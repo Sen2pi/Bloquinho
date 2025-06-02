@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NotionClone On-Premises - Projeto</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>NotionClone</h2>
+                <span class="subtitle">On-Premises</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#overview" class="nav-link active" data-section="overview">
+                    <span class="nav-icon">🏠</span>Overview
+                </a></li>
+                <li><a href="#architecture" class="nav-link" data-section="architecture">
+                    <span class="nav-icon">🏗️</span>Arquitetura
+                </a></li>
+                <li><a href="#features" class="nav-link" data-section="features">
+                    <span class="nav-icon">⚡</span>Funcionalidades
+                </a></li>
+                <li><a href="#development" class="nav-link" data-section="development">
+                    <span class="nav-icon">📅</span>Plano de Desenvolvimento
+                </a></li>
+                <li><a href="#specifications" class="nav-link" data-section="specifications">
+                    <span class="nav-icon">⚙️</span>Especificações
+                </a></li>
+                <li><a href="#backup" class="nav-link" data-section="backup">
+                    <span class="nav-icon">🔒</span>Backup & Segurança
+                </a></li>
+                <li><a href="#estimates" class="nav-link" data-section="estimates">
+                    <span class="nav-icon">💰</span>Estimativas & ROI
+                </a></li>
+            </ul>
+            <div class="theme-toggle">
+                <button id="theme-toggle" class="btn btn--secondary btn--sm">
+                    <span id="theme-icon">🌙</span> Tema Escuro
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Overview Section -->
+            <section id="overview" class="content-section active">
+                <div class="hero">
+                    <h1>NotionClone On-Premises</h1>
+                    <p class="hero-subtitle">Aplicação similar ao Notion que funciona completamente on-premises, sem limitações de planos e com backup cloud integrado</p>
+                    <div class="hero-actions">
+                        <button class="btn btn--primary btn--lg" onclick="scrollToSection('architecture')">Explorar Projeto</button>
+                        <button class="btn btn--outline btn--lg" onclick="scrollToSection('estimates')">Ver ROI</button>
+                    </div>
+                </div>
+
+                <div class="objectives">
+                    <h2>Objetivos Principais</h2>
+                    <div class="objectives-grid">
+                        <div class="objective-card">
+                            <div class="objective-icon">⚡</div>
+                            <h3>Funcionalidade Completa</h3>
+                            <p>Implementar todas as funcionalidades do Notion sem limitações</p>
+                        </div>
+                        <div class="objective-card">
+                            <div class="objective-icon">🏠</div>
+                            <h3>On-Premises</h3>
+                            <p>Execução local sem dependência de serviços cloud externos</p>
+                        </div>
+                        <div class="objective-card">
+                            <div class="objective-icon">☁️</div>
+                            <h3>Backup Cloud</h3>
+                            <p>Integração com OneDrive, Google Drive e clouds privadas</p>
+                        </div>
+                        <div class="objective-card">
+                            <div class="objective-icon">🆓</div>
+                            <h3>Sem Planos</h3>
+                            <p>Acesso completo a todas as funcionalidades sem restrições</p>
+                        </div>
+                        <div class="objective-card">
+                            <div class="objective-icon">🔓</div>
+                            <h3>Open Source</h3>
+                            <p>Licença que permite uso comercial e modificações</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="benefits">
+                    <h2>Benefícios vs Notion Original</h2>
+                    <div class="benefits-list">
+                        <div class="benefit-item">
+                            <span class="benefit-icon">✅</span>
+                            <div>
+                                <strong>Custo Fixo</strong>
+                                <p>Sem custos recorrentes por utilizador</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">✅</span>
+                            <div>
+                                <strong>Controlo Total</strong>
+                                <p>Dados sempre sob o seu controlo</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">✅</span>
+                            <div>
+                                <strong>Sem Limitações</strong>
+                                <p>Acesso a todas as funcionalidades</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">✅</span>
+                            <div>
+                                <strong>Personalização</strong>
+                                <p>Modificações conforme necessidades</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Architecture Section -->
+            <section id="architecture" class="content-section">
+                <h1>Arquitetura Técnica</h1>
+                
+                <div class="architecture-images">
+                    <div class="arch-image">
+                        <h3>Arquitetura do Sistema</h3>
+                        <img src="https://pplx-res.cloudinary.com/image/upload/v1748872451/gpt4o_images/qjtdvecadwnmqf9exghd.png" alt="Arquitetura do sistema" class="responsive-image">
+                    </div>
+                    <div class="arch-image">
+                        <h3>Fluxo de Dados</h3>
+                        <img src="https://pplx-res.cloudinary.com/image/upload/v1748872553/gpt4o_images/zffepv06o01wrxyyxq8b.png" alt="Fluxo de dados" class="responsive-image">
+                    </div>
+                </div>
+
+                <div class="tech-stack">
+                    <h2>Stack Tecnológica</h2>
+                    <div class="stack-table">
+                        <div class="stack-header">
+                            <div>Camada</div>
+                            <div>Tecnologia Principal</div>
+                            <div>Alternativa</div>
+                            <div>Justificação</div>
+                        </div>
+                        <div id="tech-stack-content"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features Section -->
+            <section id="features" class="content-section">
+                <h1>Funcionalidades</h1>
+                
+                <div class="comparison-section">
+                    <h2>Comparação com Planos Notion</h2>
+                    <div class="comparison-table">
+                        <div class="comparison-header">
+                            <div>Funcionalidade</div>
+                            <div>Free</div>
+                            <div>Plus</div>
+                            <div>Business</div>
+                            <div>Enterprise</div>
+                            <div class="our-solution">Nossa Solução</div>
+                        </div>
+                        <div id="comparison-content"></div>
+                    </div>
+                </div>
+
+                <div class="features-checklist">
+                    <h2>Funcionalidades Core</h2>
+                    <div id="features-grid"></div>
+                </div>
+            </section>
+
+            <!-- Development Section -->
+            <section id="development" class="content-section">
+                <h1>Plano de Desenvolvimento</h1>
+                
+                <div class="timeline">
+                    <h2>Timeline de Desenvolvimento</h2>
+                    <div id="development-timeline"></div>
+                </div>
+
+                <div class="development-summary">
+                    <div class="summary-card">
+                        <h3>Tempo Total Estimado</h3>
+                        <div class="summary-value">32-44 semanas</div>
+                        <p>Aproximadamente 8-11 meses</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Equipe Recomendada</h3>
+                        <div class="summary-value">3-5 developers</div>
+                        <p>Full-stack + DevOps</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Metodologia</h3>
+                        <div class="summary-value">Agile/Scrum</div>
+                        <p>Sprints de 2 semanas</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Specifications Section -->
+            <section id="specifications" class="content-section">
+                <h1>Especificações Técnicas</h1>
+                
+                <div class="specs-grid">
+                    <div class="spec-card">
+                        <h3>Requisitos do Servidor</h3>
+                        <div class="spec-list">
+                            <div class="spec-item">
+                                <strong>CPU:</strong> 4 cores
+                            </div>
+                            <div class="spec-item">
+                                <strong>RAM:</strong> 8GB
+                            </div>
+                            <div class="spec-item">
+                                <strong>Storage:</strong> 100GB SSD
+                            </div>
+                            <div class="spec-item">
+                                <strong>OS:</strong> Ubuntu 20.04+ ou Docker
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="spec-card">
+                        <h3>Ambiente de Desenvolvimento</h3>
+                        <div class="spec-list">
+                            <div class="spec-item">
+                                <strong>Node.js:</strong> 18+
+                            </div>
+                            <div class="spec-item">
+                                <strong>PostgreSQL:</strong> 14+
+                            </div>
+                            <div class="spec-item">
+                                <strong>Redis:</strong> 6+
+                            </div>
+                            <div class="spec-item">
+                                <strong>Docker:</strong> 20+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="spec-card">
+                        <h3>APIs e Integrações</h3>
+                        <div class="spec-list">
+                            <div class="spec-item">
+                                <strong>OneDrive API</strong> - Backup cloud
+                            </div>
+                            <div class="spec-item">
+                                <strong>Google Drive API</strong> - Backup cloud
+                            </div>
+                            <div class="spec-item">
+                                <strong>Cloud Privada</strong> - WebDAV/S3
+                            </div>
+                            <div class="spec-item">
+                                <strong>OAuth 2.0</strong> - Autenticação
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="spec-card">
+                        <h3>Modelo de Dados</h3>
+                        <div class="spec-list">
+                            <div class="spec-item">
+                                <strong>Blocos</strong> - Estrutura hierárquica
+                            </div>
+                            <div class="spec-item">
+                                <strong>Páginas</strong> - Contentor de blocos
+                            </div>
+                            <div class="spec-item">
+                                <strong>Workspaces</strong> - Organização
+                            </div>
+                            <div class="spec-item">
+                                <strong>Utilizadores</strong> - Permissões
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Backup Section -->
+            <section id="backup" class="content-section">
+                <h1>Backup & Segurança</h1>
+                
+                <div class="backup-grid">
+                    <div class="backup-card">
+                        <h3>🔄 Estratégia de Backup</h3>
+                        <ul>
+                            <li>Backup automático diário</li>
+                            <li>Retenção configurável (7, 30, 90 dias)</li>
+                            <li>Backup incremental</li>
+                            <li>Verificação de integridade</li>
+                            <li>Restore ponto-no-tempo</li>
+                        </ul>
+                    </div>
+
+                    <div class="backup-card">
+                        <h3>☁️ Integrações Cloud</h3>
+                        <ul>
+                            <li>Microsoft OneDrive</li>
+                            <li>Google Drive</li>
+                            <li>Clouds privadas (WebDAV)</li>
+                            <li>Compatibilidade S3</li>
+                            <li>Encriptação end-to-end</li>
+                        </ul>
+                    </div>
+
+                    <div class="backup-card">
+                        <h3>🔐 Segurança</h3>
+                        <ul>
+                            <li>HTTPS obrigatório</li>
+                            <li>OAuth 2.0 + JWT</li>
+                            <li>SAML SSO</li>
+                            <li>2FA obrigatório</li>
+                            <li>RBAC (Role-Based Access)</li>
+                        </ul>
+                    </div>
+
+                    <div class="backup-card">
+                        <h3>📊 Auditoria</h3>
+                        <ul>
+                            <li>Log de todas as ações</li>
+                            <li>Rastreamento de alterações</li>
+                            <li>Conformidade GDPR</li>
+                            <li>Retenção de logs</li>
+                            <li>Relatórios de acesso</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Estimates Section -->
+            <section id="estimates" class="content-section">
+                <h1>Estimativas & ROI</h1>
+                
+                <div class="cost-comparison">
+                    <h2>Comparação de Custos</h2>
+                    <div class="cost-cards">
+                        <div class="cost-card notion-cost">
+                            <h3>Notion Business (50 users)</h3>
+                            <div class="cost-value">€975/mês</div>
+                            <div class="cost-annual">€11.700/ano</div>
+                            <ul>
+                                <li>Custo recorrente</li>
+                                <li>Limitações de features</li>
+                                <li>Dados na cloud</li>
+                                <li>Dependência externa</li>
+                            </ul>
+                        </div>
+
+                        <div class="cost-card our-cost">
+                            <h3>Nossa Solução</h3>
+                            <div class="cost-value">€20k-30k inicial</div>
+                            <div class="cost-annual">€720/ano operacional</div>
+                            <ul>
+                                <li>Custo único de desenvolvimento</li>
+                                <li>Todas as features incluídas</li>
+                                <li>Dados on-premises</li>
+                                <li>Controlo total</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="roi-calculator">
+                    <h2>Calculadora de ROI</h2>
+                    <div class="calculator-card">
+                        <div class="calculator-inputs">
+                            <div class="input-group">
+                                <label for="users">Número de Utilizadores:</label>
+                                <input type="number" id="users" value="50" min="1" max="1000">
+                            </div>
+                            <div class="input-group">
+                                <label for="years">Período (anos):</label>
+                                <input type="number" id="years" value="3" min="1" max="10">
+                            </div>
+                        </div>
+                        <div class="calculator-results">
+                            <div class="result-item">
+                                <span>Custo Notion Business:</span>
+                                <span id="notion-cost">€35.100</span>
+                            </div>
+                            <div class="result-item">
+                                <span>Custo Nossa Solução:</span>
+                                <span id="our-cost">€22.160</span>
+                            </div>
+                            <div class="result-item savings">
+                                <span>Poupança Total:</span>
+                                <span id="savings">€12.940</span>
+                            </div>
+                            <div class="result-item">
+                                <span>ROI:</span>
+                                <span id="roi">58%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-benefits">
+                    <h2>Benefícios ao Longo do Tempo</h2>
+                    <div class="benefits-timeline">
+                        <div class="benefit-year">
+                            <h4>Ano 1</h4>
+                            <p>Investimento inicial: €25k</p>
+                            <p>Economia vs Notion: €-13.3k</p>
+                        </div>
+                        <div class="benefit-year">
+                            <h4>Ano 2</h4>
+                            <p>Custo operacional: €720</p>
+                            <p>Economia vs Notion: €11k</p>
+                        </div>
+                        <div class="benefit-year">
+                            <h4>Ano 3+</h4>
+                            <p>Custo operacional: €720</p>
+                            <p>Economia vs Notion: €11k/ano</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
