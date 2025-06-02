@@ -1,10 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
 import { PrismaClient } from '@prisma/client';
-import { createClient } from 'redis';
 
 import authRoutes from './routes/auth';
 import workspaceRoutes from './routes/workspaces';
@@ -14,28 +11,18 @@ import databaseRoutes from './routes/databases';
 import backupRoutes from './routes/backup';
 
 import { authMiddleware } from './middleware/auth';
-import { setupCollaboration } from './services/collaboration';
 
 const app = express();
-const server = createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
-});
 
 // Database
 export const prisma = new PrismaClient();
 
-// Redis
-export const redis = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
-});
-
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  credentials: true
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -49,27 +36,28 @@ app.use('/api/backup', authMiddleware, backupRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    database: 'connected'
+  });
 });
-
-// Setup real-time collaboration
-setupCollaboration(io);
 
 const PORT = process.env.PORT || 3001;
 
 async function startServer() {
   try {
-    await redis.connect();
-    console.log('Connected to Redis');
-    
+    // Conectar Prisma
     await prisma.$connect();
-    console.log('Connected to PostgreSQL');
+    console.log('✅ Connected to PostgreSQL');
     
-    server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+    // Iniciar servidor
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📊 Health check: http://localhost:${PORT}/health`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 }
@@ -78,7 +66,13 @@ startServer();
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
+  console.log('🛑 Shutting down gracefully...');
   await prisma.$disconnect();
-  await redis.disconnect();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('🛑 Shutting down gracefully...');
+  await prisma.$disconnect();
   process.exit(0);
 });

@@ -51,43 +51,6 @@ export function setupCollaboration(io: Server) {
       });
     });
 
-    // Handle block updates
-    socket.on('block-update', (data: {
-      pageId: string;
-      blockId: string;
-      content: any;
-      type: string;
-    }) => {
-      socket.to(`page:${data.pageId}`).emit('block-updated', {
-        ...data,
-        updatedBy: socket.data.user.id
-      });
-    });
-
-    // Handle cursor position
-    socket.on('cursor-position', (data: {
-      pageId: string;
-      blockId: string;
-      position: number;
-    }) => {
-      socket.to(`page:${data.pageId}`).emit('cursor-moved', {
-        ...data,
-        userId: socket.data.user.id,
-        userName: socket.data.user.name
-      });
-    });
-
-    // Handle comments
-    socket.on('new-comment', (data: {
-      pageId: string;
-      content: string;
-    }) => {
-      socket.to(`page:${data.pageId}`).emit('comment-added', {
-        ...data,
-        author: socket.data.user
-      });
-    });
-
     socket.on('disconnect', () => {
       console.log(`User ${socket.data.user.name} disconnected`);
     });
