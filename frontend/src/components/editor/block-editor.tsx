@@ -6,7 +6,8 @@ import { useBlockStore } from '@/lib/stores/block'
 import { Block } from '@/components/editor/block'
 import { SlashMenu } from '@/components/editor/slash-menu'
 import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
+import { Plus, FileText } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 interface BlockEditorProps {
   pageId: string
@@ -37,17 +38,66 @@ export function BlockEditor({ pageId }: BlockEditorProps) {
     reorderBlocks(updates)
   }
 
-  const handleAddBlock = (type: string, afterBlockId?: string) => {
+  const handleAddBlock = async (type: string, afterBlockId?: string) => {
     const afterIndex = afterBlockId 
       ? blocks.findIndex(b => b.id === afterBlockId)
       : blocks.length - 1
 
-    createBlock({
-      type,
-      content: getDefaultContent(type),
-      pageId,
-      order: afterIndex + 1
-    })
+    try {
+      await createBlock({
+        type,
+        content: getDefaultContent(type),
+        pageId,
+        order: afterIndex + 1
+      })
+      toast.success('Block added!')
+    } catch (error) {
+      toast.error('Failed to add block')
+    }
+  }
+
+  const handleDeleteBlock = async (blockId: string) => {
+    if (blocks.length === 1) {
+      toast.error('Cannot delete the last block')
+      return
+    }
+
+    try {
+      await deleteBlock(blockId)
+      toast.success('Block deleted!')
+    } catch (error) {
+      toast.error('Failed to delete block')
+    }
+  }
+
+  const handleKeyDown = (e: KeyboardEvent, blockId: string) => {
+    const blockIndex = blocks.findIndex(b => b.id === blockId)
+    
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault()
+      handleAddBlock('TEXT', blockId)
+    } else if (e.key === 'Backspace' && e.metaKey) {
+      e.preventDefault()
+      handleDeleteBlock(blockId)
+    } else if (e.key === 'ArrowUp' && e.metaKey) {
+      e.preventDefault()
+      if (blockIndex > 0) {
+        const updates = [
+          { id: blocks[blockIndex].id, order: blockIndex - 1 },
+          { id: blocks[blockIndex - 1].id, order: blockIndex }
+        ]
+        reorderBlocks(updates)
+      }
+    } else if (e.key === 'ArrowDown' && e.metaKey) {
+      e.preventDefault()
+      if (blockIndex < blocks.length - 1) {
+        const updates = [
+          { id: blocks[blockIndex].id, order: blockIndex + 1 },
+          { id: blocks[blockIndex + 1].id, order: blockIndex }
+        ]
+        reorderBlocks(updates)
+      }
+    }
   }
 
   const getDefaultContent = (type: string) => {
@@ -72,6 +122,8 @@ export function BlockEditor({ pageId }: BlockEditorProps) {
         return { text: '', language: 'javascript' }
       case 'DIVIDER':
         return {}
+      case 'PAGE':
+        return { title: 'Untitled Page', pageId: null }
       default:
         return { text: '' }
     }
@@ -97,8 +149,9 @@ export function BlockEditor({ pageId }: BlockEditorProps) {
                         block={block}
                         dragHandleProps={provided.dragHandleProps}
                         onUpdate={(content) => updateBlock(block.id, { content })}
-                        onDelete={() => deleteBlock(block.id)}
+                        onDelete={() => handleDeleteBlock(block.id)}
                         onAddBlock={(type) => handleAddBlock(type, block.id)}
+                        onKeyDown={(e) => handleKeyDown(e, block.id)}
                         onSlashMenu={(show, position) => {
                           setShowSlashMenu(show)
                           setSlashMenuPosition(position)
@@ -117,11 +170,17 @@ export function BlockEditor({ pageId }: BlockEditorProps) {
 
       {blocks.length === 0 && (
         <div className="text-center py-12">
+          <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
           <p className="text-gray-500 mb-4">Start writing or press / for commands</p>
-          <Button onClick={() => handleAddBlock('TEXT')}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add a block
-          </Button>
+          <div className="space-y-2">
+            <Button onClick={() => handleAddBlock('TEXT')}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add a text block
+            </Button>
+            <p className="text-xs text-gray-400">
+              Shortcuts: Shift+Enter (new block), Cmd+Backspace (delete), Cmd+↑↓ (move)
+            </p>
+          </div>
         </div>
       )}
 
