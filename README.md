@@ -1,3 +1,5 @@
+<img src="./logo.png">
+
 # Bloquinho- Self-Hosted Workspace
 
 Uma aplicação completa similar ao Notion, desenvolvida para execução on-premises com todas as funcionalidades sem limitações de planos.
