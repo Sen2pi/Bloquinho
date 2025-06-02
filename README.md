@@ -1,4 +1,4 @@
-<img src="./logo.png" type="icon" windth=300>
+<img src="./logo.png" type="icon" windth="200px">
 
 # Bloquinho- Self-Hosted Workspace
 
