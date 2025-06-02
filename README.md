@@ -167,8 +167,6 @@ O desenvolvimento de uma aplicação similar ao Notion on-premises representa um
 
 A aplicação proposta não apenas replicaria as funcionalidades do Notion, mas também as expandiria com recursos adicionais de backup e integração, tudo isso mantendo os dados sob controle total da organização e sem as restrições associadas a planos pagos.
 
-<div style="text-align: center">⁂</div>
-
 [^1]: https://super.so/blog/40-notion-features-for-efficiency-and-aesthetics-2024
 
 [^2]: https://thomasjfrank.com/every-notion-feature-released-in-2024/
