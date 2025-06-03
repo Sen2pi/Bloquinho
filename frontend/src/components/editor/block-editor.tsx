@@ -70,36 +70,6 @@ export function BlockEditor({ pageId }: BlockEditorProps) {
     }
   }
 
-  const handleKeyDown = (e: KeyboardEvent, blockId: string) => {
-    const blockIndex = blocks.findIndex(b => b.id === blockId)
-    
-    if (e.key === 'Enter' && e.shiftKey) {
-      e.preventDefault()
-      handleAddBlock('TEXT', blockId)
-    } else if (e.key === 'Backspace' && e.metaKey) {
-      e.preventDefault()
-      handleDeleteBlock(blockId)
-    } else if (e.key === 'ArrowUp' && e.metaKey) {
-      e.preventDefault()
-      if (blockIndex > 0) {
-        const updates = [
-          { id: blocks[blockIndex].id, order: blockIndex - 1 },
-          { id: blocks[blockIndex - 1].id, order: blockIndex }
-        ]
-        reorderBlocks(updates)
-      }
-    } else if (e.key === 'ArrowDown' && e.metaKey) {
-      e.preventDefault()
-      if (blockIndex < blocks.length - 1) {
-        const updates = [
-          { id: blocks[blockIndex].id, order: blockIndex + 1 },
-          { id: blocks[blockIndex + 1].id, order: blockIndex }
-        ]
-        reorderBlocks(updates)
-      }
-    }
-  }
-
   const getDefaultContent = (type: string) => {
     switch (type) {
       case 'TEXT':
@@ -122,8 +92,6 @@ export function BlockEditor({ pageId }: BlockEditorProps) {
         return { text: '', language: 'javascript' }
       case 'DIVIDER':
         return {}
-      case 'PAGE':
-        return { title: 'Untitled Page', pageId: null }
       default:
         return { text: '' }
     }
@@ -151,10 +119,9 @@ export function BlockEditor({ pageId }: BlockEditorProps) {
                         onUpdate={(content) => updateBlock(block.id, { content })}
                         onDelete={() => handleDeleteBlock(block.id)}
                         onAddBlock={(type) => handleAddBlock(type, block.id)}
-                        onKeyDown={(e) => handleKeyDown(e, block.id)}
                         onSlashMenu={(show, position) => {
                           setShowSlashMenu(show)
-                          setSlashMenuPosition(position)
+                          if (position) setSlashMenuPosition(position)
                           setActiveBlockId(block.id)
                         }}
                       />
@@ -172,15 +139,10 @@ export function BlockEditor({ pageId }: BlockEditorProps) {
         <div className="text-center py-12">
           <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
           <p className="text-gray-500 mb-4">Start writing or press / for commands</p>
-          <div className="space-y-2">
-            <Button onClick={() => handleAddBlock('TEXT')}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add a text block
-            </Button>
-            <p className="text-xs text-gray-400">
-              Shortcuts: Shift+Enter (new block), Cmd+Backspace (delete), Cmd+↑↓ (move)
-            </p>
-          </div>
+          <Button onClick={() => handleAddBlock('TEXT')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add a text block
+          </Button>
         </div>
       )}
 

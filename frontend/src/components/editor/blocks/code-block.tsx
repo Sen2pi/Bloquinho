@@ -6,54 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Copy, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// Importação correta do highlight.js para Next.js
-import hljs from 'highlight.js/lib/core'
-import javascript from 'highlight.js/lib/languages/javascript'
-import typescript from 'highlight.js/lib/languages/typescript'
-import python from 'highlight.js/lib/languages/python'
-import java from 'highlight.js/lib/languages/java'
-import cpp from 'highlight.js/lib/languages/cpp'
-import csharp from 'highlight.js/lib/languages/csharp'
-import php from 'highlight.js/lib/languages/php'
-import ruby from 'highlight.js/lib/languages/ruby'
-import go from 'highlight.js/lib/languages/go'
-import rust from 'highlight.js/lib/languages/rust'
-import swift from 'highlight.js/lib/languages/swift'
-import kotlin from 'highlight.js/lib/languages/kotlin'
-import css from 'highlight.js/lib/languages/css'
-import xml from 'highlight.js/lib/languages/xml'
-import sql from 'highlight.js/lib/languages/sql'
-import json from 'highlight.js/lib/languages/json'
-import yaml from 'highlight.js/lib/languages/yaml'
-import bash from 'highlight.js/lib/languages/bash'
-import powershell from 'highlight.js/lib/languages/powershell'
-import dockerfile from 'highlight.js/lib/languages/dockerfile'
-import markdown from 'highlight.js/lib/languages/markdown'
-
-// Registrar as linguagens
-hljs.registerLanguage('javascript', javascript)
-hljs.registerLanguage('typescript', typescript)
-hljs.registerLanguage('python', python)
-hljs.registerLanguage('java', java)
-hljs.registerLanguage('cpp', cpp)
-hljs.registerLanguage('csharp', csharp)
-hljs.registerLanguage('php', php)
-hljs.registerLanguage('ruby', ruby)
-hljs.registerLanguage('go', go)
-hljs.registerLanguage('rust', rust)
-hljs.registerLanguage('swift', swift)
-hljs.registerLanguage('kotlin', kotlin)
-hljs.registerLanguage('css', css)
-hljs.registerLanguage('html', xml)
-hljs.registerLanguage('xml', xml)
-hljs.registerLanguage('sql', sql)
-hljs.registerLanguage('json', json)
-hljs.registerLanguage('yaml', yaml)
-hljs.registerLanguage('bash', bash)
-hljs.registerLanguage('powershell', powershell)
-hljs.registerLanguage('dockerfile', dockerfile)
-hljs.registerLanguage('markdown', markdown)
-
 interface CodeBlockProps {
   content: { text: string; language?: string }
   onChange: (content: { text: string; language?: string }) => void
@@ -98,20 +50,15 @@ export function CodeBlock({ content, onChange }: CodeBlockProps) {
   }, [content])
 
   useEffect(() => {
-    if (codeRef.current && !isEditing && text) {
+    if (codeRef.current && !isEditing && text && typeof window !== 'undefined') {
       codeRef.current.textContent = text
-      if (language !== 'plaintext') {
-        hljs.highlightElement(codeRef.current)
+      // @ts-ignore
+      if (window.hljs && language !== 'plaintext') {
+        // @ts-ignore
+        window.hljs.highlightElement(codeRef.current)
       }
     }
   }, [text, language, isEditing])
-
-  useEffect(() => {
-    if (textareaRef.current && isEditing) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px'
-    }
-  }, [text, isEditing])
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value
@@ -155,7 +102,6 @@ export function CodeBlock({ content, onChange }: CodeBlockProps) {
       setText(newText)
       onChange({ text: newText, language })
       
-      // Restore cursor position
       setTimeout(() => {
         textarea.selectionStart = textarea.selectionEnd = start + 2
       }, 0)
@@ -221,7 +167,6 @@ export function CodeBlock({ content, onChange }: CodeBlockProps) {
             <code
               ref={codeRef}
               className={`language-${language} text-sm`}
-              style={{ background: 'transparent' }}
             >
               {text || 'Double-click to edit code...'}
             </code>

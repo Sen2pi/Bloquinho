@@ -11,9 +11,7 @@ import {
   Star, 
   Archive,
   Settings,
-  Copy,
-  Link,
-  StarIcon
+  Copy
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -30,16 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-  FacebookShareButton,
-  TwitterShareButton,
-  LinkedinShareButton,
-  WhatsappShareButton,
-  FacebookIcon,
-  TwitterIcon,
-  LinkedinIcon,
-  WhatsappIcon,
-} from 'react-share'
+import { RWebShare } from 'react-web-share'
 import toast from 'react-hot-toast'
 
 interface Page {
@@ -80,7 +69,7 @@ export function PageHeader({ page, onUpdate }: PageHeaderProps) {
         toast.success('Title updated!')
       } catch (error) {
         console.error('Failed to update title:', error)
-        setTitle(page.title) // Revert on error
+        setTitle(page.title)
         toast.error('Failed to update title')
       }
     }
@@ -124,7 +113,6 @@ export function PageHeader({ page, onUpdate }: PageHeaderProps) {
   const handleDeletePage = async () => {
     if (confirm('Are you sure you want to delete this page?')) {
       try {
-        // Implement delete functionality
         toast.success('Page deleted')
       } catch (error) {
         toast.error('Failed to delete page')
@@ -205,52 +193,20 @@ export function PageHeader({ page, onUpdate }: PageHeaderProps) {
 
           {/* Actions */}
           <div className="flex items-center space-x-2">
-            {/* Share Button */}
-            <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Share this page</DialogTitle>
-                  <DialogDescription>
-                    Share this page with others using the options below
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-4">
-                  {/* Copy Link */}
-                  <div className="flex items-center space-x-2">
-                    <Input value={currentUrl} readOnly className="flex-1" />
-                    <Button onClick={handleCopyLink} size="sm">
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  {/* Social Share Buttons */}
-                  <div className="flex items-center justify-center space-x-3">
-                    <FacebookShareButton url={currentUrl} quote={shareTitle}>
-                      <FacebookIcon size={40} round />
-                    </FacebookShareButton>
-                    
-                    <TwitterShareButton url={currentUrl} title={shareTitle}>
-                      <TwitterIcon size={40} round />
-                    </TwitterShareButton>
-                    
-                    <LinkedinShareButton url={currentUrl} title={shareTitle} summary={shareDescription}>
-                      <LinkedinIcon size={40} round />
-                    </LinkedinShareButton>
-                    
-                    <WhatsappShareButton url={currentUrl} title={shareTitle}>
-                      <WhatsappIcon size={40} round />
-                    </WhatsappShareButton>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            {/* Share Button with react-web-share */}
+            <RWebShare
+              data={{
+                text: shareDescription,
+                url: currentUrl,
+                title: shareTitle,
+              }}
+              onClick={() => toast.success("Shared successfully!")}
+            >
+              <Button variant="outline" size="sm">
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+            </RWebShare>
             
             {/* Favorite Button */}
             <Button 
@@ -273,6 +229,10 @@ export function PageHeader({ page, onUpdate }: PageHeaderProps) {
                 <DropdownMenuItem onClick={() => setIsEditingIcon(true)}>
                   <Edit3 className="h-4 w-4 mr-2" />
                   Change Icon
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopyLink}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy Link
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Archive className="h-4 w-4 mr-2" />

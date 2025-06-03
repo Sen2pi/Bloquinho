@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Block as BlockType } from '@/types'
 import { TextBlock } from './blocks/text-block'
 import { HeadingBlock } from './blocks/heading-block'
 import { ListBlock } from './blocks/list-block'
@@ -11,16 +10,26 @@ import { CodeBlock } from './blocks/code-block'
 import { DividerBlock } from './blocks/divider-block'
 import { ImageBlock } from './blocks/image-block'
 import { DatabaseBlock } from './blocks/database-block'
+import { TableBlock } from './blocks/table-block'
+import { PageBlock } from './blocks/page-block'
 import { Button } from '@/components/ui/button'
-import { GripVertical, Plus, Trash2 } from 'lucide-react'
+import { GripVertical, Plus, Trash2, MoreHorizontal } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface BlockProps {
-  block: BlockType
+  block: any
   dragHandleProps?: any
   onUpdate: (content: any) => void
   onDelete: () => void
   onAddBlock: (type: string) => void
-  onSlashMenu: (show: boolean, position: { x: number; y: number }) => void
+  onSlashMenu: (show: boolean, position?: { x: number; y: number }) => void
+  isInGrid?: boolean
 }
 
 export function Block({
@@ -29,7 +38,8 @@ export function Block({
   onUpdate,
   onDelete,
   onAddBlock,
-  onSlashMenu
+  onSlashMenu,
+  isInGrid = false
 }: BlockProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [showActions, setShowActions] = useState(false)
@@ -44,6 +54,14 @@ export function Block({
     }
   }
 
+  useEffect(() => {
+    const element = blockRef.current
+    if (element) {
+      element.addEventListener('keydown', handleKeyDown)
+      return () => element.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
+
   const renderBlock = () => {
     switch (block.type) {
       case 'TEXT':
@@ -52,19 +70,22 @@ export function Block({
             content={block.content}
             onChange={onUpdate}
             onKeyDown={handleKeyDown}
+            placeholder="Type '/' for commands"
           />
         )
+
       case 'HEADING_1':
       case 'HEADING_2':
       case 'HEADING_3':
         return (
           <HeadingBlock
-            level={parseInt(block.type.split('_')[1])}
+            level={parseInt(block.type.split('_')[1]) as 1 | 2 | 3}
             content={block.content}
             onChange={onUpdate}
             onKeyDown={handleKeyDown}
           />
         )
+
       case 'BULLET_LIST':
       case 'NUMBERED_LIST':
         return (
@@ -75,6 +96,7 @@ export function Block({
             onKeyDown={handleKeyDown}
           />
         )
+
       case 'TODO':
         return (
           <TodoBlock
@@ -83,6 +105,7 @@ export function Block({
             onKeyDown={handleKeyDown}
           />
         )
+
       case 'QUOTE':
         return (
           <QuoteBlock
@@ -91,6 +114,7 @@ export function Block({
             onKeyDown={handleKeyDown}
           />
         )
+
       case 'CODE':
         return (
           <CodeBlock
@@ -98,8 +122,10 @@ export function Block({
             onChange={onUpdate}
           />
         )
+
       case 'DIVIDER':
         return <DividerBlock />
+
       case 'IMAGE':
         return (
           <ImageBlock
@@ -107,6 +133,15 @@ export function Block({
             onChange={onUpdate}
           />
         )
+
+      case 'TABLE':
+        return (
+          <TableBlock
+            content={block.content}
+            onChange={onUpdate}
+          />
+        )
+
       case 'DATABASE':
         return (
           <DatabaseBlock
@@ -114,101 +149,92 @@ export function Block({
             onChange={onUpdate}
           />
         )
+
+      case 'PAGE':
+        return (
+          <PageBlock
+            content={block.content}
+            onChange={onUpdate}
+            parentPageId={block.pageId}
+          />
+        )
+
       default:
         return (
           <TextBlock
             content={block.content}
             onChange={onUpdate}
             onKeyDown={handleKeyDown}
+            placeholder="Type '/' for commands"
           />
         )
     }
   }
 
   return (
-    <div
+    <div 
       ref={blockRef}
-      className="block group relative"
+      className={`block group relative transition-all duration-200 ${
+        isInGrid ? 'h-full p-2' : 'my-1 min-h-[2rem]'
+      }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Block Actions */}
-      {isHovered && (
-        <div className="absolute left-0 top-0 -ml-12 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 cursor-grab"
-            {...dragHandleProps}
-          >
-            <GripVertical className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={() => setShowActions(!showActions)}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+      {isHovered && !isInGrid && (
+        <div className="absolute -left-10 top-0 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div {...dragHandleProps} className="cursor-grab">
+            <GripVertical className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+          </div>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={() => setShowActions(!showActions)}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => onAddBlock('TEXT')}>
+                Text
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAddBlock('HEADING_1')}>
+                Heading 1
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAddBlock('BULLET_LIST')}>
+                Bullet List
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAddBlock('TODO')}>
+                To-do
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onAddBlock('TABLE')}>
+                Table
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAddBlock('PAGE')}>
+                Sub-page
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAddBlock('IMAGE')}>
+                Image
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onDelete} className="text-red-600">
+                <Trash2 className="h-3 w-3 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
 
       {/* Block Content */}
-      <div className="min-h-[1.5rem]">
+      <div className={isInGrid ? 'h-full overflow-hidden' : ''}>
         {renderBlock()}
       </div>
-
-      {/* Quick Actions */}
-      {showActions && (
-        <div className="absolute left-0 top-full mt-1 bg-white border rounded-md shadow-lg p-2 z-10">
-          <div className="grid grid-cols-3 gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onAddBlock('TEXT')}
-            >
-              Text
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onAddBlock('HEADING_1')}
-            >
-              H1
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onAddBlock('BULLET_LIST')}
-            >
-              List
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onAddBlock('TODO')}
-            >
-              Todo
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onAddBlock('IMAGE')}
-            >
-              Image
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600"
-              onClick={onDelete}
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
