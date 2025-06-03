@@ -12,20 +12,20 @@ const Logo = () => {
   return (
     <div className="hidden md:flex items-center gap-x-2  ">
       <Image
-        src={"/e-logo.svg"}
+        src={"/logo.png"}
         className="dark:hidden"
         height={40}
         width={40}
         alt="logo"
       />
       <Image
-        src={"/dark-logo.svg"}
+        src={"/dark-logo.png"}
         className="hidden dark:block"
         height={40}
         width={40}
         alt="logo"
       />
-      <p className={cn("font-semibold", font.className)}>Eisa{"'"}s Notion</p>
+      <p className={cn("font-semibold", font.className)}>Bloquinho</p>
     </div>
   );
 };

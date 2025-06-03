@@ -13,7 +13,7 @@ const Heading = () => {
     <div className="max-w-3xl space-y-3">
       <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">
         Your Ideas, Documents & Workspaces In One Place. Welcome to
-        <span className="underline ml-1">Notion</span>
+        <span className="underline ml-1">Bloquinho</span>
       </h1>
       <h3 className="text-base sm:text-xl md:text-2xl font-medium">
         The connecting workspace where

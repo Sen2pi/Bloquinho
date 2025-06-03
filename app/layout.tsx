@@ -11,10 +11,10 @@ import { cn } from "@/lib/utils";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Eisa's Notion",
+  title: "Bloquinho",
   description: "The Connecting workspace where better, faster work happens",
   icons: {
-    icon: "/dark-logo.svg",
+    icon: "/dark-logo.png",
   },
 };
 
