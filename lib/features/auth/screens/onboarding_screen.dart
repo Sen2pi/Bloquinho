@@ -16,6 +16,7 @@ import '../../../core/models/user_profile.dart';
 import '../../../core/models/storage_settings.dart';
 import '../../../core/models/app_language.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/services/onedrive_service.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -39,6 +40,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // Estados de loading
   bool _isCreatingUser = false;
   bool _isCompleted = false;
+  bool _isCheckingOneDrive = false;
+  bool _oneDriveAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOneDriveAvailability();
+  }
 
   @override
   void dispose() {
@@ -46,6 +55,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _nameController.dispose();
     _emailController.dispose();
     super.dispose();
+  }
+
+  /// Verificar se o OneDrive está disponível
+  Future<void> _checkOneDriveAvailability() async {
+    setState(() {
+      _isCheckingOneDrive = true;
+    });
+
+    try {
+      // Simular verificação de subscrição
+      // Em produção, isso faria uma chamada real para verificar a conta
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Por enquanto, assumir que está disponível
+      // TODO: Implementar lógica real de verificação de subscrição
+      setState(() {
+        _oneDriveAvailable = true;
+      });
+    } catch (e) {
+      setState(() {
+        _oneDriveAvailable = false;
+      });
+    } finally {
+      setState(() {
+        _isCheckingOneDrive = false;
+      });
+    }
   }
 
   void _nextPage() {
@@ -99,15 +135,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     });
 
     try {
+      // Verificar se os controladores não são null
+      final name = _nameController.text.trim();
+      final email = _emailController.text.trim();
+
+      if (name.isEmpty || email.isEmpty) {
+        throw Exception('Nome e email são obrigatórios');
+      }
+
       // Salvar perfil
-      await ref.read(userProfileProvider.notifier).createProfile(
-          name: _nameController.text.trim(),
-          email: _emailController.text.trim());
+      final userProfileNotifier = ref.read(userProfileProvider.notifier);
+      await userProfileNotifier.createProfile(name: name, email: email);
 
       // Configurar storage
-      await ref
-          .read(storageSettingsProvider.notifier)
-          .changeProvider(_selectedStorage);
+      final storageNotifier = ref.read(storageSettingsProvider.notifier);
+      await storageNotifier.changeProvider(_selectedStorage);
+
+      // Se OneDrive foi selecionado, fazer autenticação automática
+      if (_selectedStorage == CloudStorageProvider.oneDrive) {
+        final onedriveService = OneDriveService();
+        final authResult = await onedriveService.authenticate();
+
+        if (authResult.success) {
+          // Conectar ao serviço
+          await storageNotifier.connect();
+        } else {
+          throw Exception(
+              'Falha na autenticação com OneDrive: ${authResult.errorMessage}');
+        }
+      }
 
       // Mostrar estado de conclusão
       if (mounted) {
@@ -119,7 +175,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         await Future.delayed(const Duration(milliseconds: 1000));
 
         // Navegar para o workspace
-        context.goNamed('workspace');
+        if (context.mounted) {
+          context.goNamed('workspace');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -841,14 +899,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
           const SizedBox(height: 16),
 
-          _buildStorageOption(
-            provider: CloudStorageProvider.oneDrive,
-            title: 'OneDrive',
-            subtitle: 'Sincronizar com OneDrive (5GB grátis)',
-            icon: PhosphorIcons.cloud(),
-            isDarkMode: isDarkMode,
-            delay: 800,
-          ),
+          // OneDrive - mostrar apenas se disponível
+          if (_isCheckingOneDrive)
+            _buildOneDriveCheckingWidget(isDarkMode)
+          else if (_oneDriveAvailable)
+            _buildStorageOption(
+              provider: CloudStorageProvider.oneDrive,
+              title: 'OneDrive',
+              subtitle: 'Sincronizar com OneDrive (requer subscrição)',
+              icon: PhosphorIcons.cloud(),
+              isDarkMode: isDarkMode,
+              delay: 800,
+            )
+          else
+            _buildOneDriveUnavailableWidget(isDarkMode),
 
           const Spacer(),
 
@@ -1050,5 +1114,134 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         .animate(delay: Duration(milliseconds: delay))
         .fadeIn(duration: 600.ms)
         .slideY(begin: 0.3, end: 0);
+  }
+
+  /// Widget para mostrar carregamento do OneDrive
+  Widget _buildOneDriveCheckingWidget(bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Ícone com loading
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Conteúdo
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'OneDrive',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Verificando disponibilidade...',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: isDarkMode
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Widget para mostrar OneDrive não disponível
+  Widget _buildOneDriveUnavailableWidget(bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode
+            ? AppColors.darkSurface.withOpacity(0.5)
+            : AppColors.lightSurface.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDarkMode
+              ? AppColors.darkBorder.withOpacity(0.5)
+              : AppColors.lightBorder.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Ícone desabilitado
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: isDarkMode
+                  ? AppColors.darkBorder.withOpacity(0.5)
+                  : AppColors.lightBorder.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              PhosphorIcons.cloud(),
+              color: isDarkMode
+                  ? AppColors.darkTextSecondary.withOpacity(0.5)
+                  : AppColors.lightTextSecondary.withOpacity(0.5),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Conteúdo
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'OneDrive',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isDarkMode
+                            ? AppColors.darkTextSecondary.withOpacity(0.7)
+                            : AppColors.lightTextSecondary.withOpacity(0.7),
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Requer subscrição ativa do OneDrive',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: isDarkMode
+                            ? AppColors.darkTextSecondary.withOpacity(0.5)
+                            : AppColors.lightTextSecondary.withOpacity(0.5),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -102,6 +102,110 @@ class OneDriveService extends CloudStorageService {
         'Content-Type': 'application/json',
       };
 
+  /// Verificar se o usuário tem subscrição ativa do OneDrive
+  Future<bool> hasActiveSubscription() async {
+    try {
+      // Verificar se tem token válido
+      if (!_isTokenValid && !await _refreshAccessToken()) {
+        return false;
+      }
+
+      // Fazer chamada para verificar informações da conta
+      final response = await http.get(
+        Uri.parse('$_baseUrl/me/drive'),
+        headers: _authHeaders,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        // Verificar se tem quota suficiente (mais de 5GB indica subscrição)
+        final quota = data['quota'];
+        if (quota != null) {
+          final total = quota['total'] as int? ?? 0;
+          final used = quota['used'] as int? ?? 0;
+          final remaining = quota['remaining'] as int? ?? 0;
+
+          // OneDrive gratuito tem 5GB, pago tem 100GB+
+          // Se tem mais de 50GB total, provavelmente tem subscrição
+          return total > 50 * 1024 * 1024 * 1024; // 50GB em bytes
+        }
+      }
+
+      return false;
+    } catch (e) {
+      print('Erro ao verificar subscrição: $e');
+      return false;
+    }
+  }
+
+  /// Criar pasta do aplicativo no OneDrive
+  Future<bool> createAppFolder() async {
+    try {
+      // Verificar se tem token válido
+      if (!_isTokenValid && !await _refreshAccessToken()) {
+        return false;
+      }
+
+      const folderName = 'Bloquinho';
+
+      // Verificar se a pasta já existe
+      final checkResponse = await http.get(
+        Uri.parse('$_baseUrl/me/drive/root:/$folderName'),
+        headers: _authHeaders,
+      );
+
+      if (checkResponse.statusCode == 200) {
+        // Pasta já existe
+        final data = json.decode(checkResponse.body);
+        final folderId = data['id'];
+
+        // Salvar ID da pasta nas configurações
+        _settings = _settings.copyWith(
+          providerConfig: {
+            ..._settings.providerConfig,
+            'app_folder_id': folderId,
+            'app_folder_name': folderName,
+          },
+        );
+
+        return true;
+      }
+
+      // Criar nova pasta
+      final createResponse = await http.post(
+        Uri.parse('$_baseUrl/me/drive/root/children'),
+        headers: _authHeaders,
+        body: json.encode({
+          'name': folderName,
+          'folder': {},
+          '@microsoft.graph.conflictBehavior': 'rename',
+        }),
+      );
+
+      if (createResponse.statusCode == 201) {
+        final data = json.decode(createResponse.body);
+        final folderId = data['id'];
+
+        // Salvar ID da pasta nas configurações
+        _settings = _settings.copyWith(
+          providerConfig: {
+            ..._settings.providerConfig,
+            'app_folder_id': folderId,
+            'app_folder_name': folderName,
+          },
+        );
+
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      print('Erro ao criar pasta do app: $e');
+      return false;
+    }
+  }
+
   @override
   Future<AuthResult> authenticate({Map<String, dynamic>? config}) async {
     try {
@@ -139,6 +243,9 @@ class OneDriveService extends CloudStorageService {
       );
 
       _statusController.add(CloudStorageStatus.connected);
+
+      // Criar pasta do aplicativo automaticamente
+      await createAppFolder();
 
       return AuthResult.success(
         accountEmail: mockUserData['email']!,
