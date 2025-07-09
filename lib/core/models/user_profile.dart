@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bloquinho/core/models/storage_settings.dart';
 
 /// Modelo que representa o perfil completo de um usuário
 class UserProfile {
@@ -16,6 +17,7 @@ class UserProfile {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isPublic;
+  final StorageSettings? storageSettings;
 
   const UserProfile({
     required this.id,
@@ -32,6 +34,7 @@ class UserProfile {
     required this.createdAt,
     required this.updatedAt,
     this.isPublic = true,
+    this.storageSettings,
   });
 
   /// Criar um novo perfil com valores padrão
@@ -64,6 +67,7 @@ class UserProfile {
     List<String>? interests,
     DateTime? updatedAt,
     bool? isPublic,
+    StorageSettings? storageSettings,
   }) {
     return UserProfile(
       id: id,
@@ -80,6 +84,7 @@ class UserProfile {
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
       isPublic: isPublic ?? this.isPublic,
+      storageSettings: storageSettings ?? this.storageSettings,
     );
   }
 
@@ -100,6 +105,7 @@ class UserProfile {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'isPublic': isPublic,
+      'storageSettings': storageSettings?.toJson(),
     };
   }
 
@@ -122,6 +128,10 @@ class UserProfile {
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       isPublic: json['isPublic'] as bool? ?? true,
+      storageSettings: json['storageSettings'] != null
+          ? StorageSettings.fromJson(
+              json['storageSettings'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -171,6 +181,92 @@ class UserProfile {
 
   /// Verificar se tem avatar personalizado
   bool get hasCustomAvatar => avatarPath != null && avatarPath!.isNotEmpty;
+
+  /// Verificar se tem configurações de armazenamento
+  bool get hasStorageSettings => storageSettings != null;
+
+  /// Verificar se está usando armazenamento local
+  bool get isUsingLocalStorage =>
+      storageSettings?.provider == CloudStorageProvider.local;
+
+  /// Verificar se está usando armazenamento em nuvem
+  bool get isUsingCloudStorage => storageSettings?.isCloudStorage == true;
+
+  /// Verificar se está conectado ao armazenamento em nuvem
+  bool get isConnectedToCloud => storageSettings?.isConnected == true;
+
+  /// Obter nome do provider de armazenamento
+  String get storageProviderName =>
+      storageSettings?.provider.displayName ?? 'Não configurado';
+
+  /// Obter status do armazenamento
+  CloudStorageStatus get storageStatus =>
+      storageSettings?.status ?? CloudStorageStatus.disconnected;
+
+  /// Obter configurações de armazenamento ou criar padrão local
+  StorageSettings get effectiveStorageSettings =>
+      storageSettings ?? StorageSettings.local();
+
+  /// Atualizar configurações de armazenamento
+  UserProfile updateStorageSettings(StorageSettings newSettings) {
+    return copyWith(storageSettings: newSettings);
+  }
+
+  /// Remover configurações de armazenamento (voltar ao local)
+  UserProfile removeStorageSettings() {
+    return copyWith(storageSettings: StorageSettings.local());
+  }
+
+  /// Verificar se deve mostrar aviso de armazenamento local
+  bool get shouldShowLocalStorageWarning => isUsingLocalStorage;
+
+  /// Obter aviso de armazenamento local
+  String? get localStorageWarning {
+    if (isUsingLocalStorage) {
+      return '⚠️ Armazenamento Local: Os dados ficam apenas neste dispositivo. '
+          'Para sincronizar entre dispositivos, configure um armazenamento em nuvem.';
+    }
+    return null;
+  }
+
+  /// Verificar se pode fazer sincronização automática
+  bool get canAutoSync => storageSettings?.canAutoBackup == true;
+
+  /// Verificar se precisa sincronizar
+  bool get needsSync => storageSettings?.needsSync == true;
+
+  /// Obter tempo desde última sincronização
+  Duration? get timeSinceLastSync => storageSettings?.timeSinceLastSync;
+
+  /// Obter texto de status de sincronização
+  String get syncStatusText {
+    if (isUsingLocalStorage) {
+      return 'Armazenamento local - Sincronização não aplicável';
+    }
+
+    if (!isConnectedToCloud) {
+      return 'Desconectado - Conecte-se para sincronizar';
+    }
+
+    if (storageSettings?.isSyncing == true) {
+      return 'Sincronizando...';
+    }
+
+    final timeSinceSync = timeSinceLastSync;
+    if (timeSinceSync == null) {
+      return 'Nunca sincronizado';
+    }
+
+    if (timeSinceSync.inMinutes < 1) {
+      return 'Sincronizado agora';
+    } else if (timeSinceSync.inMinutes < 60) {
+      return 'Sincronizado há ${timeSinceSync.inMinutes} minutos';
+    } else if (timeSinceSync.inHours < 24) {
+      return 'Sincronizado há ${timeSinceSync.inHours} horas';
+    } else {
+      return 'Sincronizado há ${timeSinceSync.inDays} dias';
+    }
+  }
 
   @override
   bool operator ==(Object other) {

@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import '../../../shared/providers/user_profile_provider.dart';
 import '../../../core/models/user_profile.dart';
 import '../widgets/profile_avatar.dart';
+import '../../../shared/providers/storage_settings_provider.dart';
+import '../../../core/models/storage_settings.dart';
 
 /// Tela principal do perfil do usuário
 class ProfileScreen extends ConsumerWidget {
@@ -191,6 +193,11 @@ class ProfileScreen extends ConsumerWidget {
 
           // Estatísticas
           _buildStats(context, stats),
+
+          const SizedBox(height: 32),
+
+          // Armazenamento
+          _buildStorageSection(context, ref, profile),
 
           const SizedBox(height: 32),
 
@@ -529,6 +536,177 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildStorageSection(
+    BuildContext context,
+    WidgetRef ref,
+    UserProfile profile,
+  ) {
+    final storageSettings = ref.watch(storageSettingsProvider);
+    final isLocalStorage = ref.watch(isLocalStorageProvider);
+    final isConnected = ref.watch(isStorageConnectedProvider);
+    final providerName = ref.watch(currentProviderNameProvider);
+    final syncStatus = ref.watch(syncStatusTextProvider);
+    final localWarning = ref.watch(localStorageWarningProvider);
+    final needsSync = ref.watch(needsSyncProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Armazenamento',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Status do armazenamento
+                Row(
+                  children: [
+                    Icon(
+                      _getStorageIcon(storageSettings.provider),
+                      color: _getStorageColor(storageSettings.provider),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            providerName,
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                          ),
+                          Text(
+                            syncStatus,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.7),
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(storageSettings.status)
+                            .withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _getStatusColor(storageSettings.status)
+                              .withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        _getStatusText(storageSettings.status),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: _getStatusColor(storageSettings.status),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Aviso de armazenamento local
+                if (localWarning != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber,
+                          color: Colors.orange[600],
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Dados apenas neste dispositivo',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange[800],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // Indicador de sincronização necessária
+                if (needsSync && !isLocalStorage) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.sync_problem,
+                          color: Colors.blue[600],
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Sincronização pendente',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue[800],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                // Botão de configurações
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/workspace/profile/storage'),
+                    icon: const Icon(Icons.settings),
+                    label: const Text('Configurar Armazenamento'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildQuickActions(
     BuildContext context,
     WidgetRef ref,
@@ -695,5 +873,61 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// Obter ícone do provider de armazenamento
+  IconData _getStorageIcon(CloudStorageProvider provider) {
+    switch (provider) {
+      case CloudStorageProvider.googleDrive:
+        return Icons.cloud;
+      case CloudStorageProvider.oneDrive:
+        return Icons.cloud_outlined;
+      case CloudStorageProvider.local:
+        return Icons.storage;
+    }
+  }
+
+  /// Obter cor do provider de armazenamento
+  Color _getStorageColor(CloudStorageProvider provider) {
+    switch (provider) {
+      case CloudStorageProvider.googleDrive:
+        return Colors.blue;
+      case CloudStorageProvider.oneDrive:
+        return Colors.indigo;
+      case CloudStorageProvider.local:
+        return Colors.grey;
+    }
+  }
+
+  /// Obter cor do status
+  Color _getStatusColor(CloudStorageStatus status) {
+    switch (status) {
+      case CloudStorageStatus.connected:
+        return Colors.green;
+      case CloudStorageStatus.syncing:
+        return Colors.blue;
+      case CloudStorageStatus.connecting:
+        return Colors.orange;
+      case CloudStorageStatus.error:
+        return Colors.red;
+      case CloudStorageStatus.disconnected:
+        return Colors.grey;
+    }
+  }
+
+  /// Obter texto do status
+  String _getStatusText(CloudStorageStatus status) {
+    switch (status) {
+      case CloudStorageStatus.connected:
+        return 'Conectado';
+      case CloudStorageStatus.syncing:
+        return 'Sincronizando';
+      case CloudStorageStatus.connecting:
+        return 'Conectando';
+      case CloudStorageStatus.error:
+        return 'Erro';
+      case CloudStorageStatus.disconnected:
+        return 'Desconectado';
+    }
   }
 }

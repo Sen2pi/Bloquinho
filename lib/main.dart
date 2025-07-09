@@ -11,6 +11,7 @@ import 'features/workspace/screens/workspace_screen.dart';
 import 'features/backup/screens/backup_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'features/profile/screens/profile_edit_screen.dart';
+import 'features/profile/screens/storage_settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -107,6 +108,11 @@ final GoRouter _router = GoRouter(
           path: 'profile/edit',
           name: 'profile_edit',
           builder: (context, state) => const ProfileEditScreen(),
+        ),
+        GoRoute(
+          path: 'profile/storage',
+          name: 'storage_settings',
+          builder: (context, state) => const StorageSettingsScreen(),
         ),
       ],
     ),
