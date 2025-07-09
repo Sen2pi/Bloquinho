@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../shared/providers/theme_provider.dart';
+import '../../../shared/providers/user_profile_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -23,9 +24,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // Simular carregamento inicial
     await Future.delayed(const Duration(seconds: 2));
 
-    // Navegar para a tela de autenticação
+    // Verificar se há usuário criado
+    final hasProfile = ref.read(hasProfileProvider);
+
     if (mounted) {
-      context.goNamed('auth');
+      if (hasProfile) {
+        // Usuário já existe, ir para auth
+        context.goNamed('auth');
+      } else {
+        // Primeiro acesso, mostrar onboarding
+        context.goNamed('onboarding');
+      }
     }
   }
 

@@ -73,6 +73,9 @@ abstract class CloudStorageService {
   /// Obter configurações padrão
   StorageSettings getDefaultSettings();
 
+  /// Atualizar configurações
+  void updateSettings(StorageSettings settings);
+
   /// Callback para mudanças de status
   Stream<CloudStorageStatus> get statusStream;
 

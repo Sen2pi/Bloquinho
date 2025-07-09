@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/models/app_language.dart';
 import 'shared/providers/theme_provider.dart';
+import 'shared/providers/language_provider.dart';
 import 'features/auth/screens/splash_screen.dart';
+import 'features/auth/screens/onboarding_screen.dart';
 import 'features/workspace/screens/workspace_screen.dart';
 import 'features/backup/screens/backup_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
@@ -40,6 +44,7 @@ class BloquinhoApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
+    final currentLocale = ref.watch(currentLocaleProvider);
 
     return MaterialApp.router(
       title: 'Bloquinho',
@@ -54,10 +59,13 @@ class BloquinhoApp extends ConsumerWidget {
       routerConfig: _router,
 
       // Configurações de localização
-      supportedLocales: const [
-        Locale('pt', 'BR'),
-        Locale('en', 'US'),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
+      supportedLocales: AppLanguage.supportedLocales,
+      locale: currentLocale,
 
       // Builder para configurações globais
       builder: (context, child) {
@@ -120,6 +128,11 @@ final GoRouter _router = GoRouter(
       path: '/auth',
       name: 'auth',
       builder: (context, state) => const AuthScreen(),
+    ),
+    GoRoute(
+      path: '/onboarding',
+      name: 'onboarding',
+      builder: (context, state) => const OnboardingScreen(),
     ),
   ],
   errorBuilder: (context, state) => const NotFoundScreen(),
