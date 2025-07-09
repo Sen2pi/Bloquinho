@@ -8,6 +8,7 @@ import 'core/theme/app_theme.dart';
 import 'shared/providers/theme_provider.dart';
 import 'features/auth/screens/splash_screen.dart';
 import 'features/workspace/screens/workspace_screen.dart';
+import 'features/backup/screens/backup_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,12 +84,17 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const WorkspaceScreen(),
       routes: [
         GoRoute(
-          path: '/document/:id',
+          path: 'document/:id',
           name: 'document',
           builder: (context, state) {
             final documentId = state.pathParameters['id'] ?? '';
             return DocumentScreen(documentId: documentId);
           },
+        ),
+        GoRoute(
+          path: 'backup',
+          name: 'backup',
+          builder: (context, state) => const BackupScreen(),
         ),
       ],
     ),

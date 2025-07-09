@@ -596,6 +596,12 @@
       "languageVersion": "3.2"
     },
     {
+      "name": "mockito",
+      "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/mockito-5.4.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
       "name": "nested",
       "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/nested-1.0.0",
       "packageUri": "lib/",

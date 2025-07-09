@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../shared/providers/backup_provider.dart';
 import '../../../core/services/backup_service.dart';
 import '../widgets/backup_card.dart';
@@ -35,27 +34,26 @@ class _BackupScreenState extends ConsumerState<BackupScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colors = isDark ? AppColors.dark : AppColors.light;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colors.surface,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: colors.surface,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         title: Text(
           'Backup e Sincronização',
           style: TextStyle(
-            color: colors.onSurface,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
-        iconTheme: IconThemeData(color: colors.onSurface),
+        iconTheme: IconThemeData(color: colorScheme.onSurface),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: colors.primary,
-          unselectedLabelColor: colors.onSurface.withOpacity(0.6),
-          indicatorColor: colors.primary,
+          labelColor: colorScheme.primary,
+          unselectedLabelColor: colorScheme.onSurface.withOpacity(0.6),
+          indicatorColor: colorScheme.primary,
           tabs: const [
             Tab(
               icon: Icon(PhosphorIconsRegular.downloadSimple),
@@ -71,31 +69,32 @@ class _BackupScreenState extends ConsumerState<BackupScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildBackupsTab(colors),
-          _buildImportTab(colors),
+          _buildBackupsTab(),
+          _buildImportTab(),
         ],
       ),
-      floatingActionButton: _buildCreateBackupFAB(colors),
+      floatingActionButton: _buildCreateBackupFAB(),
     );
   }
 
-  Widget _buildCreateBackupFAB(AppColors colors) {
+  Widget _buildCreateBackupFAB() {
     return Consumer(
       builder: (context, ref, child) {
+        final colorScheme = Theme.of(context).colorScheme;
         final isCreating = ref.watch(isCreatingBackupProvider);
         final isBusy = ref.watch(isBackupBusyProvider);
 
         return FloatingActionButton.extended(
           onPressed: isBusy ? null : () => _createBackup(),
-          backgroundColor: colors.primary,
-          foregroundColor: colors.onPrimary,
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
           icon: isCreating
               ? SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(colors.onPrimary),
+                    valueColor: AlwaysStoppedAnimation(colorScheme.onPrimary),
                   ),
                 )
               : const Icon(PhosphorIconsRegular.plus),
@@ -105,9 +104,10 @@ class _BackupScreenState extends ConsumerState<BackupScreen>
     );
   }
 
-  Widget _buildBackupsTab(AppColors colors) {
+  Widget _buildBackupsTab() {
     return Consumer(
       builder: (context, ref, child) {
+        final colorScheme = Theme.of(context).colorScheme;
         final backupState = ref.watch(backupProvider);
         final localBackups = backupState.localBackups;
 
@@ -116,11 +116,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen>
         }
 
         if (backupState.error != null) {
-          return _buildErrorWidget(colors, backupState.error!);
+          return _buildErrorWidget(backupState.error!);
         }
 
         if (localBackups.isEmpty) {
-          return _buildEmptyBackupsWidget(colors);
+          return _buildEmptyBackupsWidget();
         }
 
         return RefreshIndicator(
@@ -130,14 +130,14 @@ class _BackupScreenState extends ConsumerState<BackupScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildBackupStats(colors, localBackups),
+                _buildBackupStats(localBackups),
                 const SizedBox(height: 16),
                 Text(
                   'Backups Locais (${localBackups.length})',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: colors.onSurface,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -166,361 +166,389 @@ class _BackupScreenState extends ConsumerState<BackupScreen>
     );
   }
 
-  Widget _buildBackupStats(AppColors colors, List<BackupMetadata> backups) {
+  Widget _buildBackupStats(List<BackupMetadata> backups) {
     if (backups.isEmpty) return const SizedBox.shrink();
 
-    final latestBackup = backups.first;
-    final totalSize =
-        backups.fold<int>(0, (sum, backup) => sum + backup.fileSize);
+    return Consumer(
+      builder: (context, ref, child) {
+        final colorScheme = Theme.of(context).colorScheme;
+        final latestBackup = backups.first;
+        final totalSize =
+            backups.fold<int>(0, (sum, backup) => sum + backup.fileSize);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.primaryContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                PhosphorIconsRegular.info,
-                color: colors.onPrimaryContainer,
-                size: 20,
+              Row(
+                children: [
+                  Icon(
+                    PhosphorIconsRegular.info,
+                    color: colorScheme.onPrimaryContainer,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Estatísticas',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Estatísticas',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colors.onPrimaryContainer,
-                ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatItem(
+                      'Total de Backups',
+                      backups.length.toString(),
+                      PhosphorIconsRegular.archive,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildStatItem(
+                      'Espaço Usado',
+                      _formatFileSize(totalSize),
+                      PhosphorIconsRegular.hardDrive,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildStatItem(
+                'Último Backup',
+                _formatDate(latestBackup.createdAt),
+                PhosphorIconsRegular.clock,
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                  colors,
-                  'Total de Backups',
-                  backups.length.toString(),
-                  PhosphorIconsRegular.archive,
-                ),
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  colors,
-                  'Espaço Usado',
-                  _formatFileSize(totalSize),
-                  PhosphorIconsRegular.harddrive,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _buildStatItem(
-            colors,
-            'Último Backup',
-            _formatDate(latestBackup.createdAt),
-            PhosphorIconsRegular.clock,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildStatItem(
-      AppColors colors, String label, String value, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, color: colors.onPrimaryContainer, size: 16),
-        const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildStatItem(String label, String value, IconData icon) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return Row(
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: colors.onPrimaryContainer.withOpacity(0.8),
-              ),
-            ),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: colors.onPrimaryContainer,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildImportTab(AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: colors.surfaceVariant,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: colors.outline.withOpacity(0.3),
-                style: BorderStyle.solid,
-              ),
-            ),
-            child: Column(
+            Icon(icon, color: colorScheme.onPrimaryContainer, size: 16),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  PhosphorIconsRegular.uploadSimple,
-                  size: 48,
-                  color: colors.primary,
-                ),
-                const SizedBox(height: 16),
                 Text(
-                  'Importar Backup',
+                  label,
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: colors.onSurface,
+                    fontSize: 12,
+                    color: colorScheme.onPrimaryContainer.withOpacity(0.8),
                   ),
                 ),
-                const SizedBox(height: 8),
                 Text(
-                  'Selecione um arquivo de backup para restaurar seus dados',
-                  textAlign: TextAlign.center,
+                  value,
                   style: TextStyle(
                     fontSize: 14,
-                    color: colors.onSurface.withOpacity(0.7),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: Consumer(
-                    builder: (context, ref, child) {
-                      final isImporting = ref.watch(isImportingBackupProvider);
-                      final isBusy = ref.watch(isBackupBusyProvider);
-
-                      return ElevatedButton.icon(
-                        onPressed:
-                            isBusy ? null : () => _importBackupWithPicker(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colors.primary,
-                          foregroundColor: colors.onPrimary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        icon: isImporting
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor:
-                                      AlwaysStoppedAnimation(colors.onPrimary),
-                                ),
-                              )
-                            : const Icon(PhosphorIconsRegular.folderOpen),
-                        label: Text(isImporting
-                            ? 'Importando...'
-                            : 'Selecionar Arquivo'),
-                      );
-                    },
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onPrimaryContainer,
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 20),
-          _buildImportInstructions(colors),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildImportInstructions(AppColors colors) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.secondaryContainer,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+  Widget _buildImportTab() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final colorScheme = Theme.of(context).colorScheme;
+
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: colorScheme.outline.withOpacity(0.3),
+                    style: BorderStyle.solid,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      PhosphorIconsRegular.uploadSimple,
+                      size: 48,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Importar Backup',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Selecione um arquivo de backup para restaurar seus dados',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          final isImporting =
+                              ref.watch(isImportingBackupProvider);
+                          final isBusy = ref.watch(isBackupBusyProvider);
+
+                          return ElevatedButton.icon(
+                            onPressed:
+                                isBusy ? null : () => _importBackupWithPicker(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            icon: isImporting
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation(
+                                          colorScheme.onPrimary),
+                                    ),
+                                  )
+                                : const Icon(PhosphorIconsRegular.folderOpen),
+                            label: Text(isImporting
+                                ? 'Importando...'
+                                : 'Selecionar Arquivo'),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildImportInstructions(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildImportInstructions() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final colorScheme = Theme.of(context).colorScheme;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    PhosphorIconsRegular.lightbulb,
+                    color: colorScheme.onSecondaryContainer,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Como funciona',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildInstructionItem('1. Selecione um arquivo .json de backup'),
+              _buildInstructionItem(
+                  '2. O backup será validado automaticamente'),
+              _buildInstructionItem(
+                  '3. Escolha se deseja substituir ou mesclar os dados'),
+              _buildInstructionItem(
+                  '4. Seus dados serão restaurados com segurança'),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInstructionItem(String text) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final colorScheme = Theme.of(context).colorScheme;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
             children: [
               Icon(
-                PhosphorIconsRegular.lightbulb,
-                color: colors.onSecondaryContainer,
-                size: 20,
+                PhosphorIconsRegular.check,
+                color: colorScheme.onSecondaryContainer,
+                size: 16,
               ),
               const SizedBox(width: 8),
-              Text(
-                'Como funciona',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colors.onSecondaryContainer,
+              Expanded(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.onSecondaryContainer,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          _buildInstructionItem(
-            colors,
-            '1. Selecione um arquivo .json de backup',
-          ),
-          _buildInstructionItem(
-            colors,
-            '2. O backup será validado automaticamente',
-          ),
-          _buildInstructionItem(
-            colors,
-            '3. Escolha se deseja substituir ou mesclar os dados',
-          ),
-          _buildInstructionItem(
-            colors,
-            '4. Seus dados serão restaurados com segurança',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildInstructionItem(AppColors colors, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(
-            PhosphorIconsRegular.check,
-            color: colors.onSecondaryContainer,
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 14,
-                color: colors.onSecondaryContainer,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildEmptyBackupsWidget() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final colorScheme = Theme.of(context).colorScheme;
 
-  Widget _buildEmptyBackupsWidget(AppColors colors) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              PhosphorIconsRegular.archive,
-              size: 64,
-              color: colors.onSurface.withOpacity(0.4),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Nenhum backup encontrado',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: colors.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Crie seu primeiro backup para manter seus dados seguros',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: colors.onSurface.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => _createBackup(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colors.primary,
-                foregroundColor: colors.onPrimary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  PhosphorIconsRegular.archive,
+                  size: 64,
+                  color: colorScheme.onSurface.withOpacity(0.4),
                 ),
-              ),
-              icon: const Icon(PhosphorIconsRegular.plus),
-              label: const Text('Criar Primeiro Backup'),
+                const SizedBox(height: 16),
+                Text(
+                  'Nenhum backup encontrado',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Crie seu primeiro backup para manter seus dados seguros',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () => _createBackup(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
+                  icon: const Icon(PhosphorIconsRegular.plus),
+                  label: const Text('Criar Primeiro Backup'),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildErrorWidget(AppColors colors, String error) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              PhosphorIconsRegular.warning,
-              size: 64,
-              color: colors.error,
+  Widget _buildErrorWidget(String error) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final colorScheme = Theme.of(context).colorScheme;
+
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  PhosphorIconsRegular.warning,
+                  size: 64,
+                  color: colorScheme.error,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Erro ao carregar backups',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.error,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    ref.read(backupProvider.notifier).clearError();
+                    ref.read(backupProvider.notifier).loadLocalBackups();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                  ),
+                  icon: const Icon(PhosphorIconsRegular.arrowClockwise),
+                  label: const Text('Tentar Novamente'),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Erro ao carregar backups',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: colors.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: colors.error,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () {
-                ref.read(backupProvider.notifier).clearError();
-                ref.read(backupProvider.notifier).loadLocalBackups();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colors.primary,
-                foregroundColor: colors.onPrimary,
-              ),
-              icon: const Icon(PhosphorIconsRegular.arrowClockwise),
-              label: const Text('Tentar Novamente'),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -544,7 +572,6 @@ class _BackupScreenState extends ConsumerState<BackupScreen>
   }
 
   Future<void> _exportBackup(String fileName) async {
-    // Implementar exportação de backup específico
     final filePath = await ref.read(backupProvider.notifier).exportBackup();
 
     if (filePath != null && mounted) {
