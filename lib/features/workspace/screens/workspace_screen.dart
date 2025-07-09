@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../shared/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -142,6 +143,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   isDarkMode: isDarkMode,
                 ),
                 _buildSidebarItem(
+                  icon: PhosphorIcons.user(),
+                  label: 'Perfil',
+                  index: 8,
+                  isDarkMode: isDarkMode,
+                ),
+                _buildSidebarItem(
                   icon: PhosphorIcons.downloadSimple(),
                   label: 'Backup',
                   index: 7,
@@ -245,13 +252,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               _selectedSidebarItem = index;
             });
 
-            // Navegar para tela de backup se for o índice 7
+            // Navegar para telas específicas
             if (index == 7) {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const BackupScreen(),
-                ),
-              );
+              context.pushNamed('backup');
+            } else if (index == 8) {
+              context.pushNamed('profile');
             }
           },
           child: Container(

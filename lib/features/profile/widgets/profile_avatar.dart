@@ -1,0 +1,346 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/models/user_profile.dart';
+import '../../../shared/providers/user_profile_provider.dart';
+
+/// Widget para exibir avatar do usuário
+class ProfileAvatar extends ConsumerWidget {
+  final UserProfile profile;
+  final double size;
+  final VoidCallback? onTap;
+  final bool showEditButton;
+  final bool showLoadingIndicator;
+
+  const ProfileAvatar({
+    super.key,
+    required this.profile,
+    this.size = 50,
+    this.onTap,
+    this.showEditButton = false,
+    this.showLoadingIndicator = true,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isUploadingAvatar = ref.watch(isUploadingAvatarProvider);
+    final avatarFile = ref.watch(avatarFileProvider);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        children: [
+          // Avatar principal
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: ClipOval(
+              child: avatarFile.when(
+                data: (file) => _buildAvatarContent(context, file),
+                loading: () => _buildLoadingAvatar(context),
+                error: (error, stackTrace) => _buildFallbackAvatar(context),
+              ),
+            ),
+          ),
+
+          // Loading indicator
+          if (isUploadingAvatar && showLoadingIndicator)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withOpacity(0.5),
+                ),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ),
+            ),
+
+          // Botão de edição
+          if (showEditButton && onTap != null)
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: size * 0.3,
+                height: size * 0.3,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Theme.of(context).colorScheme.primary,
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.surface,
+                    width: 2,
+                  ),
+                ),
+                child: Icon(
+                  Icons.edit,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  size: size * 0.15,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarContent(BuildContext context, File? file) {
+    if (file != null && file.existsSync()) {
+      return Image.file(
+        file,
+        fit: BoxFit.cover,
+        width: size,
+        height: size,
+        errorBuilder: (context, error, stackTrace) =>
+            _buildFallbackAvatar(context),
+      );
+    }
+
+    return _buildFallbackAvatar(context);
+  }
+
+  Widget _buildFallbackAvatar(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.secondary,
+          ],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          profile.initials,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onPrimary,
+            fontSize: size * 0.4,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingAvatar(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+      ),
+      child: Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Widget compacto para avatar em listas
+class ProfileAvatarCompact extends ConsumerWidget {
+  final UserProfile profile;
+  final double size;
+  final VoidCallback? onTap;
+
+  const ProfileAvatarCompact({
+    super.key,
+    required this.profile,
+    this.size = 40,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ProfileAvatar(
+      profile: profile,
+      size: size,
+      onTap: onTap,
+      showEditButton: false,
+      showLoadingIndicator: false,
+    );
+  }
+}
+
+/// Widget para avatar grande com opções de edição
+class ProfileAvatarLarge extends ConsumerWidget {
+  final UserProfile profile;
+  final VoidCallback? onEditTap;
+  final bool showEditButton;
+
+  const ProfileAvatarLarge({
+    super.key,
+    required this.profile,
+    this.onEditTap,
+    this.showEditButton = true,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ProfileAvatar(
+      profile: profile,
+      size: 120,
+      onTap: onEditTap,
+      showEditButton: showEditButton,
+      showLoadingIndicator: true,
+    );
+  }
+}
+
+/// Widget para avatar em AppBar
+class ProfileAvatarAppBar extends ConsumerWidget {
+  final UserProfile profile;
+  final VoidCallback? onTap;
+
+  const ProfileAvatarAppBar({
+    super.key,
+    required this.profile,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ProfileAvatar(
+        profile: profile,
+        size: 32,
+        onTap: onTap,
+        showEditButton: false,
+        showLoadingIndicator: false,
+      ),
+    );
+  }
+}
+
+/// Widget para placeholder quando não há perfil
+class ProfileAvatarPlaceholder extends StatelessWidget {
+  final double size;
+  final VoidCallback? onTap;
+
+  const ProfileAvatarPlaceholder({
+    super.key,
+    this.size = 50,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Theme.of(context).colorScheme.surfaceVariant,
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline,
+            width: 2,
+          ),
+        ),
+        child: Icon(
+          Icons.person,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          size: size * 0.6,
+        ),
+      ),
+    );
+  }
+}
+
+/// Widget para avatar em drawer/sidebar
+class ProfileAvatarDrawer extends ConsumerWidget {
+  final UserProfile? profile;
+  final VoidCallback? onTap;
+
+  const ProfileAvatarDrawer({
+    super.key,
+    this.profile,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (profile == null) {
+      return ProfileAvatarPlaceholder(
+        size: 64,
+        onTap: onTap,
+      );
+    }
+
+    return ProfileAvatar(
+      profile: profile!,
+      size: 64,
+      onTap: onTap,
+      showEditButton: false,
+      showLoadingIndicator: false,
+    );
+  }
+}
+
+/// Extensão para facilitar o uso do ProfileAvatar
+extension ProfileAvatarExtension on UserProfile {
+  /// Criar avatar padrão
+  Widget avatar({
+    double size = 50,
+    VoidCallback? onTap,
+    bool showEditButton = false,
+  }) {
+    return Builder(
+      builder: (context) => ProfileAvatar(
+        profile: this,
+        size: size,
+        onTap: onTap,
+        showEditButton: showEditButton,
+      ),
+    );
+  }
+
+  /// Criar avatar compacto
+  Widget avatarCompact({
+    double size = 40,
+    VoidCallback? onTap,
+  }) {
+    return ProfileAvatarCompact(
+      profile: this,
+      size: size,
+      onTap: onTap,
+    );
+  }
+
+  /// Criar avatar grande
+  Widget avatarLarge({
+    VoidCallback? onEditTap,
+    bool showEditButton = true,
+  }) {
+    return ProfileAvatarLarge(
+      profile: this,
+      onEditTap: onEditTap,
+      showEditButton: showEditButton,
+    );
+  }
+}

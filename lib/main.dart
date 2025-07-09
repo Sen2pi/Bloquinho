@@ -9,6 +9,8 @@ import 'shared/providers/theme_provider.dart';
 import 'features/auth/screens/splash_screen.dart';
 import 'features/workspace/screens/workspace_screen.dart';
 import 'features/backup/screens/backup_screen.dart';
+import 'features/profile/screens/profile_screen.dart';
+import 'features/profile/screens/profile_edit_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -95,6 +97,16 @@ final GoRouter _router = GoRouter(
           path: 'backup',
           name: 'backup',
           builder: (context, state) => const BackupScreen(),
+        ),
+        GoRoute(
+          path: 'profile',
+          name: 'profile',
+          builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: 'profile/edit',
+          name: 'profile_edit',
+          builder: (context, state) => const ProfileEditScreen(),
         ),
       ],
     ),
