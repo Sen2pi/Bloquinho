@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../shared/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../backup/screens/backup_screen.dart';
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
   const WorkspaceScreen({super.key});
@@ -140,6 +141,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   index: 4,
                   isDarkMode: isDarkMode,
                 ),
+                _buildSidebarItem(
+                  icon: PhosphorIcons.downloadSimple(),
+                  label: 'Backup',
+                  index: 7,
+                  isDarkMode: isDarkMode,
+                ),
                 const SizedBox(height: 16),
                 if (_isSidebarExpanded) ...[
                   Padding(
@@ -237,6 +244,15 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             setState(() {
               _selectedSidebarItem = index;
             });
+
+            // Navegar para tela de backup se for o índice 7
+            if (index == 7) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const BackupScreen(),
+                ),
+              );
+            }
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
