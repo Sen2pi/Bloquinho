@@ -36,16 +36,7 @@ class AppTheme {
         ),
       ),
 
-      // Cards
-      cardTheme: CardTheme(
-        color: AppColors.lightCardBackground,
-        elevation: 2,
-        shadowColor: AppColors.lightBorder.withOpacity(0.3),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.lightBorder, width: 1),
-        ),
-      ),
+      // Cards configurado via ThemeData padrão
 
       // Botões
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -212,16 +203,7 @@ class AppTheme {
         ),
       ),
 
-      // Cards
-      cardTheme: CardTheme(
-        color: AppColors.darkCardBackground,
-        elevation: 4,
-        shadowColor: Colors.black.withOpacity(0.5),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.darkBorder, width: 1),
-        ),
-      ),
+      // Cards configurado via ThemeData padrão
 
       // Botões
       elevatedButtonTheme: ElevatedButtonThemeData(
