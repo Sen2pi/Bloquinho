@@ -85,6 +85,7 @@ class WorkspaceSection {
   final String id;
   final String name;
   final IconData icon;
+  final String? customIconPath; // Caminho para imagem customizada
   final String route;
   final int itemCount;
   final bool hasSubItems;
@@ -94,6 +95,7 @@ class WorkspaceSection {
     required this.id,
     required this.name,
     required this.icon,
+    this.customIconPath,
     required this.route,
     this.itemCount = 0,
     this.hasSubItems = false,
@@ -104,6 +106,7 @@ class WorkspaceSection {
     String? id,
     String? name,
     IconData? icon,
+    String? customIconPath,
     String? route,
     int? itemCount,
     bool? hasSubItems,
@@ -113,22 +116,27 @@ class WorkspaceSection {
       id: id ?? this.id,
       name: name ?? this.name,
       icon: icon ?? this.icon,
+      customIconPath: customIconPath ?? this.customIconPath,
       route: route ?? this.route,
       itemCount: itemCount ?? this.itemCount,
       hasSubItems: hasSubItems ?? this.hasSubItems,
       subSections: subSections ?? this.subSections,
     );
   }
+
+  /// Retorna true se deve usar ícone customizado
+  bool get hasCustomIcon => customIconPath != null;
 }
 
 /// Seções padrão do workspace
 class WorkspaceSections {
   static const List<WorkspaceSection> defaultSections = [
     WorkspaceSection(
-      id: 'notes',
-      name: 'Notas',
+      id: 'bloquinho',
+      name: 'Bloquinho',
       icon: Icons.note_outlined,
-      route: '/workspace/notes',
+      customIconPath: 'notas.png',
+      route: '/workspace/bloquinho',
       itemCount: 0,
       hasSubItems: true,
     ),
@@ -144,6 +152,7 @@ class WorkspaceSections {
       id: 'passwords',
       name: 'Passwords',
       icon: Icons.password_outlined,
+      customIconPath: 'senha.png',
       route: '/workspace/passwords',
       itemCount: 0,
       hasSubItems: false,
@@ -152,6 +161,7 @@ class WorkspaceSections {
       id: 'agenda',
       name: 'Agenda',
       icon: Icons.calendar_month_outlined,
+      customIconPath: 'agenda.png',
       route: '/workspace/agenda',
       itemCount: 0,
       hasSubItems: true,
@@ -160,6 +170,7 @@ class WorkspaceSections {
       id: 'database',
       name: 'Base de Dados',
       icon: Icons.storage_outlined,
+      customIconPath: 'dossier.png',
       route: '/workspace/database',
       itemCount: 0,
       hasSubItems: true,

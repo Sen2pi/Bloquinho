@@ -15,6 +15,8 @@ import '../../profile/widgets/profile_avatar.dart';
 import '../../database/screens/database_list_screen.dart';
 import '../../database/widgets/database_section_widget.dart';
 import '../../../shared/providers/database_provider.dart';
+import '../../bloquinho/widgets/bloquinho_section_widget.dart';
+import '../../bloquinho/providers/page_provider.dart';
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
   const WorkspaceScreen({super.key});
@@ -25,7 +27,8 @@ class WorkspaceScreen extends ConsumerStatefulWidget {
 
 class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   bool _isSidebarExpanded = true;
-  String _selectedSectionId = 'notes';
+  String _selectedSectionId = 'bloquinho'; // Atualizado para bloquinho
+  bool _isBloquinhoExpanded = false;
 
   @override
   void initState() {
@@ -33,6 +36,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     // Configurar referência para atualizações de status de sincronização
     WidgetsBinding.instance.addPostFrameCallback((_) {
       OAuth2Service.setSyncRef(ref);
+      // Carregar páginas do workspace atual
+      final currentWorkspace = ref.read(currentWorkspaceProvider);
+      if (currentWorkspace != null) {
+        ref
+            .read(pageProvider.notifier)
+            .loadPagesForWorkspace(currentWorkspace.id);
+      }
     });
   }
 
@@ -95,6 +105,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                       isSelected: _selectedSectionId == section.id,
                       isExpanded: false,
                       onTap: () => _handleSectionTap(section.id),
+                    );
+                  }
+                  if (section.id.contains('bloquinho')) {
+                    return BloquinhoSectionWidget(
+                      isDarkMode: isDarkMode,
+                      isSelected: _selectedSectionId == section.id,
+                      isExpanded: _isBloquinhoExpanded,
+                      onTap: () => _handleBloquinhoTap(),
                     );
                   }
                   return _buildSectionItem(
@@ -280,15 +298,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             ),
             child: Row(
               children: [
-                Icon(
-                  section.icon,
-                  size: 18,
-                  color: isSelected
-                      ? AppColors.primary
-                      : (isDarkMode
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary),
-                ),
+                _buildSectionIcon(section, isSelected, isDarkMode),
                 if (_isSidebarExpanded) ...[
                   const SizedBox(width: 12),
                   Expanded(
@@ -322,6 +332,39 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  /// Widget helper para renderizar ícones customizados ou MaterialIcons
+  Widget _buildSectionIcon(
+      WorkspaceSection section, bool isSelected, bool isDarkMode) {
+    final iconColor = isSelected
+        ? AppColors.primary
+        : (isDarkMode
+            ? AppColors.darkTextSecondary
+            : AppColors.lightTextSecondary);
+
+    if (section.hasCustomIcon) {
+      return Image.asset(
+        section.customIconPath!,
+        width: 18,
+        height: 18,
+        color: iconColor,
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback para ícone MaterialIcons se a imagem falhar
+          return Icon(
+            section.icon,
+            size: 18,
+            color: iconColor,
+          );
+        },
+      );
+    }
+
+    return Icon(
+      section.icon,
+      size: 18,
+      color: iconColor,
     );
   }
 
@@ -536,8 +579,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
     // Navegar para seção específica
     switch (sectionId) {
-      case 'notes':
-        // Implementar navegação para notas
+      case 'bloquinho':
+        // Implementar navegação para bloquinho (páginas)
         break;
       case 'documents':
         // Implementar navegação para documentos
@@ -560,6 +603,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         // Implementar navegação para lixeira
         break;
     }
+  }
+
+  void _handleBloquinhoTap() {
+    setState(() {
+      _selectedSectionId = 'bloquinho';
+      _isBloquinhoExpanded = !_isBloquinhoExpanded;
+    });
   }
 
   void _handleUserMenuAction(String action) {
@@ -697,10 +747,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     children: [
                       ElevatedButton.icon(
                         onPressed: () {
-                          // TODO: Implementar criação de nota
+                          // TODO: Implementar criação de página
                         },
                         icon: Icon(PhosphorIcons.plus()),
-                        label: const Text('Nova Nota'),
+                        label: const Text('Nova Página'),
                       ),
                       const SizedBox(width: 16),
                       OutlinedButton.icon(
@@ -725,10 +775,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                       children: [
                         _buildWorkspaceCard(
                           icon: Icons.note_outlined,
-                          title: 'Notas',
-                          subtitle: 'Criar e organizar notas',
+                          title: 'Bloquinho',
+                          subtitle: 'Páginas e documentos tipo Notion',
                           color: Colors.blue,
-                          onTap: () => _handleSectionTap('notes'),
+                          onTap: () => _handleSectionTap('bloquinho'),
                         ),
                         _buildWorkspaceCard(
                           icon: Icons.description_outlined,

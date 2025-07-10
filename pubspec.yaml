@@ -96,6 +96,10 @@ flutter:
     - logo.png
     - logoDark.png
     - screenshots/
+    - notas.png
+    - agenda.png
+    - dossier.png
+    - senha.png
 
   # fonts:
   #   - family: Inter

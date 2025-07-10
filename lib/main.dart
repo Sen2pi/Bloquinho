@@ -20,6 +20,7 @@ import 'features/backup/screens/backup_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'features/profile/screens/profile_edit_screen.dart';
 import 'features/profile/screens/storage_settings_screen.dart';
+import 'features/bloquinho/screens/page_editor_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -134,11 +135,11 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const WorkspaceScreen(),
       routes: [
         GoRoute(
-          path: 'document/:id',
-          name: 'document',
+          path: 'page/:id',
+          name: 'page',
           builder: (context, state) {
-            final documentId = state.pathParameters['id'] ?? '';
-            return DocumentScreen(documentId: documentId);
+            final pageId = state.pathParameters['id'] ?? '';
+            return PageEditorScreen(pageId: pageId);
           },
         ),
         GoRoute(
