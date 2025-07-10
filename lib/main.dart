@@ -9,6 +9,7 @@ import 'core/theme/app_theme.dart';
 import 'core/models/app_language.dart';
 import 'core/services/user_profile_service.dart';
 import 'core/services/local_storage_service.dart';
+import 'core/services/oauth2_service.dart';
 import 'shared/providers/theme_provider.dart';
 import 'shared/providers/language_provider.dart';
 import 'shared/providers/user_profile_provider.dart';
@@ -59,6 +60,15 @@ Future<void> _initializeServices() async {
     final localStorageService = LocalStorageService();
     await localStorageService.initialize();
     debugPrint('✅ LocalStorageService inicializado');
+
+    // Inicializar OAuth2Service
+    await OAuth2Service.initialize();
+    debugPrint('✅ OAuth2Service inicializado');
+
+    // Restaurar sessões OAuth2 existentes (conexões persistentes)
+    // Delay para permitir inicialização completa do app
+    await Future.delayed(const Duration(milliseconds: 500));
+    await OAuth2Service.restoreExistingSessions();
 
     // UserProfileService será inicializado no provider conforme necessário
     debugPrint('✅ Serviços básicos inicializados');

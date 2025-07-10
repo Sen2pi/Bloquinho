@@ -24,6 +24,7 @@ class _StorageSettingsScreenState extends ConsumerState<StorageSettingsScreen> {
   Widget build(BuildContext context) {
     final storageSettings = ref.watch(storageSettingsProvider);
     final isConnected = ref.watch(isStorageConnectedProvider);
+    final isOAuth2Connected = ref.watch(isOAuth2ConnectedProvider);
     final isLocalStorage = ref.watch(isLocalStorageProvider);
     final providerName = ref.watch(currentProviderNameProvider);
     final accountInfo = ref.watch(storageAccountInfoProvider);
@@ -32,6 +33,15 @@ class _StorageSettingsScreenState extends ConsumerState<StorageSettingsScreen> {
     final localWarning = ref.watch(localStorageWarningProvider);
     final storageSpace = ref.watch(storageSpaceProvider);
     final autoSyncSettings = ref.watch(autoSyncSettingsProvider);
+
+    // Para cloud storage, usar OAuth2 status se disponível
+    final actuallyConnected = isLocalStorage
+        ? isConnected
+        : (isOAuth2Connected.when(
+            data: (oauth2Connected) => oauth2Connected || isConnected,
+            loading: () => isConnected,
+            error: (_, __) => isConnected,
+          ));
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -67,11 +77,12 @@ class _StorageSettingsScreenState extends ConsumerState<StorageSettingsScreen> {
             // Seção de status de conexão
             if (!isLocalStorage) ...[
               const SizedBox(height: 24),
-              _buildConnectionSection(isConnected, providerName, accountInfo),
+              _buildConnectionSection(
+                  actuallyConnected, providerName, accountInfo),
             ],
 
             // Seção de sincronização
-            if (isConnected && !isLocalStorage) ...[
+            if (actuallyConnected && !isLocalStorage) ...[
               const SizedBox(height: 24),
               _buildSyncSection(syncStatus, lastSync),
             ],
@@ -83,14 +94,14 @@ class _StorageSettingsScreenState extends ConsumerState<StorageSettingsScreen> {
             ],
 
             // Seção de espaço de armazenamento
-            if (isConnected && !isLocalStorage) ...[
+            if (actuallyConnected && !isLocalStorage) ...[
               const SizedBox(height: 24),
               _buildStorageSpaceSection(storageSpace),
             ],
 
             // Seção de ações
             const SizedBox(height: 24),
-            _buildActionsSection(isConnected, isLocalStorage),
+            _buildActionsSection(actuallyConnected, isLocalStorage),
 
             const SizedBox(height: 32),
           ],

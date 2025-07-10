@@ -6,8 +6,10 @@ import 'package:go_router/go_router.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/workspace_provider.dart';
 import '../../../shared/providers/user_profile_provider.dart';
+import '../../../shared/widgets/cloud_sync_indicator.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/workspace.dart';
+import '../../../core/services/oauth2_service.dart';
 import '../../backup/screens/backup_screen.dart';
 import '../../profile/widgets/profile_avatar.dart';
 
@@ -21,6 +23,15 @@ class WorkspaceScreen extends ConsumerStatefulWidget {
 class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   bool _isSidebarExpanded = true;
   String _selectedSectionId = 'notes';
+
+  @override
+  void initState() {
+    super.initState();
+    // Configurar referência para atualizações de status de sincronização
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      OAuth2Service.setSyncRef(ref);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -642,6 +653,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   icon: Icon(PhosphorIcons.magnifyingGlass()),
                   tooltip: 'Pesquisar',
                 ),
+                // Indicador de sincronização na nuvem
+                CompactCloudSyncIndicator(
+                  onTap: () => showCloudSyncStatusModal(context),
+                ),
+                const SizedBox(width: 8),
                 IconButton(
                   onPressed: () {},
                   icon: Icon(PhosphorIcons.bell()),

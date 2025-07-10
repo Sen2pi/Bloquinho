@@ -310,7 +310,12 @@ class StorageSpace {
   });
 
   /// Porcentagem de uso
-  double get usagePercentage => (usedBytes / totalBytes) * 100;
+  double get usagePercentage {
+    if (totalBytes == 0) return 0.0;
+    final percentage = (usedBytes / totalBytes) * 100;
+    if (percentage.isNaN || percentage.isInfinite) return 0.0;
+    return percentage.clamp(0.0, 100.0);
+  }
 
   /// Verificar se está quase cheio (>90%)
   bool get isAlmostFull => usagePercentage > 90;

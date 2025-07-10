@@ -3,6 +3,7 @@ import 'package:bloquinho/core/models/storage_settings.dart';
 import 'package:bloquinho/core/services/cloud_storage_service.dart';
 import 'package:bloquinho/core/services/google_drive_service.dart';
 import 'package:bloquinho/core/services/onedrive_service.dart';
+import 'package:bloquinho/core/services/oauth2_service.dart' as oauth2;
 import 'package:hive_flutter/hive_flutter.dart';
 
 /// Provider singleton para as configurações de armazenamento
@@ -269,6 +270,15 @@ final storageConnectionStatusProvider = Provider<CloudStorageStatus>((ref) {
 final isStorageConnectedProvider = Provider<bool>((ref) {
   final settings = ref.watch(storageSettingsProvider);
   return settings.isConnected;
+});
+
+/// Provider para verificar se está conectado via OAuth2 (para telas de configuração)
+final isOAuth2ConnectedProvider = FutureProvider<bool>((ref) async {
+  try {
+    return await oauth2.OAuth2Service.hasActiveConnection();
+  } catch (e) {
+    return false;
+  }
 });
 
 /// Provider para verificar se está sincronizando
