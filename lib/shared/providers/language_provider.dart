@@ -14,7 +14,7 @@ class LanguageNotifier extends StateNotifier<AppLanguage> {
   }
 
   Future<void> _initHive() async {
-    await Hive.initFlutter();
+    // Hive já foi inicializado globalmente
     _box = await Hive.openBox('app_settings');
 
     // Carregar idioma salvo

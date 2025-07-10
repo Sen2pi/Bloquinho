@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 
 import '../models/user_profile.dart';
+import 'local_storage_service.dart';
 
 /// Exceções específicas do serviço de perfil
 class UserProfileException implements Exception {
@@ -34,6 +35,7 @@ class UserProfileService {
   Box<String>? _box;
   UserProfile? _cachedProfile;
   final ImagePicker _imagePicker = ImagePicker();
+  final LocalStorageService _localStorageService = LocalStorageService();
 
   /// Instância singleton
   static final UserProfileService _instance = UserProfileService._internal();
@@ -43,6 +45,9 @@ class UserProfileService {
   /// Inicializar o serviço
   Future<void> initialize() async {
     try {
+      // Inicializar LocalStorageService primeiro
+      await _localStorageService.initialize();
+
       if (_box == null || !_box!.isOpen) {
         _box = await Hive.openBox<String>(_boxName);
       }
@@ -65,7 +70,16 @@ class UserProfileService {
       return _cachedProfile;
     }
 
-    return await _loadProfileFromStorage();
+    // Tentar carregar do novo sistema de pastas primeiro
+    final localProfile = await _localStorageService.getFirstProfile();
+    if (localProfile != null) {
+      _cachedProfile = localProfile;
+      return localProfile;
+    }
+
+    // Fallback para sistema antigo (Hive) para compatibilidade
+    final hiveProfile = await _loadProfileFromStorage();
+    return hiveProfile;
   }
 
   /// Salvar ou atualizar perfil
@@ -85,7 +99,12 @@ class UserProfileService {
       // Atualizar timestamp de modificação
       final updatedProfile = profile.copyWith(updatedAt: DateTime.now());
 
-      // Salvar no armazenamento local
+      // Salvar no novo sistema de pastas
+      if (!kIsWeb) {
+        await _localStorageService.saveProfile(updatedProfile);
+      }
+
+      // Manter compatibilidade com sistema antigo (Hive)
       await _box!.put(_profileKey, updatedProfile.toJsonString());
 
       // Atualizar cache
@@ -281,11 +300,23 @@ class UserProfileService {
     }
 
     final profile = await getCurrentProfile();
-    if (profile?.avatarPath == null) return null;
+    if (profile == null) return null;
 
     try {
-      final file = File(profile!.avatarPath!);
-      return await file.exists() ? file : null;
+      // Tentar obter do LocalStorageService primeiro
+      final localPhoto =
+          await _localStorageService.getProfilePhoto(profile.name);
+      if (localPhoto != null) {
+        return localPhoto;
+      }
+
+      // Fallback para sistema antigo
+      if (profile.avatarPath != null) {
+        final file = File(profile.avatarPath!);
+        return await file.exists() ? file : null;
+      }
+
+      return null;
     } catch (e) {
       debugPrint('⚠️ Erro ao verificar arquivo de avatar: $e');
       return null;
@@ -320,6 +351,16 @@ class UserProfileService {
   /// Verificar se existe perfil criado
   Future<bool> hasProfile() async {
     await _ensureInitialized();
+
+    // Verificar primeiro no novo sistema de pastas
+    if (!kIsWeb) {
+      final hasLocalProfile = await _localStorageService.hasExistingProfile();
+      if (hasLocalProfile) {
+        return true;
+      }
+    }
+
+    // Fallback para sistema antigo
     return _box!.containsKey(_profileKey);
   }
 
@@ -366,25 +407,40 @@ class UserProfileService {
   Future<UserProfile> _processAndSaveAvatar(
       XFile image, UserProfile profile) async {
     try {
-      // Obter diretório para avatars
-      final avatarsDir = await _getAvatarsDirectory();
+      String? avatarPath;
 
-      // Gerar nome único para o arquivo
-      final fileName =
-          'avatar_${profile.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final avatarPath = path.join(avatarsDir.path, fileName);
-
-      // Deletar avatar anterior se existir
-      if (profile.avatarPath != null) {
-        await _deleteAvatarFile(profile.avatarPath!);
+      if (!kIsWeb) {
+        // Usar LocalStorageService para salvar foto
+        final imageFile = File(image.path);
+        avatarPath = await _localStorageService.saveProfilePhoto(
+          profile.name,
+          imageFile,
+        );
       }
 
-      // Copiar nova imagem
-      final imageFile = File(image.path);
-      final savedFile = await imageFile.copy(avatarPath);
+      // Fallback para sistema antigo se LocalStorageService falhar
+      if (avatarPath == null) {
+        // Obter diretório para avatars
+        final avatarsDir = await _getAvatarsDirectory();
+
+        // Gerar nome único para o arquivo
+        final fileName =
+            'avatar_${profile.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        avatarPath = path.join(avatarsDir.path, fileName);
+
+        // Deletar avatar anterior se existir
+        if (profile.avatarPath != null) {
+          await _deleteAvatarFile(profile.avatarPath!);
+        }
+
+        // Copiar nova imagem
+        final imageFile = File(image.path);
+        final savedFile = await imageFile.copy(avatarPath);
+        avatarPath = savedFile.path;
+      }
 
       // Atualizar perfil com novo avatar
-      final updatedProfile = profile.copyWith(avatarPath: savedFile.path);
+      final updatedProfile = profile.copyWith(avatarPath: avatarPath);
       return await saveProfile(updatedProfile);
     } catch (e) {
       throw UserProfileException(
@@ -465,5 +521,6 @@ class UserProfileService {
     await _box?.close();
     _box = null;
     _cachedProfile = null;
+    await _localStorageService.dispose();
   }
 }

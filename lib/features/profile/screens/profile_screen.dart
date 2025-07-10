@@ -22,6 +22,11 @@ class ProfileScreen extends ConsumerWidget {
     final isLoading = profileState.isLoading;
     final error = profileState.error;
 
+    // Se ainda está carregando mas já tem profile, forçar refresh para corrigir inconsistência
+    if (isLoading && profile != null) {
+      Future.microtask(() => ref.refresh(userProfileProvider));
+    }
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
@@ -196,8 +201,8 @@ class ProfileScreen extends ConsumerWidget {
 
           const SizedBox(height: 32),
 
-          // Armazenamento
-          _buildStorageSection(context, ref, profile),
+          // Armazenamento (com proteção contra loading infinito)
+          _buildStorageSectionSafe(context, ref, profile),
 
           const SizedBox(height: 32),
 
@@ -533,6 +538,97 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStorageSectionSafe(
+    BuildContext context,
+    WidgetRef ref,
+    UserProfile profile,
+  ) {
+    // Versão simplificada para evitar loading infinito
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Armazenamento',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.storage),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Armazenamento Local',
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                          ),
+                          Text(
+                            'Dados salvos localmente',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.7),
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.green.withOpacity(0.3),
+                        ),
+                      ),
+                      child: const Text(
+                        'Ativo',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/workspace/profile/storage'),
+                    icon: const Icon(Icons.settings),
+                    label: const Text('Configurar Armazenamento'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

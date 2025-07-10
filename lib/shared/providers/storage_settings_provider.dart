@@ -5,7 +5,7 @@ import 'package:bloquinho/core/services/google_drive_service.dart';
 import 'package:bloquinho/core/services/onedrive_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-/// Provider para as configurações de armazenamento
+/// Provider singleton para as configurações de armazenamento
 final storageSettingsProvider =
     StateNotifierProvider<StorageSettingsNotifier, StorageSettings>((ref) {
   return StorageSettingsNotifier();
@@ -18,18 +18,28 @@ class StorageSettingsNotifier extends StateNotifier<StorageSettings> {
 
   Box<String>? _box;
   CloudStorageService? _currentService;
+  bool _initialized = false;
 
   StorageSettingsNotifier() : super(StorageSettings.local()) {
-    _initializeSettings();
+    // Não inicializar automaticamente para evitar loops infinitos
+  }
+
+  /// Garantir que o storage está inicializado
+  Future<void> _ensureInitialized() async {
+    if (_initialized) return;
+    await _initializeSettings();
+    _initialized = true;
   }
 
   /// Inicializar configurações carregando do Hive
   Future<void> _initializeSettings() async {
     try {
+      // Hive já foi inicializado globalmente
       _box = await Hive.openBox<String>(_boxName);
       await _loadSettings();
     } catch (e) {
       print('Erro ao inicializar configurações de storage: $e');
+      // Se falhar a inicialização, manter configurações padrão
     }
   }
 

@@ -57,14 +57,27 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
 
   /// Carregar perfil atual
   Future<void> _loadProfile() async {
-    if (state.isLoading) return;
+    if (state.isLoading) {
+      return;
+    }
 
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       await _profileService.initialize();
+
       final profile = await _profileService.getCurrentProfile();
-      final stats = await _profileService.getProfileStats();
+
+      // Carregar stats apenas se temos perfil, e de forma assíncrona
+      Map<String, dynamic> stats = {};
+      if (profile != null) {
+        try {
+          stats = await _profileService.getProfileStats();
+        } catch (e) {
+          debugPrint('⚠️ Erro ao carregar stats: $e');
+          // Não falhamos o loading por causa das stats
+        }
+      }
 
       state = state.copyWith(
         profile: profile,
@@ -72,11 +85,11 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         isLoading: false,
       );
     } catch (e) {
+      debugPrint('❌ Erro ao carregar perfil: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
-      debugPrint('⚠️ Erro ao carregar perfil: $e');
     }
   }
 
@@ -320,10 +333,16 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
   }
 }
 
-/// Provider principal do perfil de usuário
+/// Provider do serviço de perfil (singleton)
+final userProfileServiceProvider = Provider<UserProfileService>((ref) {
+  return UserProfileService();
+});
+
+/// Provider principal do perfil de usuário (singleton)
 final userProfileProvider =
     StateNotifierProvider<UserProfileNotifier, UserProfileState>((ref) {
-  return UserProfileNotifier(UserProfileService());
+  final service = ref.watch(userProfileServiceProvider);
+  return UserProfileNotifier(service);
 });
 
 /// Provider derivado: perfil atual

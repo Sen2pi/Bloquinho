@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/models/app_language.dart';
 import 'core/services/user_profile_service.dart';
+import 'core/services/local_storage_service.dart';
 import 'shared/providers/theme_provider.dart';
 import 'shared/providers/language_provider.dart';
 import 'shared/providers/user_profile_provider.dart';
@@ -52,13 +53,17 @@ void main() async {
 /// Inicializar serviços essenciais da aplicação
 Future<void> _initializeServices() async {
   try {
-    // Inicializar UserProfileService
-    final userProfileService = UserProfileService();
-    await userProfileService.initialize();
+    // Hive já foi inicializado no main()
 
-    debugPrint('✅ UserProfileService inicializado');
+    // Inicializar LocalStorageService
+    final localStorageService = LocalStorageService();
+    await localStorageService.initialize();
+    debugPrint('✅ LocalStorageService inicializado');
+
+    // UserProfileService será inicializado no provider conforme necessário
+    debugPrint('✅ Serviços básicos inicializados');
   } catch (e) {
-    debugPrint('⚠️ Erro ao inicializar UserProfileService: $e');
+    debugPrint('⚠️ Erro ao inicializar serviços: $e');
   }
 }
 
