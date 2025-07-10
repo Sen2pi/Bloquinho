@@ -38,12 +38,12 @@ class BackupData {
   factory BackupData.fromJson(Map<String, dynamic> json) {
     return BackupData(
       workspaces: (json['workspaces'] as List<dynamic>)
-          .map((e) => Workspace.fromJson(e as Map<String, dynamic>))
+          .map((e) => Workspace.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
       documents: (json['documents'] as List<dynamic>)
-          .map((e) => Document.fromJson(e as Map<String, dynamic>))
+          .map((e) => Document.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
-      settings: Map<String, dynamic>.from(json['settings'] as Map),
+      settings: Map<String, dynamic>.from(json['settings'] ?? {}),
       createdAt: DateTime.parse(json['createdAt'] as String),
       version: json['version'] as String,
       appVersion: json['appVersion'] as String,
@@ -205,7 +205,7 @@ class BackupService {
       }
 
       final jsonString = await file.readAsString();
-      final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
+      final jsonMap = Map<String, dynamic>.from(jsonDecode(jsonString));
 
       return BackupData.fromJson(jsonMap);
     } catch (e) {

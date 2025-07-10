@@ -230,8 +230,7 @@ class StorageSettings {
       syncOnStartup: json['syncOnStartup'] as bool? ?? true,
       syncOnClose: json['syncOnClose'] as bool? ?? true,
       syncFolderPath: json['syncFolderPath'] as String?,
-      providerConfig:
-          Map<String, dynamic>.from(json['providerConfig'] as Map? ?? {}),
+      providerConfig: Map<String, dynamic>.from(json['providerConfig'] ?? {}),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -243,7 +242,7 @@ class StorageSettings {
   /// Criar instância a partir de string JSON
   factory StorageSettings.fromJsonString(String jsonString) {
     return StorageSettings.fromJson(
-        json.decode(jsonString) as Map<String, dynamic>);
+        Map<String, dynamic>.from(json.decode(jsonString)));
   }
 
   /// Verificar se está conectado e operacional

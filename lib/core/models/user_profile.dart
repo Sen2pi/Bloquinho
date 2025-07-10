@@ -136,7 +136,7 @@ class UserProfile {
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       storageSettings: json['storageSettings'] != null
           ? StorageSettings.fromJson(
-              json['storageSettings'] as Map<String, dynamic>)
+              Map<String, dynamic>.from(json['storageSettings']))
           : null,
     );
   }
@@ -147,7 +147,7 @@ class UserProfile {
   /// Criar instância a partir de string JSON
   factory UserProfile.fromJsonString(String jsonString) {
     return UserProfile.fromJson(
-        json.decode(jsonString) as Map<String, dynamic>);
+        Map<String, dynamic>.from(json.decode(jsonString)));
   }
 
   /// Validar se o perfil tem dados obrigatórios válidos

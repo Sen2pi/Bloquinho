@@ -349,7 +349,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         section.customIconPath!,
         width: 18,
         height: 18,
-        color: iconColor,
+        // Removido o filtro de cor para manter as cores originais
         errorBuilder: (context, error, stackTrace) {
           // Fallback para ícone MaterialIcons se a imagem falhar
           return Icon(

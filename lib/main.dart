@@ -21,6 +21,7 @@ import 'features/profile/screens/profile_screen.dart';
 import 'features/profile/screens/profile_edit_screen.dart';
 import 'features/profile/screens/storage_settings_screen.dart';
 import 'features/bloquinho/screens/page_editor_screen.dart';
+import 'features/bloquinho/screens/notion_editor_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -143,6 +144,14 @@ final GoRouter _router = GoRouter(
           },
         ),
         GoRoute(
+          path: 'notion/:pageId',
+          name: 'notion_editor',
+          builder: (context, state) {
+            final pageId = state.pathParameters['pageId'] ?? '';
+            return NotionEditorScreen(pageId: pageId);
+          },
+        ),
+        GoRoute(
           path: 'backup',
           name: 'backup',
           builder: (context, state) => const BackupScreen(),
@@ -212,7 +221,7 @@ class AuthScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
-              'logo.png',
+              'assets/images/logo.png',
               height: 120,
               width: 120,
             ),

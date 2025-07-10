@@ -93,13 +93,9 @@ flutter:
   uses-material-design: true
 
   assets:
-    - logo.png
-    - logoDark.png
+    - assets/images/
     - screenshots/
-    - notas.png
-    - agenda.png
-    - dossier.png
-    - senha.png
+    # Todos os ícones e logos estão em assets/images/
 
   # fonts:
   #   - family: Inter

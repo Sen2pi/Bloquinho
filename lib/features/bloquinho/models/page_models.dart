@@ -145,9 +145,9 @@ class PageBlock extends Equatable {
         orElse: () => PageBlockType.text,
       ),
       content: json['content'] as String? ?? '',
-      properties: Map<String, dynamic>.from(json['properties'] as Map? ?? {}),
+      properties: Map<String, dynamic>.from(json['properties'] ?? {}),
       children: (json['children'] as List<dynamic>?)
-              ?.map((e) => PageBlock.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => PageBlock.fromJson(Map<String, dynamic>.from(e)))
               .toList() ??
           [],
       parentBlockId: json['parentBlockId'] as String?,
@@ -325,7 +325,7 @@ class BloqPage extends Equatable {
       emoji: json['emoji'] as String? ?? '📄',
       coverImage: json['coverImage'] as String?,
       blocks: (json['blocks'] as List<dynamic>?)
-              ?.map((e) => PageBlock.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => PageBlock.fromJson(Map<String, dynamic>.from(e)))
               .toList() ??
           [],
       parentId: json['parentId'] as String?,

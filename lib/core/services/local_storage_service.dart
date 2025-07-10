@@ -105,7 +105,7 @@ class LocalStorageService {
           try {
             final settingsContent = await settingsFile.readAsString();
             final profileData =
-                json.decode(settingsContent) as Map<String, dynamic>;
+                Map<String, dynamic>.from(json.decode(settingsContent));
             final profile = UserProfile.fromJson(profileData);
             profiles.add(profile);
           } catch (e) {

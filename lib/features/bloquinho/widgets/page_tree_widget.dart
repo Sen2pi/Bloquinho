@@ -67,7 +67,7 @@ class PageTreeWidget extends ConsumerWidget {
               children: [
                 // Ícone da imagem customizada
                 Image.asset(
-                  'notas.png',
+                  'assets/images/notas.png',
                   width: 18,
                   height: 18,
                   color: isDarkMode

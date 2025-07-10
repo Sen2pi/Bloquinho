@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../providers/page_provider.dart';
-import 'page_tree_widget.dart';
+import '../providers/notion_page_provider.dart';
+import 'notion_tree_widget.dart';
 
 /// Widget para a seção Bloquinho na sidebar
 class BloquinhoSectionWidget extends ConsumerWidget {
@@ -23,8 +23,9 @@ class BloquinhoSectionWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pageCount = ref.watch(rootPagesCountProvider);
-    final isLoading = ref.watch(isPageLoadingProvider);
+    final pages = ref.watch(notionPagesListProvider);
+    final pageCount = pages.length;
+    final isLoading = ref.watch(isNotionPageLoadingProvider);
 
     return Column(
       children: [
@@ -51,14 +52,10 @@ class BloquinhoSectionWidget extends ConsumerWidget {
                   children: [
                     // Ícone customizado
                     Image.asset(
-                      'notas.png',
+                      'assets/images/notas.png',
                       width: 18,
                       height: 18,
-                      color: isSelected
-                          ? AppColors.primary
-                          : (isDarkMode
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary),
+                      // Removido o filtro de cor para manter as cores originais
                       errorBuilder: (context, error, stackTrace) {
                         return Icon(
                           Icons.note_outlined,
@@ -150,7 +147,7 @@ class BloquinhoSectionWidget extends ConsumerWidget {
               ),
             )
           else
-            PageTreeWidget(
+            NotionTreeWidget(
               isDarkMode: isDarkMode,
               isExpanded: true,
               onToggleExpansion: null, // Já gerenciado pelo header principal
@@ -309,7 +306,7 @@ class _CreatePageDialogState extends ConsumerState<CreatePageDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      final page = await ref.read(pageProvider.notifier).createPage(
+      final page = await ref.read(notionPageProvider.notifier).createPage(
             title: _titleController.text.trim(),
             emoji: _selectedEmoji,
             parentId: widget.parentId,

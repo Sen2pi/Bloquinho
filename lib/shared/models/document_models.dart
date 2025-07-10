@@ -100,9 +100,9 @@ class DocumentBlock extends Equatable {
         orElse: () => BlockType.text,
       ),
       content: json['content'] as String,
-      properties: Map<String, dynamic>.from(json['properties'] as Map),
+      properties: Map<String, dynamic>.from(json['properties'] ?? {}),
       children: (json['children'] as List<dynamic>?)
-              ?.map((e) => DocumentBlock.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => DocumentBlock.fromJson(Map<String, dynamic>.from(e)))
               .toList() ??
           [],
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -231,7 +231,7 @@ class Document extends Equatable {
       icon: json['icon'] as String? ?? '📄',
       coverImage: json['coverImage'] as String? ?? '',
       blocks: (json['blocks'] as List<dynamic>?)
-              ?.map((e) => DocumentBlock.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => DocumentBlock.fromJson(Map<String, dynamic>.from(e)))
               .toList() ??
           [],
       parentId: json['parentId'] as String?,
@@ -350,7 +350,7 @@ class Workspace extends Equatable {
       description: json['description'] as String? ?? '',
       icon: json['icon'] as String? ?? '🏠',
       documentIds: List<String>.from(json['documentIds'] as List? ?? []),
-      settings: Map<String, dynamic>.from(json['settings'] as Map? ?? {}),
+      settings: Map<String, dynamic>.from(json['settings'] ?? {}),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       ownerId: json['ownerId'] as String,

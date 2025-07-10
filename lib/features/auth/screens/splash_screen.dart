@@ -116,7 +116,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: Image.asset(
-                    isDarkMode ? 'logoDark.png' : 'logo.png',
+                    isDarkMode
+                        ? 'assets/images/logoDark.png'
+                        : 'assets/images/logo.png',
                     fit: BoxFit.cover,
                   ),
                 ),

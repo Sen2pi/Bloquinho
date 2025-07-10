@@ -122,14 +122,22 @@ class _DatabaseSectionWidgetState extends ConsumerState<DatabaseSectionWidget> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.storage_outlined,
-                      size: 18,
-                      color: widget.isSelected
-                          ? AppColors.primary
-                          : (widget.isDarkMode
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary),
+                    // Ícone customizado para manter cores originais
+                    Image.asset(
+                      'assets/images/dossier.png',
+                      width: 18,
+                      height: 18,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          Icons.storage_outlined,
+                          size: 18,
+                          color: widget.isSelected
+                              ? AppColors.primary
+                              : (widget.isDarkMode
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary),
+                        );
+                      },
                     ),
                     const SizedBox(width: 12),
                     Expanded(

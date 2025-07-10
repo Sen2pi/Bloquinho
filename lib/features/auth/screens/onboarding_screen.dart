@@ -553,7 +553,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: Image.asset(
-                          isDarkMode ? 'logoDark.png' : 'logo.png',
+                          isDarkMode
+                              ? 'assets/images/logoDark.png'
+                              : 'assets/images/logo.png',
                           width: 80,
                           height: 80,
                           fit: BoxFit.cover,
