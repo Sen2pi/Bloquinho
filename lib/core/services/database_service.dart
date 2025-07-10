@@ -14,6 +14,7 @@ class DatabaseService {
   Box<String>? _box;
   bool _initialized = false;
   List<DatabaseTable> _tables = [];
+  String? _currentWorkspaceId;
 
   /// Instância singleton
   static final DatabaseService _instance = DatabaseService._internal();
@@ -104,9 +105,61 @@ class DatabaseService {
     }
   }
 
-  /// Obtém todas as tabelas
+  /// Define o workspace atual
+  void setCurrentWorkspace(String workspaceId) {
+    final previousWorkspace = _currentWorkspaceId;
+    _currentWorkspaceId = workspaceId;
+
+    debugPrint('🔄 Workspace mudou: $previousWorkspace → $workspaceId');
+    debugPrint('📊 Total de tabelas: ${_tables.length}');
+
+    // Migrar tabelas sem workspaceId para o workspace atual
+    _migrateOrphanTables();
+
+    final filteredTables = tables;
+    debugPrint(
+        '🔍 Tabelas no workspace "$workspaceId": ${filteredTables.length}');
+    for (final table in filteredTables) {
+      debugPrint('  - ${table.name} (workspace: ${table.workspaceId})');
+    }
+  }
+
+  /// Migra tabelas sem workspaceId para o workspace atual
+  void _migrateOrphanTables() {
+    bool hasChanges = false;
+
+    for (int i = 0; i < _tables.length; i++) {
+      final table = _tables[i];
+      if (table.workspaceId == null) {
+        debugPrint(
+            '🔄 Migrando tabela órfã "${table.name}" para workspace "$_currentWorkspaceId"');
+        _tables[i] = table.copyWith(workspaceId: _currentWorkspaceId);
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      _saveTables(); // Salvar mudanças de migração
+      debugPrint('✅ Migração de tabelas órfãs concluída');
+    }
+  }
+
+  /// Obtém todas as tabelas do workspace atual
   List<DatabaseTable> get tables {
-    return List.unmodifiable(_tables);
+    if (_currentWorkspaceId == null) {
+      debugPrint(
+          '⚠️ Nenhum workspace selecionado, retornando todas as tabelas');
+      return List.unmodifiable(_tables);
+    }
+
+    final filtered = _tables
+        .where((table) => table.workspaceId == _currentWorkspaceId)
+        .toList();
+
+    debugPrint(
+        '🔍 Filtrando tabelas para workspace "$_currentWorkspaceId": ${filtered.length}/${_tables.length}');
+
+    return List.unmodifiable(filtered);
   }
 
   /// Obtém uma tabela por ID
@@ -144,12 +197,13 @@ class DatabaseService {
       description: description,
       icon: icon,
       color: color,
-    );
+    ).copyWith(workspaceId: _currentWorkspaceId);
 
     _tables.add(table);
     await _saveTables();
 
-    debugPrint('✅ Tabela criada: ${table.name} (${table.id})');
+    debugPrint(
+        '✅ Tabela criada: ${table.name} (${table.id}) para workspace $_currentWorkspaceId');
     return table;
   }
 

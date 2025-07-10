@@ -149,9 +149,11 @@ class DatabaseColumn {
     );
   }
 
-  /// Obtém opções de seleção (para tipos select/multiSelect)
+  /// Obtém opções de seleção (para tipos select/multiSelect/status)
   List<SelectOption> get selectOptions {
-    if (type != ColumnType.select && type != ColumnType.multiSelect) {
+    if (type != ColumnType.select &&
+        type != ColumnType.multiSelect &&
+        type != ColumnType.status) {
       return [];
     }
 
@@ -187,17 +189,17 @@ class DatabaseColumn {
     return [
       const SelectOption(
         id: 'todo',
-        name: 'Por fazer',
+        name: 'Por fazer', // Will be translated at runtime
         color: Color(0xFFEF4444), // Red
       ),
       const SelectOption(
         id: 'in_progress',
-        name: 'Em progresso',
+        name: 'Em progresso', // Will be translated at runtime
         color: Color(0xFFF59E0B), // Amber
       ),
       const SelectOption(
         id: 'done',
-        name: 'Concluído',
+        name: 'Concluído', // Will be translated at runtime
         color: Color(0xFF10B981), // Emerald
       ),
     ];
@@ -409,6 +411,7 @@ class DatabaseTable {
   final DateTime createdAt;
   final DateTime lastModified;
   final Map<String, dynamic> config;
+  final String? workspaceId;
 
   const DatabaseTable({
     required this.id,
@@ -421,6 +424,7 @@ class DatabaseTable {
     required this.createdAt,
     required this.lastModified,
     this.config = const {},
+    this.workspaceId,
   });
 
   DatabaseTable copyWith({
@@ -434,6 +438,7 @@ class DatabaseTable {
     DateTime? createdAt,
     DateTime? lastModified,
     Map<String, dynamic>? config,
+    String? workspaceId,
   }) {
     return DatabaseTable(
       id: id ?? this.id,
@@ -446,6 +451,7 @@ class DatabaseTable {
       createdAt: createdAt ?? this.createdAt,
       lastModified: lastModified ?? this.lastModified,
       config: config ?? this.config,
+      workspaceId: workspaceId ?? this.workspaceId,
     );
   }
 
@@ -461,6 +467,7 @@ class DatabaseTable {
       'createdAt': createdAt.toIso8601String(),
       'lastModified': lastModified.toIso8601String(),
       'config': config,
+      'workspaceId': workspaceId,
     };
   }
 
@@ -481,6 +488,7 @@ class DatabaseTable {
       createdAt: DateTime.parse(json['createdAt']),
       lastModified: DateTime.parse(json['lastModified']),
       config: Map<String, dynamic>.from(json['config'] ?? {}),
+      workspaceId: json['workspaceId'],
     );
   }
 

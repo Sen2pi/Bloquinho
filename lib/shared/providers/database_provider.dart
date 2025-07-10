@@ -1,110 +1,203 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:bloquinho/core/models/database_models.dart';
 import 'package:bloquinho/core/services/database_service.dart';
+import 'workspace_provider.dart';
 
-/// Provider para gerenciar o estado das tabelas do database
+/// Provider para integrar DatabaseService com Workspace
+final databaseServiceProvider = Provider<DatabaseService>((ref) {
+  final databaseService = DatabaseService();
+
+  // Observar mudanças no workspace atual
+  ref.listen<String?>(
+    currentWorkspaceIdProvider,
+    (previous, current) {
+      if (current != null && current != previous) {
+        debugPrint(
+            '🔄 Provider detectou mudança de workspace: $previous → $current');
+        databaseService.setCurrentWorkspace(current);
+        debugPrint('✅ Workspace definido no DatabaseService');
+      }
+    },
+  );
+
+  return databaseService;
+});
+
+/// Provider derivado: ID do workspace atual
+final currentWorkspaceIdProvider = Provider<String?>((ref) {
+  return ref.watch(currentWorkspaceProvider)?.id;
+});
+
+/// Provider para tabelas do workspace atual
+final databaseTablesProvider = FutureProvider<List<DatabaseTable>>((ref) async {
+  final databaseService = ref.watch(databaseServiceProvider);
+  final currentWorkspaceId = ref.watch(currentWorkspaceIdProvider);
+
+  debugPrint(
+      '🔄 databaseTablesProvider executando para workspace: $currentWorkspaceId');
+
+  // Garantir que o serviço está inicializado
+  await databaseService.initialize();
+
+  // Definir workspace atual (força re-filtro)
+  if (currentWorkspaceId != null) {
+    databaseService.setCurrentWorkspace(currentWorkspaceId);
+  }
+
+  final tables = databaseService.tables;
+  debugPrint(
+      '📋 Provider retornando ${tables.length} tabelas para workspace "$currentWorkspaceId"');
+
+  return tables;
+});
+
+/// Provider para buscar uma tabela específica
+final databaseTableProvider =
+    Provider.family<DatabaseTable?, String>((ref, tableId) {
+  final tables = ref.watch(databaseTablesProvider);
+
+  return tables.when(
+    data: (tablesList) {
+      try {
+        return tablesList.firstWhere((table) => table.id == tableId);
+      } catch (e) {
+        return null;
+      }
+    },
+    loading: () => null,
+    error: (error, stack) => null,
+  );
+});
+
+/// Provider para contar tabelas do workspace atual
+final databaseTableCountProvider = Provider<int>((ref) {
+  final tables = ref.watch(databaseTablesProvider);
+
+  return tables.when(
+    data: (tablesList) => tablesList.length,
+    loading: () => 0,
+    error: (error, stack) => 0,
+  );
+});
+
+/// Notifier para operações de database
 class DatabaseNotifier extends StateNotifier<AsyncValue<List<DatabaseTable>>> {
-  final DatabaseService _databaseService;
+  final Ref ref;
+  late final DatabaseService _databaseService;
+  String? _lastWorkspaceId;
 
-  DatabaseNotifier(this._databaseService) : super(const AsyncValue.loading()) {
-    _loadTables();
+  DatabaseNotifier(this.ref) : super(const AsyncValue.loading()) {
+    _databaseService = ref.read(databaseServiceProvider);
+
+    // Observar mudanças de workspace
+    ref.listen<String?>(currentWorkspaceIdProvider, (previous, current) {
+      if (current != previous && current != null) {
+        debugPrint(
+            '🔄 DatabaseNotifier detectou mudança: $previous → $current');
+        _lastWorkspaceId = current;
+        _loadTables(); // Recarregar tabelas para o novo workspace
+      }
+    });
+
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      await _databaseService.initialize();
+
+      // Definir workspace inicial se disponível
+      final currentWorkspaceId = ref.read(currentWorkspaceIdProvider);
+      if (currentWorkspaceId != null) {
+        _lastWorkspaceId = currentWorkspaceId;
+        _databaseService.setCurrentWorkspace(currentWorkspaceId);
+      }
+
+      await _loadTables();
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   Future<void> _loadTables() async {
     try {
-      await _databaseService.initialize();
+      state = const AsyncValue.loading();
+
+      // Garantir que o workspace está definido
+      if (_lastWorkspaceId != null) {
+        _databaseService.setCurrentWorkspace(_lastWorkspaceId!);
+      }
+
       final tables = _databaseService.tables;
+      debugPrint(
+          '🔄 DatabaseNotifier carregou ${tables.length} tabelas para workspace "$_lastWorkspaceId"');
       state = AsyncValue.data(tables);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
-  Future<void> refresh() async {
-    state = const AsyncValue.loading();
-    await _loadTables();
-  }
-
-  Future<DatabaseTable> createTable({
+  /// Criar nova tabela
+  Future<void> createTable({
     required String name,
     String? description,
-    IconData? icon,
-    Color? color,
+    dynamic icon,
+    dynamic color,
   }) async {
     try {
-      final table = await _databaseService.createTable(
+      await _databaseService.createTable(
         name: name,
         description: description,
         icon: icon,
         color: color,
       );
-      await refresh();
-      return table;
+      await _loadTables();
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
-      rethrow;
     }
   }
 
+  /// Atualizar tabela
+  Future<void> updateTable(DatabaseTable table) async {
+    try {
+      await _databaseService.updateTable(table);
+      await _loadTables();
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  /// Deletar tabela
   Future<void> deleteTable(String tableId) async {
     try {
       await _databaseService.deleteTable(tableId);
-      await refresh();
+      await _loadTables();
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
-      rethrow;
     }
   }
 
-  Future<DatabaseTable> updateTable(DatabaseTable table) async {
-    try {
-      final updatedTable = await _databaseService.updateTable(table);
-      await refresh();
-      return updatedTable;
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
-      rethrow;
-    }
-  }
-
-  List<DatabaseTable> searchTables(String query) {
-    return state.whenOrNull(
-          data: (tables) => _databaseService.searchTables(query),
-        ) ??
-        [];
-  }
-
-  DatabaseTable? getTable(String tableId) {
-    return state.whenOrNull(
-      data: (tables) => _databaseService.getTable(tableId),
-    );
-  }
-
-  Map<String, dynamic> getStatistics() {
-    return state.whenOrNull(
-          data: (tables) => _databaseService.getStatistics(),
-        ) ??
-        {};
+  /// Forçar reload das tabelas (útil após mudança de workspace)
+  Future<void> refreshTables() async {
+    await _loadTables();
   }
 }
 
-/// Provider para o DatabaseService
-final databaseServiceProvider = Provider<DatabaseService>((ref) {
-  return DatabaseService();
-});
-
-/// Provider para o estado das tabelas
-final databaseProvider =
+/// Provider principal do database com notifier
+final databaseNotifierProvider =
     StateNotifierProvider<DatabaseNotifier, AsyncValue<List<DatabaseTable>>>(
         (ref) {
-  final databaseService = ref.watch(databaseServiceProvider);
-  return DatabaseNotifier(databaseService);
+  return DatabaseNotifier(ref);
 });
 
 /// Provider para obter apenas a lista de tabelas
 final tablesProvider = Provider<List<DatabaseTable>>((ref) {
-  return ref.watch(databaseProvider).whenOrNull(data: (tables) => tables) ?? [];
+  return ref
+          .watch(databaseNotifierProvider)
+          .whenOrNull(data: (tables) => tables) ??
+      [];
 });
 
 /// Provider para contar o número de tabelas
@@ -115,10 +208,4 @@ final tablesCountProvider = Provider<int>((ref) {
 /// Provider para verificar se existem tabelas
 final hasTablesProvider = Provider<bool>((ref) {
   return ref.watch(tablesCountProvider) > 0;
-});
-
-/// Provider para estatísticas do database
-final databaseStatsProvider = Provider<Map<String, dynamic>>((ref) {
-  final notifier = ref.watch(databaseProvider.notifier);
-  return notifier.getStatistics();
 });

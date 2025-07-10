@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'package:bloquinho/core/models/database_models.dart';
+import 'package:bloquinho/core/l10n/app_strings.dart';
+import 'package:bloquinho/shared/providers/language_provider.dart';
 
 /// Widget base para células editáveis
 abstract class DatabaseCellWidget extends StatelessWidget {
@@ -1012,17 +1015,31 @@ class StatusCellWidget extends DatabaseCellWidget {
     final options = column.selectOptions;
     final currentValue = value?.value?.toString();
 
-    if (currentValue == null || currentValue.isEmpty) {
-      return Text(
-        'Sem status',
-        style: TextStyle(
-          color: Colors.grey[600],
-          fontStyle: FontStyle.italic,
-          fontSize: 12,
-        ),
-      );
-    }
+    return InkWell(
+      onTap: () => onStartEdit?.call(),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: currentValue == null || currentValue.isEmpty
+            ? Consumer(
+                builder: (context, ref, child) {
+                  final strings = ref.watch(appStringsProvider);
+                  return Text(
+                    strings.clickToChooseStatus,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                      fontSize: 12,
+                    ),
+                  );
+                },
+              )
+            : _buildStatusPill(options, currentValue),
+      ),
+    );
+  }
 
+  Widget _buildStatusPill(List<SelectOption> options, String currentValue) {
     final selectedOption = options.firstWhere(
       (o) => o.id == currentValue,
       orElse: () => SelectOption(
@@ -1098,7 +1115,7 @@ class DeadlineCellWidget extends DatabaseCellWidget {
               ),
               child: Text(
                 currentDate != null
-                    ? _formatDateTime(currentDate)
+                    ? _formatDateTime(currentDate, context)
                     : 'Selecionar data/hora',
                 style: TextStyle(
                   color: currentDate != null ? null : Colors.grey[600],
@@ -1126,17 +1143,31 @@ class DeadlineCellWidget extends DatabaseCellWidget {
         ? DateTime.tryParse(value!.value as String)
         : value?.value as DateTime?;
 
-    if (deadline == null) {
-      return Text(
-        'Sem deadline',
-        style: TextStyle(
-          color: Colors.grey[600],
-          fontStyle: FontStyle.italic,
-          fontSize: 12,
-        ),
-      );
-    }
+    return InkWell(
+      onTap: () => onStartEdit?.call(),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: deadline == null
+            ? Consumer(
+                builder: (context, ref, child) {
+                  final strings = ref.watch(appStringsProvider);
+                  return Text(
+                    strings.clickToSetDateTime,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                      fontSize: 12,
+                    ),
+                  );
+                },
+              )
+            : _buildDeadlineDisplay(context, deadline),
+      ),
+    );
+  }
 
+  Widget _buildDeadlineDisplay(BuildContext context, DateTime deadline) {
     final now = DateTime.now();
     final isOverdue = deadline.isBefore(now);
     final isToday = _isSameDay(deadline, now);
@@ -1173,7 +1204,7 @@ class DeadlineCellWidget extends DatabaseCellWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            _formatDateTime(deadline),
+            _formatDateTime(deadline, context),
             style: TextStyle(
               color: textColor,
               fontSize: 12,
@@ -1187,19 +1218,31 @@ class DeadlineCellWidget extends DatabaseCellWidget {
   }
 
   Future<void> _pickDate(BuildContext context, DateTime? currentDate) async {
+    // Usar Consumer para acessar as traduções
+    final ref = ProviderScope.containerOf(context);
+    final strings = ref.read(appStringsProvider);
+
     final initialDate = currentDate ?? DateTime.now();
 
+    // Primeiro, selecionar a data
     final date = await showDatePicker(
       context: context,
       initialDate: initialDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
+      helpText: strings.selectDate,
+      confirmText: strings.next,
+      cancelText: strings.cancel,
     );
 
     if (date != null && context.mounted) {
+      // Depois, selecionar a hora
       final time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(initialDate),
+        helpText: strings.selectTime,
+        confirmText: strings.save,
+        cancelText: strings.back,
       );
 
       if (time != null) {
@@ -1212,11 +1255,20 @@ class DeadlineCellWidget extends DatabaseCellWidget {
         );
         onChanged?.call(dateTime.toIso8601String());
         onStopEdit?.call();
+      } else {
+        // Se cancelou na hora, voltar para seleção de data
+        if (context.mounted) {
+          _pickDate(context, currentDate);
+        }
       }
     }
   }
 
-  String _formatDateTime(DateTime dateTime) {
+  String _formatDateTime(DateTime dateTime, BuildContext context) {
+    // Usar Consumer para acessar as traduções
+    final ref = ProviderScope.containerOf(context);
+    final strings = ref.read(appStringsProvider);
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final dateDay = DateTime(dateTime.year, dateTime.month, dateTime.day);
@@ -1224,11 +1276,11 @@ class DeadlineCellWidget extends DatabaseCellWidget {
         '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
 
     if (dateDay == today) {
-      return 'Hoje $time';
+      return '${strings.today} $time';
     } else if (dateDay == today.add(const Duration(days: 1))) {
-      return 'Amanhã $time';
+      return '${strings.tomorrow} $time';
     } else if (dateDay == today.subtract(const Duration(days: 1))) {
-      return 'Ontem $time';
+      return '${strings.yesterday} $time';
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year} $time';
     }

@@ -47,7 +47,7 @@ class _DatabaseSectionWidgetState extends ConsumerState<DatabaseSectionWidget> {
       final resultMap = Map<String, dynamic>.from(result);
 
       try {
-        await ref.read(databaseProvider.notifier).createTable(
+        await ref.read(databaseNotifierProvider.notifier).createTable(
               name: resultMap['name'] as String,
               description: resultMap['description'] as String,
               icon: resultMap['icon'] as IconData,
@@ -89,7 +89,7 @@ class _DatabaseSectionWidgetState extends ConsumerState<DatabaseSectionWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final tablesAsync = ref.watch(databaseProvider);
+    final tablesAsync = ref.watch(databaseNotifierProvider);
     final tables = ref.watch(tablesProvider);
     final hasTable = tables.isNotEmpty;
 

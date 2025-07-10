@@ -276,6 +276,184 @@ class AppStrings {
         return 'Erreur lors de la création de l\'utilisateur';
     }
   }
+
+  // Database System Translations
+  String get clickToChooseStatus {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Clique para escolher status';
+      case AppLanguage.english:
+        return 'Click to choose status';
+      case AppLanguage.french:
+        return 'Cliquez pour choisir le statut';
+    }
+  }
+
+  String get clickToSetDateTime {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Clique para definir data e hora';
+      case AppLanguage.english:
+        return 'Click to set date and time';
+      case AppLanguage.french:
+        return 'Cliquez pour définir la date et l\'heure';
+    }
+  }
+
+  String get today {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Hoje';
+      case AppLanguage.english:
+        return 'Today';
+      case AppLanguage.french:
+        return 'Aujourd\'hui';
+    }
+  }
+
+  String get tomorrow {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Amanhã';
+      case AppLanguage.english:
+        return 'Tomorrow';
+      case AppLanguage.french:
+        return 'Demain';
+    }
+  }
+
+  String get yesterday {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Ontem';
+      case AppLanguage.english:
+        return 'Yesterday';
+      case AppLanguage.french:
+        return 'Hier';
+    }
+  }
+
+  String get selectDate {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Selecionar Data';
+      case AppLanguage.english:
+        return 'Select Date';
+      case AppLanguage.french:
+        return 'Sélectionner la Date';
+    }
+  }
+
+  String get selectTime {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Selecionar Hora';
+      case AppLanguage.english:
+        return 'Select Time';
+      case AppLanguage.french:
+        return 'Sélectionner l\'Heure';
+    }
+  }
+
+  String get next {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Próximo';
+      case AppLanguage.english:
+        return 'Next';
+      case AppLanguage.french:
+        return 'Suivant';
+    }
+  }
+
+  String get save {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Salvar';
+      case AppLanguage.english:
+        return 'Save';
+      case AppLanguage.french:
+        return 'Sauvegarder';
+    }
+  }
+
+  String get cancel {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Cancelar';
+      case AppLanguage.english:
+        return 'Cancel';
+      case AppLanguage.french:
+        return 'Annuler';
+    }
+  }
+
+  String get back {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Voltar';
+      case AppLanguage.english:
+        return 'Back';
+      case AppLanguage.french:
+        return 'Retour';
+    }
+  }
+
+  // Status options
+  String get statusTodo {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Por fazer';
+      case AppLanguage.english:
+        return 'To do';
+      case AppLanguage.french:
+        return 'À faire';
+    }
+  }
+
+  String get statusInProgress {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Em progresso';
+      case AppLanguage.english:
+        return 'In progress';
+      case AppLanguage.french:
+        return 'En cours';
+    }
+  }
+
+  String get statusCompleted {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Concluído';
+      case AppLanguage.english:
+        return 'Completed';
+      case AppLanguage.french:
+        return 'Terminé';
+    }
+  }
+
+  String get noStatus {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Sem status';
+      case AppLanguage.english:
+        return 'No status';
+      case AppLanguage.french:
+        return 'Sans statut';
+    }
+  }
+
+  String get noDeadline {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Sem deadline';
+      case AppLanguage.english:
+        return 'No deadline';
+      case AppLanguage.french:
+        return 'Sans échéance';
+    }
+  }
 }
 
 /// Provider de strings localizadas
