@@ -17,6 +17,7 @@ import '../../../core/models/storage_settings.dart';
 import '../../../core/models/app_language.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/services/onedrive_service.dart';
+import '../../../core/l10n/app_strings.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -128,21 +129,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _finishOnboarding() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!mounted) return;
+
+    // Verificar se temos dados válidos (já validados na página anterior)
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+
+    if (name.isEmpty || email.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Por favor, volte e preencha todos os campos'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
 
     setState(() {
       _isCreatingUser = true;
     });
 
     try {
-      // Verificar se os controladores não são null
-      final name = _nameController.text.trim();
-      final email = _emailController.text.trim();
-
-      if (name.isEmpty || email.isEmpty) {
-        throw Exception('Nome e email são obrigatórios');
-      }
-
       // Salvar perfil
       final userProfileNotifier = ref.read(userProfileProvider.notifier);
       await userProfileNotifier.createProfile(name: name, email: email);
@@ -200,6 +209,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(isDarkModeProvider);
+    final strings = ref.watch(appStringsProvider);
 
     return Scaffold(
       body: Container(
@@ -274,10 +284,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     });
                   },
                   children: [
-                    _buildLanguageSelectionPage(isDarkMode),
-                    _buildWelcomePage(isDarkMode),
-                    _buildUserInfoPage(isDarkMode),
-                    _buildStorageSelectionPage(isDarkMode),
+                    _buildLanguageSelectionPage(isDarkMode, strings),
+                    _buildWelcomePage(isDarkMode, strings),
+                    _buildUserInfoPage(isDarkMode, strings),
+                    _buildStorageSelectionPage(isDarkMode, strings),
                   ],
                 ),
               ),
@@ -288,7 +298,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _buildLanguageSelectionPage(bool isDarkMode) {
+  Widget _buildLanguageSelectionPage(bool isDarkMode, AppStrings strings) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -323,7 +333,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
           // Título
           Text(
-            'Escolha seu idioma',
+            strings.chooseLanguage,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   fontWeight: FontWeight.bold,
@@ -337,7 +347,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
           // Subtítulo
           Text(
-            'Selecione o idioma de sua preferência\npara usar a aplicação.',
+            strings.languageDescription,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: isDarkMode
@@ -384,9 +394,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Continuar',
-                style: TextStyle(
+              child: Text(
+                strings.continueButton,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -491,7 +501,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         .slideX(begin: -0.3, end: 0);
   }
 
-  Widget _buildWelcomePage(bool isDarkMode) {
+  Widget _buildWelcomePage(bool isDarkMode, AppStrings strings) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -595,7 +605,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
           // Título
           Text(
-            'Bem-vindo ao\nBloquinho',
+            strings.welcomeToBloquinho,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   fontWeight: FontWeight.bold,
@@ -610,7 +620,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
           // Subtítulo
           Text(
-            'Seu workspace pessoal para organizar\nideias, projetos e conhecimento.',
+            strings.workspaceDescription,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: isDarkMode
@@ -638,9 +648,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Começar',
-                style: TextStyle(
+              child: Text(
+                strings.startButton,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -655,7 +665,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _buildUserInfoPage(bool isDarkMode) {
+  Widget _buildUserInfoPage(bool isDarkMode, AppStrings strings) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Form(
@@ -667,7 +677,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
             // Título
             Text(
-              'Crie seu perfil',
+              strings.createProfile,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -676,7 +686,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             const SizedBox(height: 8),
 
             Text(
-              'Adicione suas informações para personalizar sua experiência.',
+              strings.profileDescription,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: isDarkMode
                         ? AppColors.darkTextSecondary
@@ -736,7 +746,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Adicionar foto',
+                              strings.addPhoto,
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
@@ -761,7 +771,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             TextFormField(
               controller: _nameController,
               decoration: InputDecoration(
-                labelText: 'Nome completo',
+                labelText: strings.fullName,
                 prefixIcon: Icon(PhosphorIcons.user()),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -769,7 +779,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Por favor, insira seu nome';
+                  return strings.pleaseEnterName;
                 }
                 return null;
               },
@@ -784,7 +794,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             TextFormField(
               controller: _emailController,
               decoration: InputDecoration(
-                labelText: 'Email',
+                labelText: strings.email,
                 prefixIcon: Icon(PhosphorIcons.envelope()),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -793,11 +803,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Por favor, insira seu email';
+                  return strings.pleaseEnterEmail;
                 }
                 if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
                     .hasMatch(value.trim())) {
-                  return 'Por favor, insira um email válido';
+                  return strings.pleaseEnterValidEmail;
                 }
                 return null;
               },
@@ -825,9 +835,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Continuar',
-                  style: TextStyle(
+                child: Text(
+                  strings.continueButton,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -843,7 +853,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _buildStorageSelectionPage(bool isDarkMode) {
+  Widget _buildStorageSelectionPage(bool isDarkMode, AppStrings strings) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -853,7 +863,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
           // Título
           Text(
-            'Escolha seu armazenamento',
+            strings.chooseStorage,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -862,7 +872,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 8),
 
           Text(
-            'Selecione onde você deseja armazenar seus dados.',
+            strings.storageDescription,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: isDarkMode
                       ? AppColors.darkTextSecondary
@@ -878,10 +888,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           // Opções de armazenamento
           _buildStorageOption(
             provider: CloudStorageProvider.local,
-            title: 'Armazenamento Local',
-            subtitle: 'Dados ficam apenas neste dispositivo',
+            title: strings.localStorage,
+            subtitle: strings.localStorageDescription,
             icon: PhosphorIcons.desktop(),
-            warning: 'Os dados não serão sincronizados entre dispositivos',
+            warning: strings.localStorageWarning,
             isDarkMode: isDarkMode,
             delay: 400,
           ),
@@ -891,7 +901,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           _buildStorageOption(
             provider: CloudStorageProvider.googleDrive,
             title: 'Google Drive',
-            subtitle: 'Sincronizar com Google Drive (15GB grátis)',
+            subtitle: strings.googleDriveDescription,
             icon: PhosphorIcons.cloud(),
             isDarkMode: isDarkMode,
             delay: 600,
@@ -906,7 +916,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             _buildStorageOption(
               provider: CloudStorageProvider.oneDrive,
               title: 'OneDrive',
-              subtitle: 'Sincronizar com OneDrive (requer subscrição)',
+              subtitle: strings.oneDriveDescription,
               icon: PhosphorIcons.cloud(),
               isDarkMode: isDarkMode,
               delay: 800,
@@ -940,9 +950,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           size: 24,
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Concluído!',
-                          style: TextStyle(
+                        Text(
+                          strings.completedButton,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -959,9 +969,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                 AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Text(
-                          'Começar a usar',
-                          style: TextStyle(
+                      : Text(
+                          strings.startUsingButton,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:bloquinho/core/models/storage_settings.dart';
 import 'package:bloquinho/core/services/cloud_storage_service.dart';
+import 'package:bloquinho/core/services/oauth2_service.dart' as oauth2;
 import 'package:http/http.dart' as http;
 
 /// Serviço para integração com Google Drive
@@ -103,44 +104,42 @@ class GoogleDriveService extends CloudStorageService {
     try {
       _statusController.add(CloudStorageStatus.connecting);
 
-      // Simular processo de autenticação OAuth2
-      // Em produção, usar um webview ou browser para OAuth2
-      await Future.delayed(const Duration(seconds: 2));
+      // Usar OAuth2 real
+      final result = await oauth2.OAuth2Service.authenticateWithGoogle();
 
-      // Simular resposta de autenticação bem-sucedida
-      final mockUserData = {
-        'email': 'usuario@gmail.com',
-        'name': 'Usuário Exemplo',
-        'id': '123456789',
-        'picture': 'https://example.com/avatar.jpg',
-      };
+      if (result.success) {
+        // Extrair tokens do resultado
+        final accountData = result.accountData!;
+        _accessToken = accountData['access_token'];
+        _refreshToken = accountData['refresh_token'];
+        _tokenExpiry = accountData['expires_at'] != null
+            ? DateTime.parse(accountData['expires_at'])
+            : null;
 
-      _accessToken =
-          'mock_access_token_${DateTime.now().millisecondsSinceEpoch}';
-      _refreshToken =
-          'mock_refresh_token_${DateTime.now().millisecondsSinceEpoch}';
-      _tokenExpiry = DateTime.now().add(const Duration(hours: 1));
+        _settings = _settings.copyWith(
+          status: CloudStorageStatus.connected,
+          accountEmail: result.accountEmail,
+          accountName: result.accountName,
+          providerConfig: {
+            'user_id': accountData['id'],
+            'picture': accountData['picture'],
+            'access_token': _accessToken,
+            'refresh_token': _refreshToken,
+            'expires_at': _tokenExpiry?.toIso8601String(),
+          },
+        );
 
-      _settings = _settings.copyWith(
-        status: CloudStorageStatus.connected,
-        accountEmail: mockUserData['email'],
-        accountName: mockUserData['name'],
-        providerConfig: {
-          'user_id': mockUserData['id'],
-          'picture': mockUserData['picture'],
-          'access_token': _accessToken,
-          'refresh_token': _refreshToken,
-          'expires_at': _tokenExpiry?.toIso8601String(),
-        },
-      );
+        _statusController.add(CloudStorageStatus.connected);
 
-      _statusController.add(CloudStorageStatus.connected);
-
-      return AuthResult.success(
-        accountEmail: mockUserData['email']!,
-        accountName: mockUserData['name'],
-        accountData: mockUserData,
-      );
+        return AuthResult.success(
+          accountEmail: result.accountEmail!,
+          accountName: result.accountName,
+          accountData: accountData,
+        );
+      } else {
+        _statusController.add(CloudStorageStatus.error);
+        return AuthResult.error(result.error ?? 'Erro na autenticação');
+      }
     } catch (e) {
       _statusController.add(CloudStorageStatus.error);
       return AuthResult.error('Erro na autenticação: $e');
