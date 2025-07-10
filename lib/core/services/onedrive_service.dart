@@ -213,24 +213,21 @@ class OneDriveService extends CloudStorageService {
       _statusController.add(CloudStorageStatus.connecting);
 
       // Usar OAuth2 real
-      final result = await oauth2.OAuth2Service.authenticateWithMicrosoft();
+      final result = await oauth2.OAuth2Service.authenticateMicrosoft();
 
       if (result.success) {
         // Extrair tokens do resultado
-        final accountData = result.accountData!;
-        _accessToken = accountData['access_token'];
-        _refreshToken = accountData['refresh_token'];
-        _tokenExpiry = accountData['expires_at'] != null
-            ? DateTime.parse(accountData['expires_at'])
-            : null;
+        _accessToken = result.accessToken;
+        _refreshToken = result.refreshToken;
+        _tokenExpiry = null; // Será implementado posteriormente
 
         _settings = _settings.copyWith(
           status: CloudStorageStatus.connected,
-          accountEmail: result.accountEmail,
-          accountName: result.accountName,
+          accountEmail: result.userEmail,
+          accountName: result.userName,
           providerConfig: {
-            'user_id': accountData['id'],
-            'picture': accountData['picture'],
+            'user_id': result.userEmail,
+            'picture': '',
             'access_token': _accessToken,
             'refresh_token': _refreshToken,
             'expires_at': _tokenExpiry?.toIso8601String(),
@@ -243,9 +240,13 @@ class OneDriveService extends CloudStorageService {
         await createAppFolder();
 
         return AuthResult.success(
-          accountEmail: result.accountEmail!,
-          accountName: result.accountName,
-          accountData: accountData,
+          accountEmail: result.userEmail!,
+          accountName: result.userName,
+          accountData: {
+            'email': result.userEmail,
+            'name': result.userName,
+            'picture': '',
+          },
         );
       } else {
         _statusController.add(CloudStorageStatus.error);

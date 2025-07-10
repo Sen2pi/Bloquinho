@@ -1,311 +1,346 @@
-import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:oauth2/oauth2.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:oauth2/oauth2.dart' as oauth2;
-import 'package:url_launcher/url_launcher.dart';
 
-/// Serviço para autenticação OAuth2 com Google Drive e OneDrive
+/// Resultado da autenticação OAuth2
+class AuthResult {
+  final bool success;
+  final String? accessToken;
+  final String? refreshToken;
+  final String? userEmail;
+  final String? userName;
+  final String? error;
+
+  const AuthResult({
+    required this.success,
+    this.accessToken,
+    this.refreshToken,
+    this.userEmail,
+    this.userName,
+    this.error,
+  });
+
+  AuthResult.success({
+    required this.accessToken,
+    required this.refreshToken,
+    this.userEmail,
+    this.userName,
+  })  : success = true,
+        error = null;
+
+  AuthResult.failure(this.error)
+      : success = false,
+        accessToken = null,
+        refreshToken = null,
+        userEmail = null,
+        userName = null;
+}
+
+/// Configuração OAuth2
+class OAuth2Config {
+  final String googleClientId;
+  final String? googleClientSecret;
+  final String microsoftClientId;
+
+  const OAuth2Config({
+    required this.googleClientId,
+    this.googleClientSecret,
+    required this.microsoftClientId,
+  });
+
+  /// Carrega configuração do arquivo oauth_config.json na raiz do projeto
+  static Future<OAuth2Config?> loadFromFile() async {
+    try {
+      final file = File('oauth_config.json');
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        final json = jsonDecode(content);
+        return OAuth2Config(
+          googleClientId: json['google_client_id'] ?? '',
+          googleClientSecret: json['google_client_secret'],
+          microsoftClientId: json['microsoft_client_id'] ?? '',
+        );
+      }
+    } catch (e) {
+      print('Erro ao carregar configuração OAuth2: $e');
+    }
+    return null;
+  }
+
+  /// Configuração padrão com placeholders
+  static const OAuth2Config defaultConfig = OAuth2Config(
+    googleClientId: 'YOUR_GOOGLE_CLIENT_ID',
+    googleClientSecret: 'YOUR_GOOGLE_CLIENT_SECRET',
+    microsoftClientId: 'YOUR_MICROSOFT_CLIENT_ID',
+  );
+}
+
+/// Serviço OAuth2 para autenticação com Google Drive e OneDrive
 class OAuth2Service {
-  static const _storage = FlutterSecureStorage();
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
-  // Configurações OAuth2 para Google Drive
-  static const String _googleClientId = 'YOUR_GOOGLE_CLIENT_ID';
-  static const String _googleClientSecret = 'YOUR_GOOGLE_CLIENT_SECRET';
+  // Configuração OAuth2
+  static OAuth2Config? _config;
+
+  /// Inicializa o serviço com configuração
+  static Future<void> initialize() async {
+    _config = await OAuth2Config.loadFromFile() ?? OAuth2Config.defaultConfig;
+  }
+
+  // URLs de autorização
   static const String _googleAuthUrl =
       'https://accounts.google.com/o/oauth2/v2/auth';
-  static const String _googleTokenUrl = 'https://oauth2.googleapis.com/token';
-  static const String _googleScopes =
-      'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
+  static const String _googleTokenUrl =
+      'https://www.googleapis.com/oauth2/v4/token';
 
-  // Configurações OAuth2 para Microsoft OneDrive
-  static const String _microsoftClientId = 'YOUR_MICROSOFT_CLIENT_ID';
-  static const String _microsoftClientSecret = 'YOUR_MICROSOFT_CLIENT_SECRET';
   static const String _microsoftAuthUrl =
       'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
   static const String _microsoftTokenUrl =
       'https://login.microsoftonline.com/common/oauth2/v2.0/token';
-  static const String _microsoftScopes =
-      'files.readwrite offline_access user.read';
 
-  static const String _redirectUri = 'com.bloquinho.app://oauth/callback';
+  // Redirect URI para desenvolvimento
+  static const String _redirectUri = 'http://localhost:8080/oauth/callback';
 
-  /// Autenticar com Google Drive
-  static Future<AuthResult> authenticateWithGoogle() async {
+  /// Verifica se as credenciais estão configuradas
+  static bool get isConfigured {
+    return _config != null &&
+        _config!.googleClientId != 'YOUR_GOOGLE_CLIENT_ID' &&
+        _config!.microsoftClientId != 'YOUR_MICROSOFT_CLIENT_ID';
+  }
+
+  /// Autentica com Google Drive
+  static Future<AuthResult> authenticateGoogle() async {
+    if (_config == null) {
+      await initialize();
+    }
+
+    if (!isConfigured) {
+      return AuthResult.failure(
+          'Credenciais OAuth2 não configuradas. Consulte docs/OAUTH_SETUP.md');
+    }
+
     try {
-      // Verificar se já temos credenciais salvas
-      final savedCredentials = await _getSavedCredentials('google');
-      if (savedCredentials != null) {
-        // Verificar se o token ainda é válido
-        if (savedCredentials.canRefresh && savedCredentials.isExpired) {
-          try {
-            final refreshed = await savedCredentials.refresh();
-            await _saveCredentials('google', refreshed);
-            return await _getGoogleUserInfo(refreshed);
-          } catch (e) {
-            // Token refresh falhou, fazer novo login
-            await _clearCredentials('google');
-          }
-        } else if (!savedCredentials.isExpired) {
-          return await _getGoogleUserInfo(savedCredentials);
-        }
-      }
+      final client = await _authenticateWithGoogle();
+      final userInfo = await _getGoogleUserInfo(client);
 
-      // Fazer novo login
-      final grant = oauth2.AuthorizationCodeGrant(
-        _googleClientId,
-        Uri.parse(_googleAuthUrl),
-        Uri.parse(_googleTokenUrl),
-        secret: _googleClientSecret,
+      // Salva tokens
+      await _saveGoogleTokens(client);
+
+      return AuthResult.success(
+        accessToken: client.credentials.accessToken,
+        refreshToken: client.credentials.refreshToken,
+        userEmail: userInfo['email'],
+        userName: userInfo['name'],
       );
-
-      final authorizationUrl = grant.getAuthorizationUrl(
-        Uri.parse(_redirectUri),
-        scopes: _googleScopes.split(' '),
-      );
-
-      // Abrir URL no navegador
-      if (await canLaunchUrl(authorizationUrl)) {
-        await launchUrl(authorizationUrl, mode: LaunchMode.externalApplication);
-      } else {
-        return AuthResult.error('Não foi possível abrir o navegador');
-      }
-
-      // Aguardar callback (em produção, implementar servidor local ou deep linking)
-      // Por enquanto, usar processo simulado
-      await Future.delayed(const Duration(seconds: 5));
-
-      // Simular recebimento do código de autorização
-      final mockAuthCode =
-          'mock_auth_code_${DateTime.now().millisecondsSinceEpoch}';
-
-      try {
-        final client = await grant.handleAuthorizationCode(mockAuthCode);
-        final credentials = client.credentials;
-
-        await _saveCredentials('google', credentials);
-        return await _getGoogleUserInfo(credentials);
-      } catch (e) {
-        return AuthResult.error('Erro no processamento do código: $e');
-      }
     } catch (e) {
-      return AuthResult.error('Erro na autenticação Google: $e');
+      return AuthResult.failure('Erro na autenticação Google: $e');
     }
   }
 
-  /// Autenticar com Microsoft OneDrive
-  static Future<AuthResult> authenticateWithMicrosoft() async {
-    try {
-      // Verificar se já temos credenciais salvas
-      final savedCredentials = await _getSavedCredentials('microsoft');
-      if (savedCredentials != null) {
-        // Verificar se o token ainda é válido
-        if (savedCredentials.canRefresh && savedCredentials.isExpired) {
-          try {
-            final refreshed = await savedCredentials.refresh();
-            await _saveCredentials('microsoft', refreshed);
-            return await _getMicrosoftUserInfo(refreshed);
-          } catch (e) {
-            // Token refresh falhou, fazer novo login
-            await _clearCredentials('microsoft');
-          }
-        } else if (!savedCredentials.isExpired) {
-          return await _getMicrosoftUserInfo(savedCredentials);
-        }
-      }
+  /// Autentica com Microsoft OneDrive
+  static Future<AuthResult> authenticateMicrosoft() async {
+    if (_config == null) {
+      await initialize();
+    }
 
-      // Fazer novo login
-      final grant = oauth2.AuthorizationCodeGrant(
-        _microsoftClientId,
-        Uri.parse(_microsoftAuthUrl),
-        Uri.parse(_microsoftTokenUrl),
-        secret: _microsoftClientSecret,
+    if (!isConfigured) {
+      return AuthResult.failure(
+          'Credenciais OAuth2 não configuradas. Consulte docs/OAUTH_SETUP.md');
+    }
+
+    try {
+      final client = await _authenticateWithMicrosoft();
+      final userInfo = await _getMicrosoftUserInfo(client);
+
+      // Salva tokens
+      await _saveMicrosoftTokens(client);
+
+      return AuthResult.success(
+        accessToken: client.credentials.accessToken,
+        refreshToken: client.credentials.refreshToken,
+        userEmail: userInfo['mail'] ?? userInfo['userPrincipalName'],
+        userName: userInfo['displayName'],
       );
+    } catch (e) {
+      return AuthResult.failure('Erro na autenticação Microsoft: $e');
+    }
+  }
 
-      final authorizationUrl = grant.getAuthorizationUrl(
-        Uri.parse(_redirectUri),
-        scopes: _microsoftScopes.split(' '),
+  /// Autentica com Google usando OAuth2
+  static Future<Client> _authenticateWithGoogle() async {
+    final identifier = _config!.googleClientId;
+    final secret = _config!.googleClientSecret;
+    final redirectUrl = Uri.parse(_redirectUri);
+
+    final scopes = [
+      'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+    ];
+
+    final grant = AuthorizationCodeGrant(
+      identifier,
+      Uri.parse(_googleAuthUrl),
+      Uri.parse(_googleTokenUrl),
+      secret: secret,
+    );
+
+    final authUrl = grant.getAuthorizationUrl(redirectUrl, scopes: scopes);
+
+    // Lança o navegador para autenticação
+    await launchUrl(authUrl);
+
+    // Aqui você precisaria implementar um servidor HTTP local para capturar o callback
+    // Por simplicidade, vamos simular o fluxo
+    await Future.delayed(const Duration(seconds: 5));
+
+    // Em uma implementação real, você capturaria o código de autorização do callback
+    // Por enquanto, vamos simular
+    throw Exception(
+        'Implementação de servidor HTTP local necessária para capturar callback');
+  }
+
+  /// Autentica com Microsoft usando OAuth2
+  static Future<Client> _authenticateWithMicrosoft() async {
+    final identifier = _config!.microsoftClientId;
+    final redirectUrl = Uri.parse(_redirectUri);
+
+    final scopes = [
+      'https://graph.microsoft.com/Files.ReadWrite',
+      'https://graph.microsoft.com/User.Read',
+      'offline_access',
+    ];
+
+    final grant = AuthorizationCodeGrant(
+      identifier,
+      Uri.parse(_microsoftAuthUrl),
+      Uri.parse(_microsoftTokenUrl),
+    );
+
+    final authUrl = grant.getAuthorizationUrl(redirectUrl, scopes: scopes);
+
+    // Lança o navegador para autenticação
+    await launchUrl(authUrl);
+
+    // Aqui você precisaria implementar um servidor HTTP local para capturar o callback
+    // Por simplicidade, vamos simular o fluxo
+    await Future.delayed(const Duration(seconds: 5));
+
+    // Em uma implementação real, você capturaria o código de autorização do callback
+    // Por enquanto, vamos simular
+    throw Exception(
+        'Implementação de servidor HTTP local necessária para capturar callback');
+  }
+
+  /// Obtém informações do usuário Google
+  static Future<Map<String, dynamic>> _getGoogleUserInfo(Client client) async {
+    final response = await client.get(
+      Uri.parse('https://www.googleapis.com/oauth2/v1/userinfo?alt=json'),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    throw Exception('Erro ao obter informações do usuário Google');
+  }
+
+  /// Obtém informações do usuário Microsoft
+  static Future<Map<String, dynamic>> _getMicrosoftUserInfo(
+      Client client) async {
+    final response = await client.get(
+      Uri.parse('https://graph.microsoft.com/v1.0/me'),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    throw Exception('Erro ao obter informações do usuário Microsoft');
+  }
+
+  /// Salva tokens Google no armazenamento seguro
+  static Future<void> _saveGoogleTokens(Client client) async {
+    await _storage.write(
+      key: 'google_access_token',
+      value: client.credentials.accessToken,
+    );
+
+    if (client.credentials.refreshToken != null) {
+      await _storage.write(
+        key: 'google_refresh_token',
+        value: client.credentials.refreshToken!,
       );
-
-      // Abrir URL no navegador
-      if (await canLaunchUrl(authorizationUrl)) {
-        await launchUrl(authorizationUrl, mode: LaunchMode.externalApplication);
-      } else {
-        return AuthResult.error('Não foi possível abrir o navegador');
-      }
-
-      // Aguardar callback (em produção, implementar servidor local ou deep linking)
-      // Por enquanto, usar processo simulado
-      await Future.delayed(const Duration(seconds: 5));
-
-      // Simular recebimento do código de autorização
-      final mockAuthCode =
-          'mock_auth_code_${DateTime.now().millisecondsSinceEpoch}';
-
-      try {
-        final client = await grant.handleAuthorizationCode(mockAuthCode);
-        final credentials = client.credentials;
-
-        await _saveCredentials('microsoft', credentials);
-        return await _getMicrosoftUserInfo(credentials);
-      } catch (e) {
-        return AuthResult.error('Erro no processamento do código: $e');
-      }
-    } catch (e) {
-      return AuthResult.error('Erro na autenticação Microsoft: $e');
     }
-  }
-
-  /// Obter informações do usuário Google
-  static Future<AuthResult> _getGoogleUserInfo(
-      oauth2.Credentials credentials) async {
-    try {
-      final client = oauth2.Client(credentials);
-      final response = await client
-          .get(Uri.parse('https://www.googleapis.com/oauth2/v2/userinfo'));
-
-      if (response.statusCode == 200) {
-        final userInfo = json.decode(response.body);
-        return AuthResult.success(
-          accountEmail: userInfo['email'],
-          accountName: userInfo['name'],
-          accountData: {
-            ...userInfo,
-            'access_token': credentials.accessToken,
-            'refresh_token': credentials.refreshToken,
-            'expires_at': credentials.expiration?.toIso8601String(),
-          },
-        );
-      } else {
-        return AuthResult.error('Erro ao obter informações do usuário Google');
-      }
-    } catch (e) {
-      return AuthResult.error(
-          'Erro ao obter informações do usuário Google: $e');
-    }
-  }
-
-  /// Obter informações do usuário Microsoft
-  static Future<AuthResult> _getMicrosoftUserInfo(
-      oauth2.Credentials credentials) async {
-    try {
-      final client = oauth2.Client(credentials);
-      final response =
-          await client.get(Uri.parse('https://graph.microsoft.com/v1.0/me'));
-
-      if (response.statusCode == 200) {
-        final userInfo = json.decode(response.body);
-        return AuthResult.success(
-          accountEmail: userInfo['mail'] ?? userInfo['userPrincipalName'],
-          accountName: userInfo['displayName'],
-          accountData: {
-            ...userInfo,
-            'access_token': credentials.accessToken,
-            'refresh_token': credentials.refreshToken,
-            'expires_at': credentials.expiration?.toIso8601String(),
-          },
-        );
-      } else {
-        return AuthResult.error(
-            'Erro ao obter informações do usuário Microsoft');
-      }
-    } catch (e) {
-      return AuthResult.error(
-          'Erro ao obter informações do usuário Microsoft: $e');
-    }
-  }
-
-  /// Salvar credenciais no armazenamento seguro
-  static Future<void> _saveCredentials(
-      String provider, oauth2.Credentials credentials) async {
-    final credentialsData = {
-      'accessToken': credentials.accessToken,
-      'refreshToken': credentials.refreshToken,
-      'expiration': credentials.expiration?.toIso8601String(),
-      'scopes': credentials.scopes,
-    };
 
     await _storage.write(
-      key: '${provider}_credentials',
-      value: json.encode(credentialsData),
+      key: 'google_expires_at',
+      value: client.credentials.expiration?.toIso8601String(),
     );
   }
 
-  /// Obter credenciais salvas
-  static Future<oauth2.Credentials?> _getSavedCredentials(
-      String provider) async {
-    try {
-      final credentialsJson =
-          await _storage.read(key: '${provider}_credentials');
-      if (credentialsJson == null) return null;
+  /// Salva tokens Microsoft no armazenamento seguro
+  static Future<void> _saveMicrosoftTokens(Client client) async {
+    await _storage.write(
+      key: 'microsoft_access_token',
+      value: client.credentials.accessToken,
+    );
 
-      final credentialsData = json.decode(credentialsJson);
-
-      return oauth2.Credentials(
-        credentialsData['accessToken'],
-        refreshToken: credentialsData['refreshToken'],
-        expiration: credentialsData['expiration'] != null
-            ? DateTime.parse(credentialsData['expiration'])
-            : null,
-        scopes: List<String>.from(credentialsData['scopes'] ?? []),
+    if (client.credentials.refreshToken != null) {
+      await _storage.write(
+        key: 'microsoft_refresh_token',
+        value: client.credentials.refreshToken!,
       );
-    } catch (e) {
-      print('Erro ao obter credenciais salvas: $e');
-      return null;
     }
-  }
 
-  /// Limpar credenciais
-  static Future<void> _clearCredentials(String provider) async {
-    await _storage.delete(key: '${provider}_credentials');
-  }
-
-  /// Desconectar do Google
-  static Future<void> disconnectFromGoogle() async {
-    await _clearCredentials('google');
-  }
-
-  /// Desconectar do Microsoft
-  static Future<void> disconnectFromMicrosoft() async {
-    await _clearCredentials('microsoft');
-  }
-}
-
-/// Resultado da autenticação
-class AuthResult {
-  final bool success;
-  final String? error;
-  final String? accountEmail;
-  final String? accountName;
-  final Map<String, dynamic>? accountData;
-
-  AuthResult._({
-    required this.success,
-    this.error,
-    this.accountEmail,
-    this.accountName,
-    this.accountData,
-  });
-
-  factory AuthResult.success({
-    required String accountEmail,
-    String? accountName,
-    Map<String, dynamic>? accountData,
-  }) {
-    return AuthResult._(
-      success: true,
-      accountEmail: accountEmail,
-      accountName: accountName,
-      accountData: accountData,
+    await _storage.write(
+      key: 'microsoft_expires_at',
+      value: client.credentials.expiration?.toIso8601String(),
     );
   }
 
-  factory AuthResult.error(String error) {
-    return AuthResult._(
-      success: false,
-      error: error,
-    );
+  /// Obtém token Google salvo
+  static Future<String?> getGoogleAccessToken() async {
+    return await _storage.read(key: 'google_access_token');
+  }
+
+  /// Obtém token Microsoft salvo
+  static Future<String?> getMicrosoftAccessToken() async {
+    return await _storage.read(key: 'microsoft_access_token');
+  }
+
+  /// Verifica se o usuário está autenticado no Google
+  static Future<bool> isGoogleAuthenticated() async {
+    final token = await getGoogleAccessToken();
+    return token != null && token.isNotEmpty;
+  }
+
+  /// Verifica se o usuário está autenticado no Microsoft
+  static Future<bool> isMicrosoftAuthenticated() async {
+    final token = await getMicrosoftAccessToken();
+    return token != null && token.isNotEmpty;
+  }
+
+  /// Limpa tokens Google
+  static Future<void> clearGoogleTokens() async {
+    await _storage.delete(key: 'google_access_token');
+    await _storage.delete(key: 'google_refresh_token');
+    await _storage.delete(key: 'google_expires_at');
+  }
+
+  /// Limpa tokens Microsoft
+  static Future<void> clearMicrosoftTokens() async {
+    await _storage.delete(key: 'microsoft_access_token');
+    await _storage.delete(key: 'microsoft_refresh_token');
+    await _storage.delete(key: 'microsoft_expires_at');
+  }
+
+  /// Limpa todos os tokens
+  static Future<void> clearAllTokens() async {
+    await clearGoogleTokens();
+    await clearMicrosoftTokens();
   }
 }

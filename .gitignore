@@ -34,3 +34,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# OAuth2 credentials - NUNCA COMMITE ESTAS CREDENCIAIS!
+oauth_config.json
+.env
+*.env
+credentials.json
+client_secret.json

@@ -1,0 +1,12 @@
+{
+  "google_client_id": "559954382422-tssorad2ncrls4q3o5q6ovf4ru4rg5e4.apps.googleusercontent.com",
+  "google_client_secret": "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",
+  "microsoft_client_id": "341ab3c5-0a36-41dc-b27c-80c56fa37719",
+  
+  "_comments": {
+    "google_client_id": "Obtido em: https://console.cloud.google.com/ > APIs & Services > Credentials",
+    "google_client_secret": "Obtido junto com o Client ID (apenas para apps Desktop/Web)",
+    "microsoft_client_id": "Obtido em: https://portal.azure.com/ > App registrations > Overview",
+    "instructions": "1. Copie este arquivo para 'oauth_config.json', 2. Substitua os valores com suas credenciais reais, 3. Adicione oauth_config.json ao .gitignore para não commitar credenciais"
+  }
+} 
