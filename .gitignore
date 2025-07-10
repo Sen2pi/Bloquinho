@@ -6,6 +6,11 @@
 .pnp.js
 .yarn/install-state.gz
 
+/.dart
+/.dart*
+/.flutter-plugins-dependencies
+/.flutter-plugins
+
 # testing
 /coverage
 
