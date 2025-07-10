@@ -8,6 +8,7 @@
 
 /.dart
 /.dart_tool
+/.dart_tool/**
 /.idea
 /.flutter-plugins-dependencies
 /.flutter-plugins
