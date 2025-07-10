@@ -12,6 +12,9 @@ import '../../../core/models/workspace.dart';
 import '../../../core/services/oauth2_service.dart';
 import '../../backup/screens/backup_screen.dart';
 import '../../profile/widgets/profile_avatar.dart';
+import '../../database/screens/database_list_screen.dart';
+import '../../database/widgets/database_section_widget.dart';
+import '../../../shared/providers/database_provider.dart';
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
   const WorkspaceScreen({super.key});
@@ -85,10 +88,20 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               padding: const EdgeInsets.all(8),
               children: [
                 // Seções principais
-                ...workspaceSections.map((section) => _buildSectionItem(
-                      section: section,
+                ...workspaceSections.map((section) {
+                  if (section.id.contains('database')) {
+                    return DatabaseSectionWidget(
                       isDarkMode: isDarkMode,
-                    )),
+                      isSelected: _selectedSectionId == section.id,
+                      isExpanded: false,
+                      onTap: () => _handleSectionTap(section.id),
+                    );
+                  }
+                  return _buildSectionItem(
+                    section: section,
+                    isDarkMode: isDarkMode,
+                  );
+                }),
 
                 const SizedBox(height: 24),
 
@@ -536,7 +549,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         // Implementar navegação para agenda
         break;
       case 'database':
-        // Implementar navegação para base de dados
+        // Navegar para base de dados
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const DatabaseListScreen(),
+          ),
+        );
         break;
       case 'trash':
         // Implementar navegação para lixeira

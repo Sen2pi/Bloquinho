@@ -408,6 +408,12 @@ class LocalStorageService {
     }
   }
 
+  /// Obter caminho base dos dados
+  Future<String?> getBasePath() async {
+    await _ensureInitialized();
+    return _basePath;
+  }
+
   /// Fechar serviço e limpar recursos
   Future<void> dispose() async {
     _isInitialized = false;
