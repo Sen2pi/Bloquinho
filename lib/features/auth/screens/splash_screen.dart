@@ -21,18 +21,51 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    // Simular carregamento inicial
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      debugPrint('🚀 Iniciando aplicação...');
 
-    // Verificar se há usuário criado
-    final hasProfile = ref.read(hasProfileProvider);
+      // Aguardar um tempo mínimo para mostrar splash
+      await Future.delayed(const Duration(seconds: 1));
 
-    if (mounted) {
-      if (hasProfile) {
-        // Usuário já existe, ir para auth
-        context.goNamed('auth');
-      } else {
-        // Primeiro acesso, mostrar onboarding
+      // Carregar perfil salvo se existir
+      debugPrint('📱 Carregando perfil salvo...');
+      try {
+        await ref.read(userProfileProvider.notifier).loadProfile();
+      } catch (e) {
+        debugPrint('⚠️ Erro ao carregar perfil: $e');
+        // Continuar mesmo com erro - pode não existir perfil
+      }
+
+      // Aguardar mais um pouco para animações
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Verificar se há perfil criado
+      final hasProfile = ref.read(hasProfileProvider);
+      final profile = ref.read(currentProfileProvider);
+
+      debugPrint('👤 Perfil encontrado: $hasProfile');
+      if (profile != null) {
+        debugPrint('📄 Nome do perfil: ${profile.name}');
+        debugPrint('📧 Email do perfil: ${profile.email}');
+      }
+
+      if (mounted) {
+        if (hasProfile && profile != null && profile.name.isNotEmpty) {
+          // Usuário já existe com dados válidos, ir para workspace
+          debugPrint('✅ Navegando para workspace');
+          context.goNamed('workspace');
+        } else {
+          // Primeiro acesso ou perfil incompleto, mostrar onboarding
+          debugPrint('🎯 Navegando para onboarding');
+          context.goNamed('onboarding');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Erro na inicialização: $e');
+
+      // Em caso de erro, mostrar onboarding como fallback
+      if (mounted) {
+        debugPrint('🔄 Fallback para onboarding');
         context.goNamed('onboarding');
       }
     }
@@ -139,6 +172,32 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 .animate(delay: 600.ms)
                 .fadeIn(duration: 600.ms)
                 .scale(begin: const Offset(0.5, 0.5)),
+
+            const SizedBox(height: 24),
+
+            // Status de carregamento
+            Consumer(
+              builder: (context, ref, child) {
+                final isLoading = ref.watch(isProfileLoadingProvider);
+                final hasProfile = ref.watch(hasProfileProvider);
+
+                String statusText = 'Inicializando...';
+                if (isLoading) {
+                  statusText = 'Carregando dados salvos...';
+                } else if (hasProfile) {
+                  statusText = 'Perfil encontrado!';
+                } else {
+                  statusText = 'Primeiro acesso detectado';
+                }
+
+                return Text(
+                  statusText,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[500],
+                      ),
+                ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0);
+              },
+            ),
           ],
         ),
       ),

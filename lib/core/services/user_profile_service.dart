@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
@@ -111,6 +112,29 @@ class UserProfileService {
     return await saveProfile(profile);
   }
 
+  /// Criar perfil com avatar a partir do OAuth2
+  Future<UserProfile> createProfileFromOAuth({
+    required String name,
+    required String email,
+    String? avatarPath,
+    String? avatarUrl,
+  }) async {
+    await _ensureInitialized();
+
+    final profile = UserProfile.create(name: name, email: email);
+
+    // Adicionar avatar se disponível
+    if (avatarPath != null || avatarUrl != null) {
+      final updatedProfile = profile.copyWith(
+        avatarPath: avatarPath,
+        avatarUrl: avatarUrl,
+      );
+      return await saveProfile(updatedProfile);
+    }
+
+    return await saveProfile(profile);
+  }
+
   /// Atualizar campos específicos do perfil
   Future<UserProfile> updateProfile({
     String? name,
@@ -150,6 +174,14 @@ class UserProfileService {
 
   /// Upload de avatar a partir da galeria
   Future<UserProfile> uploadAvatarFromGallery() async {
+    // No web, não suporta upload de avatar ainda
+    if (kIsWeb) {
+      throw UserProfileException(
+        'Upload de avatar não suportado na versão web',
+        code: 'WEB_NOT_SUPPORTED',
+      );
+    }
+
     final currentProfile = await getCurrentProfile();
     if (currentProfile == null) {
       throw UserProfileException(
@@ -179,6 +211,14 @@ class UserProfileService {
 
   /// Upload de avatar a partir da câmera
   Future<UserProfile> uploadAvatarFromCamera() async {
+    // No web, não suporta upload de avatar ainda
+    if (kIsWeb) {
+      throw UserProfileException(
+        'Upload de avatar não suportado na versão web',
+        code: 'WEB_NOT_SUPPORTED',
+      );
+    }
+
     final currentProfile = await getCurrentProfile();
     if (currentProfile == null) {
       throw UserProfileException(
@@ -235,11 +275,21 @@ class UserProfileService {
 
   /// Obter arquivo de avatar se existir
   Future<File?> getAvatarFile() async {
+    // No web, avatares são tratados de forma diferente
+    if (kIsWeb) {
+      return null;
+    }
+
     final profile = await getCurrentProfile();
     if (profile?.avatarPath == null) return null;
 
-    final file = File(profile!.avatarPath!);
-    return await file.exists() ? file : null;
+    try {
+      final file = File(profile!.avatarPath!);
+      return await file.exists() ? file : null;
+    } catch (e) {
+      debugPrint('⚠️ Erro ao verificar arquivo de avatar: $e');
+      return null;
+    }
   }
 
   /// Deletar perfil atual
@@ -346,14 +396,28 @@ class UserProfileService {
 
   /// Obter diretório para avatars
   Future<Directory> _getAvatarsDirectory() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final avatarsDir = Directory(path.join(appDir.path, _avatarsFolder));
-
-    if (!await avatarsDir.exists()) {
-      await avatarsDir.create(recursive: true);
+    if (kIsWeb) {
+      // No web, retornar diretório temporário (mas não é usado realmente)
+      return Directory.systemTemp;
     }
 
-    return avatarsDir;
+    try {
+      // Em plataformas nativas, usar diretório de documentos
+      final appDir = await getApplicationDocumentsDirectory();
+      final avatarsDir = Directory(path.join(appDir.path, _avatarsFolder));
+
+      if (!await avatarsDir.exists()) {
+        await avatarsDir.create(recursive: true);
+      }
+
+      return avatarsDir;
+    } catch (e) {
+      debugPrint('⚠️ Erro ao obter diretório de avatars: $e');
+      throw UserProfileException(
+        'Erro ao criar diretório de avatars',
+        originalError: e,
+      );
+    }
   }
 
   /// Deletar arquivo de avatar

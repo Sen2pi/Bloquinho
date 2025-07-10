@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -44,11 +45,7 @@ class ProfileAvatar extends ConsumerWidget {
               ),
             ),
             child: ClipOval(
-              child: avatarFile.when(
-                data: (file) => _buildAvatarContent(context, file),
-                loading: () => _buildLoadingAvatar(context),
-                error: (error, stackTrace) => _buildFallbackAvatar(context),
-              ),
+              child: _buildAvatarWidget(context, ref),
             ),
           ),
 
@@ -95,6 +92,37 @@ class ProfileAvatar extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildAvatarWidget(BuildContext context, WidgetRef ref) {
+    // Se tem URL, usar imagem da rede (útil para web e OAuth2)
+    if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
+      return Image.network(
+        profile.avatarUrl!,
+        fit: BoxFit.cover,
+        width: size,
+        height: size,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return _buildLoadingAvatar(context);
+        },
+        errorBuilder: (context, error, stackTrace) =>
+            _buildFallbackAvatar(context),
+      );
+    }
+
+    // Se tem arquivo local (mobile), tentar carregar
+    if (profile.avatarPath != null && !kIsWeb) {
+      final avatarFile = ref.watch(avatarFileProvider);
+      return avatarFile.when(
+        data: (file) => _buildAvatarContent(context, file),
+        loading: () => _buildLoadingAvatar(context),
+        error: (error, stackTrace) => _buildFallbackAvatar(context),
+      );
+    }
+
+    // Fallback para iniciais
+    return _buildFallbackAvatar(context);
   }
 
   Widget _buildAvatarContent(BuildContext context, File? file) {

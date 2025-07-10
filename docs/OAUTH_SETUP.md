@@ -51,8 +51,17 @@ Este guia mostra como configurar as credenciais OAuth2 reais para permitir que o
 
 4. **Authorized redirect URIs** (para Web/Desktop):
    ```
-   http://localhost:8080/oauth/callback
+   http://localhost:*/oauth/callback
    com.bloquinho.app://oauth/callback
+   ```
+   
+   **Nota**: Use `http://localhost:*/oauth/callback` ou adicione múltiplas portas:
+   ```
+   http://localhost:8080/oauth/callback
+   http://localhost:8081/oauth/callback
+   http://localhost:8082/oauth/callback
+   http://localhost:3000/oauth/callback
+   http://localhost:3001/oauth/callback
    ```
 
 5. Clique **"CREATE"**
@@ -93,7 +102,7 @@ Este guia mostra como configurar as credenciais OAuth2 reais para permitir que o
 5. Clique **"Add permissions"**
 
 ### Passo 3: Obter Client ID
-
+ ID : 341ab3c5-0a36-41dc-b27c-80c56fa37719
 1. Vá em **"Overview"**
 2. **Copie o "Application (client) ID"**
 
@@ -105,8 +114,14 @@ Este guia mostra como configurar as credenciais OAuth2 reais para permitir que o
 3. Adicione URIs de redirecionamento:
    ```
    http://localhost:8080/oauth/callback
+   http://localhost:8081/oauth/callback
+   http://localhost:8082/oauth/callback
+   http://localhost:3000/oauth/callback
+   http://localhost:3001/oauth/callback
    com.bloquinho.app://oauth/callback
    ```
+   
+   **Nota**: Adicione múltiplas portas pois o sistema usa portas dinâmicas disponíveis.
 
 ## 🔧 Configurar no Código
 

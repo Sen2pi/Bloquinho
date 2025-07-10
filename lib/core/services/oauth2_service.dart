@@ -1,9 +1,13 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:oauth2/oauth2.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
+import 'avatar_cache_service.dart';
 
 /// Resultado da autenticação OAuth2
 class AuthResult {
@@ -12,6 +16,8 @@ class AuthResult {
   final String? refreshToken;
   final String? userEmail;
   final String? userName;
+  final String? avatarPath; // Para arquivos locais (mobile)
+  final String? avatarUrl; // Para URLs (web/OAuth2)
   final String? error;
 
   const AuthResult({
@@ -20,6 +26,8 @@ class AuthResult {
     this.refreshToken,
     this.userEmail,
     this.userName,
+    this.avatarPath,
+    this.avatarUrl,
     this.error,
   });
 
@@ -28,6 +36,8 @@ class AuthResult {
     required this.refreshToken,
     this.userEmail,
     this.userName,
+    this.avatarPath,
+    this.avatarUrl,
   })  : success = true,
         error = null;
 
@@ -36,7 +46,9 @@ class AuthResult {
         accessToken = null,
         refreshToken = null,
         userEmail = null,
-        userName = null;
+        userName = null,
+        avatarPath = null,
+        avatarUrl = null;
 }
 
 /// Configuração OAuth2
@@ -72,10 +84,19 @@ class OAuth2Config {
 
   /// Configuração padrão com placeholders
   static const OAuth2Config defaultConfig = OAuth2Config(
-    googleClientId: 'YOUR_GOOGLE_CLIENT_ID',
-    googleClientSecret: 'YOUR_GOOGLE_CLIENT_SECRET',
-    microsoftClientId: 'YOUR_MICROSOFT_CLIENT_ID',
+    googleClientId:
+        '559954382422-tssorad2ncrls4q3o5q6ovf4ru4rg5e4.apps.googleusercontent.com ',
+    googleClientSecret: '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',
+    microsoftClientId: '341ab3c5-0a36-41dc-b27c-80c56fa37719',
   );
+}
+
+/// Classe auxiliar para servidor de callback
+class _CallbackServer {
+  final HttpServer server;
+  final int port;
+
+  _CallbackServer(this.server, this.port);
 }
 
 /// Serviço OAuth2 para autenticação com Google Drive e OneDrive
@@ -101,8 +122,8 @@ class OAuth2Service {
   static const String _microsoftTokenUrl =
       'https://login.microsoftonline.com/common/oauth2/v2.0/token';
 
-  // Redirect URI para desenvolvimento
-  static const String _redirectUri = 'http://localhost:8080/oauth/callback';
+  // Redirect URI dinâmico para desenvolvimento
+  static String _redirectUri = 'http://localhost:8080/oauth/callback';
 
   /// Verifica se as credenciais estão configuradas
   static bool get isConfigured {
@@ -129,11 +150,33 @@ class OAuth2Service {
       // Salva tokens
       await _saveGoogleTokens(client);
 
+      // Processar avatar conforme plataforma
+      String? avatarPath;
+      String? avatarUrl;
+
+      if (userInfo['picture'] != null) {
+        if (kIsWeb) {
+          // No web, salvar apenas a URL
+          avatarUrl = userInfo['picture'];
+          debugPrint('✅ Avatar URL Google salva: $avatarUrl');
+        } else {
+          // No mobile, baixar e cachear arquivo
+          debugPrint('🔄 Baixando avatar Google: ${userInfo['picture']}');
+          avatarPath = await AvatarCacheService.downloadAndCacheAvatar(
+            url: userInfo['picture'],
+            userId: userInfo['email'] ?? userInfo['id'],
+            fileName: 'google_avatar_${userInfo['id']}.jpg',
+          );
+        }
+      }
+
       return AuthResult.success(
         accessToken: client.credentials.accessToken,
         refreshToken: client.credentials.refreshToken,
         userEmail: userInfo['email'],
         userName: userInfo['name'],
+        avatarPath: avatarPath,
+        avatarUrl: avatarUrl,
       );
     } catch (e) {
       return AuthResult.failure('Erro na autenticação Google: $e');
@@ -158,21 +201,72 @@ class OAuth2Service {
       // Salva tokens
       await _saveMicrosoftTokens(client);
 
+      // Processar avatar conforme plataforma
+      String? avatarPath;
+      String? avatarUrl;
+
+      try {
+        // Obter foto de perfil do Microsoft Graph
+        final photoResponse = await client.get(
+          Uri.parse('https://graph.microsoft.com/v1.0/me/photo/\$value'),
+        );
+
+        if (photoResponse.statusCode == 200) {
+          if (kIsWeb) {
+            // No web, converter bytes para data URL
+            final bytes = photoResponse.bodyBytes;
+            final base64 = base64Encode(bytes);
+            avatarUrl = 'data:image/jpeg;base64,$base64';
+            debugPrint('✅ Avatar Microsoft convertido para data URL');
+          } else {
+            // No mobile, salvar arquivo localmente
+            debugPrint('🔄 Baixando avatar Microsoft para: ${userInfo['id']}');
+
+            final cacheDir =
+                await AvatarCacheService.getAvatarsCacheDirectory();
+            final fileName = 'microsoft_avatar_${userInfo['id']}.jpg';
+            final filePath = '${cacheDir.path}/$fileName';
+            final file = File(filePath);
+
+            await file.writeAsBytes(photoResponse.bodyBytes);
+            avatarPath = filePath;
+
+            debugPrint('✅ Avatar Microsoft salvo: $filePath');
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Erro ao processar avatar Microsoft: $e');
+      }
+
       return AuthResult.success(
         accessToken: client.credentials.accessToken,
         refreshToken: client.credentials.refreshToken,
         userEmail: userInfo['mail'] ?? userInfo['userPrincipalName'],
         userName: userInfo['displayName'],
+        avatarPath: avatarPath,
+        avatarUrl: avatarUrl,
       );
     } catch (e) {
       return AuthResult.failure('Erro na autenticação Microsoft: $e');
     }
   }
 
+  /// Cria servidor HTTP local para capturar callback OAuth2
+  static Future<_CallbackServer> _createCallbackServer() async {
+    final server = await HttpServer.bind('localhost', 0); // Porta automática
+    final port = server.port;
+    _redirectUri = 'http://localhost:$port/oauth/callback';
+
+    return _CallbackServer(server, port);
+  }
+
   /// Autentica com Google usando OAuth2
   static Future<Client> _authenticateWithGoogle() async {
     final identifier = _config!.googleClientId;
     final secret = _config!.googleClientSecret;
+
+    // Criar servidor HTTP local
+    final callbackServer = await _createCallbackServer();
     final redirectUrl = Uri.parse(_redirectUri);
 
     final scopes = [
@@ -190,22 +284,68 @@ class OAuth2Service {
 
     final authUrl = grant.getAuthorizationUrl(redirectUrl, scopes: scopes);
 
-    // Lança o navegador para autenticação
-    await launchUrl(authUrl);
+    // Configurar listener para callback
+    final completer = Completer<String>();
 
-    // Aqui você precisaria implementar um servidor HTTP local para capturar o callback
-    // Por simplicidade, vamos simular o fluxo
-    await Future.delayed(const Duration(seconds: 5));
+    callbackServer.server.listen((request) {
+      final uri = request.uri;
 
-    // Em uma implementação real, você capturaria o código de autorização do callback
-    // Por enquanto, vamos simular
-    throw Exception(
-        'Implementação de servidor HTTP local necessária para capturar callback');
+      if (uri.path == '/oauth/callback') {
+        final code = uri.queryParameters['code'];
+        final error = uri.queryParameters['error'];
+
+        // Responder ao navegador
+        request.response
+          ..statusCode = 200
+          ..headers.contentType = ContentType.html
+          ..write('''
+            <html>
+              <body>
+                <h1>${error != null ? 'Erro na autenticação' : 'Autenticação bem-sucedida'}</h1>
+                <p>${error != null ? 'Erro: $error' : 'Pode fechar esta janela.'}</p>
+                <script>window.close();</script>
+              </body>
+            </html>
+          ''')
+          ..close();
+
+        if (error != null) {
+          completer.completeError(Exception('Erro OAuth2: $error'));
+        } else if (code != null) {
+          completer.complete(code);
+        } else {
+          completer
+              .completeError(Exception('Código de autorização não encontrado'));
+        }
+      }
+    });
+
+    try {
+      // Lançar navegador
+      await launchUrl(authUrl, mode: LaunchMode.externalApplication);
+
+      // Aguardar callback (timeout de 5 minutos)
+      final code = await completer.future.timeout(
+        const Duration(minutes: 5),
+        onTimeout: () => throw Exception('Timeout na autenticação'),
+      );
+
+      // Trocar código por token
+      final client = await grant.handleAuthorizationCode(code);
+
+      return client;
+    } finally {
+      // Fechar servidor
+      await callbackServer.server.close();
+    }
   }
 
   /// Autentica com Microsoft usando OAuth2
   static Future<Client> _authenticateWithMicrosoft() async {
     final identifier = _config!.microsoftClientId;
+
+    // Criar servidor HTTP local
+    final callbackServer = await _createCallbackServer();
     final redirectUrl = Uri.parse(_redirectUri);
 
     final scopes = [
@@ -222,17 +362,60 @@ class OAuth2Service {
 
     final authUrl = grant.getAuthorizationUrl(redirectUrl, scopes: scopes);
 
-    // Lança o navegador para autenticação
-    await launchUrl(authUrl);
+    // Configurar listener para callback
+    final completer = Completer<String>();
 
-    // Aqui você precisaria implementar um servidor HTTP local para capturar o callback
-    // Por simplicidade, vamos simular o fluxo
-    await Future.delayed(const Duration(seconds: 5));
+    callbackServer.server.listen((request) {
+      final uri = request.uri;
 
-    // Em uma implementação real, você capturaria o código de autorização do callback
-    // Por enquanto, vamos simular
-    throw Exception(
-        'Implementação de servidor HTTP local necessária para capturar callback');
+      if (uri.path == '/oauth/callback') {
+        final code = uri.queryParameters['code'];
+        final error = uri.queryParameters['error'];
+
+        // Responder ao navegador
+        request.response
+          ..statusCode = 200
+          ..headers.contentType = ContentType.html
+          ..write('''
+            <html>
+              <body>
+                <h1>${error != null ? 'Erro na autenticação' : 'Autenticação bem-sucedida'}</h1>
+                <p>${error != null ? 'Erro: $error' : 'Pode fechar esta janela.'}</p>
+                <script>window.close();</script>
+              </body>
+            </html>
+          ''')
+          ..close();
+
+        if (error != null) {
+          completer.completeError(Exception('Erro OAuth2: $error'));
+        } else if (code != null) {
+          completer.complete(code);
+        } else {
+          completer
+              .completeError(Exception('Código de autorização não encontrado'));
+        }
+      }
+    });
+
+    try {
+      // Lançar navegador
+      await launchUrl(authUrl, mode: LaunchMode.externalApplication);
+
+      // Aguardar callback (timeout de 5 minutos)
+      final code = await completer.future.timeout(
+        const Duration(minutes: 5),
+        onTimeout: () => throw Exception('Timeout na autenticação'),
+      );
+
+      // Trocar código por token
+      final client = await grant.handleAuthorizationCode(code);
+
+      return client;
+    } finally {
+      // Fechar servidor
+      await callbackServer.server.close();
+    }
   }
 
   /// Obtém informações do usuário Google

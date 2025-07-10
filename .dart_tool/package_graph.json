@@ -7,6 +7,7 @@
       "name": "bloquinho",
       "version": "1.0.0+1",
       "dependencies": [
+        "crypto",
         "cupertino_icons",
         "dio",
         "equatable",
@@ -210,6 +211,13 @@
         "crypto",
         "stream_channel",
         "web"
+      ]
+    },
+    {
+      "name": "crypto",
+      "version": "3.0.6",
+      "dependencies": [
+        "typed_data"
       ]
     },
     {
@@ -843,13 +851,6 @@
       ]
     },
     {
-      "name": "crypto",
-      "version": "3.0.6",
-      "dependencies": [
-        "typed_data"
-      ]
-    },
-    {
       "name": "build_runner_core",
       "version": "8.0.0",
       "dependencies": [
@@ -1055,6 +1056,13 @@
       "name": "web",
       "version": "0.5.1",
       "dependencies": []
+    },
+    {
+      "name": "typed_data",
+      "version": "1.4.0",
+      "dependencies": [
+        "collection"
+      ]
     },
     {
       "name": "fixnum",
@@ -1536,13 +1544,6 @@
       "dependencies": [
         "meta",
         "path"
-      ]
-    },
-    {
-      "name": "typed_data",
-      "version": "1.4.0",
-      "dependencies": [
-        "collection"
       ]
     },
     {

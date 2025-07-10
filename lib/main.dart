@@ -7,8 +7,10 @@ import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/models/app_language.dart';
+import 'core/services/user_profile_service.dart';
 import 'shared/providers/theme_provider.dart';
 import 'shared/providers/language_provider.dart';
+import 'shared/providers/user_profile_provider.dart';
 import 'features/auth/screens/splash_screen.dart';
 import 'features/auth/screens/onboarding_screen.dart';
 import 'features/workspace/screens/workspace_screen.dart';
@@ -20,8 +22,17 @@ import 'features/profile/screens/storage_settings_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializar Hive para armazenamento local
-  await Hive.initFlutter();
+  try {
+    // Inicializar Hive para armazenamento local
+    await Hive.initFlutter();
+
+    // Inicializar serviços críticos
+    await _initializeServices();
+
+    debugPrint('✅ Serviços inicializados com sucesso');
+  } catch (e) {
+    debugPrint('❌ Erro ao inicializar serviços: $e');
+  }
 
   // Configurar orientação da tela
   await SystemChrome.setPreferredOrientations([
@@ -36,6 +47,19 @@ void main() async {
       child: BloquinhoApp(),
     ),
   );
+}
+
+/// Inicializar serviços essenciais da aplicação
+Future<void> _initializeServices() async {
+  try {
+    // Inicializar UserProfileService
+    final userProfileService = UserProfileService();
+    await userProfileService.initialize();
+
+    debugPrint('✅ UserProfileService inicializado');
+  } catch (e) {
+    debugPrint('⚠️ Erro ao inicializar UserProfileService: $e');
+  }
 }
 
 class BloquinhoApp extends ConsumerWidget {

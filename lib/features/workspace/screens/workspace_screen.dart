@@ -95,13 +95,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   ),
                   const SizedBox(height: 8),
                 ],
-                _buildSidebarItem(
-                  icon: PhosphorIcons.user(),
-                  label: 'Perfil',
-                  sectionId: 'profile',
-                  isDarkMode: isDarkMode,
-                  onTap: () => context.pushNamed('profile'),
-                ),
+
                 _buildSidebarItem(
                   icon: PhosphorIcons.downloadSimple(),
                   label: 'Backup',
@@ -376,22 +370,31 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               child: Row(
                 children: [
                   // Avatar do usuário
-                  if (currentProfile != null)
-                    ProfileAvatar(
-                      profile: currentProfile,
-                      size: 32,
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
                       onTap: () => context.pushNamed('profile'),
-                    )
-                  else
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: AppColors.primary,
-                      child: const Icon(
-                        Icons.person,
-                        color: Colors.white,
-                        size: 18,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: currentProfile != null
+                            ? ProfileAvatar(
+                                profile: currentProfile,
+                                size: 32,
+                                showLoadingIndicator: false,
+                              )
+                            : CircleAvatar(
+                                radius: 16,
+                                backgroundColor: AppColors.primary,
+                                child: const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
                       ),
                     ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -459,22 +462,31 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             ),
           ] else ...[
             // Avatar compacto quando collapsed
-            if (currentProfile != null)
-              ProfileAvatar(
-                profile: currentProfile,
-                size: 32,
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
                 onTap: () => context.pushNamed('profile'),
-              )
-            else
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.primary,
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 18,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: currentProfile != null
+                      ? ProfileAvatar(
+                          profile: currentProfile,
+                          size: 32,
+                          showLoadingIndicator: false,
+                        )
+                      : CircleAvatar(
+                          radius: 16,
+                          backgroundColor: AppColors.primary,
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
                 ),
               ),
+            ),
           ],
 
           // Botão de tema

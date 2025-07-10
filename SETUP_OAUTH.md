@@ -26,7 +26,11 @@ cp oauth_config.json.example oauth_config.json
 2. Vá em `App registrations` → `New registration`
 3. Nome: `Bloquinho`
 4. Tipo: `Personal Microsoft accounts`
-5. Redirect URI: `http://localhost:8080/oauth/callback`
+5. Redirect URIs: Adicione múltiplas portas:
+   - `http://localhost:8080/oauth/callback`
+   - `http://localhost:8081/oauth/callback`
+   - `http://localhost:8082/oauth/callback`
+   - `http://localhost:3000/oauth/callback`
 6. Adicione permissões: `Files.ReadWrite`, `User.Read`, `offline_access`
 7. Copie o `Application (client) ID`
 
@@ -63,7 +67,11 @@ flutter run
 - ✅ Configure o OAuth consent screen
 
 **Erro: redirect_uri_mismatch**
-- ✅ Adicione `http://localhost:8080/oauth/callback` aos redirect URIs
+- ✅ Adicione múltiplas portas aos redirect URIs:
+  - `http://localhost:8080/oauth/callback`
+  - `http://localhost:8081/oauth/callback`
+  - `http://localhost:8082/oauth/callback`
+  - `http://localhost:3000/oauth/callback`
 
 ### OneDrive
 

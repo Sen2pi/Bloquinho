@@ -9,14 +9,15 @@ class UserProfile {
   final String? bio;
   final String? phone;
   final String? location;
-  final String? avatarPath;
   final DateTime? birthDate;
   final String? website;
   final String? profession;
   final List<String> interests;
+  final String? avatarPath; // Para arquivos locais (mobile)
+  final String? avatarUrl; // Para URLs (web/OAuth2)
+  final bool isPublic;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final bool isPublic;
   final StorageSettings? storageSettings;
 
   const UserProfile({
@@ -26,14 +27,15 @@ class UserProfile {
     this.bio,
     this.phone,
     this.location,
-    this.avatarPath,
     this.birthDate,
     this.website,
     this.profession,
     this.interests = const [],
+    this.avatarPath,
+    this.avatarUrl,
+    this.isPublic = true,
     required this.createdAt,
     required this.updatedAt,
-    this.isPublic = true,
     this.storageSettings,
   });
 
@@ -53,20 +55,21 @@ class UserProfile {
     );
   }
 
-  /// Criar uma cópia do perfil com campos modificados
+  /// Copiar com novos valores
   UserProfile copyWith({
     String? name,
     String? email,
     String? bio,
     String? phone,
     String? location,
-    String? avatarPath,
     DateTime? birthDate,
     String? website,
     String? profession,
     List<String>? interests,
-    DateTime? updatedAt,
+    String? avatarPath,
+    String? avatarUrl,
     bool? isPublic,
+    DateTime? updatedAt,
     StorageSettings? storageSettings,
   }) {
     return UserProfile(
@@ -76,19 +79,20 @@ class UserProfile {
       bio: bio ?? this.bio,
       phone: phone ?? this.phone,
       location: location ?? this.location,
-      avatarPath: avatarPath ?? this.avatarPath,
       birthDate: birthDate ?? this.birthDate,
       website: website ?? this.website,
       profession: profession ?? this.profession,
       interests: interests ?? this.interests,
+      avatarPath: avatarPath ?? this.avatarPath,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      isPublic: isPublic ?? this.isPublic,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
-      isPublic: isPublic ?? this.isPublic,
       storageSettings: storageSettings ?? this.storageSettings,
     );
   }
 
-  /// Converter para Map para serialização JSON
+  /// Converter para JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -97,19 +101,20 @@ class UserProfile {
       'bio': bio,
       'phone': phone,
       'location': location,
-      'avatarPath': avatarPath,
       'birthDate': birthDate?.toIso8601String(),
       'website': website,
       'profession': profession,
       'interests': interests,
+      'avatarPath': avatarPath,
+      'avatarUrl': avatarUrl,
+      'isPublic': isPublic,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
-      'isPublic': isPublic,
       'storageSettings': storageSettings?.toJson(),
     };
   }
 
-  /// Criar instância a partir de Map JSON
+  /// Criar a partir de JSON
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
       id: json['id'] as String,
@@ -118,16 +123,17 @@ class UserProfile {
       bio: json['bio'] as String?,
       phone: json['phone'] as String?,
       location: json['location'] as String?,
-      avatarPath: json['avatarPath'] as String?,
       birthDate: json['birthDate'] != null
           ? DateTime.parse(json['birthDate'] as String)
           : null,
       website: json['website'] as String?,
       profession: json['profession'] as String?,
-      interests: List<String>.from(json['interests'] as List? ?? []),
+      interests: List<String>.from(json['interests'] ?? []),
+      avatarPath: json['avatarPath'] as String?,
+      avatarUrl: json['avatarUrl'] as String?,
+      isPublic: json['isPublic'] as bool? ?? true,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
-      isPublic: json['isPublic'] as bool? ?? true,
       storageSettings: json['storageSettings'] != null
           ? StorageSettings.fromJson(
               json['storageSettings'] as Map<String, dynamic>)
@@ -156,7 +162,7 @@ class UserProfile {
     return isValid &&
         bio != null &&
         bio!.trim().isNotEmpty &&
-        avatarPath != null;
+        (avatarPath != null || avatarUrl != null);
   }
 
   /// Obter iniciais do nome para avatar placeholder
@@ -180,7 +186,7 @@ class UserProfile {
   }
 
   /// Verificar se tem avatar personalizado
-  bool get hasCustomAvatar => avatarPath != null && avatarPath!.isNotEmpty;
+  bool get hasCustomAvatar => avatarPath != null || avatarUrl != null;
 
   /// Verificar se tem configurações de armazenamento
   bool get hasStorageSettings => storageSettings != null;

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/user_profile.dart';
@@ -75,6 +76,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         isLoading: false,
         error: e.toString(),
       );
+      debugPrint('⚠️ Erro ao carregar perfil: $e');
     }
   }
 
@@ -82,6 +84,23 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
   Future<void> refresh() async {
     _profileService.clearCache();
     await _loadProfile();
+  }
+
+  /// Carregar perfil existente (para inicialização)
+  Future<void> loadProfile() async {
+    if (state.isLoading) return;
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      await _loadProfile();
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      debugPrint('⚠️ Erro ao carregar perfil: $e');
+    }
   }
 
   /// Criar novo perfil
@@ -97,6 +116,40 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
       final profile = await _profileService.createProfile(
         name: name,
         email: email,
+      );
+      final stats = await _profileService.getProfileStats();
+
+      state = state.copyWith(
+        profile: profile,
+        stats: stats,
+        isUpdating: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isUpdating: false,
+        error: e.toString(),
+      );
+      rethrow;
+    }
+  }
+
+  /// Criar perfil a partir do OAuth2
+  Future<void> createProfileFromOAuth({
+    required String name,
+    required String email,
+    String? avatarPath,
+    String? avatarUrl,
+  }) async {
+    if (state.isUpdating) return;
+
+    state = state.copyWith(isUpdating: true, error: null);
+
+    try {
+      final profile = await _profileService.createProfileFromOAuth(
+        name: name,
+        email: email,
+        avatarPath: avatarPath,
+        avatarUrl: avatarUrl,
       );
       final stats = await _profileService.getProfileStats();
 
