@@ -34,6 +34,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   bool _isSidebarExpanded = true;
   Section _selectedSection = Section.bloquinho;
   bool _isBloquinhoExpanded = true;
+  final GlobalKey<BlocoEditorScreenState> _editorKey =
+      GlobalKey<BlocoEditorScreenState>();
 
   @override
   void initState() {
@@ -144,9 +146,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                               onPageSelected: (pageId) {
                                 setState(() {
                                   _selectedSection = Section.bloquinho;
-                                  // Aqui você pode passar o pageId para o editor principal
-                                  // Exemplo: _editorKey.currentState?.navigateToPage(pageId);
                                 });
+                                // Navega para a página correta no editor
+                                _editorKey.currentState?.setPage(pageId);
                               },
                             ),
                           ),
@@ -714,7 +716,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       case Section.database:
         return const DatabaseListScreen();
       case Section.bloquinho:
-        return const BlocoEditorScreen();
+        return BlocoEditorScreen(key: _editorKey);
       default:
         return Center(
           child: Column(

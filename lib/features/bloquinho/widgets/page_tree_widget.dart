@@ -224,16 +224,20 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
             ),
             title: MouseRegion(
               cursor: SystemMouseCursors.click,
-              child: Text(
-                page.title,
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 15,
-                  color: Colors.blue,
-                  decoration: TextDecoration.underline,
+              child: GestureDetector(
+                onTap: () => _selectPage(page.id),
+                child: Text(
+                  page.title,
+                  style: TextStyle(
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontSize: 15,
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             trailing: _buildPageActions(page, isDarkMode),

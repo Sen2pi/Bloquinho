@@ -30,7 +30,7 @@ class PageChildrenList extends ConsumerWidget {
     final children = pages.where((p) => p.parentId == currentPageId).toList();
 
     if (children.isEmpty) {
-      return _buildEmptyState(context, isDarkMode);
+      return const SizedBox.shrink();
     }
 
     return Container(
@@ -72,54 +72,6 @@ class PageChildrenList extends ConsumerWidget {
           const SizedBox(height: 12),
           ...children
               .map((child) => _buildChildItem(context, child, isDarkMode)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context, bool isDarkMode) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            PhosphorIcons.folders(),
-            size: 48,
-            color: isDarkMode ? Colors.white38 : Colors.black26,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Nenhuma subpágina',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: isDarkMode ? Colors.white70 : Colors.black54,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Crie subpáginas para organizar seu conteúdo',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: isDarkMode ? Colors.white54 : Colors.black45,
-                ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () => onCreateSubPage(currentPageId),
-            icon: Icon(PhosphorIcons.plus()),
-            label: const Text('Criar primeira subpágina'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-          ),
         ],
       ),
     );
