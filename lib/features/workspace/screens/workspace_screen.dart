@@ -138,27 +138,18 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                           horizontalTitleGap: 12,
                         ),
                         if (_isBloquinhoExpanded && _isSidebarExpanded)
-                          const Padding(
-                            padding: EdgeInsets.only(left: 16.0),
-                            child: PageTreeWidget(),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16.0),
+                            child: PageTreeWidget(
+                              onPageSelected: (pageId) {
+                                setState(() {
+                                  _selectedSection = Section.bloquinho;
+                                  // Aqui você pode passar o pageId para o editor principal
+                                  // Exemplo: _editorKey.currentState?.navigateToPage(pageId);
+                                });
+                              },
+                            ),
                           ),
-                        ListTile(
-                          leading: Image.asset(
-                            'assets/images/cartao.png',
-                            width: 28,
-                            height: 28,
-                          ),
-                          title: _isSidebarExpanded
-                              ? const Text('Documentos')
-                              : null,
-                          onTap: () {
-                            print('Sidebar: Documentos clicado');
-                            _handleSectionTap('documentos');
-                          },
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 2),
-                          horizontalTitleGap: 12,
-                        ),
                       ],
                     );
                   }

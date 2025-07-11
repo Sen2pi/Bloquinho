@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,27 +13,34 @@ import '../providers/blocos_provider.dart';
 import '../widgets/bloco_toolbar.dart';
 import '../widgets/bloco_menu_widget.dart';
 import '../widgets/bloco_render_widget.dart';
+import '../widgets/page_content_widget.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/workspace_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../widgets/page_children_list.dart';
+import '../widgets/notion_editor.dart';
+import '../providers/pages_provider.dart';
+import '../models/page_model.dart';
 
 class BlocoEditorScreen extends ConsumerStatefulWidget {
   final String? documentId;
   final String? documentTitle;
   final bool isReadOnly;
+  final String? initialPageId;
 
   const BlocoEditorScreen({
     super.key,
     this.documentId,
     this.documentTitle,
     this.isReadOnly = false,
+    this.initialPageId,
   });
 
   @override
-  ConsumerState<BlocoEditorScreen> createState() => _BlocoEditorScreenState();
+  ConsumerState<BlocoEditorScreen> createState() => BlocoEditorScreenState();
 }
 
-class _BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
+class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   final FocusNode _editorFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _contentController = TextEditingController();
@@ -40,6 +49,8 @@ class _BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   double _zoomLevel = 1.0;
   String? _searchQuery;
   bool _isSearchVisible = false;
+  String _currentPageId = '';
+  List<String> _navigationStack = [];
 
   @override
   void initState() {
@@ -47,6 +58,43 @@ class _BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeEditor();
     });
+  }
+
+  void setPage(String pageId) {
+    setState(() {
+      _currentPageId = pageId;
+      if (!_navigationStack.contains(pageId)) {
+        _navigationStack.add(pageId);
+      }
+    });
+  }
+
+  // Métodos para carregar e salvar conteúdo em arquivos .md
+  Future<String> loadPageContent(String pageId) async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/pages/$pageId.md');
+      if (await file.exists()) {
+        return await file.readAsString();
+      }
+    } catch (e) {
+      // ignore
+    }
+    return '';
+  }
+
+  Future<void> savePageContent(String pageId, String content) async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final pagesDir = Directory('${dir.path}/pages');
+      if (!await pagesDir.exists()) {
+        await pagesDir.create(recursive: true);
+      }
+      final file = File('${pagesDir.path}/$pageId.md');
+      await file.writeAsString(content);
+    } catch (e) {
+      // ignore
+    }
   }
 
   @override
@@ -59,9 +107,23 @@ class _BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
   Future<void> _initializeEditor() async {
     try {
+      // Se não tem documentId, criar página raiz
+      if (widget.documentId == null) {
+        final pagesNotifier = ref.read(pagesProvider.notifier);
+        final newPage = PageModel.create(
+          title: widget.documentTitle ?? 'Nova Página',
+        );
+        pagesNotifier.state = [...pagesNotifier.state, newPage];
+        _currentPageId = newPage.id;
+        _navigationStack = [newPage.id];
+      } else {
+        _currentPageId = widget.documentId!;
+        _navigationStack = [widget.documentId!];
+      }
+
       await ref.read(editorControllerProvider.notifier).initialize(
-        documentId: widget.documentId,
-        documentTitle: widget.documentTitle ?? 'Novo Documento',
+        documentId: _currentPageId,
+        documentTitle: widget.documentTitle ?? 'Nova Página',
         isReadOnly: widget.isReadOnly,
         settings: {
           'showLineNumbers': _showLineNumbers,
@@ -73,260 +135,325 @@ class _BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     }
   }
 
+  void _navigateToPage(String pageId) {
+    setState(() {
+      _currentPageId = pageId;
+      if (!_navigationStack.contains(pageId)) {
+        _navigationStack.add(pageId);
+      }
+    });
+  }
+
+  void _navigateBack() {
+    if (_navigationStack.length > 1) {
+      setState(() {
+        _navigationStack.removeLast();
+        _currentPageId = _navigationStack.last;
+      });
+    }
+  }
+
+  void _createSubPage(String parentId) {
+    final pagesNotifier = ref.read(pagesProvider.notifier);
+    final newPage = PageModel.create(
+      title: 'Nova Subpágina',
+      parentId: parentId,
+    );
+    pagesNotifier.state = [...pagesNotifier.state, newPage];
+    _navigateToPage(newPage.id);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(isDarkModeProvider);
     final editorState = ref.watch(editorControllerProvider);
     final currentWorkspace = ref.watch(currentWorkspaceProvider);
+    final pages = ref.watch(pagesProvider);
+    final currentPage = pages.firstWhere(
+      (p) => p.id == _currentPageId,
+      orElse: () => PageModel.create(title: 'Página não encontrada'),
+    );
 
     return Theme(
       data: isDarkMode ? ThemeData.dark() : ThemeData.light(),
       child: Scaffold(
         backgroundColor:
             isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
-        appBar: _isFullscreen ? null : _buildAppBar(isDarkMode, editorState),
-        body: _buildBody(isDarkMode, editorState),
+        appBar: _isFullscreen
+            ? null
+            : _buildAppBar(isDarkMode, editorState, currentPage),
+        body: _buildBody(isDarkMode, editorState, currentPage),
         floatingActionButton: _buildFloatingActionButton(editorState),
         bottomNavigationBar: _buildBottomBar(isDarkMode, editorState),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(
-      bool isDarkMode, EditorControllerState editorState) {
+  PreferredSizeWidget _buildAppBar(bool isDarkMode,
+      EditorControllerState editorState, PageModel? currentPage) {
     return AppBar(
       elevation: 0,
       backgroundColor:
           isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
       foregroundColor:
           isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-      title: _buildTitleSection(editorState),
+      title: _buildTitleSection(editorState, currentPage),
       actions: _buildAppBarActions(isDarkMode, editorState),
       bottom: _isSearchVisible ? _buildSearchBar() : null,
     );
   }
 
-  Widget _buildTitleSection(EditorControllerState editorState) {
-    return Row(
+  Widget _buildTitleSection(
+      EditorControllerState editorState, PageModel? currentPage) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Status de sincronização
-        _buildSyncStatusIndicator(editorState),
-        const SizedBox(width: 12),
-        // Título editável
-        Expanded(
-          child: GestureDetector(
-            onTap: () => _editDocumentTitle(editorState),
-            child: Text(
-              editorState.documentTitle ?? 'Documento sem título',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+        // Breadcrumb de navegação
+        if (_navigationStack.length > 1)
+          Row(
+            children: [
+              IconButton(
+                onPressed: _navigateBack,
+                icon: Icon(PhosphorIcons.arrowLeft()),
+                tooltip: 'Voltar',
               ),
-              overflow: TextOverflow.ellipsis,
-            ),
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _navigationStack.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final pageId = entry.value;
+                      final pages = ref.read(pagesProvider.notifier).state;
+                      PageModel? page;
+                      try {
+                        page = pages.firstWhere((p) => p.id == pageId);
+                      } catch (e) {
+                        page = null;
+                      }
+
+                      return Row(
+                        children: [
+                          if (index > 0)
+                            Icon(PhosphorIcons.caretRight(), size: 16),
+                          GestureDetector(
+                            onTap: () => _navigateToPage(pageId),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(4),
+                                color: pageId == _currentPageId
+                                    ? AppColors.primary.withOpacity(0.1)
+                                    : Colors.transparent,
+                              ),
+                              child: Text(
+                                page?.title ?? 'Página',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: pageId == _currentPageId
+                                      ? AppColors.primary
+                                      : Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
           ),
+
+        // Título e ícone da página atual
+        Row(
+          children: [
+            // Seletor de ícone
+            if (currentPage != null)
+              GestureDetector(
+                onTap: () => _showIconSelector(currentPage),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.black.withOpacity(0.05),
+                  ),
+                  child: Text(
+                    currentPage.icon ?? '📄',
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                ),
+              ),
+
+            const SizedBox(width: 12),
+
+            // Título editável
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _editPageTitle(currentPage),
+                child: Text(
+                  currentPage?.title ?? 'Página sem título',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildSyncStatusIndicator(EditorControllerState editorState) {
-    IconData icon;
-    Color color;
-    String tooltip;
-
-    if (editorState.isSaving) {
-      icon = PhosphorIcons.circleNotch();
-      color = Colors.orange;
-      tooltip = 'Salvando...';
-    } else if (editorState.hasChanges) {
-      icon = PhosphorIcons.circle();
-      color = Colors.red;
-      tooltip = 'Alterações não salvas';
-    } else {
-      icon = PhosphorIcons.checkCircle();
-      color = Colors.green;
-      tooltip = 'Salvo';
-    }
-
-    return Tooltip(
-      message: tooltip,
-      child: Icon(
-        icon,
-        size: 16,
-        color: color,
-      ),
-    );
-  }
-
-  List<Widget> _buildAppBarActions(
-      bool isDarkMode, EditorControllerState editorState) {
-    return [
-      // Buscar
-      IconButton(
-        onPressed: () => _toggleSearch(),
-        icon: Icon(PhosphorIcons.magnifyingGlass()),
-        tooltip: 'Buscar',
-      ),
-
-      // Desfazer/Refazer
-      IconButton(
-        onPressed: editorState.canUndo
-            ? () => ref.read(editorControllerProvider.notifier).undo()
-            : null,
-        icon: Icon(PhosphorIcons.arrowCounterClockwise()),
-        tooltip: 'Desfazer',
-      ),
-      IconButton(
-        onPressed: editorState.canRedo
-            ? () => ref.read(editorControllerProvider.notifier).redo()
-            : null,
-        icon: Icon(PhosphorIcons.arrowClockwise()),
-        tooltip: 'Refazer',
-      ),
-
-      // Zoom
-      PopupMenuButton<double>(
-        onSelected: (zoom) => _setZoomLevel(zoom),
-        icon: Icon(PhosphorIcons.magnifyingGlassPlus()),
-        tooltip: 'Zoom',
-        itemBuilder: (context) => [
-          const PopupMenuItem(value: 0.75, child: Text('75%')),
-          const PopupMenuItem(value: 1.0, child: Text('100%')),
-          const PopupMenuItem(value: 1.25, child: Text('125%')),
-          const PopupMenuItem(value: 1.5, child: Text('150%')),
-        ],
-      ),
-
-      // Visualização
-      PopupMenuButton<String>(
-        onSelected: _handleViewOption,
-        icon: Icon(PhosphorIcons.eye()),
-        tooltip: 'Visualização',
-        itemBuilder: (context) => [
-          PopupMenuItem(
-            value: 'fullscreen',
-            child: Row(
-              children: [
-                Icon(PhosphorIcons.arrowsOut()),
-                const SizedBox(width: 8),
-                const Text('Tela cheia'),
-              ],
-            ),
-          ),
-          PopupMenuItem(
-            value: 'line_numbers',
-            child: Row(
-              children: [
-                Icon(_showLineNumbers
-                    ? PhosphorIcons.checkSquare()
-                    : PhosphorIcons.square()),
-                const SizedBox(width: 8),
-                const Text('Números de linha'),
-              ],
-            ),
-          ),
-          PopupMenuItem(
-            value: 'reading_mode',
-            child: Row(
-              children: [
-                Icon(PhosphorIcons.book()),
-                const SizedBox(width: 8),
-                const Text('Modo leitura'),
-              ],
-            ),
-          ),
-        ],
-      ),
-
-      // Menu principal
-      PopupMenuButton<String>(
-        onSelected: _handleMenuOption,
-        icon: Icon(PhosphorIcons.dotsThreeVertical()),
-        itemBuilder: (context) => [
-          PopupMenuItem(
-            value: 'save',
-            child: Row(
-              children: [
-                Icon(PhosphorIcons.floppyDisk()),
-                const SizedBox(width: 8),
-                const Text('Salvar'),
-              ],
-            ),
-          ),
-          PopupMenuItem(
-            value: 'export',
-            child: Row(
-              children: [
-                Icon(PhosphorIcons.export()),
-                const SizedBox(width: 8),
-                const Text('Exportar'),
-              ],
-            ),
-          ),
-          PopupMenuItem(
-            value: 'import',
-            child: Row(
-              children: [
-                Icon(PhosphorIcons.upload()),
-                const SizedBox(width: 8),
-                const Text('Importar'),
-              ],
-            ),
-          ),
-          const PopupMenuDivider(),
-          PopupMenuItem(
-            value: 'share',
-            child: Row(
-              children: [
-                Icon(PhosphorIcons.share()),
-                const SizedBox(width: 8),
-                const Text('Compartilhar'),
-              ],
-            ),
-          ),
-          PopupMenuItem(
-            value: 'settings',
-            child: Row(
-              children: [
-                Icon(PhosphorIcons.gear()),
-                const SizedBox(width: 8),
-                const Text('Configurações'),
-              ],
-            ),
-          ),
-        ],
-      ),
+  void _showIconSelector(PageModel page) {
+    final icons = [
+      '📄',
+      '📝',
+      '📋',
+      '📚',
+      '📖',
+      '📗',
+      '📘',
+      '📙',
+      '📓',
+      '📔',
+      '📕',
+      '📒',
+      '📃',
+      '📄',
+      '📑',
+      '🔖',
+      '🏷️',
+      '📌',
+      '📍',
+      '🎯',
+      '💡',
+      '💭',
+      '💬',
+      '💭',
+      '💡',
+      '🔍',
+      '🔎',
+      '📊',
+      '📈',
+      '📉',
+      '📋',
+      '✅',
+      '❌',
+      '⚠️',
+      'ℹ️',
+      '🔔',
+      '🔕',
+      '🔒',
+      '🔓',
+      '🔐',
     ];
-  }
 
-  PreferredSize _buildSearchBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(56),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        child: TextField(
-          autofocus: true,
-          onChanged: (query) => setState(() => _searchQuery = query),
-          onSubmitted: _performSearch,
-          decoration: InputDecoration(
-            hintText: 'Buscar no documento...',
-            prefixIcon: Icon(PhosphorIcons.magnifyingGlass()),
-            suffixIcon: IconButton(
-              onPressed: _toggleSearch,
-              icon: Icon(PhosphorIcons.x()),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Escolher Ícone'),
+        content: Container(
+          width: 300,
+          height: 200,
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 8,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: icons.length,
+            itemBuilder: (context, index) {
+              final icon = icons[index];
+              final isSelected = page.icon == icon;
+
+              return GestureDetector(
+                onTap: () {
+                  ref.read(pagesProvider.notifier).updatePage(
+                        page.id,
+                        icon: icon,
+                      );
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected ? AppColors.primary : Colors.grey,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      icon,
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: isSelected ? Colors.white : null,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildBody(bool isDarkMode, EditorControllerState editorState) {
+  void _editPageTitle(PageModel? page) {
+    if (page == null) return;
+
+    final titleController = TextEditingController(text: page.title);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Editar Título'),
+        content: TextField(
+          controller: titleController,
+          decoration: const InputDecoration(
+            labelText: 'Título da página',
+            hintText: 'Digite o título...',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (titleController.text.trim().isNotEmpty) {
+                ref.read(pagesProvider.notifier).updatePage(
+                      page.id,
+                      title: titleController.text.trim(),
+                    );
+                Navigator.of(context).pop();
+              }
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody(bool isDarkMode, EditorControllerState editorState,
+      PageModel? currentPage) {
     if (editorState.isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
@@ -345,16 +472,28 @@ class _BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
     return Column(
       children: [
-        // Toolbar
-        if (!_isFullscreen && editorState.canEdit)
-          BlocoToolbar(
-            onBlockInsert: _insertBlock,
-            isDarkMode: isDarkMode,
+        // Lista horizontal de subpáginas e botão +
+        if (currentPage != null)
+          _SubPagesBar(
+            parentPage: currentPage,
+            onNavigateToPage: _navigateToPage,
+            onCreateSubPage: _createSubPage,
           ),
 
-        // Editor principal
+        // Lista de filhos no topo (mantém para navegação vertical)
+        if (currentPage != null)
+          PageChildrenList(
+            currentPageId: currentPage.id,
+            onNavigateToPage: _navigateToPage,
+            onCreateSubPage: _createSubPage,
+          ),
+
+        // Editor de conteúdo com auto-save
         Expanded(
-          child: _buildEditor(isDarkMode, editorState),
+          child: PageContentWidget(
+            pageId: currentPage?.id ?? '',
+            isEditing: !widget.isReadOnly,
+          ),
         ),
       ],
     );
@@ -520,18 +659,11 @@ class _BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   void _toggleSearch() {
     setState(() {
       _isSearchVisible = !_isSearchVisible;
-      if (!_isSearchVisible) {
-        _searchQuery = null;
-      }
     });
   }
 
   void _performSearch(String query) {
-    if (query.isNotEmpty) {
-      final results =
-          ref.read(editorControllerProvider.notifier).findText(query);
-      _showSearchResults(results);
-    }
+    // Implementar busca
   }
 
   void _showSearchResults(List<Map<String, dynamic>> results) {
@@ -577,19 +709,10 @@ class _BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   void _handleMenuOption(String option) {
     switch (option) {
       case 'save':
-        _saveDocument();
+        // Implementar salvamento
         break;
       case 'export':
-        _exportDocument();
-        break;
-      case 'import':
-        _importDocument();
-        break;
-      case 'share':
-        _shareDocument();
-        break;
-      case 'settings':
-        _showSettings();
+        // Implementar exportação
         break;
     }
   }
@@ -709,6 +832,101 @@ class _BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         action: SnackBarAction(
           label: 'Fechar',
           onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildAppBarActions(
+      bool isDarkMode, EditorControllerState editorState) {
+    return [
+      // Buscar
+      IconButton(
+        onPressed: () => _toggleSearch(),
+        icon: Icon(PhosphorIcons.magnifyingGlass()),
+        tooltip: 'Buscar',
+      ),
+
+      // Desfazer/Refazer
+      IconButton(
+        onPressed: editorState.canUndo
+            ? () => ref.read(editorControllerProvider.notifier).undo()
+            : null,
+        icon: Icon(PhosphorIcons.arrowCounterClockwise()),
+        tooltip: 'Desfazer',
+      ),
+      IconButton(
+        onPressed: editorState.canRedo
+            ? () => ref.read(editorControllerProvider.notifier).redo()
+            : null,
+        icon: Icon(PhosphorIcons.arrowClockwise()),
+        tooltip: 'Refazer',
+      ),
+
+      // Zoom
+      PopupMenuButton<double>(
+        onSelected: (zoom) => _setZoomLevel(zoom),
+        icon: Icon(PhosphorIcons.magnifyingGlassPlus()),
+        tooltip: 'Zoom',
+        itemBuilder: (context) => [
+          const PopupMenuItem(value: 0.75, child: Text('75%')),
+          const PopupMenuItem(value: 1.0, child: Text('100%')),
+          const PopupMenuItem(value: 1.25, child: Text('125%')),
+          const PopupMenuItem(value: 1.5, child: Text('150%')),
+        ],
+      ),
+
+      // Menu principal
+      PopupMenuButton<String>(
+        onSelected: _handleMenuOption,
+        icon: Icon(PhosphorIcons.dotsThreeVertical()),
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: 'save',
+            child: Row(
+              children: [
+                Icon(PhosphorIcons.floppyDisk()),
+                const SizedBox(width: 8),
+                const Text('Salvar'),
+              ],
+            ),
+          ),
+          PopupMenuItem(
+            value: 'export',
+            child: Row(
+              children: [
+                Icon(PhosphorIcons.export()),
+                const SizedBox(width: 8),
+                const Text('Exportar'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  PreferredSize _buildSearchBar() {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(56),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        child: TextField(
+          autofocus: true,
+          onChanged: (query) => setState(() => _searchQuery = query),
+          onSubmitted: _performSearch,
+          decoration: InputDecoration(
+            hintText: 'Buscar no documento...',
+            prefixIcon: Icon(PhosphorIcons.magnifyingGlass()),
+            suffixIcon: IconButton(
+              onPressed: _toggleSearch,
+              icon: Icon(PhosphorIcons.x()),
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          ),
         ),
       ),
     );
@@ -898,6 +1116,47 @@ class _LinkDialogState extends State<_LinkDialog> {
           child: const Text('Inserir'),
         ),
       ],
+    );
+  }
+}
+
+// Widget auxiliar para barra de subpáginas
+class _SubPagesBar extends ConsumerWidget {
+  final PageModel parentPage;
+  final void Function(String pageId) onNavigateToPage;
+  final void Function(String parentId) onCreateSubPage;
+
+  const _SubPagesBar({
+    required this.parentPage,
+    required this.onNavigateToPage,
+    required this.onCreateSubPage,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pages = ref.watch(pagesProvider);
+    final subPages = pages.where((p) => p.parentId == parentPage.id).toList();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          ...subPages.map((page) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ActionChip(
+                  avatar: Text(page.icon ?? '📄',
+                      style: const TextStyle(fontSize: 16)),
+                  label: Text(page.title, overflow: TextOverflow.ellipsis),
+                  onPressed: () => onNavigateToPage(page.id),
+                ),
+              )),
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Nova subpágina',
+            onPressed: () => onCreateSubPage(parentPage.id),
+          ),
+        ],
+      ),
     );
   }
 }

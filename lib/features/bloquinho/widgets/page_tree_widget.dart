@@ -9,37 +9,61 @@ import '../../../shared/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
 
 class PageTreeWidget extends ConsumerStatefulWidget {
-  const PageTreeWidget({super.key});
+  final void Function(String pageId)? onPageSelected;
+  final String? pageRootId;
+  const PageTreeWidget({super.key, this.onPageSelected, this.pageRootId});
 
   @override
   ConsumerState<PageTreeWidget> createState() => _PageTreeWidgetState();
 }
 
 class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
-  String? _expandedPageId;
+  Set<String> _expandedPageIds = {}; // Múltiplas páginas expandidas
   String? _searchQuery;
   bool _showArchived = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Expandir automaticamente páginas que têm filhos
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoExpandPages();
+    });
+  }
+
+  void _autoExpandPages() {
+    final pages = ref.read(pagesProvider);
+    final pagesWithChildren = pages
+        .where((page) => pages.any((p) => p.parentId == page.id))
+        .map((page) => page.id)
+        .toSet();
+
+    setState(() {
+      _expandedPageIds.addAll(pagesWithChildren);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final pages = ref.watch(pagesProvider);
-    final currentPageId = ref.watch(currentPageProvider);
+    String? currentPageId;
     final isDarkMode = ref.watch(isDarkModeProvider);
+
+    // Encontrar a página root (Bloquinho)
+    final rootPage = widget.pageRootId != null
+        ? pages.firstWhere((p) => p.id == widget.pageRootId,
+            orElse: () =>
+                pages.firstWhere((p) => p.isRoot, orElse: () => pages.first))
+        : pages.firstWhere((p) => p.isRoot, orElse: () => pages.first);
 
     return Container(
       color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          _buildHeader(isDarkMode),
-
-          // Search bar
-          _buildSearchBar(isDarkMode),
-
-          // Pages tree
-          _buildPagesTree(pages, currentPageId, isDarkMode),
-        ],
+      child: _buildPageItem(
+        page: rootPage,
+        allPages: pages,
+        currentPageId: currentPageId,
+        isDarkMode: isDarkMode,
+        depth: 0,
       ),
     );
   }
@@ -108,8 +132,7 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
   Widget _buildPagesTree(
       List<PageModel> pages, String? currentPageId, bool isDarkMode) {
     final filteredPages = _getFilteredPages(pages);
-    final rootPages = filteredPages.where((page) => page.isRoot).toList()
-      ..sort((a, b) => a.order.compareTo(b.order));
+    final rootPages = filteredPages.where((page) => page.isRoot).toList();
 
     if (rootPages.isEmpty) {
       return _buildEmptyState(isDarkMode);
@@ -141,33 +164,35 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
     required int depth,
   }) {
     final isSelected = currentPageId == page.id;
-    final isExpanded = _expandedPageId == page.id;
-    final children = allPages.where((p) => p.parentId == page.id).toList()
-      ..sort((a, b) => a.order.compareTo(b.order));
+    final isExpanded = _expandedPageIds.contains(page.id);
+    final children = allPages.where((p) => p.parentId == page.id).toList();
     final hasChildren = children.isNotEmpty;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Page item
         Container(
           margin: EdgeInsets.only(
-            left: depth * 16.0,
+            left: 12.0 + depth * 18.0, // recuo maior para subníveis
             top: 2,
             bottom: 2,
           ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
             color: isSelected
-                ? AppColors.primary.withOpacity(0.1)
+                ? AppColors.primary.withOpacity(0.13)
                 : Colors.transparent,
             border: isSelected
                 ? Border.all(color: AppColors.primary, width: 1)
                 : null,
           ),
           child: ListTile(
+            dense: true,
+            minLeadingWidth: 0,
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 4,
+              horizontal: 4,
+              vertical: 0,
             ),
             leading: Row(
               mainAxisSize: MainAxisSize.min,
@@ -190,33 +215,27 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
                 else
                   const SizedBox(width: 24),
 
-                // Page icon
-                Icon(
-                  _getPageIcon(page),
-                  size: 16,
-                  color: _getPageColor(page),
+                // Emoji do usuário
+                Text(
+                  page.icon ?? '📄',
+                  style: const TextStyle(fontSize: 18),
                 ),
               ],
             ),
-            title: Text(
-              page.title,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: page.isArchived ? Colors.grey : null,
+            title: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: Text(
+                page.title,
+                style: TextStyle(
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  fontSize: 15,
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            subtitle: page.content?.isNotEmpty == true
-                ? Text(
-                    page.content!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  )
-                : null,
             trailing: _buildPageActions(page, isDarkMode),
             onTap: () => _selectPage(page.id),
             onLongPress: () => _showPageContextMenu(page),
@@ -237,83 +256,53 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
   }
 
   Widget _buildPageActions(PageModel page, bool isDarkMode) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Archive indicator
-        if (page.isArchived)
-          Icon(
-            PhosphorIcons.archive(),
-            size: 14,
-            color: Colors.grey,
+    return PopupMenuButton<String>(
+      onSelected: (action) => _handlePageAction(action, page),
+      icon: Icon(
+        PhosphorIcons.dotsThreeVertical(),
+        size: 14,
+        color: Colors.grey[400],
+      ),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(PhosphorIcons.pencil(), size: 16),
+              const SizedBox(width: 8),
+              const Text('Editar'),
+            ],
           ),
-
-        // More actions
-        PopupMenuButton<String>(
-          onSelected: (action) => _handlePageAction(action, page),
-          icon: Icon(
-            PhosphorIcons.dotsThreeVertical(),
-            size: 14,
-            color: Colors.grey[400],
+        ),
+        PopupMenuItem(
+          value: 'add_child',
+          child: Row(
+            children: [
+              Icon(PhosphorIcons.plus(), size: 16),
+              const SizedBox(width: 8),
+              const Text('Adicionar subpágina'),
+            ],
           ),
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(PhosphorIcons.pencil(), size: 16),
-                  const SizedBox(width: 8),
-                  const Text('Editar'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'add_child',
-              child: Row(
-                children: [
-                  Icon(PhosphorIcons.plus(), size: 16),
-                  const SizedBox(width: 8),
-                  const Text('Adicionar subpágina'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'move',
-              child: Row(
-                children: [
-                  Icon(PhosphorIcons.arrowsOut(), size: 16),
-                  const SizedBox(width: 8),
-                  const Text('Mover'),
-                ],
-              ),
-            ),
-            const PopupMenuDivider(),
-            PopupMenuItem(
-              value: 'archive',
-              child: Row(
-                children: [
-                  Icon(
-                    page.isArchived
-                        ? PhosphorIcons.folderOpen()
-                        : PhosphorIcons.archive(),
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(page.isArchived ? 'Desarquivar' : 'Arquivar'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(PhosphorIcons.trash(), size: 16, color: Colors.red),
-                  const SizedBox(width: 8),
-                  const Text('Excluir', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
+        ),
+        PopupMenuItem(
+          value: 'move',
+          child: Row(
+            children: [
+              Icon(PhosphorIcons.arrowsOut(), size: 16),
+              const SizedBox(width: 8),
+              const Text('Mover'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(PhosphorIcons.trash(), size: 16, color: Colors.red),
+              const SizedBox(width: 8),
+              const Text('Excluir', style: TextStyle(color: Colors.red)),
+            ],
+          ),
         ),
       ],
     );
@@ -363,23 +352,19 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
     if (_searchQuery?.isNotEmpty == true) {
       final query = _searchQuery!.toLowerCase();
       filtered = filtered.where((page) {
-        return page.title.toLowerCase().contains(query) ||
-            (page.content?.toLowerCase().contains(query) ?? false);
+        return page.title.toLowerCase().contains(query);
       }).toList();
-    }
-
-    // Filter archived pages
-    if (!_showArchived) {
-      filtered = filtered.where((page) => !page.isArchived).toList();
     }
 
     return filtered;
   }
 
-  IconData _getPageIcon(PageModel page) {
-    if (page.isBloquinhoRoot) return PhosphorIcons.bookOpen();
-    if (page.isRoot) return PhosphorIcons.fileText();
-    return PhosphorIcons.file();
+  Icon _getPageIcon(PageModel page) {
+    // Usa o emoji definido pelo usuário ou um emoji padrão
+    return Icon(
+      null,
+      size: 0, // Não exibe o ícone do pacote
+    );
   }
 
   Color _getPageColor(PageModel page) {
@@ -390,17 +375,19 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
 
   void _toggleExpanded(String pageId) {
     setState(() {
-      if (_expandedPageId == pageId) {
-        _expandedPageId = null;
+      if (_expandedPageIds.contains(pageId)) {
+        _expandedPageIds.remove(pageId);
       } else {
-        _expandedPageId = pageId;
+        _expandedPageIds.add(pageId);
       }
     });
   }
 
   void _selectPage(String pageId) {
-    ref.read(currentPageProvider.notifier).state = pageId;
-    // TODO: Navegar para a página
+    if (widget.onPageSelected != null) {
+      widget.onPageSelected!(pageId);
+    }
+    setState(() {});
   }
 
   void _showPageContextMenu(PageModel page) {
@@ -418,9 +405,6 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
       case 'move':
         _showMovePageDialog(page);
         break;
-      case 'archive':
-        ref.read(pagesProvider.notifier).toggleArchive(page.id);
-        break;
       case 'delete':
         _showDeletePageDialog(page);
         break;
@@ -429,33 +413,18 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
 
   void _showCreatePageDialog({String? parentId}) {
     final titleController = TextEditingController();
-    final contentController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Nova Página'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Título',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: contentController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Conteúdo (opcional)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
+        content: TextField(
+          controller: titleController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Título',
+            border: OutlineInputBorder(),
+          ),
         ),
         actions: [
           TextButton(
@@ -466,9 +435,8 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
             onPressed: () {
               final title = titleController.text.trim();
               if (title.isNotEmpty) {
-                ref.read(pagesProvider.notifier).addPage(
+                ref.read(pagesProvider.notifier).createPage(
                       title: title,
-                      content: contentController.text.trim(),
                       parentId: parentId,
                     );
                 Navigator.of(context).pop();
@@ -483,32 +451,17 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
 
   void _showEditPageDialog(PageModel page) {
     final titleController = TextEditingController(text: page.title);
-    final contentController = TextEditingController(text: page.content ?? '');
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Editar Página'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'Título',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: contentController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Conteúdo',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
+        content: TextField(
+          controller: titleController,
+          decoration: const InputDecoration(
+            labelText: 'Título',
+            border: OutlineInputBorder(),
+          ),
         ),
         actions: [
           TextButton(
@@ -522,7 +475,6 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
                 ref.read(pagesProvider.notifier).updatePage(
                       page.id,
                       title: title,
-                      content: contentController.text.trim(),
                     );
                 Navigator.of(context).pop();
               }

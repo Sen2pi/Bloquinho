@@ -270,16 +270,16 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                       Row(
                         children: [
                           Expanded(
-                            child: _buildDateField(
-                              'Data de Início',
+                            child: _buildDateTimeField(
+                              'Data e Hora de Início',
                               _startDate,
                               (date) => setState(() => _startDate = date),
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: _buildDateField(
-                              'Data de Fim',
+                            child: _buildDateTimeField(
+                              'Data e Hora de Fim',
                               _endDate,
                               (date) => setState(() => _endDate = date),
                             ),
@@ -289,8 +289,8 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                       const SizedBox(height: 16),
 
                       // Deadline
-                      _buildDateField(
-                        'Deadline',
+                      _buildDateTimeField(
+                        'Deadline (Data e Hora)',
                         _deadline,
                         (date) => setState(() => _deadline = date),
                       ),
@@ -393,7 +393,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
     );
   }
 
-  Widget _buildDateField(
+  Widget _buildDateTimeField(
       String label, DateTime? value, Function(DateTime?) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,6 +405,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
         const SizedBox(height: 8),
         InkWell(
           onTap: () async {
+            // Primeiro selecionar data
             final date = await showDatePicker(
               context: context,
               initialDate: value ?? DateTime.now(),
@@ -412,7 +413,24 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
               lastDate: DateTime(2030),
             );
             if (date != null) {
-              onChanged(date);
+              // Depois selecionar hora
+              final time = await showTimePicker(
+                context: context,
+                initialTime: value != null
+                    ? TimeOfDay.fromDateTime(value)
+                    : TimeOfDay.now(),
+              );
+              if (time != null) {
+                // Combinar data e hora
+                final dateTime = DateTime(
+                  date.year,
+                  date.month,
+                  date.day,
+                  time.hour,
+                  time.minute,
+                );
+                onChanged(dateTime);
+              }
             }
           },
           child: Container(
@@ -427,8 +445,8 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                 const SizedBox(width: 8),
                 Text(
                   value != null
-                      ? '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}'
-                      : 'Selecionar data',
+                      ? '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year} ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}'
+                      : 'Selecionar data e hora',
                 ),
               ],
             ),
@@ -441,15 +459,35 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
   void _saveItem() {
     if (!_formKey.currentState!.validate()) return;
 
+    // Garantir que sempre tenha data e hora
+    DateTime? startDate = _startDate;
+    DateTime? endDate = _endDate;
+    DateTime? deadline = _deadline;
+
+    // Se não tem data de início, usar agora
+    if (startDate == null) {
+      startDate = DateTime.now();
+    }
+
+    // Se tem data de início mas não de fim, usar início + 1 hora
+    if (startDate != null && endDate == null) {
+      endDate = startDate.add(const Duration(hours: 1));
+    }
+
+    // Se não tem deadline mas é uma tarefa, usar data de início
+    if (deadline == null && _selectedType == AgendaItemType.task) {
+      deadline = startDate;
+    }
+
     final item = AgendaItem(
       id: widget.item?.id ?? '',
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim().isEmpty
           ? null
           : _descriptionController.text.trim(),
-      startDate: _startDate,
-      endDate: _endDate,
-      deadline: _deadline,
+      startDate: startDate,
+      endDate: endDate,
+      deadline: deadline,
       type: _selectedType,
       status: _selectedStatus,
       priority: _selectedPriority,

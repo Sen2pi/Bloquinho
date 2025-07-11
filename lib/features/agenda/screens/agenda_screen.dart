@@ -11,6 +11,7 @@ import '../widgets/agenda_kanban_view.dart';
 import '../widgets/agenda_list_view.dart';
 import '../widgets/add_agenda_item_dialog.dart';
 import '../widgets/agenda_stats_card.dart';
+import '../widgets/agenda_dashboard.dart';
 
 class AgendaScreen extends ConsumerStatefulWidget {
   const AgendaScreen({super.key});
@@ -56,6 +57,9 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         children: [
           // Header
           _buildHeader(isDarkMode, stats),
+
+          // Dashboard
+          const AgendaDashboard(),
 
           // Filtros
           _buildFilters(isDarkMode),

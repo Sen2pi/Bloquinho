@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:math' as math;
 
@@ -5,44 +6,43 @@ import 'dart:math' as math;
 class PageModel {
   final String id;
   final String title;
-  final String? content;
+  final String? icon;
   final String? parentId;
   final List<String> childrenIds;
+  final List<dynamic> blocks; // Lista de blocos ricos (texto, código, etc)
+  final String content; // Conteúdo de texto da página
   final DateTime createdAt;
   final DateTime updatedAt;
-  final Map<String, dynamic> metadata;
-  final int order;
-  final bool isArchived;
 
-  const PageModel({
+  PageModel({
     required this.id,
     required this.title,
-    this.content,
+    this.icon,
     this.parentId,
     this.childrenIds = const [],
-    required this.createdAt,
-    required this.updatedAt,
-    this.metadata = const {},
-    this.order = 0,
-    this.isArchived = false,
-  });
+    this.blocks = const [],
+    this.content = '',
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
 
   /// Criar uma nova página
   factory PageModel.create({
     required String title,
-    String? content,
+    String? icon,
     String? parentId,
-    int order = 0,
+    String content = '',
   }) {
     final now = DateTime.now();
     return PageModel(
       id: const Uuid().v4(),
       title: title,
-      content: content,
+      icon: icon,
       parentId: parentId,
+      content: content,
       createdAt: now,
       updatedAt: now,
-      order: order,
     );
   }
 
@@ -50,26 +50,24 @@ class PageModel {
   PageModel copyWith({
     String? id,
     String? title,
-    String? content,
+    String? icon,
     String? parentId,
     List<String>? childrenIds,
+    List<dynamic>? blocks,
+    String? content,
     DateTime? createdAt,
     DateTime? updatedAt,
-    Map<String, dynamic>? metadata,
-    int? order,
-    bool? isArchived,
   }) {
     return PageModel(
       id: id ?? this.id,
       title: title ?? this.title,
-      content: content ?? this.content,
+      icon: icon ?? this.icon,
       parentId: parentId ?? this.parentId,
       childrenIds: childrenIds ?? this.childrenIds,
+      blocks: blocks ?? this.blocks,
+      content: content ?? this.content,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      metadata: metadata ?? this.metadata,
-      order: order ?? this.order,
-      isArchived: isArchived ?? this.isArchived,
     );
   }
 
@@ -78,14 +76,13 @@ class PageModel {
     return {
       'id': id,
       'title': title,
-      'content': content,
+      'icon': icon,
       'parentId': parentId,
       'childrenIds': childrenIds,
+      'blocks': blocks,
+      'content': content,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
-      'metadata': metadata,
-      'order': order,
-      'isArchived': isArchived,
     };
   }
 
@@ -94,14 +91,13 @@ class PageModel {
     return PageModel(
       id: map['id'] ?? '',
       title: map['title'] ?? '',
-      content: map['content'],
+      icon: map['icon'],
       parentId: map['parentId'],
       childrenIds: List<String>.from(map['childrenIds'] ?? []),
+      blocks: map['blocks'] ?? [],
+      content: map['content'] ?? '',
       createdAt: DateTime.parse(map['createdAt']),
       updatedAt: DateTime.parse(map['updatedAt']),
-      metadata: Map<String, dynamic>.from(map['metadata'] ?? {}),
-      order: map['order'] ?? 0,
-      isArchived: map['isArchived'] ?? false,
     );
   }
 
@@ -191,14 +187,12 @@ class PageTree {
 
   /// Obter páginas raiz (sem pai)
   List<PageModel> get rootPages {
-    return pages.where((page) => page.isRoot).toList()
-      ..sort((a, b) => a.order.compareTo(b.order));
+    return pages.where((page) => page.isRoot).toList();
   }
 
   /// Obter filhos de uma página
   List<PageModel> getChildren(String parentId) {
-    return pages.where((page) => page.parentId == parentId).toList()
-      ..sort((a, b) => a.order.compareTo(b.order));
+    return pages.where((page) => page.parentId == parentId).toList();
   }
 
   /// Obter ancestrais de uma página
@@ -268,8 +262,7 @@ class PageTree {
   List<PageModel> search(String query) {
     final lowercaseQuery = query.toLowerCase();
     return pages.where((page) {
-      return page.title.toLowerCase().contains(lowercaseQuery) ||
-          (page.content?.toLowerCase().contains(lowercaseQuery) ?? false);
+      return page.title.toLowerCase().contains(lowercaseQuery);
     }).toList();
   }
 
@@ -278,14 +271,12 @@ class PageTree {
     final totalPages = pages.length;
     final rootPages = this.rootPages.length;
     final subPages = pages.where((p) => p.isSubPage).length;
-    final archivedPages = pages.where((p) => p.isArchived).length;
 
     return {
       'totalPages': totalPages,
       'rootPages': rootPages,
       'subPages': subPages,
-      'archivedPages': archivedPages,
-      'activePages': totalPages - archivedPages,
+      'activePages': totalPages - subPages,
     };
   }
 }
