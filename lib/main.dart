@@ -194,11 +194,13 @@ final GoRouter _router = GoRouter(
 );
 
 // Tela de autenticação (placeholder)
-class AuthScreen extends StatelessWidget {
+class AuthScreen extends ConsumerWidget {
   const AuthScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(appStringsProvider);
+
     return Scaffold(
       body: Center(
         child: Column(
@@ -210,17 +212,17 @@ class AuthScreen extends StatelessWidget {
               width: 120,
             ),
             const SizedBox(height: 32),
-            const Text(
-              'Bloquinho',
-              style: TextStyle(
+            Text(
+              strings.appTitle,
+              style: const TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Seu workspace pessoal',
-              style: TextStyle(
+            Text(
+              strings.appSubtitle,
+              style: const TextStyle(
                 fontSize: 16,
                 color: Colors.grey,
               ),
@@ -230,7 +232,7 @@ class AuthScreen extends StatelessWidget {
               onPressed: () {
                 context.goNamed('workspace');
               },
-              child: const Text('Entrar'),
+              child: Text(strings.enterButton),
             ),
           ],
         ),
@@ -240,14 +242,16 @@ class AuthScreen extends StatelessWidget {
 }
 
 // Tela de página não encontrada
-class NotFoundScreen extends StatelessWidget {
+class NotFoundScreen extends ConsumerWidget {
   const NotFoundScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(appStringsProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Página não encontrada'),
+        title: Text(strings.pageNotFound),
       ),
       body: Center(
         child: Column(
@@ -259,14 +263,14 @@ class NotFoundScreen extends StatelessWidget {
               color: Colors.grey,
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Página não encontrada',
-              style: TextStyle(fontSize: 24),
+            Text(
+              strings.pageNotFound,
+              style: const TextStyle(fontSize: 24),
             ),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () => context.goNamed('workspace'),
-              child: const Text('Voltar ao início'),
+              child: Text(strings.backToHome),
             ),
           ],
         ),

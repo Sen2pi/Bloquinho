@@ -108,6 +108,50 @@ class AppStrings {
   String get tomorrow => _getString('tomorrow');
   String get yesterday => _getString('yesterday');
 
+  // Main app strings
+  String get appTitle => _getString('appTitle');
+  String get appSubtitle => _getString('appSubtitle');
+  String get enterButton => _getString('enterButton');
+  String get pageNotFound => _getString('pageNotFound');
+  String get backToHome => _getString('backToHome');
+
+  // Cloud sync strings
+  String get syncStatusTitle => _getString('syncStatusTitle');
+  String get syncProvider => _getString('syncProvider');
+  String get syncLastSync => _getString('syncLastSync');
+  String get syncFiles => _getString('syncFiles');
+  String get syncCompleted => _getString('syncCompleted');
+  String get syncErrorOccurred => _getString('syncErrorOccurred');
+  String get syncButton => _getString('syncButton');
+  String get closeButton => _getString('closeButton');
+  String get unknown => _getString('unknown');
+
+  // Documents strings
+  String get creditDebit => _getString('creditDebit');
+  String get loyalty => _getString('loyalty');
+  String get identification => _getString('identification');
+  String get featureInDevelopment => _getString('featureInDevelopment');
+  String get addDocument => _getString('addDocument');
+  String get addCard => _getString('addCard');
+  String get viewFile => _getString('viewFile');
+  String get documentType => _getString('documentType');
+
+  // Profile strings
+  String get profileNotFound => _getString('profileNotFound');
+  String get cacheInfo => _getString('cacheInfo');
+  String get clearCache => _getString('clearCache');
+  String get authenticatingWithGoogle => _getString('authenticatingWithGoogle');
+  String get authenticatingWithMicrosoft =>
+      _getString('authenticatingWithMicrosoft');
+  String get authenticationError => _getString('authenticationError');
+  String get cacheCleared => _getString('cacheCleared');
+  String get errorClearingCache => _getString('errorClearingCache');
+  String get cacheFiles => _getString('cacheFiles');
+  String get cacheSize => _getString('cacheSize');
+  String get cacheDirectory => _getString('cacheDirectory');
+  String get ok => _getString('ok');
+  String get errorGettingInfo => _getString('errorGettingInfo');
+
   // Sidebar e Workspaces
   String get sidebarSystem => _getString('sidebarSystem');
   String get sidebarBackup => _getString('sidebarBackup');
@@ -352,6 +396,41 @@ class AppStrings {
     'today': 'Hoje',
     'tomorrow': 'Amanhã',
     'yesterday': 'Ontem',
+    'appTitle': 'Bloquinho',
+    'appSubtitle': 'Seu workspace pessoal',
+    'enterButton': 'Entrar',
+    'pageNotFound': 'Página não encontrada',
+    'backToHome': 'Voltar ao início',
+    'syncStatusTitle': 'Status de Sincronização',
+    'syncProvider': 'Provedor',
+    'syncLastSync': 'Última Sincronização',
+    'syncFiles': 'Arquivos',
+    'syncCompleted': 'Sincronização concluída!',
+    'syncErrorOccurred': 'Erro na sincronização',
+    'syncButton': 'Sincronizar',
+    'closeButton': 'Fechar',
+    'unknown': 'Desconhecido',
+    'creditDebit': 'Crédito/Débito',
+    'loyalty': 'Fidelização',
+    'identification': 'Identificação',
+    'featureInDevelopment': 'Funcionalidade em desenvolvimento...',
+    'addDocument': 'Adicionar Documento',
+    'addCard': 'Adicionar Cartão',
+    'viewFile': 'Visualizar arquivo...',
+    'documentType': 'Tipo de Documento',
+    'profileNotFound': 'Nenhum perfil encontrado',
+    'cacheInfo': 'Ver Informações do Cache',
+    'clearCache': 'Limpar Cache',
+    'authenticatingWithGoogle': 'Autenticando com Google...',
+    'authenticatingWithMicrosoft': 'Autenticando com Microsoft...',
+    'authenticationError': 'Erro na autenticação',
+    'cacheCleared': 'Cache limpo com sucesso!',
+    'errorClearingCache': 'Erro ao limpar cache',
+    'cacheFiles': 'Arquivos',
+    'cacheSize': 'Tamanho',
+    'cacheDirectory': 'Diretório',
+    'ok': 'OK',
+    'errorGettingInfo': 'Erro ao obter informações',
     'sidebarSystem': 'Sistema',
     'sidebarBackup': 'Backup',
     'sidebarTrash': 'Lixeira',
@@ -558,6 +637,41 @@ class AppStrings {
     'today': 'Today',
     'tomorrow': 'Tomorrow',
     'yesterday': 'Yesterday',
+    'appTitle': 'Bloquinho',
+    'appSubtitle': 'Your personal workspace',
+    'enterButton': 'Enter',
+    'pageNotFound': 'Page not found',
+    'backToHome': 'Back to home',
+    'syncStatusTitle': 'Sync Status',
+    'syncProvider': 'Provider',
+    'syncLastSync': 'Last Sync',
+    'syncFiles': 'Files',
+    'syncCompleted': 'Sync completed!',
+    'syncErrorOccurred': 'Sync error occurred',
+    'syncButton': 'Sync',
+    'closeButton': 'Close',
+    'unknown': 'Unknown',
+    'creditDebit': 'Credit/Debit',
+    'loyalty': 'Loyalty',
+    'identification': 'Identification',
+    'featureInDevelopment': 'Feature in development...',
+    'addDocument': 'Add Document',
+    'addCard': 'Add Card',
+    'viewFile': 'View file...',
+    'documentType': 'Document Type',
+    'profileNotFound': 'No profile found',
+    'cacheInfo': 'View Cache Info',
+    'clearCache': 'Clear Cache',
+    'authenticatingWithGoogle': 'Authenticating with Google...',
+    'authenticatingWithMicrosoft': 'Authenticating with Microsoft...',
+    'authenticationError': 'Authentication error',
+    'cacheCleared': 'Cache cleared successfully!',
+    'errorClearingCache': 'Error clearing cache',
+    'cacheFiles': 'Files',
+    'cacheSize': 'Size',
+    'cacheDirectory': 'Directory',
+    'ok': 'OK',
+    'errorGettingInfo': 'Error getting info',
     'sidebarSystem': 'System',
     'sidebarBackup': 'Backup',
     'sidebarTrash': 'Trash',
@@ -767,6 +881,41 @@ class AppStrings {
     'today': 'Aujourd\'hui',
     'tomorrow': 'Demain',
     'yesterday': 'Hier',
+    'appTitle': 'Bloquinho',
+    'appSubtitle': 'Votre espace de travail personnel',
+    'enterButton': 'Entrer',
+    'pageNotFound': 'Page non trouvée',
+    'backToHome': 'Retour à l\'accueil',
+    'syncStatusTitle': 'Statut de Synchronisation',
+    'syncProvider': 'Fournisseur',
+    'syncLastSync': 'Dernière Synchronisation',
+    'syncFiles': 'Fichiers',
+    'syncCompleted': 'Synchronisation terminée !',
+    'syncErrorOccurred': 'Erreur de synchronisation survenue',
+    'syncButton': 'Synchroniser',
+    'closeButton': 'Fermer',
+    'unknown': 'Inconnu',
+    'creditDebit': 'Crédit/Débit',
+    'loyalty': 'Fidélité',
+    'identification': 'Identification',
+    'featureInDevelopment': 'Fonctionnalité en développement...',
+    'addDocument': 'Ajouter un Document',
+    'addCard': 'Ajouter une Carte',
+    'viewFile': 'Voir le fichier...',
+    'documentType': 'Type de Document',
+    'profileNotFound': 'Aucun profil trouvé',
+    'cacheInfo': 'Voir les Informations du Cache',
+    'clearCache': 'Vider le Cache',
+    'authenticatingWithGoogle': 'Authentification avec Google...',
+    'authenticatingWithMicrosoft': 'Authentification avec Microsoft...',
+    'authenticationError': 'Erreur d\'authentification',
+    'cacheCleared': 'Cache vidé avec succès !',
+    'errorClearingCache': 'Erreur lors du vidage du cache',
+    'cacheFiles': 'Fichiers',
+    'cacheSize': 'Taille',
+    'cacheDirectory': 'Répertoire',
+    'ok': 'OK',
+    'errorGettingInfo': 'Erreur lors de l\'obtention des informations',
     'sidebarSystem': 'Système',
     'sidebarBackup': 'Sauvegarde',
     'sidebarTrash': 'Corbeille',

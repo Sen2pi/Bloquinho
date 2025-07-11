@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/cloud_sync_status_provider.dart';
+import '../../core/l10n/app_strings.dart';
+import '../providers/language_provider.dart';
 
 /// Indicador de status da sincronização na nuvem para a topbar
 class CloudSyncIndicator extends ConsumerWidget {
@@ -156,6 +158,7 @@ class CloudSyncStatusModal extends ConsumerWidget {
     final icon = ref.watch(cloudSyncIconProvider);
     final color = ref.watch(cloudSyncColorProvider);
     final lastSync = ref.watch(cloudSyncLastSyncProvider);
+    final strings = ref.watch(appStringsProvider);
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -169,7 +172,7 @@ class CloudSyncStatusModal extends ConsumerWidget {
               Icon(icon, color: color, size: 24),
               const SizedBox(width: 12),
               Text(
-                'Status de Sincronização',
+                strings.syncStatusTitle,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -181,19 +184,19 @@ class CloudSyncStatusModal extends ConsumerWidget {
 
           // Status atual
           _buildStatusRow(
-            'Status',
-            state.message ?? 'Desconhecido',
+            strings.syncStatus,
+            state.message ?? strings.unknown,
             color,
           ),
 
           if (state.provider != null) ...[
             const SizedBox(height: 12),
             _buildStatusRow(
-              'Provedor',
+              strings.syncProvider,
               state.provider == 'google'
-                  ? 'Google Drive'
+                  ? strings.googleDrive
                   : state.provider == 'microsoft'
-                      ? 'OneDrive'
+                      ? strings.oneDrive
                       : state.provider!,
               null,
             ),
@@ -201,17 +204,17 @@ class CloudSyncStatusModal extends ConsumerWidget {
 
           if (lastSync != null) ...[
             const SizedBox(height: 12),
-            _buildStatusRow('Última Sincronização', lastSync, null),
+            _buildStatusRow(strings.syncLastSync, lastSync, null),
           ],
 
           if (state.filesCount != null) ...[
             const SizedBox(height: 12),
-            _buildStatusRow('Arquivos', '${state.filesCount}', null),
+            _buildStatusRow(strings.syncFiles, '${state.filesCount}', null),
           ],
 
           if (state.error != null) ...[
             const SizedBox(height: 12),
-            _buildStatusRow('Erro', state.error!, Colors.red),
+            _buildStatusRow(strings.syncError, state.error!, Colors.red),
           ],
 
           const SizedBox(height: 24),
@@ -240,19 +243,19 @@ class CloudSyncStatusModal extends ConsumerWidget {
 
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Sincronização concluída!'),
+                          SnackBar(
+                            content: Text(strings.syncCompleted),
                             backgroundColor: Colors.green,
                           ),
                         );
                       }
                     } catch (e) {
-                      notifier.setError('Erro na sincronização: $e');
+                      notifier.setError('${strings.syncErrorOccurred}: $e');
 
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Erro na sincronização: $e'),
+                            content: Text('${strings.syncErrorOccurred}: $e'),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -260,13 +263,13 @@ class CloudSyncStatusModal extends ConsumerWidget {
                     }
                   },
                   icon: const Icon(Icons.sync),
-                  label: const Text('Sincronizar'),
+                  label: Text(strings.syncButton),
                 ),
                 const SizedBox(width: 8),
               ],
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Fechar'),
+                child: Text(strings.closeButton),
               ),
             ],
           ),
