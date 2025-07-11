@@ -1,1 +1,0 @@
- C:\\Users\\MC_SE\\Developer\\Bloquinho\\.dart_tool\\flutter_build\\33964736467d668795daae27a1c1a21d\\native_assets.json: 

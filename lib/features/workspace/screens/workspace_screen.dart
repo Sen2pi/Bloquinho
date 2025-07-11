@@ -15,8 +15,7 @@ import '../../profile/widgets/profile_avatar.dart';
 import '../../database/screens/database_list_screen.dart';
 import '../../database/widgets/database_section_widget.dart';
 import '../../../shared/providers/database_provider.dart';
-import '../../bloquinho/widgets/bloquinho_section_widget.dart';
-import '../../bloquinho/providers/page_provider.dart';
+import '../../passwords/screens/password_manager_screen.dart';
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
   const WorkspaceScreen({super.key});
@@ -36,13 +35,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     // Configurar referência para atualizações de status de sincronização
     WidgetsBinding.instance.addPostFrameCallback((_) {
       OAuth2Service.setSyncRef(ref);
-      // Carregar páginas do workspace atual
-      final currentWorkspace = ref.read(currentWorkspaceProvider);
-      if (currentWorkspace != null) {
-        ref
-            .read(pageProvider.notifier)
-            .loadPagesForWorkspace(currentWorkspace.id);
-      }
     });
   }
 
@@ -108,10 +100,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     );
                   }
                   if (section.id.contains('bloquinho')) {
-                    return BloquinhoSectionWidget(
+                    return _buildSidebarItem(
+                      icon: PhosphorIcons.notePencil(),
+                      label: 'Bloquinho',
+                      sectionId: section.id,
                       isDarkMode: isDarkMode,
-                      isSelected: _selectedSectionId == section.id,
-                      isExpanded: _isBloquinhoExpanded,
                       onTap: () => _handleBloquinhoTap(),
                     );
                   }
@@ -580,13 +573,19 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     // Navegar para seção específica
     switch (sectionId) {
       case 'bloquinho':
-        // Implementar navegação para bloquinho (páginas)
+        // Navegar para Bloquinho usando o método específico
+        _handleBloquinhoTap();
         break;
       case 'documents':
         // Implementar navegação para documentos
         break;
       case 'passwords':
-        // Implementar navegação para passwords
+        // Navegar para gestor de palavras-passe
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const PasswordManagerScreen(),
+          ),
+        );
         break;
       case 'agenda':
         // Implementar navegação para agenda
@@ -605,11 +604,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     }
   }
 
-  void _handleBloquinhoTap() {
-    setState(() {
-      _selectedSectionId = 'bloquinho';
-      _isBloquinhoExpanded = !_isBloquinhoExpanded;
-    });
+  void _handleBloquinhoTap() async {
+    setState(() => _selectedSectionId = 'bloquinho');
+
+    // Navegar para a tela de notas
+    if (mounted) {
+      context.pushNamed('notes');
+    }
   }
 
   void _handleUserMenuAction(String action) {
@@ -624,6 +625,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         // Implementar logout
         break;
     }
+  }
+
+  void _showCreatePageDialog(BuildContext context) {
+    // Implementar diálogo de criação de página
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
+    );
   }
 
   Widget _buildWorkspaceCard({
@@ -746,9 +754,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   Row(
                     children: [
                       ElevatedButton.icon(
-                        onPressed: () {
-                          // TODO: Implementar criação de página
-                        },
+                        onPressed: () => _showCreatePageDialog(context),
                         icon: Icon(PhosphorIcons.plus()),
                         label: const Text('Nova Página'),
                       ),
