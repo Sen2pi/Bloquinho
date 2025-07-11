@@ -32,6 +32,7 @@ class AgendaKanbanView extends ConsumerWidget {
               TaskStatus.todo,
               Colors.grey,
               isDarkMode,
+              ref,
             ),
           ),
           const SizedBox(width: 16),
@@ -45,6 +46,7 @@ class AgendaKanbanView extends ConsumerWidget {
               TaskStatus.inProgress,
               Colors.blue,
               isDarkMode,
+              ref,
             ),
           ),
           const SizedBox(width: 16),
@@ -58,6 +60,7 @@ class AgendaKanbanView extends ConsumerWidget {
               TaskStatus.done,
               Colors.green,
               isDarkMode,
+              ref,
             ),
           ),
           const SizedBox(width: 16),
@@ -71,6 +74,7 @@ class AgendaKanbanView extends ConsumerWidget {
               TaskStatus.cancelled,
               Colors.red,
               isDarkMode,
+              ref,
             ),
           ),
         ],
@@ -85,6 +89,7 @@ class AgendaKanbanView extends ConsumerWidget {
     TaskStatus status,
     Color color,
     bool isDarkMode,
+    WidgetRef ref,
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -184,7 +189,8 @@ class AgendaKanbanView extends ConsumerWidget {
                           child: DragTarget<AgendaItem>(
                             onWillAccept: (data) =>
                                 data != null && data.status != status,
-                            onAccept: (data) => _moveItemToStatus(data, status),
+                            onAccept: (data) =>
+                                _moveItemToStatus(data, status, ref),
                             builder: (context, candidateData, rejectedData) {
                               return AgendaItemCard(
                                 item: item,
@@ -237,9 +243,9 @@ class AgendaKanbanView extends ConsumerWidget {
     );
   }
 
-  void _moveItemToStatus(AgendaItem item, TaskStatus newStatus) {
-    // Implementar mudança de status via provider
-    // ref.read(agendaProvider.notifier).updateItemStatus(item.id, newStatus);
+  void _moveItemToStatus(AgendaItem item, TaskStatus newStatus, WidgetRef ref) {
+    // Usar o provider para atualizar o status (que também atualiza na base de dados se necessário)
+    ref.read(agendaProvider.notifier).updateItemStatus(item.id, newStatus);
   }
 
   void _showItemDetails(BuildContext context, AgendaItem item) {

@@ -383,6 +383,69 @@ class LocalStorageService {
     }
   }
 
+  /// Obter dados por chave (para compatibilidade com sistema de documentos)
+  Future<String?> getData(String key) async {
+    await _ensureInitialized();
+
+    if (kIsWeb) {
+      // No web, usar localStorage
+      return null; // Implementar se necessário
+    }
+
+    try {
+      // Usar o primeiro perfil disponível para armazenar dados
+      final profiles = await getExistingProfiles();
+      if (profiles.isEmpty) return null;
+
+      final profilePath = await createProfileStructure(profiles.first.name);
+      final dataFile = File(path.join(profilePath, '${key}.json'));
+
+      if (await dataFile.exists()) {
+        return await dataFile.readAsString();
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ Erro ao obter dados: $e');
+      return null;
+    }
+  }
+
+  /// Salvar dados por chave (para compatibilidade com sistema de documentos)
+  Future<void> saveData(String key, String data) async {
+    await _ensureInitialized();
+
+    if (kIsWeb) {
+      // No web, usar localStorage
+      return; // Implementar se necessário
+    }
+
+    try {
+      // Usar o primeiro perfil disponível para armazenar dados
+      final profiles = await getExistingProfiles();
+      if (profiles.isEmpty) {
+        // Criar perfil padrão se não existir
+        final defaultProfile = UserProfile(
+          id: 'default',
+          name: 'Default',
+          email: 'default@example.com',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await saveProfile(defaultProfile);
+      }
+
+      final profilePath = await createProfileStructure(
+          profiles.isNotEmpty ? profiles.first.name : 'Default');
+      final dataFile = File(path.join(profilePath, '${key}.json'));
+
+      await dataFile.writeAsString(data);
+      debugPrint('✅ Dados salvos: ${dataFile.path}');
+    } catch (e) {
+      debugPrint('❌ Erro ao salvar dados: $e');
+      throw Exception('Erro ao salvar dados: $e');
+    }
+  }
+
   /// Sanitizar nome de arquivo/pasta
   String _sanitizeFileName(String name) {
     // Remover caracteres especiais e espaços

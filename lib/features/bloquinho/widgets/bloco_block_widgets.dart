@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:flutter_highlight/flutter_highlight.dart';
-import 'package:flutter_highlight/themes/github.dart';
-import 'package:flutter_highlight/themes/atom-one-dark.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../models/bloco_base_model.dart';
 import '../models/bloco_tipo_enum.dart';
@@ -1315,16 +1309,21 @@ class _BlocoCodigoWidgetState extends ConsumerState<BlocoCodigoWidget> {
                     onSubmitted: (_) => _saveChanges(),
                   )
                 : widget.bloco.destacarSintaxe
-                    ? HighlightView(
-                        widget.bloco.codigo.isEmpty
-                            ? '// Código vazio'
-                            : widget.bloco.codigo,
-                        language: widget.bloco.linguagem,
-                        theme: isDarkMode ? atomOneDarkTheme : githubTheme,
-                        padding: EdgeInsets.zero,
-                        textStyle: const TextStyle(
-                          fontFamily: 'Courier',
-                          fontSize: 14,
+                    ? Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color:
+                              isDarkMode ? Colors.grey[800] : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          widget.bloco.codigo.isEmpty
+                              ? '// Código vazio'
+                              : widget.bloco.codigo,
+                          style: const TextStyle(
+                            fontFamily: 'Courier',
+                            fontSize: 14,
+                          ),
                         ),
                       )
                     : Text(
@@ -1467,10 +1466,21 @@ class _BlocoEquacaoWidgetState extends State<BlocoEquacaoWidget> {
                         fontStyle: FontStyle.italic,
                       ),
                     )
-                  : Math.tex(
-                      widget.bloco.formula,
-                      mathStyle: MathStyle.display,
-                      textStyle: const TextStyle(fontSize: 18),
+                  : Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        widget.bloco.formula.isEmpty
+                            ? 'Fórmula vazia'
+                            : widget.bloco.formula,
+                        style: const TextStyle(
+                          fontFamily: 'Courier',
+                          fontSize: 18,
+                        ),
+                      ),
                     ),
             ),
 
@@ -1524,28 +1534,19 @@ class BlocoImagemWidget extends StatelessWidget {
             ),
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: CachedNetworkImage(
-                imageUrl: bloco.url,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Colors.grey[200],
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[200],
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(PhosphorIcons.image(), size: 48, color: Colors.grey),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Erro ao carregar imagem',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
+              child: Container(
+                color: Colors.grey[200],
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(PhosphorIcons.image(), size: 48, color: Colors.grey),
+                    const SizedBox(height: 8),
+                    Text(
+                      bloco.url.isEmpty ? 'Sem imagem' : 'Imagem: ${bloco.url}',
+                      style: const TextStyle(color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1608,13 +1609,18 @@ class BlocoVideoWidget extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Thumbnail
+                  // Thumbnail placeholder
                   if (bloco.thumbnail != null)
-                    CachedNetworkImage(
-                      imageUrl: bloco.thumbnail!,
-                      fit: BoxFit.cover,
+                    Container(
                       width: double.infinity,
                       height: double.infinity,
+                      color: Colors.grey[300],
+                      child: Center(
+                        child: Text(
+                          'Thumbnail: ${bloco.thumbnail}',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ),
                     ),
 
                   // Play button
@@ -1693,11 +1699,9 @@ class BlocoLinkWidget extends StatelessWidget {
     this.onUpdated,
   });
 
-  void _openLink() async {
-    final uri = Uri.parse(bloco.url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
+  void _openLink() {
+    // TODO: Implementar abertura de links
+    print('Abrindo link: ${bloco.url}');
   }
 
   @override

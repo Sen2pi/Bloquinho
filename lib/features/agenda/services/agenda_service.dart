@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 
 import '../models/agenda_item.dart';
 import '../../../shared/providers/database_provider.dart';
+import '../../../core/services/database_service.dart';
+import '../../../core/models/database_models.dart';
 
 class AgendaService {
   static const String _boxName = 'agenda_items';
@@ -193,23 +195,91 @@ class AgendaService {
     }
   }
 
-  TaskStatus _mapDatabaseStatusToTaskStatus(String? dbStatus) {
-    switch (dbStatus?.toLowerCase()) {
-      case 'todo':
-      case 'a fazer':
-        return TaskStatus.todo;
-      case 'inprogress':
-      case 'em progresso':
-        return TaskStatus.inProgress;
-      case 'done':
-      case 'concluída':
-        return TaskStatus.done;
-      case 'cancelled':
-      case 'cancelada':
-        return TaskStatus.cancelled;
-      default:
-        return TaskStatus.todo;
+  /// Busca todos os deadlines da base de dados e converte em AgendaItem
+  Future<List<AgendaItem>> getDatabaseDeadlines() async {
+    final List<AgendaItem> items = [];
+    final databaseService = DatabaseService();
+    await databaseService.initialize();
+    for (final table in databaseService.tables) {
+      // Buscar deadlineColumn
+      DatabaseColumn? deadlineColumn;
+      for (final col in table.columns) {
+        if (col.type == ColumnType.deadline) {
+          deadlineColumn = col;
+          break;
+        }
+      }
+      // Buscar statusColumn
+      DatabaseColumn? statusColumn;
+      for (final col in table.columns) {
+        if (col.type == ColumnType.status) {
+          statusColumn = col;
+          break;
+        }
+      }
+      // Buscar titleColumn
+      DatabaseColumn? titleColumn;
+      for (final col in table.columns) {
+        if (col.isPrimary) {
+          titleColumn = col;
+          break;
+        }
+      }
+      if (titleColumn == null) {
+        for (final col in table.columns) {
+          if (col.type == ColumnType.text) {
+            titleColumn = col;
+            break;
+          }
+        }
+      }
+      if (titleColumn == null && table.columns.isNotEmpty) {
+        titleColumn = table.columns.first;
+      }
+      if (deadlineColumn == null || titleColumn == null) continue;
+      for (final row in table.rows) {
+        final deadlineCell = row.getCell(deadlineColumn.id);
+        if (deadlineCell == null || deadlineCell.value == null) continue;
+        final statusCell =
+            statusColumn != null ? row.getCell(statusColumn.id) : null;
+        final statusValue = statusCell?.value;
+        // Mapear status da base para TaskStatus
+        final TaskStatus? status = _mapDatabaseStatusToTaskStatus(statusValue);
+        items.add(
+          AgendaItem(
+            id: '', // será gerado ao criar na agenda
+            title:
+                row.getCell(titleColumn.id)?.value?.toString() ?? 'Sem título',
+            description: row.getCell(titleColumn.id)?.value?.toString(),
+            deadline: deadlineCell.value is DateTime
+                ? deadlineCell.value
+                : DateTime.tryParse(deadlineCell.value.toString()),
+            type: AgendaItemType.task,
+            status: status,
+            priority:
+                Priority.medium, // pode mapear se houver coluna de prioridade
+            databaseItemId: row.id,
+            databaseName: table.name,
+            createdAt: row.createdAt,
+            updatedAt: row.lastModified,
+          ),
+        );
+      }
     }
+    return items;
+  }
+
+  TaskStatus? _mapDatabaseStatusToTaskStatus(dynamic dbStatus) {
+    if (dbStatus == null) return null;
+    final value = dbStatus.toString().toLowerCase();
+    if (value == 'todo' || value == 'a fazer') return TaskStatus.todo;
+    if (value == 'in_progress' || value == 'em progresso')
+      return TaskStatus.inProgress;
+    if (value == 'done' || value == 'concluído' || value == 'concluido')
+      return TaskStatus.done;
+    if (value == 'cancelled' || value == 'cancelada' || value == 'cancelado')
+      return TaskStatus.cancelled;
+    return null;
   }
 
   Priority _mapDatabasePriorityToPriority(String? dbPriority) {

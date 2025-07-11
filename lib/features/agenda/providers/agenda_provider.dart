@@ -3,6 +3,9 @@ import 'package:equatable/equatable.dart';
 
 import '../models/agenda_item.dart';
 import '../services/agenda_service.dart';
+import '../../../core/services/database_service.dart';
+import '../../../core/models/database_models.dart';
+import 'package:flutter/foundation.dart';
 
 // Estado da agenda
 class AgendaState extends Equatable {
@@ -113,11 +116,19 @@ class AgendaNotifier extends StateNotifier<AgendaState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      final items = await _agendaService.getAllItems();
+      // Carregar itens da agenda
+      final agendaItems = await _agendaService.getAllItems();
+
+      // Carregar deadlines da base de dados
+      final databaseDeadlines = await _agendaService.getDatabaseDeadlines();
+
+      // Unificar itens (agenda + base de dados)
+      final allItems = [...agendaItems, ...databaseDeadlines];
+
       final stats = await _agendaService.getAgendaStats();
 
       state = state.copyWith(
-        items: items,
+        items: allItems,
         stats: stats,
         isLoading: false,
       );
@@ -326,7 +337,75 @@ class AgendaNotifier extends StateNotifier<AgendaState> {
   Future<void> updateItemStatus(String id, TaskStatus status) async {
     final item = state.items.firstWhere((item) => item.id == id);
     final updatedItem = item.copyWith(status: status);
+
+    // Se o item é da base de dados, atualizar lá também
+    if (item.databaseItemId != null && item.databaseName != null) {
+      await _updateDatabaseItemStatus(
+          item.databaseItemId!, item.databaseName!, status);
+    }
+
     await updateItem(updatedItem);
+  }
+
+  /// Atualiza o status de um item na base de dados
+  Future<void> _updateDatabaseItemStatus(
+      String databaseItemId, String databaseName, TaskStatus status) async {
+    try {
+      final databaseService = DatabaseService();
+      await databaseService.initialize();
+
+      // Encontrar a tabela
+      DatabaseTable? table;
+      for (final t in databaseService.tables) {
+        if (t.name == databaseName) {
+          table = t;
+          break;
+        }
+      }
+
+      if (table == null) return;
+
+      // Encontrar a coluna de status
+      DatabaseColumn? statusColumn;
+      for (final col in table.columns) {
+        if (col.type == ColumnType.status) {
+          statusColumn = col;
+          break;
+        }
+      }
+
+      if (statusColumn == null) return;
+
+      // Encontrar a linha
+      final row = table.getRow(databaseItemId);
+      if (row == null) return;
+
+      // Mapear TaskStatus para valor da base de dados
+      final statusValue = _mapTaskStatusToDatabaseStatus(status);
+
+      // Atualizar a célula
+      final updatedRow = row.setCell(statusColumn.id, statusValue);
+      final updatedTable = table.updateRow(updatedRow);
+
+      // Salvar na base de dados
+      await databaseService.updateTable(updatedTable);
+    } catch (e) {
+      debugPrint('Erro ao atualizar status na base de dados: $e');
+    }
+  }
+
+  /// Mapeia TaskStatus para valor da base de dados
+  String _mapTaskStatusToDatabaseStatus(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.todo:
+        return 'Por fazer';
+      case TaskStatus.inProgress:
+        return 'Em progresso';
+      case TaskStatus.done:
+        return 'Concluído';
+      case TaskStatus.cancelled:
+        return 'Cancelado';
+    }
   }
 
   // Sincronização com base de dados
@@ -334,10 +413,23 @@ class AgendaNotifier extends StateNotifier<AgendaState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      await _agendaService.syncWithDatabase();
+      // Buscar deadlines da base de dados
+      final databaseDeadlines = await _agendaService.getDatabaseDeadlines();
 
-      // Recarregar dados
-      await _loadInitialData();
+      // Filtrar itens que não são da base de dados (manter apenas itens nativos da agenda)
+      final nativeItems =
+          state.items.where((item) => item.databaseItemId == null).toList();
+
+      // Unificar itens nativos + deadlines da base de dados
+      final allItems = [...nativeItems, ...databaseDeadlines];
+
+      state = state.copyWith(
+        items: allItems,
+        isLoading: false,
+      );
+
+      _applyFilters();
+      await _updateStats();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
