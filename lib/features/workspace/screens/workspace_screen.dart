@@ -16,6 +16,12 @@ import '../../database/screens/database_list_screen.dart';
 import '../../database/widgets/database_section_widget.dart';
 import '../../../shared/providers/database_provider.dart';
 import '../../passwords/screens/password_manager_screen.dart';
+import '../../agenda/screens/agenda_screen.dart';
+import '../../documentos/screens/documentos_screen.dart';
+import '../../bloquinho/screens/bloco_editor_screen.dart';
+import '../../bloquinho/widgets/page_tree_widget.dart';
+
+enum Section { bloquinho, agenda, passwords, documentos, database }
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
   const WorkspaceScreen({super.key});
@@ -26,8 +32,8 @@ class WorkspaceScreen extends ConsumerStatefulWidget {
 
 class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   bool _isSidebarExpanded = true;
-  String _selectedSectionId = 'bloquinho'; // Atualizado para bloquinho
-  bool _isBloquinhoExpanded = false;
+  Section _selectedSection = Section.bloquinho;
+  bool _isBloquinhoExpanded = true;
 
   @override
   void initState() {
@@ -92,21 +98,74 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 // Seções principais
                 ...workspaceSections.map((section) {
                   if (section.id.contains('database')) {
-                    return DatabaseSectionWidget(
-                      isDarkMode: isDarkMode,
-                      isSelected: _selectedSectionId == section.id,
-                      isExpanded: false,
-                      onTap: () => _handleSectionTap(section.id),
+                    return ListTile(
+                      leading: Icon(Icons.storage_outlined, size: 28),
+                      title: _isSidebarExpanded
+                          ? const Text('Base de Dados')
+                          : null,
+                      onTap: () => _handleSectionTap('database'),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 2),
+                      horizontalTitleGap: 12,
                     );
                   }
                   if (section.id.contains('bloquinho')) {
-                    return _buildSidebarItem(
-                      icon: PhosphorIcons.notePencil(),
-                      label: 'Bloquinho',
-                      sectionId: section.id,
-                      isDarkMode: isDarkMode,
-                      onTap: () => _handleBloquinhoTap(),
+                    return Column(
+                      children: [
+                        ListTile(
+                          leading: Image.asset(
+                            isDarkMode
+                                ? 'assets/images/logoDark.png'
+                                : 'assets/images/logo.png',
+                            width: 28,
+                            height: 28,
+                          ),
+                          title: _isSidebarExpanded
+                              ? const Text('Bloquinho')
+                              : null,
+                          onTap: () {
+                            setState(() {
+                              _isBloquinhoExpanded = !_isBloquinhoExpanded;
+                            });
+                          },
+                          trailing: _isSidebarExpanded
+                              ? Icon(_isBloquinhoExpanded
+                                  ? Icons.arrow_drop_down
+                                  : Icons.arrow_right)
+                              : null,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 2),
+                          horizontalTitleGap: 12,
+                        ),
+                        if (_isBloquinhoExpanded && _isSidebarExpanded)
+                          const Padding(
+                            padding: EdgeInsets.only(left: 16.0),
+                            child: PageTreeWidget(),
+                          ),
+                        ListTile(
+                          leading: Image.asset(
+                            'assets/images/cartao.png',
+                            width: 28,
+                            height: 28,
+                          ),
+                          title: _isSidebarExpanded
+                              ? const Text('Documentos')
+                              : null,
+                          onTap: () {
+                            print('Sidebar: Documentos clicado');
+                            _handleSectionTap('documentos');
+                          },
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 2),
+                          horizontalTitleGap: 12,
+                        ),
+                      ],
                     );
+                  }
+                  if (section.id.contains('documents') ||
+                      section.name.toLowerCase().contains('documentos')) {
+                    return const SizedBox
+                        .shrink(); // Pular item dinâmico de Documentos
                   }
                   return _buildSectionItem(
                     section: section,
@@ -270,7 +329,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     required WorkspaceSection section,
     required bool isDarkMode,
   }) {
-    final isSelected = _selectedSectionId == section.id;
+    final isSelected = false; // Removed _selectedSectionId logic
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 2),
@@ -368,7 +427,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     required bool isDarkMode,
     VoidCallback? onTap,
   }) {
-    final isSelected = _selectedSectionId == sectionId;
+    final isSelected = false; // Removed _selectedSectionId logic
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 2),
@@ -567,50 +626,18 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
   void _handleSectionTap(String sectionId) {
     setState(() {
-      _selectedSectionId = sectionId;
+      if (sectionId.endsWith('agenda')) {
+        _selectedSection = Section.agenda;
+      } else if (sectionId.endsWith('passwords')) {
+        _selectedSection = Section.passwords;
+      } else if (sectionId.endsWith('documentos')) {
+        _selectedSection = Section.documentos;
+      } else if (sectionId.endsWith('database')) {
+        _selectedSection = Section.database;
+      } else if (sectionId.endsWith('bloquinho')) {
+        _selectedSection = Section.bloquinho;
+      }
     });
-
-    // Navegar para seção específica
-    switch (sectionId) {
-      case 'bloquinho':
-        // Navegar para Bloquinho usando o método específico
-        _handleBloquinhoTap();
-        break;
-      case 'documents':
-        // Implementar navegação para documentos
-        break;
-      case 'passwords':
-        // Navegar para gestor de palavras-passe
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const PasswordManagerScreen(),
-          ),
-        );
-        break;
-      case 'agenda':
-        // Implementar navegação para agenda
-        break;
-      case 'database':
-        // Navegar para base de dados
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const DatabaseListScreen(),
-          ),
-        );
-        break;
-      case 'trash':
-        // Implementar navegação para lixeira
-        break;
-    }
-  }
-
-  void _handleBloquinhoTap() async {
-    setState(() => _selectedSectionId = 'bloquinho');
-
-    // Navegar para a tela de notas
-    if (mounted) {
-      context.pushNamed('notes');
-    }
   }
 
   void _handleUserMenuAction(String action) {
@@ -686,150 +713,31 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   }
 
   Widget _buildMainContent(bool isDarkMode, Workspace? currentWorkspace) {
-    return Container(
-      color: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
-      child: Column(
-        children: [
-          // Header do conteúdo
-          Container(
-            height: 64,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color:
-                      isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Workspace: ${currentWorkspace?.name ?? 'Bloquinho'}',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      if (currentWorkspace?.description != null)
-                        Text(
-                          currentWorkspace!.description,
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
-                        ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () {},
-                  icon: Icon(PhosphorIcons.magnifyingGlass()),
-                  tooltip: 'Pesquisar',
-                ),
-                // Indicador de sincronização na nuvem
-                CompactCloudSyncIndicator(
-                  onTap: () => showCloudSyncStatusModal(context),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () {},
-                  icon: Icon(PhosphorIcons.bell()),
-                  tooltip: 'Notificações',
-                ),
-              ],
-            ),
+    switch (_selectedSection) {
+      case Section.agenda:
+        return const AgendaScreen();
+      case Section.passwords:
+        return const PasswordManagerScreen();
+      case Section.documentos:
+        return const DocumentosScreen();
+      case Section.database:
+        return const DatabaseListScreen();
+      case Section.bloquinho:
+        return const BlocoEditorScreen();
+      default:
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset('assets/images/notas.png', width: 64, height: 64),
+              const SizedBox(height: 24),
+              Text('Bem-vindo ao Bloquinho!',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('Selecione uma seção no menu lateral para começar.'),
+            ],
           ),
-
-          // Conteúdo principal
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Ações rápidas
-                  Row(
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () => _showCreatePageDialog(context),
-                        icon: Icon(PhosphorIcons.plus()),
-                        label: const Text('Nova Página'),
-                      ),
-                      const SizedBox(width: 16),
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          // TODO: Implementar importação
-                        },
-                        icon: Icon(PhosphorIcons.upload()),
-                        label: const Text('Importar'),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Conteúdo do workspace
-                  Expanded(
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 1.2,
-                      children: [
-                        _buildWorkspaceCard(
-                          icon: Icons.note_outlined,
-                          title: 'Bloquinho',
-                          subtitle: 'Páginas e documentos tipo Notion',
-                          color: Colors.blue,
-                          onTap: () => _handleSectionTap('bloquinho'),
-                        ),
-                        _buildWorkspaceCard(
-                          icon: Icons.description_outlined,
-                          title: 'Documentos',
-                          subtitle: 'Gerenciar arquivos',
-                          color: Colors.green,
-                          onTap: () => _handleSectionTap('documents'),
-                        ),
-                        _buildWorkspaceCard(
-                          icon: Icons.password_outlined,
-                          title: 'Passwords',
-                          subtitle: 'Gerenciar senhas',
-                          color: Colors.orange,
-                          onTap: () => _handleSectionTap('passwords'),
-                        ),
-                        _buildWorkspaceCard(
-                          icon: Icons.calendar_month_outlined,
-                          title: 'Agenda',
-                          subtitle: 'Agendar eventos',
-                          color: Colors.purple,
-                          onTap: () => _handleSectionTap('agenda'),
-                        ),
-                        _buildWorkspaceCard(
-                          icon: Icons.storage_outlined,
-                          title: 'Base de Dados',
-                          subtitle: 'Tabelas e dados',
-                          color: Colors.red,
-                          onTap: () => _handleSectionTap('database'),
-                        ),
-                        _buildWorkspaceCard(
-                          icon: Icons.settings_outlined,
-                          title: 'Configurações',
-                          subtitle: 'Ajustar preferências',
-                          color: Colors.grey,
-                          onTap: () => _handleUserMenuAction('settings'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+        );
+    }
   }
 }

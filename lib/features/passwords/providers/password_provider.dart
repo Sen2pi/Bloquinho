@@ -412,6 +412,11 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
     state = state.copyWith(error: null);
   }
 
+  void replaceAll(List<PasswordEntry> items) {
+    state = state.copyWith(passwords: items);
+    _applyFilters();
+  }
+
   // Geração de senhas
   String generatePassword({
     int length = 16,

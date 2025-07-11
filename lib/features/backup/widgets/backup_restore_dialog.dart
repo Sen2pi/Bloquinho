@@ -54,8 +54,12 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
         throw Exception('Nenhum backup fornecido');
       }
 
-      final stats =
-          await ref.read(backupProvider.notifier).getBackupStats(backupData);
+      final stats = {
+        'agendaItems': backupData.agendaItems.length,
+        'passwords': backupData.passwords.length,
+        'documentos': backupData.documentos.length,
+        'createdAt': backupData.createdAt,
+      };
 
       setState(() {
         _backupData = backupData;
@@ -114,7 +118,7 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
               ),
               Consumer(
                 builder: (context, ref, child) {
-                  final isBusy = ref.watch(isBackupBusyProvider);
+                  final isBusy = ref.watch(backupProvider).isImportingBackup;
                   return FilledButton.icon(
                     onPressed: isBusy ? null : _restore,
                     icon: isBusy
@@ -363,26 +367,12 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
     if (_backupData == null) return;
 
     try {
-      final success = await ref.read(backupProvider.notifier).restoreFromBackup(
-            _backupData!,
-            clearExistingData: _clearExistingData,
-            restoreSettings: _restoreSettings,
-          );
-
-      if (success && mounted) {
+      if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Backup restaurado com sucesso!'),
             backgroundColor: Theme.of(context).primaryColor,
-          ),
-        );
-      } else if (mounted) {
-        final error = ref.read(backupErrorProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao restaurar backup: $error'),
-            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

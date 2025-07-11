@@ -20,7 +20,9 @@ import 'features/backup/screens/backup_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'features/profile/screens/profile_edit_screen.dart';
 import 'features/profile/screens/storage_settings_screen.dart';
-import 'features/bloquinho/screens/notes_screen.dart';
+import 'features/agenda/screens/agenda_screen.dart';
+import 'features/passwords/screens/password_manager_screen.dart';
+import 'features/documentos/screens/documentos_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -135,11 +137,6 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const WorkspaceScreen(),
       routes: [
         GoRoute(
-          path: 'notes',
-          name: 'notes',
-          builder: (context, state) => const NotesScreen(),
-        ),
-        GoRoute(
           path: 'backup',
           name: 'backup',
           builder: (context, state) => const BackupScreen(),
@@ -159,6 +156,21 @@ final GoRouter _router = GoRouter(
           name: 'storage_settings',
           builder: (context, state) => const StorageSettingsScreen(),
         ),
+        GoRoute(
+          path: 'agenda',
+          name: 'agenda',
+          builder: (context, state) => const AgendaScreen(),
+        ),
+        GoRoute(
+          path: 'passwords',
+          name: 'passwords',
+          builder: (context, state) => const PasswordManagerScreen(),
+        ),
+        GoRoute(
+          path: 'documentos',
+          name: 'documentos',
+          builder: (context, state) => const DocumentosScreen(),
+        ),
       ],
     ),
     GoRoute(
@@ -174,28 +186,6 @@ final GoRouter _router = GoRouter(
   ],
   errorBuilder: (context, state) => const NotFoundScreen(),
 );
-
-// Tela de documento (placeholder)
-class DocumentScreen extends StatelessWidget {
-  final String documentId;
-
-  const DocumentScreen({
-    super.key,
-    required this.documentId,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Documento $documentId'),
-      ),
-      body: const Center(
-        child: Text('Editor de documento em desenvolvimento...'),
-      ),
-    );
-  }
-}
 
 // Tela de autenticação (placeholder)
 class AuthScreen extends StatelessWidget {
