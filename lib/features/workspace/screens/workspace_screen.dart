@@ -3,13 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/app_strings.dart';
+
 import '../../../shared/providers/theme_provider.dart';
+import '../../../shared/providers/language_provider.dart';
 import '../../../shared/providers/workspace_provider.dart';
 import '../../../shared/providers/user_profile_provider.dart';
 import '../../../shared/widgets/cloud_sync_indicator.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/workspace.dart';
 import '../../../core/services/oauth2_service.dart';
+import '../../../core/services/local_storage_service.dart';
+import '../../../core/services/user_profile_service.dart';
 import '../../backup/screens/backup_screen.dart';
 import '../../profile/widgets/profile_avatar.dart';
 import '../../database/screens/database_list_screen.dart';
@@ -20,6 +25,7 @@ import '../../agenda/screens/agenda_screen.dart';
 import '../../documentos/screens/documentos_screen.dart';
 import '../../bloquinho/screens/bloco_editor_screen.dart';
 import '../../bloquinho/widgets/page_tree_widget.dart';
+import '../../bloquinho/providers/pages_provider.dart';
 
 enum Section { bloquinho, agenda, passwords, documentos, database }
 
@@ -36,6 +42,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   bool _isBloquinhoExpanded = true;
   final GlobalKey<BlocoEditorScreenState> _editorKey =
       GlobalKey<BlocoEditorScreenState>();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -47,163 +54,178 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(isDarkModeProvider);
+    final currentProfile = ref.watch(currentProfileProvider);
     final currentWorkspace = ref.watch(currentWorkspaceProvider);
     final workspaceSections = ref.watch(currentWorkspaceSectionsProvider);
-    final currentProfile = ref.watch(currentProfileProvider);
+
+    // Carregar páginas automaticamente quando o contexto muda
+    ref.watch(pagesLoaderProvider);
 
     return Scaffold(
+      backgroundColor:
+          isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
       body: Row(
         children: [
           // Sidebar
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: _isSidebarExpanded ? 280 : 60,
-            child: _buildSidebar(isDarkMode, currentWorkspace,
-                workspaceSections, currentProfile),
-          ),
-
-          // Divisor
-          Container(
-            width: 1,
-            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
-          ),
+          _buildSidebar(
+              isDarkMode, currentProfile, currentWorkspace, workspaceSections),
 
           // Conteúdo principal
           Expanded(
-            child: _buildMainContent(isDarkMode, currentWorkspace),
+            child: Column(
+              children: [
+                // Header do workspace
+                _buildWorkspaceHeader(isDarkMode, currentWorkspace),
+
+                // Conteúdo principal
+                Expanded(
+                  child: _buildMainContent(isDarkMode, currentWorkspace),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSidebar(bool isDarkMode, Workspace? currentWorkspace,
-      List<WorkspaceSection> workspaceSections, dynamic currentProfile) {
-    return Container(
-      color: isDarkMode
-          ? AppColors.sidebarBackgroundDark
-          : AppColors.sidebarBackground,
-      child: Column(
-        children: [
-          // Header com seletor de workspace
-          _buildWorkspaceHeader(isDarkMode, currentWorkspace),
+  Widget _buildSidebar(bool isDarkMode, dynamic currentProfile,
+      Workspace? currentWorkspace, List<WorkspaceSection> workspaceSections) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: _isSidebarExpanded ? 280 : 60,
+      child: Container(
+        color: isDarkMode
+            ? AppColors.sidebarBackgroundDark
+            : AppColors.sidebarBackground,
+        child: Column(
+          children: [
+            // Header com seletor de workspace
+            _buildWorkspaceHeader(isDarkMode, currentWorkspace),
 
-          const Divider(height: 1),
+            const Divider(height: 1),
 
-          // Seções do workspace
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(8),
-              children: [
-                // Seções principais
-                ...workspaceSections.map((section) {
-                  if (section.id.contains('database')) {
-                    return ListTile(
-                      leading: Icon(Icons.storage_outlined, size: 28),
-                      title: _isSidebarExpanded
-                          ? const Text('Base de Dados')
-                          : null,
-                      onTap: () => _handleSectionTap('database'),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 2),
-                      horizontalTitleGap: 12,
-                    );
-                  }
-                  if (section.id.contains('bloquinho')) {
-                    return Column(
-                      children: [
-                        ListTile(
-                          leading: Image.asset(
-                            isDarkMode
-                                ? 'assets/images/logoDark.png'
-                                : 'assets/images/logo.png',
-                            width: 28,
-                            height: 28,
-                          ),
-                          title: _isSidebarExpanded
-                              ? const Text('Bloquinho')
-                              : null,
-                          onTap: () {
-                            setState(() {
-                              _isBloquinhoExpanded = !_isBloquinhoExpanded;
-                            });
-                          },
-                          trailing: _isSidebarExpanded
-                              ? Icon(_isBloquinhoExpanded
-                                  ? Icons.arrow_drop_down
-                                  : Icons.arrow_right)
-                              : null,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 2),
-                          horizontalTitleGap: 12,
-                        ),
-                        if (_isBloquinhoExpanded && _isSidebarExpanded)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 16.0),
-                            child: PageTreeWidget(
-                              onPageSelected: (pageId) {
-                                setState(() {
-                                  _selectedSection = Section.bloquinho;
-                                });
-                                // Navega para a página correta no editor
-                                _editorKey.currentState?.setPage(pageId);
-                              },
+            // Seções do workspace
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(8),
+                children: [
+                  // Seções principais
+                  ...workspaceSections.map((section) {
+                    if (section.id.contains('database')) {
+                      return ListTile(
+                        leading: Icon(Icons.storage_outlined, size: 28),
+                        title: _isSidebarExpanded
+                            ? const Text('Base de Dados')
+                            : null,
+                        onTap: () => _handleSectionTap('database'),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 2),
+                        horizontalTitleGap: 12,
+                      );
+                    }
+                    if (section.id.contains('bloquinho')) {
+                      return Column(
+                        children: [
+                          ListTile(
+                            leading: Image.asset(
+                              isDarkMode
+                                  ? 'assets/images/logoDark.png'
+                                  : 'assets/images/logo.png',
+                              width: 28,
+                              height: 28,
                             ),
+                            title: _isSidebarExpanded
+                                ? const Text('Bloquinho')
+                                : null,
+                            onTap: () {
+                              setState(() {
+                                _isBloquinhoExpanded = !_isBloquinhoExpanded;
+                              });
+                            },
+                            trailing: _isSidebarExpanded
+                                ? Icon(_isBloquinhoExpanded
+                                    ? Icons.arrow_drop_down
+                                    : Icons.arrow_right)
+                                : null,
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 2),
+                            horizontalTitleGap: 12,
                           ),
-                      ],
+                          if (_isBloquinhoExpanded && _isSidebarExpanded)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 16.0),
+                              child: PageTreeWidget(
+                                onPageSelected: (pageId) {
+                                  setState(() {
+                                    _selectedSection = Section.bloquinho;
+                                  });
+                                  // Navega para a página correta no editor
+                                  _editorKey.currentState?.setPage(pageId);
+                                },
+                              ),
+                            ),
+                        ],
+                      );
+                    }
+                    if (section.id.contains('documents') ||
+                        section.name.toLowerCase().contains('documentos')) {
+                      return const SizedBox
+                          .shrink(); // Pular item dinâmico de Documentos
+                    }
+                    return _buildSectionItem(
+                      section: section,
+                      isDarkMode: isDarkMode,
                     );
-                  }
-                  if (section.id.contains('documents') ||
-                      section.name.toLowerCase().contains('documentos')) {
-                    return const SizedBox
-                        .shrink(); // Pular item dinâmico de Documentos
-                  }
-                  return _buildSectionItem(
-                    section: section,
-                    isDarkMode: isDarkMode,
-                  );
-                }),
+                  }),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Seções de sistema
-                if (_isSidebarExpanded) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'Sistema',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
+                  // Seções de sistema
+                  if (_isSidebarExpanded) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        ref.read(appStringsProvider).sidebarSystem,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
                     ),
+                    const SizedBox(height: 8),
+                  ],
+
+                  _buildSidebarItem(
+                    icon: PhosphorIcons.downloadSimple(),
+                    label: ref.read(appStringsProvider).sidebarBackup,
+                    sectionId: 'backup',
+                    isDarkMode: isDarkMode,
+                    onTap: () => context.pushNamed('backup'),
                   ),
-                  const SizedBox(height: 8),
+                  _buildSidebarItem(
+                    icon: PhosphorIcons.trash(),
+                    label: ref.read(appStringsProvider).sidebarTrash,
+                    sectionId: 'trash',
+                    isDarkMode: isDarkMode,
+                    onTap: () => _handleSectionTap('trash'),
+                  ),
                 ],
-
-                _buildSidebarItem(
-                  icon: PhosphorIcons.downloadSimple(),
-                  label: 'Backup',
-                  sectionId: 'backup',
-                  isDarkMode: isDarkMode,
-                  onTap: () => context.pushNamed('backup'),
-                ),
-                _buildSidebarItem(
-                  icon: PhosphorIcons.trash(),
-                  label: 'Lixeira',
-                  sectionId: 'trash',
-                  isDarkMode: isDarkMode,
-                  onTap: () => _handleSectionTap('trash'),
-                ),
-              ],
+              ),
             ),
-          ),
 
-          // Footer com perfil do usuário
-          _buildUserProfileFooter(isDarkMode, currentProfile),
-        ],
+            // Footer com perfil do usuário
+            _buildUserProfileFooter(isDarkMode, currentProfile),
+          ],
+        ),
       ),
     );
   }
@@ -475,102 +497,156 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   Widget _buildUserProfileFooter(bool isDarkMode, dynamic currentProfile) {
     return Container(
       padding: const EdgeInsets.all(16),
-      child: Row(
+      decoration: BoxDecoration(
+        color: isDarkMode
+            ? AppColors.sidebarBackgroundDark.withOpacity(0.8)
+            : AppColors.sidebarBackground.withOpacity(0.8),
+        border: Border(
+          top: BorderSide(
+            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
         children: [
+          // Indicador de estado da nuvem
           if (_isSidebarExpanded) ...[
-            Expanded(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? AppColors.sidebarItemHoverDark
+                    : AppColors.sidebarItemHover,
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Row(
                 children: [
-                  // Avatar do usuário
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () => context.pushNamed('profile'),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: currentProfile != null
-                            ? ProfileAvatar(
-                                profile: currentProfile,
-                                size: 32,
-                                showLoadingIndicator: false,
-                              )
-                            : CircleAvatar(
-                                radius: 16,
-                                backgroundColor: AppColors.primary,
-                                child: const Icon(
-                                  Icons.person,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          currentProfile?.name ?? 'Usuário',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (currentProfile?.email != null)
-                          Text(
-                            currentProfile.email,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.grey[600],
-                                    ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                      ],
-                    ),
-                  ),
-                  // Menu de opções do usuário
-                  PopupMenuButton<String>(
-                    onSelected: (value) => _handleUserMenuAction(value),
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'profile',
-                        child: ListTile(
-                          leading: Icon(Icons.person),
-                          title: Text('Perfil'),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'settings',
-                        child: ListTile(
-                          leading: Icon(Icons.settings),
-                          title: Text('Configurações'),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                      const PopupMenuDivider(),
-                      const PopupMenuItem(
-                        value: 'logout',
-                        child: ListTile(
-                          leading: Icon(Icons.logout),
-                          title: Text('Sair'),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ],
-                    child: Icon(
-                      Icons.more_horiz,
-                      size: 20,
-                      color: Colors.grey[600],
+                  const ExpandedCloudSyncIndicator(),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () {
+                      // Mostrar detalhes da sincronização
+                      _showCloudSyncDetails(context);
+                    },
+                    icon: const Icon(Icons.info_outline, size: 16),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 24,
+                      minHeight: 24,
                     ),
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 12),
+          ] else ...[
+            // Indicador compacto quando collapsed
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? AppColors.sidebarItemHoverDark
+                    : AppColors.sidebarItemHover,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const CompactCloudSyncIndicator(),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // Perfil do usuário
+          if (_isSidebarExpanded) ...[
+            Row(
+              children: [
+                // Avatar
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => context.pushNamed('profile'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: currentProfile != null
+                          ? ProfileAvatar(
+                              profile: currentProfile,
+                              size: 32,
+                              showLoadingIndicator: false,
+                            )
+                          : CircleAvatar(
+                              radius: 16,
+                              backgroundColor: AppColors.primary,
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        currentProfile?.name ?? 'Usuário',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (currentProfile?.email != null)
+                        Text(
+                          currentProfile.email,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+                // Menu de opções do usuário
+                PopupMenuButton<String>(
+                  onSelected: (value) => _handleUserMenuAction(value),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'profile',
+                      child: ListTile(
+                        leading: Icon(Icons.person),
+                        title: Text('Perfil'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'settings',
+                      child: ListTile(
+                        leading: Icon(Icons.settings),
+                        title: Text('Configurações'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: ListTile(
+                        leading: Icon(Icons.logout),
+                        title: Text('Sair'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
+                  child: Icon(
+                    Icons.more_horiz,
+                    size: 20,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
             ),
           ] else ...[
             // Avatar compacto quando collapsed
@@ -633,17 +709,61 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     });
   }
 
-  void _handleUserMenuAction(String action) {
+  void _handleUserMenuAction(String action) async {
     switch (action) {
       case 'profile':
         context.pushNamed('profile');
         break;
       case 'settings':
-        // Implementar navegação para configurações
+        context.pushNamed('settings');
         break;
       case 'logout':
-        // Implementar logout
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Sair e apagar dados locais?'),
+            content: const Text(
+                'Tem certeza que deseja sair? Isso irá remover seu perfil e TODOS os dados locais deste dispositivo.\n\n⚠️ Recomenda-se fazer um backup antes de continuar.\n\nEsta ação não pode ser desfeita.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                ),
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Apagar e Sair'),
+              ),
+            ],
+          ),
+        );
+        if (confirmed == true) {
+          // Redirecionar imediatamente para onboarding
+          if (mounted) {
+            context.goNamed('onboarding');
+          }
+
+          // Deletar perfil em background (não bloquear a navegação)
+          _deleteProfileInBackground();
+        }
         break;
+    }
+  }
+
+  /// Deletar perfil em background sem bloquear a navegação
+  Future<void> _deleteProfileInBackground() async {
+    try {
+      debugPrint('🗑️ Iniciando deleção de perfil em background...');
+
+      // Deletar perfil usando o UserProfileService
+      await ref.read(userProfileProvider.notifier).deleteProfile();
+
+      debugPrint('✅ Perfil deletado com sucesso em background');
+    } catch (e) {
+      debugPrint('❌ Erro ao deletar perfil em background: $e');
+      // Não mostrar erro ao usuário pois já está no onboarding
     }
   }
 
@@ -716,7 +836,16 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       case Section.database:
         return const DatabaseListScreen();
       case Section.bloquinho:
-        return BlocoEditorScreen(key: _editorKey);
+        return Column(
+          children: [
+            // Barra de pesquisa
+            _buildSearchBar(isDarkMode),
+            // Editor do Bloquinho
+            Expanded(
+              child: BlocoEditorScreen(key: _editorKey),
+            ),
+          ],
+        );
       default:
         return Center(
           child: Column(
@@ -732,5 +861,113 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
           ),
         );
     }
+  }
+
+  Widget _buildSearchBar(bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode
+            ? AppColors.sidebarBackgroundDark
+            : AppColors.sidebarBackground,
+        border: Border(
+          bottom: BorderSide(
+            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Ícone de pesquisa
+          Icon(
+            PhosphorIcons.magnifyingGlass(),
+            color: Colors.grey[600],
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+
+          // Campo de pesquisa
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Pesquisar em Bloquinho e Base de Dados...',
+                hintStyle: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: 14,
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: TextStyle(
+                fontSize: 14,
+                color: isDarkMode ? Colors.white : Colors.black87,
+              ),
+              onChanged: (value) {
+                _performSearch(value);
+              },
+              onSubmitted: (value) {
+                _performSearch(value);
+              },
+            ),
+          ),
+
+          // Botão de limpar pesquisa
+          if (_searchController.text.isNotEmpty)
+            IconButton(
+              onPressed: () {
+                _searchController.clear();
+                _clearSearch();
+              },
+              icon: Icon(
+                PhosphorIcons.x(),
+                color: Colors.grey[600],
+                size: 18,
+              ),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(
+                minWidth: 32,
+                minHeight: 32,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _performSearch(String query) {
+    if (query.isEmpty) {
+      _clearSearch();
+      return;
+    }
+
+    // Implementar pesquisa em Bloquinho e Base de Dados
+    _searchInBloquinho(query);
+    _searchInDatabase(query);
+  }
+
+  void _searchInBloquinho(String query) {
+    // Pesquisar em páginas do Bloquinho
+    // TODO: Implementar pesquisa nas páginas do Bloquinho
+    debugPrint('🔍 Pesquisando no Bloquinho: $query');
+  }
+
+  void _searchInDatabase(String query) {
+    // Pesquisar na Base de Dados
+    // TODO: Implementar pesquisa na Base de Dados
+    debugPrint('🔍 Pesquisando na Base de Dados: $query');
+  }
+
+  void _clearSearch() {
+    // Limpar resultados de pesquisa
+    debugPrint('🧹 Limpando pesquisa');
+  }
+
+  void _showCloudSyncDetails(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => const CloudSyncStatusModal(),
+    );
   }
 }

@@ -226,117 +226,192 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
           isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
       foregroundColor:
           isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+      titleSpacing: 0,
       title: _buildTitleSection(editorState, currentPage),
       actions: _buildAppBarActions(isDarkMode, editorState),
       bottom: _isSearchVisible ? _buildSearchBar() : null,
+      toolbarHeight: 80, // Aumentar altura do header
     );
   }
 
   Widget _buildTitleSection(
       EditorControllerState editorState, PageModel? currentPage) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Breadcrumb de navegação
-        if (_navigationStack.length > 1)
-          Row(
-            children: [
-              IconButton(
-                onPressed: _navigateBack,
-                icon: Icon(PhosphorIcons.arrowLeft()),
-                tooltip: 'Voltar',
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: _navigationStack.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final pageId = entry.value;
-                      final pages = ref.read(pagesProvider.notifier).state;
-                      PageModel? page;
-                      try {
-                        page = pages.firstWhere((p) => p.id == pageId);
-                      } catch (e) {
-                        page = null;
-                      }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Breadcrumb de navegação
+          if (_navigationStack.length > 1)
+            Container(
+              height: 32,
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: _navigateBack,
+                    icon: Icon(PhosphorIcons.arrowLeft(), size: 16),
+                    tooltip: 'Voltar',
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _navigationStack.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final pageId = entry.value;
+                          final pages = ref.read(pagesProvider.notifier).state;
+                          PageModel? page;
+                          try {
+                            page = pages.firstWhere((p) => p.id == pageId);
+                          } catch (e) {
+                            page = null;
+                          }
 
-                      return Row(
-                        children: [
-                          if (index > 0)
-                            Icon(PhosphorIcons.caretRight(), size: 16),
-                          GestureDetector(
-                            onTap: () => _navigateToPage(pageId),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(4),
-                                color: pageId == _currentPageId
-                                    ? AppColors.primary.withOpacity(0.1)
-                                    : Colors.transparent,
-                              ),
-                              child: Text(
-                                page?.title ?? 'Página',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: pageId == _currentPageId
-                                      ? AppColors.primary
-                                      : Colors.grey,
+                          return Row(
+                            children: [
+                              if (index > 0)
+                                Icon(PhosphorIcons.caretRight(), size: 14),
+                              GestureDetector(
+                                onTap: () => _navigateToPage(pageId),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(4),
+                                    color: pageId == _currentPageId
+                                        ? AppColors.primary.withOpacity(0.1)
+                                        : Colors.transparent,
+                                  ),
+                                  child: Text(
+                                    page?.title ?? 'Página',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: pageId == _currentPageId
+                                          ? AppColors.primary
+                                          : Colors.grey,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
-          ),
-
-        // Título e ícone da página atual
-        Row(
-          children: [
-            // Seletor de ícone
-            if (currentPage != null)
-              GestureDetector(
-                onTap: () => _showIconSelector(currentPage),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.black.withOpacity(0.05),
-                  ),
-                  child: Text(
-                    currentPage.icon ?? '📄',
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                ),
-              ),
-
-            const SizedBox(width: 12),
-
-            // Título editável
-            Expanded(
-              child: GestureDetector(
-                onTap: () => _editPageTitle(currentPage),
-                child: Text(
-                  currentPage?.title ?? 'Página sem título',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                ],
               ),
             ),
-          ],
-        ),
-      ],
+
+          // Título e ícone da página atual
+          Container(
+            height: 40,
+            child: Row(
+              children: [
+                // Seletor de ícone
+                if (currentPage != null)
+                  GestureDetector(
+                    onTap: () => _showIconSelector(currentPage),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.1)
+                            : Colors.black.withOpacity(0.05),
+                      ),
+                      child: Text(
+                        currentPage.icon ?? '📄',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(width: 12),
+
+                // Título editável
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _editPageTitle(currentPage),
+                    child: Text(
+                      currentPage?.title ?? 'Página sem título',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+
+                // Status de salvamento
+                if (editorState.isSaving)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.orange),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Salvando...',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (editorState.lastSaved != null)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          PhosphorIcons.checkCircle(),
+                          size: 12,
+                          color: Colors.green,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Salvo',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

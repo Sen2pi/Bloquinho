@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../models/page_model.dart';
 import '../../../core/services/bloquinho_storage_service.dart';
 import '../../../shared/providers/user_profile_provider.dart';
@@ -8,6 +9,8 @@ import '../../../shared/providers/workspace_provider.dart';
 class PagesNotifier extends StateNotifier<List<PageModel>> {
   final BloquinhoStorageService _storageService = BloquinhoStorageService();
   bool _isInitialized = false;
+  String? _currentProfileName;
+  String? _currentWorkspaceName;
 
   PagesNotifier() : super([]);
 
@@ -26,20 +29,41 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
   }
 
   /// Carregar páginas do workspace atual
-  Future<void> loadPagesFromWorkspace() async {
+  Future<void> loadPagesFromWorkspace(
+      String? profileName, String? workspaceName) async {
     try {
       await initialize();
 
-      // TODO: Obter perfil e workspace atuais dos providers
-      final profileName = 'default'; // Temporário
-      final workspaceName = 'default'; // Temporário
+      // Verificar se temos perfil e workspace válidos
+      if (profileName == null || workspaceName == null) {
+        if (kDebugMode) {
+          print(
+              '⚠️ Perfil ou workspace não disponível, não carregando páginas');
+        }
+        state = [];
+        return;
+      }
+
+      // Verificar se mudou o contexto
+      if (_currentProfileName == profileName &&
+          _currentWorkspaceName == workspaceName) {
+        if (kDebugMode) {
+          print('🔄 Mesmo contexto, não recarregando páginas');
+        }
+        return;
+      }
+
+      // Atualizar contexto atual
+      _currentProfileName = profileName;
+      _currentWorkspaceName = workspaceName;
 
       final pages =
           await _storageService.loadAllPages(profileName, workspaceName);
       state = pages;
 
       if (kDebugMode) {
-        print('✅ Páginas carregadas: ${pages.length} páginas');
+        print(
+            '✅ Páginas carregadas: ${pages.length} páginas para $profileName/$workspaceName');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -47,6 +71,11 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       }
       state = [];
     }
+  }
+
+  /// Recarregar páginas quando o workspace muda
+  Future<void> reloadPages() async {
+    await loadPagesFromWorkspace(_currentProfileName, _currentWorkspaceName);
   }
 
   PageModel? getById(String id) {
@@ -69,6 +98,11 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
   }) async {
     try {
       await initialize();
+
+      // Verificar se temos contexto válido
+      if (_currentProfileName == null || _currentWorkspaceName == null) {
+        throw Exception('Perfil ou workspace não disponível');
+      }
 
       final page = PageModel.create(
         title: title,
@@ -187,13 +221,14 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
         throw Exception('Página não encontrada');
       }
 
-      // TODO: Obter perfil e workspace atuais
-      final profileName = 'default';
-      final workspaceName = 'default';
+      // Verificar se temos contexto válido
+      if (_currentProfileName == null || _currentWorkspaceName == null) {
+        throw Exception('Perfil ou workspace não disponível');
+      }
 
       // Renomear no armazenamento
       await _storageService.renamePage(
-          id, newTitle, profileName, workspaceName);
+          id, newTitle, _currentProfileName!, _currentWorkspaceName!);
 
       // Atualizar estado
       await updatePage(id, title: newTitle);
@@ -231,9 +266,10 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       }
 
       // Deletar do armazenamento
-      final profileName = 'default';
-      final workspaceName = 'default';
-      await _storageService.deletePage(id, profileName, workspaceName);
+      if (_currentProfileName != null && _currentWorkspaceName != null) {
+        await _storageService.deletePage(
+            id, _currentProfileName!, _currentWorkspaceName!);
+      }
 
       if (kDebugMode) {
         print('✅ Página removida: ${page.title}');
@@ -270,11 +306,16 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
   /// Salvar página no armazenamento
   Future<void> _savePageToStorage(PageModel page) async {
     try {
-      // TODO: Obter perfil e workspace atuais dos providers
-      final profileName = 'default';
-      final workspaceName = 'default';
+      // Verificar se temos contexto válido
+      if (_currentProfileName == null || _currentWorkspaceName == null) {
+        if (kDebugMode) {
+          print('⚠️ Contexto não disponível para salvar página');
+        }
+        return;
+      }
 
-      await _storageService.savePage(page, profileName, workspaceName);
+      await _storageService.savePage(
+          page, _currentProfileName!, _currentWorkspaceName!);
     } catch (e) {
       if (kDebugMode) {
         print('❌ Erro ao salvar página no armazenamento: $e');
@@ -287,12 +328,13 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
     try {
       await initialize();
 
-      // TODO: Obter perfil e workspace atuais
-      final profileName = 'default';
-      final workspaceName = 'default';
+      // Verificar se temos contexto válido
+      if (_currentProfileName == null || _currentWorkspaceName == null) {
+        throw Exception('Perfil ou workspace não disponível');
+      }
 
       final importedPages = await _storageService.importFromNotionFolder(
-          folderPath, profileName, workspaceName);
+          folderPath, _currentProfileName!, _currentWorkspaceName!);
 
       // Adicionar ao estado
       state = [...state, ...importedPages];
@@ -332,3 +374,18 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
 
 final pagesProvider = StateNotifierProvider<PagesNotifier, List<PageModel>>(
     (ref) => PagesNotifier());
+
+// Provider para carregar páginas automaticamente quando o contexto muda
+final pagesLoaderProvider = Provider<void>((ref) {
+  final currentProfile = ref.watch(currentProfileProvider);
+  final currentWorkspace = ref.watch(currentWorkspaceProvider);
+  final pagesNotifier = ref.read(pagesProvider.notifier);
+
+  // Carregar páginas quando o contexto muda
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    pagesNotifier.loadPagesFromWorkspace(
+      currentProfile?.name,
+      currentWorkspace?.name,
+    );
+  });
+});

@@ -111,14 +111,23 @@ class ProfileAvatar extends ConsumerWidget {
       );
     }
 
-    // Se tem arquivo local (mobile), tentar carregar
+    // Se tem arquivo local (mobile), tentar carregar diretamente
     if (profile.avatarPath != null && !kIsWeb) {
-      final avatarFile = ref.watch(avatarFileProvider);
-      return avatarFile.when(
-        data: (file) => _buildAvatarContent(context, file),
-        loading: () => _buildLoadingAvatar(context),
-        error: (error, stackTrace) => _buildFallbackAvatar(context),
-      );
+      try {
+        final file = File(profile.avatarPath!);
+        if (file.existsSync()) {
+          return Image.file(
+            file,
+            fit: BoxFit.cover,
+            width: size,
+            height: size,
+            errorBuilder: (context, error, stackTrace) =>
+                _buildFallbackAvatar(context),
+          );
+        }
+      } catch (e) {
+        debugPrint('⚠️ Erro ao carregar avatar local: $e');
+      }
     }
 
     // Fallback para iniciais

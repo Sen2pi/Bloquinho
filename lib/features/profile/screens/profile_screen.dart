@@ -5,10 +5,13 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../shared/providers/user_profile_provider.dart';
+import '../../../shared/providers/language_provider.dart';
 import '../../../core/models/user_profile.dart';
 import '../widgets/profile_avatar.dart';
 import '../../../shared/providers/storage_settings_provider.dart';
 import '../../../core/models/storage_settings.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../core/models/app_language.dart';
 
 /// Tela principal do perfil do usuário
 class ProfileScreen extends ConsumerWidget {
@@ -21,6 +24,7 @@ class ProfileScreen extends ConsumerWidget {
     final stats = profileState.stats;
     final isLoading = profileState.isLoading;
     final error = profileState.error;
+    final strings = ref.watch(appStringsProvider);
 
     // Se ainda está carregando mas já tem profile, forçar refresh para corrigir inconsistência
     if (isLoading && profile != null) {
@@ -30,7 +34,7 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Perfil'),
+        title: Text(strings.profile),
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         actions: [
@@ -38,27 +42,35 @@ class ProfileScreen extends ConsumerWidget {
             PopupMenuButton<String>(
               onSelected: (value) => _handleMenuAction(context, ref, value),
               itemBuilder: (context) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'edit',
                   child: ListTile(
-                    leading: Icon(Icons.edit),
-                    title: Text('Editar Perfil'),
+                    leading: const Icon(Icons.edit),
+                    title: Text(strings.editProfile),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
+                  value: 'language',
+                  child: ListTile(
+                    leading: const Icon(Icons.language),
+                    title: Text(strings.changeLanguage),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
                   value: 'export',
                   child: ListTile(
-                    leading: Icon(Icons.download),
-                    title: Text('Exportar Dados'),
+                    leading: const Icon(Icons.download),
+                    title: Text(strings.exportData),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'refresh',
                   child: ListTile(
-                    leading: Icon(Icons.refresh),
-                    title: Text('Atualizar'),
+                    leading: const Icon(Icons.refresh),
+                    title: Text(strings.refresh),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
@@ -68,7 +80,7 @@ class ProfileScreen extends ConsumerWidget {
                   child: ListTile(
                     leading: Icon(Icons.delete,
                         color: Theme.of(context).colorScheme.error),
-                    title: Text('Excluir Perfil',
+                    title: Text(strings.deleteProfile,
                         style: TextStyle(
                             color: Theme.of(context).colorScheme.error)),
                     contentPadding: EdgeInsets.zero,
@@ -103,6 +115,7 @@ class ProfileScreen extends ConsumerWidget {
     }
 
     if (error != null) {
+      final strings = ref.read(appStringsProvider);
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -114,7 +127,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Erro ao carregar perfil',
+              strings.errorLoadingProfile,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
@@ -128,7 +141,7 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => ref.read(userProfileProvider.notifier).refresh(),
-              child: const Text('Tentar Novamente'),
+              child: Text(strings.tryAgain),
             ),
           ],
         ),
@@ -143,6 +156,7 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
+    final strings = ref.read(appStringsProvider);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -154,12 +168,12 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Nenhum perfil encontrado',
+            strings.noProfileFound,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
           Text(
-            'Crie seu perfil para começar',
+            strings.createProfileToStart,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
@@ -168,7 +182,7 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => context.pushNamed('profile_edit'),
-            child: const Text('Criar Perfil'),
+            child: Text(strings.createNewProfile),
           ),
         ],
       ),
@@ -911,6 +925,9 @@ class ProfileScreen extends ConsumerWidget {
       case 'edit':
         context.pushNamed('profile_edit');
         break;
+      case 'language':
+        _showLanguageSelector(context, ref);
+        break;
       case 'export':
         _exportProfile(context, ref);
         break;
@@ -943,28 +960,85 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 
-  void _confirmDeleteProfile(BuildContext context, WidgetRef ref) {
+  void _showLanguageSelector(BuildContext context, WidgetRef ref) {
+    final strings = ref.read(appStringsProvider);
+    final currentLanguage = ref.read(languageProvider);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Excluir Perfil'),
-        content: const Text(
-          'Tem certeza que deseja excluir seu perfil? Esta ação não pode ser desfeita.',
+        title: Text(strings.changeLanguage),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: AppLanguage.values.map((language) {
+            return RadioListTile<AppLanguage>(
+              title: Text(language.displayName),
+              subtitle: Text(language.flag),
+              value: language,
+              groupValue: currentLanguage,
+              onChanged: (AppLanguage? value) async {
+                if (value != null) {
+                  await ref.read(languageProvider.notifier).setLanguage(value);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(strings.languageChanged)),
+                    );
+                  }
+                }
+              },
+            );
+          }).toList(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: Text(strings.cancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteProfile(BuildContext context, WidgetRef ref) {
+    final strings = ref.read(appStringsProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(strings.confirmDeleteProfile),
+        content: Text(strings.deleteProfileWarning),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(strings.cancel),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ref.read(userProfileProvider.notifier).deleteProfile();
+              try {
+                // Usar deleteAllData para limpar tudo e retornar ao onboarding
+                await ref.read(userProfileProvider.notifier).deleteAllData();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(strings.profileDeleted)),
+                  );
+                  // Navegar para o onboarding
+                  context.go('/onboarding');
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text('${strings.errorDeletingProfile}: $e')),
+                  );
+                }
+              }
             },
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Excluir'),
+            child: Text(strings.delete),
           ),
         ],
       ),

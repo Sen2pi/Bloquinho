@@ -317,6 +317,26 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     }
   }
 
+  /// Deletar todos os dados do aplicativo (reset completo para onboarding)
+  Future<void> deleteAllData() async {
+    if (state.isUpdating) return;
+
+    state = state.copyWith(isUpdating: true, error: null);
+
+    try {
+      await _profileService.deleteAllData();
+
+      // Reset completo do estado
+      state = const UserProfileState();
+    } catch (e) {
+      state = state.copyWith(
+        isUpdating: false,
+        error: e.toString(),
+      );
+      rethrow;
+    }
+  }
+
   /// Obter arquivo de avatar
   Future<File?> getAvatarFile() async {
     return await _profileService.getAvatarFile();

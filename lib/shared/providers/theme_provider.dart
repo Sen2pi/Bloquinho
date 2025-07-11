@@ -4,46 +4,73 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 class ThemeNotifier extends StateNotifier<ThemeMode> {
   static const String _themeKey = 'theme_mode';
-  late Box _box;
+  Box? _box;
 
   ThemeNotifier() : super(ThemeMode.light) {
     _initHive();
   }
 
   Future<void> _initHive() async {
-    // Hive já foi inicializado globalmente
-    _box = await Hive.openBox('app_settings');
+    try {
+      // Hive já foi inicializado globalmente
+      _box = await Hive.openBox('app_settings');
 
-    // Carregar tema salvo
-    final savedTheme = _box.get(_themeKey, defaultValue: 'light');
-    if (savedTheme == 'dark') {
-      state = ThemeMode.dark;
-    } else if (savedTheme == 'system') {
-      state = ThemeMode.system;
-    } else {
+      // Carregar tema salvo
+      final savedTheme = _box!.get(_themeKey, defaultValue: 'light');
+      if (savedTheme == 'dark') {
+        state = ThemeMode.dark;
+      } else if (savedTheme == 'system') {
+        state = ThemeMode.system;
+      } else {
+        state = ThemeMode.light;
+      }
+    } catch (e) {
+      debugPrint('Erro ao inicializar ThemeProvider: $e');
+      // Em caso de erro, usar tema padrão
       state = ThemeMode.light;
     }
   }
 
-  Future<void> setTheme(ThemeMode themeMode) async {
-    state = themeMode;
-
-    // Salvar tema
-    String themeString;
-    switch (themeMode) {
-      case ThemeMode.dark:
-        themeString = 'dark';
-        break;
-      case ThemeMode.system:
-        themeString = 'system';
-        break;
-      case ThemeMode.light:
-      default:
-        themeString = 'light';
-        break;
+  Future<void> _ensureBoxIsOpen() async {
+    if (_box == null || !_box!.isOpen) {
+      try {
+        _box = await Hive.openBox('app_settings');
+      } catch (e) {
+        debugPrint('Erro ao reabrir box app_settings: $e');
+        // Se não conseguir abrir o box, criar um novo
+        await Hive.deleteBoxFromDisk('app_settings');
+        _box = await Hive.openBox('app_settings');
+      }
     }
+  }
 
-    await _box.put(_themeKey, themeString);
+  Future<void> setTheme(ThemeMode themeMode) async {
+    try {
+      state = themeMode;
+
+      // Garantir que o box está aberto antes de salvar
+      await _ensureBoxIsOpen();
+
+      // Salvar tema
+      String themeString;
+      switch (themeMode) {
+        case ThemeMode.dark:
+          themeString = 'dark';
+          break;
+        case ThemeMode.system:
+          themeString = 'system';
+          break;
+        case ThemeMode.light:
+        default:
+          themeString = 'light';
+          break;
+      }
+
+      await _box!.put(_themeKey, themeString);
+    } catch (e) {
+      debugPrint('Erro ao salvar tema: $e');
+      // Mesmo com erro ao salvar, manter o estado atual
+    }
   }
 
   void toggleTheme() {

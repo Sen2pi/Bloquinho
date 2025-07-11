@@ -88,8 +88,12 @@ class BloquinhoStorageService {
             await createBloquinhoDirectory(profileName, workspaceName);
       }
 
+      // Carregar todas as páginas primeiro para determinar hierarquia
+      final allPages = await loadAllPages(profileName, workspaceName);
+
       // Determinar caminho do arquivo baseado na hierarquia
-      final filePath = _getPageFilePath(page, bloquinhoDir.path);
+      final filePath =
+          await _getPageFilePath(page, bloquinhoDir.path, allPages);
       final file = File(filePath);
 
       // Criar diretório pai se não existir
@@ -166,6 +170,9 @@ class BloquinhoStorageService {
             await createBloquinhoDirectory(profileName, workspaceName);
       }
 
+      // Carregar todas as páginas primeiro para determinar hierarquia
+      final allPages = await loadAllPages(profileName, workspaceName);
+
       // Carregar página atual
       final currentPage = await loadPage(pageId, profileName, workspaceName);
       if (currentPage == null) {
@@ -173,9 +180,11 @@ class BloquinhoStorageService {
       }
 
       // Obter caminhos antigo e novo
-      final oldPath = _getPageFilePath(currentPage, bloquinhoDir.path);
+      final oldPath =
+          await _getPageFilePath(currentPage, bloquinhoDir.path, allPages);
       final newPage = currentPage.copyWith(title: newTitle);
-      final newPath = _getPageFilePath(newPage, bloquinhoDir.path);
+      final newPath =
+          await _getPageFilePath(newPage, bloquinhoDir.path, allPages);
 
       // Renomear arquivo/pasta
       final oldFile = File(oldPath);
@@ -224,6 +233,9 @@ class BloquinhoStorageService {
             await createBloquinhoDirectory(profileName, workspaceName);
       }
 
+      // Carregar todas as páginas primeiro para determinar hierarquia
+      final allPages = await loadAllPages(profileName, workspaceName);
+
       // Carregar página para obter informações
       final page = await loadPage(pageId, profileName, workspaceName);
       if (page == null) {
@@ -231,7 +243,8 @@ class BloquinhoStorageService {
       }
 
       // Obter caminho da página
-      final pagePath = _getPageFilePath(page, bloquinhoDir.path);
+      final pagePath =
+          await _getPageFilePath(page, bloquinhoDir.path, allPages);
       final pageDir = Directory(pagePath.replaceAll(_pageExtension, ''));
 
       // Deletar arquivo da página
@@ -313,18 +326,57 @@ class BloquinhoStorageService {
 
   // Métodos auxiliares privados
 
-  /// Obter caminho do arquivo da página
-  String _getPageFilePath(PageModel page, String bloquinhoPath) {
+  /// Obter caminho do arquivo da página seguindo a nova estrutura hierárquica
+  Future<String> _getPageFilePath(
+      PageModel page, String bloquinhoPath, List<PageModel> allPages) async {
     final safeTitle = _sanitizeFileName(page.title);
 
     if (page.parentId == null) {
-      // Página raiz
-      return path.join(bloquinhoPath, '$safeTitle$_pageExtension');
+      // Página raiz - sempre usar o arquivo principal "bloquinho.md"
+      if (page.title.toLowerCase() == 'bloquinho' ||
+          page.title == 'Bem-vindo ao Bloquinho!' ||
+          allPages.where((p) => p.parentId == null).length == 1) {
+        return path.join(bloquinhoPath, 'bloquinho$_pageExtension');
+      } else {
+        // Se não for a página principal, criar pasta + arquivo
+        final pageFolderPath = path.join(bloquinhoPath, safeTitle);
+        return path.join(pageFolderPath, '$safeTitle$_pageExtension');
+      }
     } else {
-      // Subpágina - precisa encontrar o caminho completo
-      // TODO: Implementar lógica para encontrar caminho completo da hierarquia
-      return path.join(bloquinhoPath, '$safeTitle$_pageExtension');
+      // Subpágina - construir caminho hierárquico
+      final hierarchyPath = await _buildHierarchyPath(page, allPages);
+      final fullPath =
+          path.join(bloquinhoPath, hierarchyPath, '$safeTitle$_pageExtension');
+      return fullPath;
     }
+  }
+
+  /// Construir caminho hierárquico para uma página
+  Future<String> _buildHierarchyPath(
+      PageModel page, List<PageModel> allPages) async {
+    final pathSegments = <String>[];
+    PageModel? currentPage = page;
+
+    // Construir caminho da página atual até a raiz
+    while (currentPage?.parentId != null) {
+      final parent = allPages.firstWhere(
+        (p) => p.id == currentPage!.parentId,
+        orElse: () => currentPage!, // Se não encontrar, usar a página atual
+      );
+
+      // Se não encontrou o parent, parar para evitar loop infinito
+      if (parent.id == currentPage!.id) {
+        debugPrint(
+            '⚠️ Parent não encontrado para página: ${currentPage.title}');
+        break;
+      }
+
+      final safeParentTitle = _sanitizeFileName(parent.title);
+      pathSegments.insert(0, safeParentTitle);
+      currentPage = parent;
+    }
+
+    return pathSegments.join(path.separator);
   }
 
   /// Carregar páginas recursivamente

@@ -5,8 +5,11 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../models/bloco_base_model.dart';
 import '../models/bloco_tipo_enum.dart';
+import '../models/code_theme.dart';
 import '../providers/blocos_provider.dart';
 import '../providers/editor_controller_provider.dart';
+import '../widgets/bloco_menu_widget.dart';
+import '../widgets/code_highlight_widget.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -1152,12 +1155,28 @@ class _BlocoCodigoWidgetState extends ConsumerState<BlocoCodigoWidget> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
   bool _isEditing = false;
+  CodeTheme _selectedTheme = CodeTheme.dracula;
+  ProgrammingLanguage _selectedLanguage = ProgrammingLanguage.defaultLanguage;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.bloco.codigo);
     _focusNode = FocusNode();
+
+    // Initialize theme and language with auto-detection
+    _selectedTheme =
+        CodeTheme.getByName(widget.bloco.tema) ?? CodeTheme.defaultCodeTheme;
+
+    // Auto-detect language if not specified or if it's the default
+    if (widget.bloco.linguagem.isEmpty || widget.bloco.linguagem == 'text') {
+      _selectedLanguage =
+          CodeTheme.detectLanguageFromContent(widget.bloco.codigo);
+    } else {
+      _selectedLanguage =
+          ProgrammingLanguage.getByCode(widget.bloco.linguagem) ??
+              CodeTheme.detectLanguageFromContent(widget.bloco.codigo);
+    }
 
     _focusNode.addListener(() {
       if (!_focusNode.hasFocus && _isEditing) {
@@ -1178,9 +1197,9 @@ class _BlocoCodigoWidgetState extends ConsumerState<BlocoCodigoWidget> {
       final updatedBloco = BlocoCodigo(
         id: widget.bloco.id,
         codigo: _controller.text,
-        linguagem: widget.bloco.linguagem,
+        linguagem: _selectedLanguage.code,
         mostrarNumeroLinhas: widget.bloco.mostrarNumeroLinhas,
-        tema: widget.bloco.tema,
+        tema: _selectedTheme.name,
         destacarSintaxe: widget.bloco.destacarSintaxe,
       );
       widget.onUpdated?.call(updatedBloco);
@@ -1190,23 +1209,62 @@ class _BlocoCodigoWidgetState extends ConsumerState<BlocoCodigoWidget> {
     });
   }
 
-  void _copyCode() {
-    Clipboard.setData(ClipboardData(text: widget.bloco.codigo));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Código copiado')),
-    );
-  }
-
-  void _changeLanguage(String? newLanguage) {
+  void _changeLanguage(ProgrammingLanguage? newLanguage) {
     if (newLanguage == null) return;
+
+    setState(() {
+      _selectedLanguage = newLanguage;
+    });
 
     final updatedBloco = BlocoCodigo(
       id: widget.bloco.id,
       codigo: widget.bloco.codigo,
-      linguagem: newLanguage,
+      linguagem: newLanguage.code,
       mostrarNumeroLinhas: widget.bloco.mostrarNumeroLinhas,
-      tema: widget.bloco.tema,
+      tema: _selectedTheme.name,
       destacarSintaxe: widget.bloco.destacarSintaxe,
+    );
+    widget.onUpdated?.call(updatedBloco);
+  }
+
+  void _changeTheme(CodeTheme? newTheme) {
+    if (newTheme == null) return;
+
+    setState(() {
+      _selectedTheme = newTheme;
+    });
+
+    final updatedBloco = BlocoCodigo(
+      id: widget.bloco.id,
+      codigo: widget.bloco.codigo,
+      linguagem: _selectedLanguage.code,
+      mostrarNumeroLinhas: widget.bloco.mostrarNumeroLinhas,
+      tema: newTheme.name,
+      destacarSintaxe: widget.bloco.destacarSintaxe,
+    );
+    widget.onUpdated?.call(updatedBloco);
+  }
+
+  void _toggleLineNumbers() {
+    final updatedBloco = BlocoCodigo(
+      id: widget.bloco.id,
+      codigo: widget.bloco.codigo,
+      linguagem: _selectedLanguage.code,
+      mostrarNumeroLinhas: !widget.bloco.mostrarNumeroLinhas,
+      tema: _selectedTheme.name,
+      destacarSintaxe: widget.bloco.destacarSintaxe,
+    );
+    widget.onUpdated?.call(updatedBloco);
+  }
+
+  void _toggleSyntaxHighlighting() {
+    final updatedBloco = BlocoCodigo(
+      id: widget.bloco.id,
+      codigo: widget.bloco.codigo,
+      linguagem: _selectedLanguage.code,
+      mostrarNumeroLinhas: widget.bloco.mostrarNumeroLinhas,
+      tema: _selectedTheme.name,
+      destacarSintaxe: !widget.bloco.destacarSintaxe,
     );
     widget.onUpdated?.call(updatedBloco);
   }
@@ -1217,126 +1275,305 @@ class _BlocoCodigoWidgetState extends ConsumerState<BlocoCodigoWidget> {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: _selectedTheme.borderColor),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                topRight: Radius.circular(8),
-              ),
-            ),
-            child: Row(
-              children: [
-                // Language selector
-                DropdownButton<String>(
-                  value: widget.bloco.linguagem,
-                  onChanged: widget.isEditable ? _changeLanguage : null,
-                  underline: const SizedBox(),
-                  items: const [
-                    DropdownMenuItem(value: 'text', child: Text('Text')),
-                    DropdownMenuItem(value: 'dart', child: Text('Dart')),
-                    DropdownMenuItem(
-                        value: 'javascript', child: Text('JavaScript')),
-                    DropdownMenuItem(value: 'python', child: Text('Python')),
-                    DropdownMenuItem(value: 'java', child: Text('Java')),
-                    DropdownMenuItem(value: 'cpp', child: Text('C++')),
-                    DropdownMenuItem(value: 'html', child: Text('HTML')),
-                    DropdownMenuItem(value: 'css', child: Text('CSS')),
-                    DropdownMenuItem(value: 'json', child: Text('JSON')),
-                    DropdownMenuItem(value: 'sql', child: Text('SQL')),
-                  ],
-                ),
-
-                const Spacer(),
-
-                // Copy button
-                IconButton(
-                  onPressed: _copyCode,
-                  icon: Icon(PhosphorIcons.copy(), size: 16),
-                  tooltip: 'Copiar código',
-                ),
-
-                // Edit button
-                if (widget.isEditable)
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _isEditing = !_isEditing;
-                      });
-                      if (_isEditing) {
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          _focusNode.requestFocus();
-                        });
-                      }
-                    },
-                    icon: Icon(
-                      _isEditing
-                          ? PhosphorIcons.check()
-                          : PhosphorIcons.pencil(),
-                      size: 16,
-                    ),
-                    tooltip: _isEditing ? 'Salvar' : 'Editar',
-                  ),
-              ],
-            ),
-          ),
+          // Enhanced Header
+          _buildEnhancedHeader(isDarkMode),
 
           // Code content
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            child: _isEditing
-                ? TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    maxLines: null,
-                    style: const TextStyle(
-                      fontFamily: 'Courier',
-                      fontSize: 14,
-                    ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Insira seu código aqui...',
-                    ),
-                    onSubmitted: (_) => _saveChanges(),
-                  )
-                : widget.bloco.destacarSintaxe
-                    ? Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color:
-                              isDarkMode ? Colors.grey[800] : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          widget.bloco.codigo.isEmpty
-                              ? '// Código vazio'
-                              : widget.bloco.codigo,
-                          style: const TextStyle(
-                            fontFamily: 'Courier',
-                            fontSize: 14,
-                          ),
-                        ),
-                      )
-                    : Text(
-                        widget.bloco.codigo.isEmpty
-                            ? '// Código vazio'
-                            : widget.bloco.codigo,
-                        style: const TextStyle(
-                          fontFamily: 'Courier',
-                          fontSize: 14,
-                        ),
-                      ),
+          _buildCodeContent(isDarkMode),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnhancedHeader(bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: _selectedTheme.headerBackgroundColor,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(8),
+          topRight: Radius.circular(8),
+        ),
+        border: Border(
+          bottom: BorderSide(
+            color: _selectedTheme.borderColor,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Language selector
+          _buildLanguageSelector(),
+
+          const SizedBox(width: 16),
+
+          // Theme selector
+          _buildThemeSelector(),
+
+          const Spacer(),
+
+          // Toggle buttons
+          if (widget.isEditable) ...[
+            _buildToggleButton(
+              icon: PhosphorIcons.listNumbers(),
+              tooltip: 'Numeração de linhas',
+              isActive: widget.bloco.mostrarNumeroLinhas,
+              onPressed: _toggleLineNumbers,
+            ),
+            _buildToggleButton(
+              icon: PhosphorIcons.palette(),
+              tooltip: 'Syntax highlighting',
+              isActive: widget.bloco.destacarSintaxe,
+              onPressed: _toggleSyntaxHighlighting,
+            ),
+          ],
+
+          // Copy button (sempre visível)
+          _buildActionButton(
+            icon: PhosphorIcons.copy(),
+            tooltip: 'Copiar código',
+            onPressed: _copyCode,
+          ),
+
+          // Export as image button (sempre visível)
+          _buildActionButton(
+            icon: PhosphorIcons.image(),
+            tooltip: 'Exportar como imagem',
+            onPressed: _exportAsImage,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLanguageSelector() {
+    return PopupMenuButton<ProgrammingLanguage>(
+      onSelected: _changeLanguage,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: _selectedTheme.headerBackgroundColor,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: _selectedTheme.borderColor),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_selectedLanguage.icon != null)
+              Text(
+                _selectedLanguage.icon!,
+                style: const TextStyle(fontSize: 14),
+              ),
+            const SizedBox(width: 4),
+            Text(
+              _selectedLanguage.displayName,
+              style: TextStyle(
+                color: _selectedTheme.headerTextColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              PhosphorIcons.caretDown(),
+              size: 12,
+              color: _selectedTheme.headerTextColor,
+            ),
+          ],
+        ),
+      ),
+      itemBuilder: (context) => ProgrammingLanguage.languages.map((language) {
+        return PopupMenuItem(
+          value: language,
+          child: Row(
+            children: [
+              if (language.icon != null)
+                Text(language.icon!, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 8),
+              Text(language.displayName),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildThemeSelector() {
+    return PopupMenuButton<CodeTheme>(
+      onSelected: _changeTheme,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: _selectedTheme.headerBackgroundColor,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: _selectedTheme.borderColor),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: _selectedTheme.backgroundColor,
+                borderRadius: BorderRadius.circular(2),
+                border: Border.all(color: _selectedTheme.borderColor),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              _selectedTheme.displayName,
+              style: TextStyle(
+                color: _selectedTheme.headerTextColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              PhosphorIcons.caretDown(),
+              size: 12,
+              color: _selectedTheme.headerTextColor,
+            ),
+          ],
+        ),
+      ),
+      itemBuilder: (context) => CodeTheme.themes.map((theme) {
+        return PopupMenuItem(
+          value: theme,
+          child: Row(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: theme.backgroundColor,
+                  borderRadius: BorderRadius.circular(2),
+                  border: Border.all(color: theme.borderColor),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(theme.displayName),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildToggleButton({
+    required IconData icon,
+    required String tooltip,
+    required bool isActive,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16),
+      tooltip: tooltip,
+      color: isActive
+          ? _selectedTheme.functionColor
+          : _selectedTheme.headerTextColor,
+      hoverColor: _selectedTheme.headerTextColor.withOpacity(0.1),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16),
+      tooltip: tooltip,
+      color: _selectedTheme.headerTextColor,
+      hoverColor: _selectedTheme.headerTextColor.withOpacity(0.1),
+    );
+  }
+
+  Widget _buildCodeContent(bool isDarkMode) {
+    if (_isEditing) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        child: TextField(
+          controller: _controller,
+          focusNode: _focusNode,
+          maxLines: null,
+          style: TextStyle(
+            fontFamily: 'Courier',
+            fontSize: 14,
+            color: _selectedTheme.textColor,
+          ),
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            hintText: 'Insira seu código aqui...',
+            hintStyle: TextStyle(
+              color: _selectedTheme.textColor.withOpacity(0.5),
+            ),
+          ),
+          onSubmitted: (_) => _saveChanges(),
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 100),
+      child: CodeHighlightWidget(
+        code: widget.bloco.codigo.isEmpty
+            ? '// Código vazio'
+            : widget.bloco.codigo,
+        language: _selectedLanguage.code,
+        theme: _selectedTheme,
+        showLineNumbers: widget.bloco.mostrarNumeroLinhas,
+        showCopyButton: false, // Already in header
+        showExportButton: false, // Already in header
+        onCopy: _copyCode,
+        onExport: _exportAsImage,
+      ),
+    );
+  }
+
+  void _toggleEdit() {
+    setState(() {
+      _isEditing = !_isEditing;
+    });
+    if (_isEditing) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _focusNode.requestFocus();
+      });
+    } else {
+      _saveChanges();
+    }
+  }
+
+  void _copyCode() {
+    Clipboard.setData(ClipboardData(text: widget.bloco.codigo));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Código copiado para a área de transferência'),
+        backgroundColor: _selectedTheme.backgroundColor,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _exportAsImage() {
+    // TODO: Implement image export functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Exportação como imagem em desenvolvimento'),
+        backgroundColor: _selectedTheme.backgroundColor,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }

@@ -7,29 +7,56 @@ import '../../core/l10n/app_strings.dart';
 
 class LanguageNotifier extends StateNotifier<AppLanguage> {
   static const String _languageKey = 'app_language';
-  late Box _box;
+  Box? _box;
 
   LanguageNotifier() : super(AppLanguage.defaultLanguage) {
     _initHive();
   }
 
   Future<void> _initHive() async {
-    // Hive já foi inicializado globalmente
-    _box = await Hive.openBox('app_settings');
+    try {
+      // Hive já foi inicializado globalmente
+      _box = await Hive.openBox('app_settings');
 
-    // Carregar idioma salvo
-    final savedLanguageCode = _box.get(_languageKey, defaultValue: 'pt');
-    final savedLanguage = AppLanguage.values.firstWhere(
-      (lang) => lang.languageCode == savedLanguageCode,
-      orElse: () => AppLanguage.defaultLanguage,
-    );
+      // Carregar idioma salvo
+      final savedLanguageCode = _box!.get(_languageKey, defaultValue: 'pt');
+      final savedLanguage = AppLanguage.values.firstWhere(
+        (lang) => lang.languageCode == savedLanguageCode,
+        orElse: () => AppLanguage.defaultLanguage,
+      );
 
-    state = savedLanguage;
+      state = savedLanguage;
+    } catch (e) {
+      debugPrint('Erro ao inicializar LanguageProvider: $e');
+      // Em caso de erro, usar idioma padrão
+      state = AppLanguage.defaultLanguage;
+    }
+  }
+
+  Future<void> _ensureBoxIsOpen() async {
+    if (_box == null || !_box!.isOpen) {
+      try {
+        _box = await Hive.openBox('app_settings');
+      } catch (e) {
+        debugPrint('Erro ao reabrir box app_settings: $e');
+        // Se não conseguir abrir o box, criar um novo
+        await Hive.deleteBoxFromDisk('app_settings');
+        _box = await Hive.openBox('app_settings');
+      }
+    }
   }
 
   Future<void> setLanguage(AppLanguage language) async {
-    state = language;
-    await _box.put(_languageKey, language.languageCode);
+    try {
+      state = language;
+
+      // Garantir que o box está aberto antes de salvar
+      await _ensureBoxIsOpen();
+      await _box!.put(_languageKey, language.languageCode);
+    } catch (e) {
+      debugPrint('Erro ao salvar idioma: $e');
+      // Mesmo com erro ao salvar, manter o estado atual
+    }
   }
 
   /// Obter locale atual

@@ -17,7 +17,11 @@ import '../../../core/models/storage_settings.dart';
 import '../../../core/models/app_language.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/services/onedrive_service.dart';
+import '../../../core/services/local_storage_service.dart';
+import '../../../core/services/bloquinho_storage_service.dart';
+import '../../../core/models/workspace.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../bloquinho/models/page_model.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -172,6 +176,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           throw Exception(
               'Falha na autenticação com OneDrive: ${authResult.errorMessage}');
         }
+      }
+
+      // Criar workspaces padrão
+      final localStorageService = LocalStorageService();
+      await localStorageService.initialize();
+
+      // Criar os 3 workspaces padrão
+      final workspaces = ['Pessoal', 'Trabalho', 'Projetos'];
+      for (final workspaceName in workspaces) {
+        await localStorageService.createWorkspace(name, workspaceName);
+
+        // Criar estrutura inicial do bloquinho para cada workspace
+        final bloquinhoStorage = BloquinhoStorageService();
+        await bloquinhoStorage.initialize();
+        await bloquinhoStorage.createBloquinhoDirectory(name, workspaceName);
+
+        // Criar página inicial para cada workspace
+        final initialPage = PageModel.create(
+          title: 'Nova Página',
+          content:
+              '# Bem-vindo ao Bloquinho!\n\nEsta é sua primeira página no workspace **$workspaceName**.\n\nComece a escrever para criar seu conteúdo...',
+        );
+        await bloquinhoStorage.savePage(initialPage, name, workspaceName);
       }
 
       // Mostrar estado de conclusão

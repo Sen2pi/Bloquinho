@@ -42,21 +42,25 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       // Verificar se há perfil criado
       final hasProfile = ref.read(hasProfileProvider);
       final profile = ref.read(currentProfileProvider);
+      final isLoading = ref.read(isProfileLoadingProvider);
 
       debugPrint('👤 Perfil encontrado: $hasProfile');
+      debugPrint('📊 Estado de loading: $isLoading');
+
       if (profile != null) {
         debugPrint('📄 Nome do perfil: ${profile.name}');
         debugPrint('📧 Email do perfil: ${profile.email}');
       }
 
       if (mounted) {
-        if (hasProfile && profile != null && profile.name.isNotEmpty) {
-          // Usuário já existe com dados válidos, ir para workspace
+        // Verificação simplificada: se tem perfil, vai para workspace
+        if (hasProfile && profile != null) {
+          // Usuário já existe, ir para workspace
           debugPrint('✅ Navegando para workspace');
           context.goNamed('workspace');
         } else {
-          // Primeiro acesso ou perfil incompleto, mostrar onboarding
-          debugPrint('🎯 Navegando para onboarding');
+          // Primeiro acesso ou perfil deletado, mostrar onboarding
+          debugPrint('🎯 Navegando para onboarding (sem perfil)');
           context.goNamed('onboarding');
         }
       }

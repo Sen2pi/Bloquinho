@@ -20,6 +20,7 @@ import 'features/backup/screens/backup_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'features/profile/screens/profile_edit_screen.dart';
 import 'features/profile/screens/storage_settings_screen.dart';
+import 'features/settings/screens/settings_screen.dart';
 import 'features/agenda/screens/agenda_screen.dart';
 import 'features/passwords/screens/password_manager_screen.dart';
 import 'features/documentos/screens/documentos_screen.dart';
@@ -155,6 +156,11 @@ final GoRouter _router = GoRouter(
           path: 'profile/storage',
           name: 'storage_settings',
           builder: (context, state) => const StorageSettingsScreen(),
+        ),
+        GoRoute(
+          path: 'settings',
+          name: 'settings',
+          builder: (context, state) => const SettingsScreen(),
         ),
         GoRoute(
           path: 'agenda',

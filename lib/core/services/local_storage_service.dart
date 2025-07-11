@@ -34,9 +34,9 @@ class LocalStorageService {
         return;
       }
 
-      // Em plataformas nativas, usar diretório de documentos
-      final appDir = await getApplicationDocumentsDirectory();
-      _basePath = path.join(appDir.path, _dataFolder);
+      // Em plataformas nativas, usar pasta do projeto
+      final currentDir = Directory.current;
+      _basePath = path.join(currentDir.path, _profileFolder);
 
       // Criar pasta base se não existir
       final baseDir = Directory(_basePath!);
@@ -59,7 +59,7 @@ class LocalStorageService {
     if (kIsWeb) return false;
 
     try {
-      final profilesDir = Directory(path.join(_basePath!, _profileFolder));
+      final profilesDir = Directory(_basePath!);
 
       if (!await profilesDir.exists()) {
         return false;
@@ -92,7 +92,7 @@ class LocalStorageService {
     if (kIsWeb) return [];
 
     try {
-      final profilesDir = Directory(path.join(_basePath!, _profileFolder));
+      final profilesDir = Directory(_basePath!);
       if (!await profilesDir.exists()) return [];
 
       final profiles = <UserProfile>[];
@@ -139,7 +139,7 @@ class LocalStorageService {
     try {
       // Sanitizar nome do perfil para uso como pasta
       final safeName = _sanitizeFileName(profileName);
-      final profilePath = path.join(_basePath!, _profileFolder, safeName);
+      final profilePath = path.join(_basePath!, safeName);
 
       // Criar pasta do perfil
       final profileDir = Directory(profilePath);
@@ -154,11 +154,161 @@ class LocalStorageService {
         await workspacesDir.create(recursive: true);
       }
 
+      // Criar workspaces padrão conforme especificado pelo usuário (se não existirem)
+      await _createDefaultWorkspaceStructure(profilePath, 'work');
+      await _createDefaultWorkspaceStructure(profilePath, 'personal');
+      await _createDefaultWorkspaceStructure(profilePath, 'school');
+
+      debugPrint('✅ Workspaces criados: work, personal, school');
+
       debugPrint('✅ Estrutura criada para perfil: $profilePath');
       return profilePath;
     } catch (e) {
       debugPrint('❌ Erro ao criar estrutura do perfil: $e');
       throw Exception('Erro ao criar estrutura do perfil: $e');
+    }
+  }
+
+  /// Criar estrutura padrão do workspace
+  Future<void> _createDefaultWorkspaceStructure(
+      String profilePath, String workspaceName) async {
+    try {
+      final safeWorkspaceName = _sanitizeFileName(workspaceName);
+      final workspacePath =
+          path.join(profilePath, _workspacesFolder, safeWorkspaceName);
+      final workspaceDir = Directory(workspacePath);
+
+      if (!await workspaceDir.exists()) {
+        await workspaceDir.create(recursive: true);
+      }
+
+      // Criar as 5 pastas principais conforme especificado pelo usuário
+      final folders = [
+        'bloquinho',
+        'documents',
+        'agenda',
+        'passwords',
+        'databases'
+      ];
+
+      for (final folder in folders) {
+        final folderPath = path.join(workspacePath, folder);
+        final folderDir = Directory(folderPath);
+
+        if (!await folderDir.exists()) {
+          await folderDir.create(recursive: true);
+        }
+
+        // Criar arquivos padrão para cada pasta
+        await _createDefaultFiles(folderPath, folder);
+      }
+
+      debugPrint('✅ Estrutura do workspace criada: $workspacePath');
+    } catch (e) {
+      debugPrint('❌ Erro ao criar estrutura do workspace: $e');
+      throw Exception('Erro ao criar estrutura do workspace: $e');
+    }
+  }
+
+  /// Criar arquivos padrão para cada pasta
+  Future<void> _createDefaultFiles(String folderPath, String folderType) async {
+    try {
+      switch (folderType) {
+        case 'bloquinho':
+          // Criar arquivo principal 'bloquinho' conforme especificado
+          final bloquinhoFile = File(path.join(folderPath, 'bloquinho.md'));
+          if (!await bloquinhoFile.exists()) {
+            await bloquinhoFile.writeAsString('''
+# Bem-vindo ao Bloquinho! 🎉
+
+Esta é sua página principal do Bloquinho. Aqui você pode:
+
+- **Criar páginas** para suas notas e ideias
+- **Organizar conteúdo** em pastas e subpastas
+- **Usar formatação** markdown completa
+- **Adicionar links** entre páginas
+- **Inserir código** com syntax highlighting
+
+## Começando
+
+1. Clique no botão "+" para criar uma nova página
+2. Use a barra lateral para navegar entre páginas
+3. Digite "/" para acessar comandos rápidos
+
+Boa escrita! ✨
+''');
+          }
+          break;
+
+        case 'databases':
+          // Criar arquivo de configuração da base de dados
+          final dbConfigFile = File(path.join(folderPath, 'config.json'));
+          if (!await dbConfigFile.exists()) {
+            await dbConfigFile.writeAsString('''
+{
+  "workspace": "${folderPath.split(path.separator).reversed.elementAt(2)}",
+  "createdAt": "${DateTime.now().toIso8601String()}",
+  "tables": [],
+  "version": "1.0"
+}
+''');
+          }
+          break;
+
+        case 'passwords':
+          // Criar arquivo de configuração para senhas
+          final passwordsConfigFile =
+              File(path.join(folderPath, 'config.json'));
+          if (!await passwordsConfigFile.exists()) {
+            await passwordsConfigFile.writeAsString('''
+{
+  "workspace": "${folderPath.split(path.separator).reversed.elementAt(2)}",
+  "createdAt": "${DateTime.now().toIso8601String()}",
+  "passwords": [],
+  "categories": ["pessoal", "trabalho", "estudos", "financeiro"],
+  "version": "1.0"
+}
+''');
+          }
+          break;
+
+        case 'documents':
+          // Criar arquivo de índice de documentos
+          final docsIndexFile = File(path.join(folderPath, 'index.json'));
+          if (!await docsIndexFile.exists()) {
+            await docsIndexFile.writeAsString('''
+{
+  "workspace": "${folderPath.split(path.separator).reversed.elementAt(2)}",
+  "createdAt": "${DateTime.now().toIso8601String()}",
+  "documents": [],
+  "categories": ["pessoal", "trabalho", "estudos"],
+  "version": "1.0"
+}
+''');
+          }
+          break;
+
+        case 'agenda':
+          // Criar arquivo de configuração da agenda
+          final agendaConfigFile = File(path.join(folderPath, 'config.json'));
+          if (!await agendaConfigFile.exists()) {
+            await agendaConfigFile.writeAsString('''
+{
+  "workspace": "${folderPath.split(path.separator).reversed.elementAt(2)}",
+  "createdAt": "${DateTime.now().toIso8601String()}",
+  "events": [],
+  "reminders": [],
+  "categories": ["pessoal", "trabalho", "saúde"],
+  "version": "1.0"
+}
+''');
+          }
+          break;
+      }
+
+      debugPrint('✅ Arquivos padrão criados para: $folderType');
+    } catch (e) {
+      debugPrint('❌ Erro ao criar arquivos padrão para $folderType: $e');
     }
   }
 
@@ -171,7 +321,7 @@ class LocalStorageService {
     }
 
     try {
-      // Criar estrutura se não existir
+      // Sempre criar/verificar estrutura para garantir migração
       final profilePath = await createProfileStructure(profile.name);
 
       // Salvar settings.json
@@ -179,7 +329,7 @@ class LocalStorageService {
       final profileJson = json.encode(profile.toJson());
       await settingsFile.writeAsString(profileJson);
 
-      debugPrint('✅ Perfil salvo: ${settingsFile.path}');
+      debugPrint('✅ Perfil salvo na nova estrutura: ${settingsFile.path}');
     } catch (e) {
       debugPrint('❌ Erro ao salvar perfil: $e');
       throw Exception('Erro ao salvar perfil: $e');
@@ -199,7 +349,7 @@ class LocalStorageService {
     try {
       // Obter caminho do perfil
       final safeName = _sanitizeFileName(profileName);
-      final profilePath = path.join(_basePath!, _profileFolder, safeName);
+      final profilePath = path.join(_basePath!, safeName);
       final photoPath = path.join(profilePath, _profilePhotoFile);
 
       if (imageData is File) {
@@ -229,8 +379,7 @@ class LocalStorageService {
 
     try {
       final safeName = _sanitizeFileName(profileName);
-      final photoPath =
-          path.join(_basePath!, _profileFolder, safeName, _profilePhotoFile);
+      final photoPath = path.join(_basePath!, safeName, _profilePhotoFile);
       final photoFile = File(photoPath);
 
       if (await photoFile.exists()) {
@@ -251,8 +400,7 @@ class LocalStorageService {
 
     try {
       final safeName = _sanitizeFileName(profileName);
-      final workspacesPath =
-          path.join(_basePath!, _profileFolder, safeName, _workspacesFolder);
+      final workspacesPath = path.join(_basePath!, safeName, _workspacesFolder);
       final workspacesDir = Directory(workspacesPath);
 
       if (await workspacesDir.exists()) {
@@ -318,16 +466,44 @@ class LocalStorageService {
 
     try {
       final safeName = _sanitizeFileName(profileName);
-      final profilePath = path.join(_basePath!, _profileFolder, safeName);
+      final profilePath = path.join(_basePath!, safeName);
       final profileDir = Directory(profilePath);
 
       if (await profileDir.exists()) {
         await profileDir.delete(recursive: true);
         debugPrint('✅ Perfil deletado: $profilePath');
+      } else {
+        debugPrint('⚠️ Pasta do perfil não encontrada: $profilePath');
       }
     } catch (e) {
       debugPrint('❌ Erro ao deletar perfil: $e');
       throw Exception('Erro ao deletar perfil: $e');
+    }
+  }
+
+  /// Deletar todos os dados de perfis (limpar pasta profile completamente)
+  Future<void> deleteAllProfiles() async {
+    await _ensureInitialized();
+
+    if (kIsWeb) {
+      throw Exception('Deleção de dados não suportada no web');
+    }
+
+    try {
+      final profilesDir = Directory(_basePath!);
+
+      if (await profilesDir.exists()) {
+        // Deletar recursivamente toda a pasta profile
+        await profilesDir.delete(recursive: true);
+
+        // Recriar pasta base vazia
+        await profilesDir.create(recursive: true);
+
+        debugPrint('✅ Todos os perfis deletados: $_basePath');
+      }
+    } catch (e) {
+      debugPrint('❌ Erro ao deletar todos os perfis: $e');
+      throw Exception('Erro ao deletar todos os perfis: $e');
     }
   }
 

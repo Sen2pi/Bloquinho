@@ -323,26 +323,102 @@ class UserProfileService {
     }
   }
 
-  /// Deletar perfil atual
+  /// Deletar perfil e todos os dados associados
   Future<void> deleteProfile() async {
     await _ensureInitialized();
 
     try {
       final currentProfile = await getCurrentProfile();
 
-      // Deletar avatar se existir
-      if (currentProfile?.avatarPath != null) {
-        await _deleteAvatarFile(currentProfile!.avatarPath!);
-      }
+      if (currentProfile != null) {
+        // Deletar avatar se existir
+        if (currentProfile.avatarPath != null) {
+          await _deleteAvatarFile(currentProfile.avatarPath!);
+        }
 
-      // Remover do armazenamento
-      await _box!.delete(_profileKey);
+        // Deletar perfil do LocalStorageService (novo sistema)
+        if (!kIsWeb) {
+          try {
+            await _localStorageService.deleteProfile(currentProfile.name);
+          } catch (e) {
+            debugPrint('⚠️ Erro ao deletar perfil do LocalStorageService: $e');
+          }
+        }
+
+        // Remover do sistema antigo (Hive)
+        await _box!.delete(_profileKey);
+      }
 
       // Limpar cache
       _cachedProfile = null;
+
+      debugPrint('✅ Perfil deletado com sucesso');
     } catch (e) {
+      debugPrint('❌ Erro ao deletar perfil: $e');
       throw UserProfileException(
         'Erro ao deletar perfil',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Deletar todos os dados do aplicativo (reset completo para retornar ao onboarding)
+  Future<void> deleteAllData() async {
+    await _ensureInitialized();
+
+    try {
+      // 1. Deletar todos os perfis do armazenamento local
+      if (!kIsWeb) {
+        await _localStorageService.deleteAllProfiles();
+      }
+
+      // 2. Limpar box do perfil
+      await _box!.clear();
+
+      // 3. Limpar outros boxes relacionados se existirem
+      try {
+        final settingsBox = await Hive.openBox('app_settings');
+        await settingsBox.clear();
+        await settingsBox.close();
+      } catch (e) {
+        debugPrint('⚠️ Settings box não encontrado ou erro ao limpar: $e');
+      }
+
+      try {
+        final storageSettingsBox =
+            await Hive.openBox<String>('storage_settings');
+        await storageSettingsBox.clear();
+        await storageSettingsBox.close();
+      } catch (e) {
+        debugPrint(
+            '⚠️ Storage settings box não encontrado ou erro ao limpar: $e');
+      }
+
+      try {
+        final changeLogBox = await Hive.openBox('change_log');
+        await changeLogBox.clear();
+        await changeLogBox.close();
+      } catch (e) {
+        debugPrint('⚠️ Change log box não encontrado ou erro ao limpar: $e');
+      }
+
+      try {
+        final syncSettingsBox = await Hive.openBox('sync_settings');
+        await syncSettingsBox.clear();
+        await syncSettingsBox.close();
+      } catch (e) {
+        debugPrint('⚠️ Sync settings box não encontrado ou erro ao limpar: $e');
+      }
+
+      // 4. Limpar cache
+      _cachedProfile = null;
+
+      debugPrint(
+          '✅ Todos os dados do aplicativo deletados - pronto para onboarding');
+    } catch (e) {
+      debugPrint('❌ Erro ao deletar todos os dados: $e');
+      throw UserProfileException(
+        'Erro ao deletar todos os dados',
         originalError: e,
       );
     }

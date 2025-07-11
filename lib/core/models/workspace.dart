@@ -133,7 +133,7 @@ class WorkspaceSections {
   static const List<WorkspaceSection> defaultSections = [
     WorkspaceSection(
       id: 'bloquinho',
-      name: 'Bloquinho',
+      name: 'Bloquinho', // Não traduzível - marca
       icon: Icons.note_outlined,
       customIconPath: 'assets/images/notas.png',
       route: '/workspace/bloquinho',
@@ -150,7 +150,7 @@ class WorkspaceSections {
     ),
     WorkspaceSection(
       id: 'passwords',
-      name: 'Passwords',
+      name: 'Senhas',
       icon: Icons.password_outlined,
       customIconPath: 'assets/images/senha.png',
       route: '/workspace/passwords',
