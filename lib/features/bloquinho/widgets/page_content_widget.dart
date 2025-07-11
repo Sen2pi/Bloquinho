@@ -64,9 +64,8 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
     if (state != null) {
       final content = await state.loadPageContent(widget.pageId);
       setState(() {
-        _textController.text = content.isNotEmpty
-            ? content
-            : ref.read(pagesProvider.notifier).getPageContent(widget.pageId);
+        _textController.text =
+            content.isNotEmpty ? content : getPageContent(widget.pageId);
       });
     }
   }
@@ -75,8 +74,7 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
   void didUpdateWidget(covariant PageContentWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.pageId != widget.pageId) {
-      _textController.text =
-          ref.read(pagesProvider.notifier).getPageContent(widget.pageId);
+      _textController.text = getPageContent(widget.pageId);
     }
   }
 
@@ -165,7 +163,7 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
     setState(() {
       _isSaving = true;
     });
-    ref.read(pagesProvider.notifier).updatePageContent(widget.pageId, content);
+    updatePageContent(widget.pageId, content);
     // Salvar em arquivo .md
     final state = context.findAncestorStateOfType<BlocoEditorScreenState>();
     if (state != null) {
@@ -175,6 +173,19 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
       _isSaving = false;
       _editing = false;
     });
+  }
+
+  String getPageContent(String pageId) {
+    final pages = ref.read(pagesProvider);
+    final page = pages.firstWhere(
+      (p) => p.id == pageId,
+      orElse: () => PageModel.create(title: 'Página não encontrada'),
+    );
+    return page.content;
+  }
+
+  void updatePageContent(String pageId, String content) {
+    ref.read(pagesProvider.notifier).updatePageContent(pageId, content);
   }
 
   @override

@@ -49,12 +49,42 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
     String? currentPageId;
     final isDarkMode = ref.watch(isDarkModeProvider);
 
-    // Encontrar a página root (Bloquinho)
-    final rootPage = widget.pageRootId != null
-        ? pages.firstWhere((p) => p.id == widget.pageRootId,
-            orElse: () =>
-                pages.firstWhere((p) => p.isRoot, orElse: () => pages.first))
-        : pages.firstWhere((p) => p.isRoot, orElse: () => pages.first);
+    // Verificar se há páginas antes de tentar encontrar a root
+    if (pages.isEmpty) {
+      return Container(
+        color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+        child: Center(
+          child: Text(
+            'Nenhuma página encontrada',
+            style: TextStyle(
+              color: isDarkMode ? Colors.white70 : Colors.black54,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Encontrar a página root (Bloquinho) com verificações de segurança
+    PageModel? rootPage;
+    try {
+      if (widget.pageRootId != null) {
+        rootPage = pages.firstWhere(
+          (p) => p.id == widget.pageRootId,
+          orElse: () => pages.firstWhere(
+            (p) => p.isRoot,
+            orElse: () => pages.first,
+          ),
+        );
+      } else {
+        rootPage = pages.firstWhere(
+          (p) => p.isRoot,
+          orElse: () => pages.first,
+        );
+      }
+    } catch (e) {
+      // Fallback: usar a primeira página disponível
+      rootPage = pages.first;
+    }
 
     return Container(
       color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
@@ -140,7 +170,6 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
 
     return ListView.builder(
       shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 8),
       itemCount: rootPages.length,
       itemBuilder: (context, index) {

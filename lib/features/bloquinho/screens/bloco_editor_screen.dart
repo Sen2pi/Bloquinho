@@ -16,11 +16,13 @@ import '../widgets/bloco_render_widget.dart';
 import '../widgets/page_content_widget.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/workspace_provider.dart';
+import '../../../shared/providers/user_profile_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../widgets/page_children_list.dart';
 import '../widgets/notion_editor.dart';
 import '../providers/pages_provider.dart';
 import '../models/page_model.dart';
+import '../../../core/services/bloquinho_storage_service.dart';
 
 class BlocoEditorScreen extends ConsumerStatefulWidget {
   final String? documentId;
@@ -72,28 +74,55 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   // Métodos para carregar e salvar conteúdo em arquivos .md
   Future<String> loadPageContent(String pageId) async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/pages/$pageId.md');
-      if (await file.exists()) {
-        return await file.readAsString();
+      final currentProfile = ref.read(currentProfileProvider);
+      final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+      if (currentProfile == null || currentWorkspace == null) {
+        return '';
       }
+
+      final bloquinhoStorage = BloquinhoStorageService();
+      await bloquinhoStorage.initialize();
+
+      final page = await bloquinhoStorage.loadPage(
+          pageId, currentProfile.name, currentWorkspace.name);
+
+      return page?.content ?? '';
     } catch (e) {
-      // ignore
+      debugPrint('❌ Erro ao carregar conteúdo da página: $e');
+      return '';
     }
-    return '';
   }
 
   Future<void> savePageContent(String pageId, String content) async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      final pagesDir = Directory('${dir.path}/pages');
-      if (!await pagesDir.exists()) {
-        await pagesDir.create(recursive: true);
+      final currentProfile = ref.read(currentProfileProvider);
+      final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+      if (currentProfile == null || currentWorkspace == null) {
+        return;
       }
-      final file = File('${pagesDir.path}/$pageId.md');
-      await file.writeAsString(content);
+
+      final pages = ref.read(pagesProvider);
+      final page = pages.firstWhere(
+        (p) => p.id == pageId,
+        orElse: () => PageModel.create(title: 'Página não encontrada'),
+      );
+
+      final updatedPage = page.copyWith(
+        content: content,
+        updatedAt: DateTime.now(),
+      );
+
+      final bloquinhoStorage = BloquinhoStorageService();
+      await bloquinhoStorage.initialize();
+
+      await bloquinhoStorage.savePage(
+          updatedPage, currentProfile.name, currentWorkspace.name);
+
+      debugPrint('✅ Conteúdo da página salvo: $pageId');
     } catch (e) {
-      // ignore
+      debugPrint('❌ Erro ao salvar conteúdo da página: $e');
     }
   }
 

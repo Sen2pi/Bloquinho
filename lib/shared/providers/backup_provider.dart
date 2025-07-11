@@ -83,36 +83,47 @@ class BackupNotifier extends StateNotifier<BackupState> {
   }
 
   Future<BackupData?> createBackup({
-    Map<String, dynamic>? settings,
+    List<AgendaItem>? agendaItems,
+    List<PasswordEntry>? passwords,
+    List<Documento>? documentos,
+    Map<String, dynamic>? additionalSettings,
     String? customName,
-    bool saveToFile = true,
   }) async {
     if (state.isCreatingBackup) return null;
+
     try {
       state = state.copyWith(isCreatingBackup: true, clearError: true);
-      // Coletar dados dos providers
-      final agendaItems = _ref.read(agendaProvider).items;
-      final passwords = _ref.read(passwordProvider).passwords;
-      final documentosState = _ref.read(documentosProvider);
 
-      // Converter DocumentosState para lista de Documento (para compatibilidade)
-      final documentos = <Documento>[];
-      // TODO: Implementar conversão quando necessário
+      // Obter dados atuais dos providers
+      final currentAgendaItems = agendaItems ?? _ref.read(agendaProvider).items;
+      final currentPasswords =
+          (passwords ?? _ref.read(passwordsProvider)) ?? <PasswordEntry>[];
+      final currentDocumentos =
+          (documentos ?? _ref.read(documentosProvider).documentosIdentificacao)
+                  as List<Documento>? ??
+              <Documento>[];
+
+      // TODO: Obter perfil e workspace atuais
+      final profileName = 'default'; // Temporário
+      final workspaceName = 'default'; // Temporário
 
       final backup = await _backupService.createBackup(
-        agendaItems: agendaItems,
-        passwords: passwords,
-        documentos: documentos,
-        additionalSettings: settings,
+        agendaItems: currentAgendaItems,
+        passwords: currentPasswords,
+        documentos: currentDocumentos,
+        profileName: profileName,
+        workspaceName: workspaceName,
+        additionalSettings: additionalSettings,
       );
-      if (saveToFile) {
-        await _backupService.saveBackupToFile(backup, customName: customName);
-        await loadLocalBackups();
-      }
+
+      await _backupService.saveBackupToFile(backup, customName: customName);
+      await loadLocalBackups();
+
       state = state.copyWith(
         isCreatingBackup: false,
         lastCreatedBackup: backup,
       );
+
       return backup;
     } catch (e) {
       state = state.copyWith(

@@ -94,7 +94,7 @@ class PageChildrenList extends ConsumerWidget {
         child: Row(
           children: [
             Icon(
-              child.icon != null
+              child.icon != null && child.icon!.startsWith('0x')
                   ? IconData(int.parse(child.icon!),
                       fontFamily: 'PhosphorIcons')
                   : PhosphorIcons.fileText(),
