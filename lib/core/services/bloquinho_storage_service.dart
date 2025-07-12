@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 
 import '../../features/bloquinho/models/page_model.dart';
 import 'local_storage_service.dart';
+import '../constants/page_icons.dart';
 
 /// Serviço para gerenciar persistência de páginas do Bloquinho
 /// Estrutura: data/profile/[nome_profile]/workspaces/[workspace_name]/bloquinho/
@@ -237,13 +238,19 @@ class BloquinhoStorageService {
         final content = await pageFile.readAsString();
         PageModel? metadata = await _loadPageMetadata(pageId, dir.path);
         if (metadata != null) {
-          thisPage = metadata.copyWith(content: content, parentId: parentId);
+          // Usar o ícone salvo nos metadados, ou ícone padrão se não existir
+          final icon = metadata.icon ?? _getDefaultIcon(title);
+          thisPage = metadata.copyWith(
+            content: content,
+            parentId: parentId,
+            icon: icon,
+          );
         } else {
           thisPage = PageModel.create(
             title: title,
             parentId: parentId,
             content: content,
-            icon: metadata?.icon ?? _getDefaultIcon(title),
+            icon: _getDefaultIcon(title),
           );
           await _savePageMetadata(thisPage, dir.path);
         }
@@ -270,13 +277,19 @@ class BloquinhoStorageService {
             PageModel? metadata = await _loadPageMetadata(fileName, dir.path);
             PageModel page;
             if (metadata != null) {
-              page = metadata.copyWith(content: content, parentId: parentId);
+              // Usar o ícone salvo nos metadados, ou ícone padrão se não existir
+              final icon = metadata.icon ?? _getDefaultIcon(title);
+              page = metadata.copyWith(
+                content: content,
+                parentId: parentId,
+                icon: icon,
+              );
             } else {
               page = PageModel.create(
                 title: title,
                 parentId: parentId,
                 content: content,
-                icon: metadata?.icon ?? _getDefaultIcon(title),
+                icon: _getDefaultIcon(title),
               );
               await _savePageMetadata(page, dir.path);
             }
@@ -666,31 +679,7 @@ class BloquinhoStorageService {
 
   /// Obter ícone padrão baseado no título da página
   String _getDefaultIcon(String title) {
-    final lowerTitle = title.toLowerCase();
-
-    // Ícones específicos baseados no título
-    if (lowerTitle.contains('bem-vindo') || lowerTitle.contains('welcome'))
-      return '👋';
-    if (lowerTitle.contains('teste') || lowerTitle.contains('test'))
-      return '🧪';
-    if (lowerTitle.contains('nota') || lowerTitle.contains('note')) return '📝';
-    if (lowerTitle.contains('projeto') || lowerTitle.contains('project'))
-      return '🚀';
-    if (lowerTitle.contains('tarefa') || lowerTitle.contains('task'))
-      return '✅';
-    if (lowerTitle.contains('ideia') || lowerTitle.contains('idea'))
-      return '💡';
-    if (lowerTitle.contains('reunião') || lowerTitle.contains('meeting'))
-      return '🤝';
-    if (lowerTitle.contains('documento') || lowerTitle.contains('document'))
-      return '📄';
-    if (lowerTitle.contains('código') || lowerTitle.contains('code'))
-      return '💻';
-    if (lowerTitle.contains('design') || lowerTitle.contains('desenho'))
-      return '🎨';
-
-    // Ícone padrão
-    return '📄';
+    return PageIcons.getIconForTitle(title);
   }
 
   /// Obter caminho do diretório da página

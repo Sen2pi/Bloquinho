@@ -23,6 +23,7 @@ import '../widgets/notion_editor.dart';
 import '../providers/pages_provider.dart';
 import '../models/page_model.dart';
 import '../../../core/services/bloquinho_storage_service.dart';
+import '../../../core/constants/page_icons.dart';
 
 class BlocoEditorScreen extends ConsumerStatefulWidget {
   final String? documentId;
@@ -466,48 +467,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   }
 
   void _showIconSelector(PageModel page) {
-    final icons = [
-      '📄',
-      '📝',
-      '📋',
-      '📚',
-      '📖',
-      '📗',
-      '📘',
-      '📙',
-      '📓',
-      '📔',
-      '📕',
-      '📒',
-      '📃',
-      '📄',
-      '📑',
-      '🔖',
-      '🏷️',
-      '📌',
-      '📍',
-      '🎯',
-      '💡',
-      '💭',
-      '💬',
-      '💭',
-      '💡',
-      '🔍',
-      '🔎',
-      '📊',
-      '📈',
-      '📉',
-      '📋',
-      '✅',
-      '❌',
-      '⚠️',
-      'ℹ️',
-      '🔔',
-      '🔕',
-      '🔒',
-      '🔓',
-      '🔐',
-    ];
+    final icons = PageIcons.availableIcons;
 
     showDialog(
       context: context,

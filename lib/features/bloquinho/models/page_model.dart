@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import '../../../core/constants/page_icons.dart';
 import 'dart:math' as math;
 
 /// Modelo para representar uma página no sistema
@@ -38,7 +39,7 @@ class PageModel {
     return PageModel(
       id: const Uuid().v4(),
       title: title,
-      icon: icon,
+      icon: icon ?? PageIcons.defaultIcon,
       parentId: parentId,
       content: content,
       createdAt: now,
@@ -91,7 +92,7 @@ class PageModel {
     return PageModel(
       id: map['id'] ?? '',
       title: map['title'] ?? '',
-      icon: map['icon'],
+      icon: PageIcons.getValidIcon(map['icon']),
       parentId: map['parentId'],
       childrenIds: List<String>.from(map['childrenIds'] ?? []),
       blocks: map['blocks'] ?? [],

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/page_model.dart';
 import '../../../core/services/bloquinho_storage_service.dart';
+import '../../../core/constants/page_icons.dart';
 import '../../../shared/providers/user_profile_provider.dart';
 import '../../../shared/providers/workspace_provider.dart';
 
@@ -167,12 +168,23 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
     try {
       await initialize();
 
+      // Validar ícone se fornecido
+      String? validIcon;
+      if (icon != null) {
+        validIcon = PageIcons.getValidIcon(icon);
+        if (validIcon != icon) {
+          if (kDebugMode) {
+            print('⚠️ Ícone inválido "$icon" substituído por "$validIcon"');
+          }
+        }
+      }
+
       final updatedPages = [
         for (final p in state)
           if (p.id == id)
             p.copyWith(
               title: title ?? p.title,
-              icon: icon ?? p.icon,
+              icon: validIcon ?? p.icon,
               blocks: blocks ?? p.blocks,
               content: content ?? p.content,
               updatedAt: DateTime.now(),
@@ -190,7 +202,9 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       }
 
       if (kDebugMode) {
-        print('✅ Página atualizada: $id (ícone: ${icon ?? 'mantido'})');
+        final updatedPage = getById(id);
+        print(
+            '✅ Página atualizada: $id (ícone: ${updatedPage?.icon ?? 'não definido'})');
       }
     } catch (e) {
       if (kDebugMode) {
