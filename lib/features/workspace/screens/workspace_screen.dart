@@ -26,6 +26,8 @@ import '../../documentos/providers/documentos_provider.dart';
 import '../../bloquinho/screens/bloco_editor_screen.dart';
 import '../../bloquinho/widgets/page_tree_widget.dart';
 import '../../bloquinho/providers/pages_provider.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 enum Section { bloquinho, agenda, passwords, documentos, database }
 
@@ -99,6 +101,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
   Widget _buildSidebar(bool isDarkMode, dynamic currentProfile,
       Workspace? currentWorkspace, List<WorkspaceSection> workspaceSections) {
+    final appStrings = AppStrings(ref.watch(languageProvider));
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: _isSidebarExpanded ? 280 : 60,
@@ -111,6 +114,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             // Header com seletor de workspace
             _buildWorkspaceHeader(isDarkMode, currentWorkspace),
 
+            // BARRA DE PESQUISA NO TOPO DA SIDEBAR
+            if (_isSidebarExpanded)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: _buildSidebarSearchBar(isDarkMode),
+              ),
+
             const Divider(height: 1),
 
             // Seções do workspace
@@ -121,8 +131,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   // Seções principais
                   ...workspaceSections.map((section) {
                     if (section.id.contains('database')) {
+                      // Sempre usar o ícone dossier.png
                       return ListTile(
-                        leading: Icon(Icons.storage_outlined, size: 28),
+                        leading: Image.asset(
+                          'assets/images/dossier.png',
+                          width: 28,
+                          height: 28,
+                        ),
                         title: _isSidebarExpanded
                             ? const Text('Base de Dados')
                             : null,
@@ -222,10 +237,139 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               ),
             ),
 
-            // Footer com perfil do usuário
+            // BOTÃO DONATE ACIMA DO INDICADOR DE NUVEM
+            if (_isSidebarExpanded)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: SizedBox(
+                  width: 180,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDarkMode
+                          ? AppColors.sidebarItemHoverDark
+                          : AppColors.sidebarItemHover,
+                      foregroundColor:
+                          isDarkMode ? Colors.white : Colors.blue[900],
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 8),
+                    ),
+                    icon: Icon(Icons.volunteer_activism,
+                        color: isDarkMode ? Colors.amber[200] : Colors.blue,
+                        size: 20),
+                    label: Text(appStrings.donateButton,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    onPressed: () =>
+                        _showDonateDialog(context, appStrings, isDarkMode),
+                  ),
+                ),
+              ),
+
+            // Footer com perfil do usuário e indicador de nuvem
             _buildUserProfileFooter(isDarkMode, currentProfile),
           ],
         ),
+      ),
+    );
+  }
+
+  // Barra de pesquisa para a sidebar
+  Widget _buildSidebarSearchBar(bool isDarkMode) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode
+            ? AppColors.sidebarBackgroundDark
+            : AppColors.sidebarBackground,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            PhosphorIcons.magnifyingGlass(),
+            color: Colors.grey[600],
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                hintText: 'Pesquisar páginas...',
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(vertical: 10),
+              ),
+              style: TextStyle(
+                fontSize: 14,
+                color: isDarkMode ? Colors.white : Colors.black87,
+              ),
+              onChanged: (value) {
+                _performSearch(value);
+              },
+              onSubmitted: (value) {
+                _performSearch(value);
+              },
+            ),
+          ),
+          if (_searchController.text.isNotEmpty)
+            IconButton(
+              onPressed: () {
+                _searchController.clear();
+                _clearSearch();
+              },
+              icon: Icon(
+                PhosphorIcons.x(),
+                color: Colors.grey[600],
+                size: 18,
+              ),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(
+                minWidth: 32,
+                minHeight: 32,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Diálogo de doação com QR code
+  void _showDonateDialog(
+      BuildContext context, AppStrings appStrings, bool isDarkMode) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDarkMode
+            ? AppColors.sidebarBackgroundDark
+            : AppColors.sidebarBackground,
+        title: Text(appStrings.donateDialogTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/images/qrcode.png', width: 220, height: 220),
+            const SizedBox(height: 16),
+            Text(
+              appStrings.donateDialogDescription,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isDarkMode ? Colors.white70 : Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(appStrings.closeButton),
+          ),
+        ],
       ),
     );
   }
@@ -902,8 +1046,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       case Section.bloquinho:
         return Column(
           children: [
-            // Barra de pesquisa
-            _buildSearchBar(isDarkMode),
+            // REMOVIDO: Barra de pesquisa do header global
+            // _buildSearchBar(isDarkMode),
             // Editor do Bloquinho
             Expanded(
               child: BlocoEditorScreen(key: _editorKey),

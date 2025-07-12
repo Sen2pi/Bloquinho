@@ -519,6 +519,40 @@ class AppStrings {
     }
   }
 
+  // Botão Donate
+  String get donateButton {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Doar';
+      case AppLanguage.english:
+        return 'Donate';
+      case AppLanguage.french:
+        return 'Faire un don';
+    }
+  }
+
+  String get donateDialogTitle {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Apoie o Bloquinho!';
+      case AppLanguage.english:
+        return 'Support Bloquinho!';
+      case AppLanguage.french:
+        return 'Soutenez Bloquinho !';
+    }
+  }
+
+  String get donateDialogDescription {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Aponte a câmera do seu celular para doar via PayPal. Obrigado pelo apoio! ❤️';
+      case AppLanguage.english:
+        return 'Point your phone camera to donate via PayPal. Thank you for your support! ❤️';
+      case AppLanguage.french:
+        return 'Scannez avec votre téléphone pour faire un don via PayPal. Merci pour votre soutien ! ❤️';
+    }
+  }
+
   String get closeButton {
     switch (_language) {
       case AppLanguage.portuguese:
