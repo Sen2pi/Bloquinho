@@ -7,6 +7,7 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'data_directory_service.dart';
 
 /// Serviço para cache de avatares de perfil
 class AvatarCacheService {
@@ -175,28 +176,17 @@ class AvatarCacheService {
 
   /// Obter diretório de cache de avatares
   static Future<Directory> _getAvatarsCacheDirectory() async {
-    Directory appDir;
-
     if (kIsWeb) {
       // No web, usar diretório temporário
-      appDir = Directory.systemTemp;
-    } else {
-      try {
-        // Em plataformas nativas, usar diretório de documentos
-        appDir = await getApplicationDocumentsDirectory();
-      } catch (e) {
-        // Fallback para diretório temporário
-        appDir = Directory.systemTemp;
-      }
+      return Directory.systemTemp;
     }
 
-    final cacheDir = Directory(path.join(appDir.path, _avatarsCacheFolder));
-
-    if (!kIsWeb && !await cacheDir.exists()) {
-      await cacheDir.create(recursive: true);
+    try {
+      return await DataDirectoryService().getAvatarsCacheDirectory();
+    } catch (e) {
+      // Fallback para diretório temporário
+      return Directory.systemTemp;
     }
-
-    return cacheDir;
   }
 
   /// Salvar metadata do avatar

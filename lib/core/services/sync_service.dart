@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:bloquinho/core/models/storage_settings.dart';
 import 'package:bloquinho/core/services/cloud_storage_service.dart';
+import 'package:bloquinho/core/services/data_directory_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -49,9 +50,9 @@ class SyncService {
       _changeLogBox = await Hive.openBox('change_log');
       _settingsBox = await Hive.openBox('sync_settings');
 
-      // Obter pasta de armazenamento local
-      final documentsDir = await getApplicationDocumentsDirectory();
-      _localStoragePath = path.join(documentsDir.path, 'bloquinho_data');
+      // Obter pasta de armazenamento local usando DataDirectoryService
+      final dataDir = await DataDirectoryService().initialize();
+      _localStoragePath = await DataDirectoryService().getBasePath();
 
       // Criar pasta se não existir
       final localDir = Directory(_localStoragePath);

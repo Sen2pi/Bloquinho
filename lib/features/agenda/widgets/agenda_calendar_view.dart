@@ -27,74 +27,80 @@ class AgendaCalendarView extends ConsumerWidget {
     final items = ref.watch(filteredAgendaItemsProvider);
     final selectedDate = ref.watch(agendaProvider).selectedDate;
 
-    return Column(
-      children: [
-        // Calendário
-        Container(
-          margin: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Calendário
+          Container(
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color:
+                  isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color:
+                    isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+              ),
+            ),
+            child: TableCalendar<AgendaItem>(
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: focusedDay ?? DateTime.now(),
+              selectedDayPredicate: (day) =>
+                  isSameDay(selectedDay ?? DateTime.now(), day),
+              onDaySelected: onDaySelected,
+              calendarFormat: CalendarFormat.month,
+              eventLoader: (day) => _getEventsForDay(day, items),
+              startingDayOfWeek: StartingDayOfWeek.monday,
+              calendarStyle: CalendarStyle(
+                outsideDaysVisible: false,
+                weekendTextStyle: TextStyle(color: Colors.red[400]),
+                holidayTextStyle: TextStyle(color: Colors.red[400]),
+                selectedDecoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                markerDecoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                markersMaxCount: 3,
+              ),
+              headerStyle: HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+                titleTextStyle:
+                    Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ) ??
+                        const TextStyle(),
+              ),
+              daysOfWeekStyle: DaysOfWeekStyle(
+                weekdayStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ) ??
+                    const TextStyle(),
+                weekendStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.red[400],
+                        ) ??
+                    const TextStyle(),
+              ),
             ),
           ),
-          child: TableCalendar<AgendaItem>(
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
-            focusedDay: focusedDay ?? DateTime.now(),
-            selectedDayPredicate: (day) =>
-                isSameDay(selectedDay ?? DateTime.now(), day),
-            onDaySelected: onDaySelected,
-            calendarFormat: CalendarFormat.month,
-            eventLoader: (day) => _getEventsForDay(day, items),
-            startingDayOfWeek: StartingDayOfWeek.monday,
-            calendarStyle: CalendarStyle(
-              outsideDaysVisible: false,
-              weekendTextStyle: TextStyle(color: Colors.red[400]),
-              holidayTextStyle: TextStyle(color: Colors.red[400]),
-              selectedDecoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              todayDecoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.5),
-                shape: BoxShape.circle,
-              ),
-              markerDecoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              markersMaxCount: 3,
-            ),
-            headerStyle: HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-              titleTextStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ) ??
-                  const TextStyle(),
-            ),
-            daysOfWeekStyle: DaysOfWeekStyle(
-              weekdayStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ) ??
-                  const TextStyle(),
-              weekendStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.red[400],
-                      ) ??
-                  const TextStyle(),
-            ),
-          ),
-        ),
 
-        // Lista de eventos do dia selecionado
-        Expanded(
-          child: _buildEventsList(
-              context, selectedDate ?? DateTime.now(), items, isDarkMode),
-        ),
-      ],
+          // Lista de eventos do dia selecionado
+          Container(
+            height: 300, // Altura fixa para a lista de eventos
+            child: _buildEventsList(
+                context, selectedDate ?? DateTime.now(), items, isDarkMode),
+          ),
+        ],
+      ),
     );
   }
 

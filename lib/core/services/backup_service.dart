@@ -9,6 +9,7 @@ import '../../features/agenda/models/agenda_item.dart';
 import '../../features/passwords/models/password_entry.dart';
 import '../../features/documentos/models/documento.dart';
 import 'bloquinho_storage_service.dart';
+import 'data_directory_service.dart';
 import 'local_storage_service.dart';
 
 class BackupData {
@@ -174,12 +175,7 @@ class BackupService {
   /// Salvar backup em arquivo (agora inclui estrutura de pastas)
   Future<File> saveBackupToFile(BackupData backup, {String? customName}) async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final backupDir = Directory('${directory.path}/backups');
-
-      if (!await backupDir.exists()) {
-        await backupDir.create(recursive: true);
-      }
+      final backupDir = await DataDirectoryService().getBackupsDirectory();
 
       final fileName = customName ??
           'bloquinho_backup_${backup.createdAt.millisecondsSinceEpoch}.json';
@@ -198,12 +194,7 @@ class BackupService {
   Future<File> createWorkspaceBackup(String profileName, String workspaceName,
       {String? customName}) async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final backupDir = Directory('${directory.path}/backups');
-
-      if (!await backupDir.exists()) {
-        await backupDir.create(recursive: true);
-      }
+      final backupDir = await DataDirectoryService().getBackupsDirectory();
 
       final fileName = customName ??
           'workspace_backup_${workspaceName}_${DateTime.now().millisecondsSinceEpoch}.zip';
@@ -365,8 +356,7 @@ class BackupService {
   /// Listar backups locais
   Future<List<BackupMetadata>> getLocalBackups() async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final backupDir = Directory('${directory.path}/backups');
+      final backupDir = await DataDirectoryService().getBackupsDirectory();
 
       if (!await backupDir.exists()) {
         return [];
@@ -433,8 +423,8 @@ class BackupService {
   /// Deletar backup local
   Future<void> deleteLocalBackup(String fileName) async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/backups/$fileName');
+      final backupDir = await DataDirectoryService().getBackupsDirectory();
+      final file = File('${backupDir.path}/$fileName');
 
       if (await file.exists()) {
         await file.delete();
