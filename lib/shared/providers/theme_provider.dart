@@ -25,7 +25,6 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
         state = ThemeMode.light;
       }
     } catch (e) {
-      debugPrint('Erro ao inicializar ThemeProvider: $e');
       // Em caso de erro, usar tema padrão
       state = ThemeMode.light;
     }
@@ -36,7 +35,6 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
       try {
         _box = await Hive.openBox('app_settings');
       } catch (e) {
-        debugPrint('Erro ao reabrir box app_settings: $e');
         // Se não conseguir abrir o box, criar um novo
         await Hive.deleteBoxFromDisk('app_settings');
         _box = await Hive.openBox('app_settings');
@@ -68,7 +66,6 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
 
       await _box!.put(_themeKey, themeString);
     } catch (e) {
-      debugPrint('Erro ao salvar tema: $e');
       // Mesmo com erro ao salvar, manter o estado atual
     }
   }

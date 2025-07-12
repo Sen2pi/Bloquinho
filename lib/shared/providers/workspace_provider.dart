@@ -13,7 +13,6 @@ class WorkspaceNotifier extends StateNotifier<Workspace?> {
     if (state?.id != newWorkspace.id) {
       final oldWorkspace = state;
       state = newWorkspace;
-      debugPrint('🔄 Workspace alterado para: ${newWorkspace.name}');
 
       // Forçar recarregamento de todos os providers
       _notifyWorkspaceChange(newWorkspace, oldWorkspace);
@@ -22,9 +21,6 @@ class WorkspaceNotifier extends StateNotifier<Workspace?> {
 
   void _notifyWorkspaceChange(Workspace newWorkspace, Workspace? oldWorkspace) {
     // Este método será usado para notificar outros providers sobre mudança de workspace
-    debugPrint(
-        '📢 Notificando mudança de workspace para: ${newWorkspace.name}');
-
     // Aqui podemos adicionar lógica para notificar outros providers
     // Por exemplo, forçar recarregamento de dados específicos do workspace
   }
@@ -72,7 +68,6 @@ class WorkspaceChangeNotifier extends StateNotifier<String> {
 
   void notifyWorkspaceChange(String workspaceId) {
     state = workspaceId;
-    debugPrint('📢 WorkspaceChangeNotifier: Mudança para $workspaceId');
   }
 }
 

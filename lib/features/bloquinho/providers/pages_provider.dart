@@ -28,7 +28,7 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
             _currentProfileName, _currentWorkspaceName);
       }
     } catch (e) {
-      debugPrint('❌ Erro na inicialização do PagesNotifier: $e');
+      // Erro na inicialização
     }
   }
 
@@ -54,10 +54,6 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
 
       // Verificar se temos perfil e workspace válidos
       if (profileName == null || workspaceName == null) {
-        if (kDebugMode) {
-          print(
-              '⚠️ Perfil ou workspace não disponível, não carregando páginas');
-        }
         state = [];
         return;
       }
@@ -65,9 +61,6 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       // Verificar se mudou o contexto
       if (_currentProfileName == profileName &&
           _currentWorkspaceName == workspaceName) {
-        if (kDebugMode) {
-          print('🔄 Mesmo contexto, não recarregando páginas');
-        }
         return;
       }
 
@@ -82,15 +75,7 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       final correctedPages = _fixCorruptedPages(pages);
 
       state = correctedPages;
-
-      if (kDebugMode) {
-        print(
-            '✅ Páginas carregadas: ${correctedPages.length} páginas para $profileName/$workspaceName');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Erro ao carregar páginas: $e');
-      }
       state = [];
     }
   }
@@ -103,14 +88,12 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
     for (final page in pages) {
       // Verificar se é uma página duplicada
       if (seenIds.contains(page.id)) {
-        debugPrint('⚠️ Página duplicada removida: ${page.title}');
         continue;
       }
       seenIds.add(page.id);
 
       // Verificar se tem auto-referência
       if (page.parentId == page.id) {
-        debugPrint('⚠️ Página com auto-referência corrigida: ${page.title}');
         // Corrigir: se é a página raiz (Main), parentId = null, senão usar um parent válido
         final correctedPage = page.copyWith(
             parentId: page.title.toLowerCase() == 'main' ? null : 'Main');
@@ -169,12 +152,6 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       // PROTEÇÃO: Garantir que parentId não seja igual ao id da página
       final pageId = _generatePageId(title);
       if (parentId == pageId) {
-        debugPrint(
-            '⚠️ Tentativa de criar página com auto-referência detectada');
-        debugPrint('  - Título: "$title"');
-        debugPrint('  - ParentId: "$parentId"');
-        debugPrint('  - PageId: "$pageId"');
-        debugPrint('  - Corrigindo parentId para null');
         parentId = null; // Corrigir para null se for auto-referência
       }
 
@@ -195,14 +172,7 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
 
       // Salvar no armazenamento
       await _savePageToStorage(page);
-
-      if (kDebugMode) {
-        print('✅ Página criada: ${page.title} (parentId: ${page.parentId})');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Erro ao criar página: $e');
-      }
       throw Exception('Erro ao criar página: $e');
     }
   }

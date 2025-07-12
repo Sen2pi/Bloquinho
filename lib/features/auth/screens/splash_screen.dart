@@ -22,17 +22,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> _initializeApp() async {
     try {
-      debugPrint('🚀 Iniciando aplicação...');
-
       // Aguardar um tempo mínimo para mostrar splash
       await Future.delayed(const Duration(seconds: 1));
 
       // Carregar perfil salvo se existir
-      debugPrint('📱 Carregando perfil salvo...');
       try {
         await ref.read(userProfileProvider.notifier).loadProfile();
       } catch (e) {
-        debugPrint('⚠️ Erro ao carregar perfil: $e');
         // Continuar mesmo com erro - pode não existir perfil
       }
 
@@ -42,34 +38,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       // Verificar se há perfil criado
       final hasProfile = ref.read(hasProfileProvider);
       final profile = ref.read(currentProfileProvider);
-      final isLoading = ref.read(isProfileLoadingProvider);
-
-      debugPrint('👤 Perfil encontrado: $hasProfile');
-      debugPrint('📊 Estado de loading: $isLoading');
-
-      if (profile != null) {
-        debugPrint('📄 Nome do perfil: ${profile.name}');
-        debugPrint('📧 Email do perfil: ${profile.email}');
-      }
 
       if (mounted) {
         // Verificação simplificada: se tem perfil, vai para workspace
         if (hasProfile && profile != null) {
           // Usuário já existe, ir para workspace
-          debugPrint('✅ Navegando para workspace');
           context.goNamed('workspace');
         } else {
           // Primeiro acesso ou perfil deletado, mostrar onboarding
-          debugPrint('🎯 Navegando para onboarding (sem perfil)');
           context.goNamed('onboarding');
         }
       }
     } catch (e) {
-      debugPrint('❌ Erro na inicialização: $e');
-
       // Em caso de erro, mostrar onboarding como fallback
       if (mounted) {
-        debugPrint('🔄 Fallback para onboarding');
         context.goNamed('onboarding');
       }
     }

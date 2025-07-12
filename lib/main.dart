@@ -36,11 +36,7 @@ void main() async {
 
     // Inicializar serviços críticos
     await _initializeServices();
-
-    debugPrint('✅ Serviços inicializados com sucesso');
-  } catch (e) {
-    debugPrint('❌ Erro ao inicializar serviços: $e');
-  }
+  } catch (e) {}
 
   // Configurar orientação da tela
   await SystemChrome.setPreferredOrientations([
@@ -65,16 +61,13 @@ Future<void> _initializeServices() async {
     // Inicializar LocalStorageService (sistema antigo para compatibilidade)
     final localStorageService = LocalStorageService();
     await localStorageService.initialize();
-    debugPrint('✅ LocalStorageService inicializado');
 
     // Inicializar FileStorageService (novo sistema)
     final fileStorageService = FileStorageService();
     await fileStorageService.initialize();
-    debugPrint('✅ FileStorageService inicializado');
 
     // Inicializar OAuth2Service
     await OAuth2Service.initialize();
-    debugPrint('✅ OAuth2Service inicializado');
 
     // Restaurar sessões OAuth2 existentes (conexões persistentes)
     // Delay para permitir inicialização completa do app
@@ -82,10 +75,7 @@ Future<void> _initializeServices() async {
     await OAuth2Service.restoreExistingSessions();
 
     // UserProfileService será inicializado no provider conforme necessário
-    debugPrint('✅ Serviços básicos inicializados');
-  } catch (e) {
-    debugPrint('⚠️ Erro ao inicializar serviços: $e');
-  }
+  } catch (e) {}
 }
 
 class BloquinhoApp extends ConsumerWidget {

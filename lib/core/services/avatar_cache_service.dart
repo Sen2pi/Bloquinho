@@ -22,7 +22,6 @@ class AvatarCacheService {
   }) async {
     // No web, cache de arquivos não é totalmente suportado
     if (kIsWeb) {
-      debugPrint('⚠️ Cache de avatares não suportado completamente na web');
       return null;
     }
 
@@ -46,7 +45,7 @@ class AvatarCacheService {
       }
 
       // Baixar imagem
-      debugPrint('🔄 Baixando avatar de: $url');
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -68,14 +67,11 @@ class AvatarCacheService {
           'size': response.bodyBytes.length,
         });
 
-        debugPrint('✅ Avatar baixado e armazenado: $filePath');
         return filePath;
       } else {
-        debugPrint('❌ Erro ao baixar avatar: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      debugPrint('❌ Erro ao baixar avatar: $e');
       return null;
     }
   }
@@ -101,7 +97,6 @@ class AvatarCacheService {
 
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao obter avatar em cache: $e');
       return null;
     }
   }
@@ -123,13 +118,10 @@ class AvatarCacheService {
           final stat = await file.stat();
           if (now.difference(stat.modified).inDays > maxDays) {
             await file.delete();
-            debugPrint('🗑️ Cache antigo removido: ${file.path}');
           }
         }
       }
-    } catch (e) {
-      debugPrint('❌ Erro ao limpar cache: $e');
-    }
+    } catch (e) {}
   }
 
   /// Obter tamanho do cache
@@ -153,7 +145,6 @@ class AvatarCacheService {
 
       return totalSize;
     } catch (e) {
-      debugPrint('❌ Erro ao calcular tamanho do cache: $e');
       return 0;
     }
   }
@@ -166,7 +157,6 @@ class AvatarCacheService {
 
       // No web, só limpamos metadata
       if (kIsWeb) {
-        debugPrint('🗑️ Metadata de avatares limpo (web)');
         return;
       }
 
@@ -174,11 +164,8 @@ class AvatarCacheService {
       final cacheDir = await _getAvatarsCacheDirectory();
       if (await cacheDir.exists()) {
         await cacheDir.delete(recursive: true);
-        debugPrint('🗑️ Cache de avatares limpo completamente');
       }
-    } catch (e) {
-      debugPrint('❌ Erro ao limpar cache: $e');
-    }
+    } catch (e) {}
   }
 
   /// Obter diretório de cache de avatares (público)
@@ -198,7 +185,6 @@ class AvatarCacheService {
         // Em plataformas nativas, usar diretório de documentos
         appDir = await getApplicationDocumentsDirectory();
       } catch (e) {
-        debugPrint('⚠️ Erro ao obter diretório de documentos: $e');
         // Fallback para diretório temporário
         appDir = Directory.systemTemp;
       }
@@ -222,9 +208,7 @@ class AvatarCacheService {
 
       final jsonString = json.encode(existingMetadata);
       await _storage.write(key: _metadataKey, value: jsonString);
-    } catch (e) {
-      debugPrint('❌ Erro ao salvar metadata: $e');
-    }
+    } catch (e) {}
   }
 
   /// Obter metadata de um avatar específico
@@ -243,7 +227,6 @@ class AvatarCacheService {
 
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao obter metadata: $e');
       return null;
     }
   }
@@ -257,7 +240,6 @@ class AvatarCacheService {
       }
       return {};
     } catch (e) {
-      debugPrint('❌ Erro ao obter metadados: $e');
       return {};
     }
   }
@@ -287,7 +269,6 @@ class AvatarCacheService {
         'platform': 'mobile',
       };
     } catch (e) {
-      debugPrint('❌ Erro ao obter estatísticas: $e');
       return {
         'totalFiles': 0,
         'totalSize': 0,

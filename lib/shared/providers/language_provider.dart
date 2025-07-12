@@ -27,7 +27,6 @@ class LanguageNotifier extends StateNotifier<AppLanguage> {
 
       state = savedLanguage;
     } catch (e) {
-      debugPrint('Erro ao inicializar LanguageProvider: $e');
       // Em caso de erro, usar idioma padrão
       state = AppLanguage.defaultLanguage;
     }
@@ -38,7 +37,6 @@ class LanguageNotifier extends StateNotifier<AppLanguage> {
       try {
         _box = await Hive.openBox('app_settings');
       } catch (e) {
-        debugPrint('Erro ao reabrir box app_settings: $e');
         // Se não conseguir abrir o box, criar um novo
         await Hive.deleteBoxFromDisk('app_settings');
         _box = await Hive.openBox('app_settings');
@@ -54,7 +52,6 @@ class LanguageNotifier extends StateNotifier<AppLanguage> {
       await _ensureBoxIsOpen();
       await _box!.put(_languageKey, language.languageCode);
     } catch (e) {
-      debugPrint('Erro ao salvar idioma: $e');
       // Mesmo com erro ao salvar, manter o estado atual
     }
   }

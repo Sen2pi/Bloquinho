@@ -118,7 +118,6 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
     if (_currentWorkspaceId == workspaceId && _isInitialized) return;
 
     _currentWorkspaceId = workspaceId;
-    debugPrint('🔄 PasswordNotifier: Recarregando para workspace $workspaceId');
     await _loadInitialData();
   }
 
@@ -131,7 +130,6 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
 
     _currentProfileName = profileName;
     _currentWorkspaceId = workspaceId;
-    debugPrint('🔄 PasswordNotifier: Recarregando para contexto $newContext');
     await _loadInitialData();
   }
 
@@ -154,14 +152,11 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
         error: null,
       );
       _isInitialized = true;
-      debugPrint(
-          '✅ PasswordNotifier: ${passwords.length} passwords carregados');
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
-      debugPrint('❌ PasswordNotifier: Erro ao carregar passwords: $e');
     }
   }
 
@@ -170,13 +165,11 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
       state = state.copyWith(isLoading: true, error: null);
       final id = await _passwordService.createPassword(password);
       await _loadInitialData();
-      debugPrint('✅ Password adicionado: $id');
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
-      debugPrint('❌ Erro ao adicionar password: $e');
     }
   }
 
@@ -185,13 +178,11 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
       state = state.copyWith(isLoading: true, error: null);
       await _passwordService.updatePassword(password);
       await _loadInitialData();
-      debugPrint('✅ Password atualizado: ${password.id}');
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
-      debugPrint('❌ Erro ao atualizar password: $e');
     }
   }
 
@@ -200,13 +191,11 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
       state = state.copyWith(isLoading: true, error: null);
       await _passwordService.deletePassword(id);
       await _loadInitialData();
-      debugPrint('✅ Password deletado: $id');
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
-      debugPrint('❌ Erro ao deletar password: $e');
     }
   }
 
@@ -215,13 +204,11 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
       state = state.copyWith(isLoading: true, error: null);
       await _passwordService.deleteMultiplePasswords(ids);
       await _loadInitialData();
-      debugPrint('✅ ${ids.length} passwords deletados');
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
-      debugPrint('❌ Erro ao deletar múltiplos passwords: $e');
     }
   }
 
@@ -250,7 +237,6 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
     try {
       return await _passwordService.getPasswordStats();
     } catch (e) {
-      debugPrint('❌ Erro ao obter estatísticas: $e');
       return {};
     }
   }

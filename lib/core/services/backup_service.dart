@@ -154,9 +154,7 @@ class BackupService {
                 await _serializeDirectoryStructure(workspaceDir);
           }
         }
-      } catch (e) {
-        debugPrint('⚠️ Erro ao serializar estrutura de pastas: $e');
-      }
+      } catch (e) {}
 
       return BackupData(
         agendaItems: agendaItems,
@@ -228,7 +226,6 @@ class BackupService {
       // Por enquanto, copiar pasta diretamente
       await _copyDirectoryRecursively(workspaceDir, backupFile.parent);
 
-      debugPrint('✅ Backup de workspace criado: ${backupFile.path}');
       return backupFile;
     } catch (e) {
       throw Exception('Erro ao criar backup de workspace: $e');
@@ -281,15 +278,12 @@ class BackupService {
       // Contar páginas importadas
       final importedPages = await _countMarkdownFiles(bloquinhoDir);
 
-      debugPrint('✅ Workspace importado: $importedPages páginas encontradas');
-
       return {
         'success': true,
         'importedPages': importedPages,
         'workspacePath': workspaceDirPath,
       };
     } catch (e) {
-      debugPrint('❌ Erro ao importar workspace: $e');
       return {
         'success': false,
         'error': e.toString(),
@@ -363,8 +357,6 @@ class BackupService {
       if (restoreSettings) {
         await _restoreSettings(backup.settings);
       }
-
-      debugPrint('✅ Backup restaurado com sucesso');
     } catch (e) {
       throw Exception('Erro ao restaurar backup: $e');
     }
@@ -426,7 +418,6 @@ class BackupService {
           }
         } catch (e) {
           // Ignorar arquivos corrompidos
-          debugPrint('Erro ao ler backup ${file.path}: $e');
         }
       }
 
@@ -456,12 +447,6 @@ class BackupService {
   /// Validar backup
   Future<bool> validateBackup(BackupData backup) async {
     try {
-      // Verificar versão
-      if (backup.version != _backupVersion) {
-        debugPrint(
-            'Aviso: Versão do backup (${backup.version}) diferente da atual ($_backupVersion)');
-      }
-
       // Validar estrutura dos dados
       if (backup.agendaItems.any((item) => item.id.isEmpty)) return false;
       if (backup.passwords.any((item) => item.id.isEmpty)) return false;
@@ -492,7 +477,6 @@ class BackupService {
       await _buildDirectoryTree(dir, structure);
       return json.encode(structure);
     } catch (e) {
-      debugPrint('❌ Erro ao serializar estrutura: $e');
       return '{}';
     }
   }
@@ -520,9 +504,7 @@ class BackupService {
           await _buildDirectoryTree(entity, structure[name]['contents']);
         }
       }
-    } catch (e) {
-      debugPrint('❌ Erro ao construir árvore: $e');
-    }
+    } catch (e) {}
   }
 
   /// Restaurar estrutura de workspace
@@ -538,9 +520,7 @@ class BackupService {
             Directory(path.join(workspacesDir.path, workspaceName));
         await _restoreDirectoryTree(structure, workspaceDir);
       }
-    } catch (e) {
-      debugPrint('❌ Erro ao restaurar estrutura: $e');
-    }
+    } catch (e) {}
   }
 
   /// Restaurar árvore de diretório
@@ -563,9 +543,7 @@ class BackupService {
           await _restoreDirectoryTree(contents, subDir);
         }
       }
-    } catch (e) {
-      debugPrint('❌ Erro ao restaurar árvore: $e');
-    }
+    } catch (e) {}
   }
 
   /// Copiar diretório recursivamente
@@ -590,9 +568,7 @@ class BackupService {
           await _copyDirectoryRecursively(entity, targetSubDir);
         }
       }
-    } catch (e) {
-      debugPrint('❌ Erro ao copiar diretório: $e');
-    }
+    } catch (e) {}
   }
 
   /// Contar arquivos markdown
@@ -611,7 +587,6 @@ class BackupService {
 
       return count;
     } catch (e) {
-      debugPrint('❌ Erro ao contar arquivos markdown: $e');
       return 0;
     }
   }
@@ -627,15 +602,10 @@ class BackupService {
           await workspaceDir.delete(recursive: true);
         }
       }
-    } catch (e) {
-      debugPrint('❌ Erro ao limpar dados: $e');
-    }
+    } catch (e) {}
   }
 
-  Future<void> _restoreSettings(Map<String, dynamic> settings) async {
-    // Implementar restauração de configurações
-    debugPrint('Configurações restauradas: $settings');
-  }
+  Future<void> _restoreSettings(Map<String, dynamic> settings) async {}
 
   /// Criar backup automático agendado
   Future<void> createScheduledBackup() async {
@@ -653,9 +623,7 @@ class BackupService {
 
       // Limpar backups antigos (manter apenas os 5 mais recentes)
       await _cleanupOldBackups();
-    } catch (e) {
-      debugPrint('Erro ao criar backup automático: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> _cleanupOldBackups() async {
@@ -667,8 +635,6 @@ class BackupService {
           await deleteLocalBackup(backup.fileName);
         }
       }
-    } catch (e) {
-      debugPrint('Erro ao limpar backups antigos: $e');
-    }
+    } catch (e) {}
   }
 }
