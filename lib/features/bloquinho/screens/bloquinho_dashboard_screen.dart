@@ -56,11 +56,16 @@ class _BloquinhoDashboardScreenState
           isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
       foregroundColor:
           isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back),
+        onPressed: () => Navigator.of(context).pop(),
+        tooltip: 'Voltar',
+      ),
       title: Row(
         children: [
           Text('📚', style: const TextStyle(fontSize: 24)),
           const SizedBox(width: 12),
-          const Text('Bloquinho Dashboard'),
+          const Text('Bloquinho'),
         ],
       ),
       actions: [

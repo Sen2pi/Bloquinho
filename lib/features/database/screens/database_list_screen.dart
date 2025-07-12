@@ -3,6 +3,7 @@ import 'package:bloquinho/core/models/database_models.dart';
 import 'package:bloquinho/core/services/database_service.dart';
 import 'package:bloquinho/features/database/screens/table_editor_screen.dart';
 import 'package:bloquinho/features/database/widgets/create_table_dialog.dart';
+import 'package:bloquinho/core/theme/app_colors.dart';
 
 /// Tela principal que lista todas as tabelas do database
 class DatabaseListScreen extends StatefulWidget {
@@ -151,15 +152,32 @@ class _DatabaseListScreenState extends State<DatabaseListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Base de Dados'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Voltar',
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.table_chart,
+              size: 24,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 12),
+            const Text('Base de Dados'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadTables,
+            tooltip: 'Atualizar',
           ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: _createTable,
+            tooltip: 'Nova Tabela',
           ),
         ],
       ),

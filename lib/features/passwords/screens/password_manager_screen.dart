@@ -53,11 +53,48 @@ class _PasswordManagerScreenState extends ConsumerState<PasswordManagerScreen> {
     return Scaffold(
       backgroundColor:
           isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor:
+            isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+        foregroundColor:
+            isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Voltar',
+        ),
+        title: Row(
+          children: [
+            Icon(
+              PhosphorIcons.lockKey(),
+              size: 24,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 12),
+            const Text('Senhas'),
+          ],
+        ),
+        actions: [
+          IconButton(
+            onPressed: () => _showPasswordGenerator(context),
+            icon: Icon(PhosphorIcons.key()),
+            tooltip: 'Gerador de Senhas',
+          ),
+          IconButton(
+            onPressed: () => _showImportDialog(context),
+            icon: Icon(PhosphorIcons.upload()),
+            tooltip: 'Importar',
+          ),
+          IconButton(
+            onPressed: () => _showExportDialog(context),
+            icon: Icon(PhosphorIcons.download()),
+            tooltip: 'Exportar',
+          ),
+        ],
+      ),
       body: Column(
         children: [
-          // Header
-          _buildHeader(isDarkMode, stats),
-
           // Filtros
           PasswordFilters(
             onCategoryChanged: (category) => ref

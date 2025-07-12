@@ -71,6 +71,11 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
           isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
       foregroundColor:
           isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back),
+        onPressed: () => Navigator.of(context).pop(),
+        tooltip: 'Voltar',
+      ),
       title: Row(
         children: [
           Icon(

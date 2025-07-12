@@ -53,11 +53,43 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
     return Scaffold(
       backgroundColor:
           isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor:
+            isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+        foregroundColor:
+            isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Voltar',
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.calendar_month,
+              size: 24,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 12),
+            const Text('Agenda'),
+          ],
+        ),
+        actions: [
+          IconButton(
+            onPressed: () => _showSyncDialog(context),
+            icon: Icon(Icons.sync),
+            tooltip: 'Sincronizar com Base de Dados',
+          ),
+          IconButton(
+            onPressed: () => _showStatsDialog(context),
+            icon: Icon(Icons.analytics),
+            tooltip: 'Estatísticas',
+          ),
+        ],
+      ),
       body: Column(
         children: [
-          // Header
-          _buildHeader(isDarkMode, stats),
-
           // Dashboard
           const AgendaDashboard(),
 

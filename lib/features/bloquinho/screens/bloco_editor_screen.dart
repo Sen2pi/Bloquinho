@@ -262,6 +262,11 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
           isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
       foregroundColor:
           isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back),
+        onPressed: () => Navigator.of(context).pop(),
+        tooltip: 'Voltar',
+      ),
       titleSpacing: 0,
       title: _buildTitleSection(editorState, currentPage),
       actions: _buildAppBarActions(isDarkMode, editorState),

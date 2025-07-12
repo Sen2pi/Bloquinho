@@ -7,6 +7,8 @@ import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/workspace_provider.dart';
 import '../../../shared/providers/user_profile_provider.dart';
 import '../../../shared/widgets/cloud_sync_indicator.dart';
+import '../../../shared/providers/global_search_provider.dart';
+import '../../../shared/widgets/global_search_results.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/workspace.dart';
 import '../../../core/services/oauth2_service.dart';
@@ -373,65 +375,91 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
   // Barra de pesquisa para a sidebar
   Widget _buildSidebarSearchBar(bool isDarkMode) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode
-            ? AppColors.sidebarBackgroundDark
-            : AppColors.sidebarBackground,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            PhosphorIcons.magnifyingGlass(),
-            color: Colors.grey[600],
-            size: 20,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: 'Pesquisar páginas...',
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 10),
-              ),
-              style: TextStyle(
-                fontSize: 14,
-                color: isDarkMode ? Colors.white : Colors.black87,
-              ),
-              onChanged: (value) {
-                _performSearch(value);
-              },
-              onSubmitted: (value) {
-                _performSearch(value);
-              },
+    return Column(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? AppColors.sidebarBackgroundDark
+                : AppColors.sidebarBackground,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+              width: 1,
             ),
           ),
-          if (_searchController.text.isNotEmpty)
-            IconButton(
-              onPressed: () {
-                _searchController.clear();
-                _clearSearch();
-              },
-              icon: Icon(
-                PhosphorIcons.x(),
+          child: Row(
+            children: [
+              Icon(
+                PhosphorIcons.magnifyingGlass(),
                 color: Colors.grey[600],
-                size: 18,
+                size: 20,
               ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 32,
-                minHeight: 32,
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
+                    hintText: 'Pesquisar em tudo...',
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
+                  onChanged: (value) {
+                    _performGlobalSearch(value);
+                  },
+                  onSubmitted: (value) {
+                    _performGlobalSearch(value);
+                  },
+                ),
+              ),
+              if (_searchController.text.isNotEmpty)
+                IconButton(
+                  onPressed: () {
+                    _searchController.clear();
+                    _clearGlobalSearch();
+                  },
+                  icon: Icon(
+                    PhosphorIcons.x(),
+                    color: Colors.grey[600],
+                    size: 18,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        // Resultados da pesquisa global
+        if (_searchController.text.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            decoration: BoxDecoration(
+              color:
+                  isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color:
+                    isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+                width: 1,
               ),
             ),
-        ],
-      ),
+            child: GlobalSearchResults(
+              onResultSelected: () {
+                _searchController.clear();
+                _clearGlobalSearch();
+              },
+            ),
+          ),
+      ],
     );
   }
 
@@ -1216,10 +1244,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 color: isDarkMode ? Colors.white : Colors.black87,
               ),
               onChanged: (value) {
-                _performSearch(value);
+                _performGlobalSearch(value);
               },
               onSubmitted: (value) {
-                _performSearch(value);
+                _performGlobalSearch(value);
               },
             ),
           ),
@@ -1229,7 +1257,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             IconButton(
               onPressed: () {
                 _searchController.clear();
-                _clearSearch();
+                _clearGlobalSearch();
               },
               icon: Icon(
                 PhosphorIcons.x(),
@@ -1247,29 +1275,18 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     );
   }
 
-  void _performSearch(String query) {
+  void _performGlobalSearch(String query) {
     if (query.isEmpty) {
-      _clearSearch();
+      _clearGlobalSearch();
       return;
     }
 
-    // Implementar pesquisa em Bloquinho e Base de Dados
-    _searchInBloquinho(query);
-    _searchInDatabase(query);
+    // Usar o provider de pesquisa global
+    ref.read(globalSearchProvider.notifier).search(query);
   }
 
-  void _searchInBloquinho(String query) {
-    // Pesquisar em páginas do Bloquinho
-    // TODO: Implementar pesquisa nas páginas do Bloquinho
-  }
-
-  void _searchInDatabase(String query) {
-    // Pesquisar na Base de Dados
-    // TODO: Implementar pesquisa na Base de Dados
-  }
-
-  void _clearSearch() {
-    // Limpar resultados de pesquisa
+  void _clearGlobalSearch() {
+    ref.read(globalSearchProvider.notifier).clearSearch();
   }
 
   void _showCloudSyncDetails(BuildContext context) {
