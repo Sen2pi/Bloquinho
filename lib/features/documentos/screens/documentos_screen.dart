@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-
 import '../../../shared/providers/theme_provider.dart';
 import '../providers/documentos_provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -53,56 +52,114 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
     final documentosState = ref.watch(documentosProvider);
     final stats = ref.watch(documentosStatsProvider);
 
-    return Container(
-      color: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
-      child: Column(
-        children: [
-          // Header
-          _buildHeader(isDarkMode, stats),
-
-          // Tabs
-          _buildTabs(isDarkMode),
-
-          // Content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Cartões de Crédito
-                CartaoCreditoListWidget(
-                  cartoes: documentosState.cartoesCredito,
-                  isLoading: documentosState.isLoading,
-                  onAdd: _showAddCartaoCreditoDialog,
-                  onEdit: _showEditCartaoCreditoDialog,
-                  onDelete: _showDeleteCartaoCreditoDialog,
-                ),
-
-                // Cartões de Fidelização
-                CartaoFidelizacaoListWidget(
-                  cartoes: documentosState.cartoesFidelizacao,
-                  isLoading: documentosState.isLoading,
-                  onAdd: _showAddCartaoFidelizacaoDialog,
-                  onEdit: _showEditCartaoFidelizacaoDialog,
-                  onDelete: _showDeleteCartaoFidelizacaoDialog,
-                ),
-
-                // Documentos de Identificação
-                DocumentoIdentificacaoListWidget(
-                  documentos: documentosState.documentosIdentificacao,
-                  isLoading: documentosState.isLoading,
-                  onAdd: _showAddDocumentoIdentificacaoDialog,
-                  onEdit: _showEditDocumentoIdentificacaoDialog,
-                  onDelete: _showDeleteDocumentoIdentificacaoDialog,
-                ),
-              ],
-            ),
-          ),
-        ],
+    return Theme(
+      data: isDarkMode ? ThemeData.dark() : ThemeData.light(),
+      child: Scaffold(
+        backgroundColor:
+            isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+        appBar: _buildAppBar(isDarkMode, stats),
+        body: _buildBody(isDarkMode, documentosState, stats),
       ),
     );
   }
 
-  Widget _buildHeader(bool isDarkMode, Map<String, dynamic> stats) {
+  PreferredSizeWidget _buildAppBar(
+      bool isDarkMode, Map<String, dynamic> stats) {
+    return AppBar(
+      elevation: 0,
+      backgroundColor:
+          isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+      foregroundColor:
+          isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+      title: Row(
+        children: [
+          Icon(
+            PhosphorIcons.files(),
+            size: 24,
+            color: AppColors.primary,
+          ),
+          const SizedBox(width: 12),
+          const Text('Documentos'),
+        ],
+      ),
+      actions: [
+        if (stats['documentosVencidos']! > 0)
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  PhosphorIcons.warning(),
+                  size: 16,
+                  color: Colors.red,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${stats['documentosVencidos']} vencidos',
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildBody(
+      bool isDarkMode, dynamic documentosState, Map<String, dynamic> stats) {
+    return Column(
+      children: [
+        // Estatísticas Overview
+        _buildStatsOverview(isDarkMode, stats),
+        // Tabs
+        _buildTabs(isDarkMode),
+        // Content
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              // Cartões de Crédito
+              CartaoCreditoListWidget(
+                cartoes: documentosState.cartoesCredito,
+                isLoading: documentosState.isLoading,
+                onAdd: _showAddCartaoCreditoDialog,
+                onEdit: _showEditCartaoCreditoDialog,
+                onDelete: _showDeleteCartaoCreditoDialog,
+              ),
+              // Cartões de Fidelização
+              CartaoFidelizacaoListWidget(
+                cartoes: documentosState.cartoesFidelizacao,
+                isLoading: documentosState.isLoading,
+                onAdd: _showAddCartaoFidelizacaoDialog,
+                onEdit: _showEditCartaoFidelizacaoDialog,
+                onDelete: _showDeleteCartaoFidelizacaoDialog,
+              ),
+              // Documentos de Identificação
+              DocumentoIdentificacaoListWidget(
+                documentos: documentosState.documentosIdentificacao,
+                isLoading: documentosState.isLoading,
+                onAdd: _showAddDocumentoIdentificacaoDialog,
+                onEdit: _showEditDocumentoIdentificacaoDialog,
+                onDelete: _showDeleteDocumentoIdentificacaoDialog,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsOverview(bool isDarkMode, Map<String, dynamic> stats) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -116,54 +173,13 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                PhosphorIcons.files(),
-                size: 24,
-                color: AppColors.primary,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Documentos',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const Spacer(),
-              if (stats['documentosVencidos'] > 0)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        PhosphorIcons.warning(),
-                        size: 16,
-                        color: Colors.red,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${stats['documentosVencidos']} vencidos',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+          Text(
+            'Visão Geral',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-            ],
           ),
           const SizedBox(height: 16),
-
-          // Estatísticas
           Row(
             children: [
               _buildStatCard(
@@ -171,6 +187,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
                 '${stats['totalDocumentos']}',
                 PhosphorIcons.files(),
                 isDarkMode,
+                Colors.blue,
               ),
               const SizedBox(width: 12),
               _buildStatCard(
@@ -178,6 +195,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
                 '${stats['totalCartoesCredito']}',
                 PhosphorIcons.creditCard(),
                 isDarkMode,
+                Colors.green,
               ),
               const SizedBox(width: 12),
               _buildStatCard(
@@ -185,6 +203,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
                 '${stats['totalCartoesFidelizacao']}',
                 PhosphorIcons.star(),
                 isDarkMode,
+                Colors.orange,
               ),
               const SizedBox(width: 12),
               _buildStatCard(
@@ -192,6 +211,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
                 '${stats['totalDocumentosIdentificacao']}',
                 PhosphorIcons.identificationCard(),
                 isDarkMode,
+                Colors.purple,
               ),
             ],
           ),
@@ -201,36 +221,60 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
   }
 
   Widget _buildStatCard(
-      String title, String value, IconData icon, bool isDarkMode) {
+    String title,
+    String value,
+    IconData icon,
+    bool isDarkMode,
+    Color color,
+  ) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color:
               isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              size: 20,
-              color: AppColors.primary,
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 24,
+                  color: color,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color:
+                              isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
               value,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                  ),
-            ),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
+                    color: color,
                   ),
             ),
           ],
@@ -291,7 +335,6 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
   }
 
   // ===== CARTÕES DE CRÉDITO =====
-
   void _showAddCartaoCreditoDialog() {
     showDialog(
       context: context,
@@ -322,6 +365,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
         .read(documentosProvider)
         .cartoesCredito
         .firstWhere((c) => c.id == id);
+
     showDialog(
       context: context,
       builder: (context) => DeleteConfirmationDialog(
@@ -336,7 +380,6 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
   }
 
   // ===== CARTÕES DE FIDELIZAÇÃO =====
-
   void _showAddCartaoFidelizacaoDialog() {
     showDialog(
       context: context,
@@ -367,6 +410,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
         .read(documentosProvider)
         .cartoesFidelizacao
         .firstWhere((c) => c.id == id);
+
     showDialog(
       context: context,
       builder: (context) => DeleteConfirmationDialog(
@@ -381,7 +425,6 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
   }
 
   // ===== DOCUMENTOS DE IDENTIFICAÇÃO =====
-
   void _showAddDocumentoIdentificacaoDialog() {
     showDialog(
       context: context,
@@ -414,6 +457,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
         .read(documentosProvider)
         .documentosIdentificacao
         .firstWhere((d) => d.id == id);
+
     showDialog(
       context: context,
       builder: (context) => DeleteConfirmationDialog(
