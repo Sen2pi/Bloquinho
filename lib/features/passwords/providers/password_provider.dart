@@ -28,6 +28,16 @@ class PasswordState extends Equatable {
   final bool isUpdating;
   final bool isDeleting;
 
+  // NOVOS CAMPOS PARA FUNCIONALIDADES AVANÇADAS
+  final Map<String, dynamic> securityAnalysis;
+  final List<String> securitySuggestions;
+  final bool showCompromisedOnly;
+  final bool showReusedOnly;
+  final bool showOldOnly;
+  final bool showWith2FAOnly;
+  final bool showInVaultOnly;
+  final bool showPinnedOnly;
+
   const PasswordState({
     this.passwords = const [],
     this.folders = const [],
@@ -45,6 +55,14 @@ class PasswordState extends Equatable {
     this.isCreating = false,
     this.isUpdating = false,
     this.isDeleting = false,
+    this.securityAnalysis = const {},
+    this.securitySuggestions = const [],
+    this.showCompromisedOnly = false,
+    this.showReusedOnly = false,
+    this.showOldOnly = false,
+    this.showWith2FAOnly = false,
+    this.showInVaultOnly = false,
+    this.showPinnedOnly = false,
   });
 
   PasswordState copyWith({
@@ -64,6 +82,14 @@ class PasswordState extends Equatable {
     bool? isCreating,
     bool? isUpdating,
     bool? isDeleting,
+    Map<String, dynamic>? securityAnalysis,
+    List<String>? securitySuggestions,
+    bool? showCompromisedOnly,
+    bool? showReusedOnly,
+    bool? showOldOnly,
+    bool? showWith2FAOnly,
+    bool? showInVaultOnly,
+    bool? showPinnedOnly,
   }) {
     return PasswordState(
       passwords: passwords ?? this.passwords,
@@ -82,6 +108,14 @@ class PasswordState extends Equatable {
       isCreating: isCreating ?? this.isCreating,
       isUpdating: isUpdating ?? this.isUpdating,
       isDeleting: isDeleting ?? this.isDeleting,
+      securityAnalysis: securityAnalysis ?? this.securityAnalysis,
+      securitySuggestions: securitySuggestions ?? this.securitySuggestions,
+      showCompromisedOnly: showCompromisedOnly ?? this.showCompromisedOnly,
+      showReusedOnly: showReusedOnly ?? this.showReusedOnly,
+      showOldOnly: showOldOnly ?? this.showOldOnly,
+      showWith2FAOnly: showWith2FAOnly ?? this.showWith2FAOnly,
+      showInVaultOnly: showInVaultOnly ?? this.showInVaultOnly,
+      showPinnedOnly: showPinnedOnly ?? this.showPinnedOnly,
     );
   }
 
@@ -103,6 +137,14 @@ class PasswordState extends Equatable {
         isCreating,
         isUpdating,
         isDeleting,
+        securityAnalysis,
+        securitySuggestions,
+        showCompromisedOnly,
+        showReusedOnly,
+        showOldOnly,
+        showWith2FAOnly,
+        showInVaultOnly,
+        showPinnedOnly,
       ];
 }
 
@@ -115,6 +157,65 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
 
   PasswordNotifier(this._passwordService) : super(const PasswordState()) {
     _loadInitialData();
+  }
+
+  void _applyFilters() {
+    final all = state.passwords;
+    List<PasswordEntry> filtered = List.from(all);
+
+    // Filtros principais
+    if (state.searchQuery.isNotEmpty) {
+      final q = state.searchQuery.toLowerCase();
+      filtered = filtered
+          .where((e) =>
+              e.title.toLowerCase().contains(q) ||
+              e.username.toLowerCase().contains(q) ||
+              (e.website?.toLowerCase().contains(q) ?? false) ||
+              (e.notes?.toLowerCase().contains(q) ?? false) ||
+              (e.category?.toLowerCase().contains(q) ?? false) ||
+              e.tags.any((tag) => tag.toLowerCase().contains(q)))
+          .toList();
+    }
+    if (state.selectedCategory != null) {
+      filtered =
+          filtered.where((e) => e.category == state.selectedCategory).toList();
+    }
+    if (state.selectedFolderId != null) {
+      filtered =
+          filtered.where((e) => e.folderId == state.selectedFolderId).toList();
+    }
+    if (state.showFavoritesOnly) {
+      filtered = filtered.where((e) => e.isFavorite).toList();
+    }
+    if (state.showWeakOnly) {
+      filtered = filtered
+          .where((e) =>
+              e.strength == PasswordStrength.veryWeak ||
+              e.strength == PasswordStrength.weak)
+          .toList();
+    }
+    if (state.showExpiredOnly) {
+      filtered = filtered.where((e) => e.isExpired).toList();
+    }
+    if (state.showCompromisedOnly) {
+      filtered = filtered.where((e) => e.isCompromised).toList();
+    }
+    if (state.showReusedOnly) {
+      filtered = filtered.where((e) => e.isReused).toList();
+    }
+    if (state.showOldOnly) {
+      filtered = filtered.where((e) => e.isOldPassword).toList();
+    }
+    if (state.showWith2FAOnly) {
+      filtered = filtered.where((e) => e.hasTwoFactor).toList();
+    }
+    if (state.showInVaultOnly) {
+      filtered = filtered.where((e) => e.isInSecureVault).toList();
+    }
+    if (state.showPinnedOnly) {
+      filtered = filtered.where((e) => e.isPinned).toList();
+    }
+    state = state.copyWith(filteredPasswords: filtered);
   }
 
   /// Definir contexto do workspace
@@ -138,11 +239,17 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
       }
 
       final passwords = await _passwordService.getAllPasswords();
+      final stats = await _passwordService.getPasswordStats();
+      final analysis = await _passwordService.analyzeSecurity();
+
       state = state.copyWith(
         passwords: passwords,
+        stats: stats,
+        securityAnalysis: analysis,
         isLoading: false,
         error: null,
       );
+      _applyFilters();
       _isInitialized = true;
     } catch (e) {
       state = state.copyWith(
@@ -233,29 +340,214 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
     }
   }
 
+  // NOVOS MÉTODOS PARA FUNCIONALIDADES AVANÇADAS
+
+  /// Analisar segurança geral
+  Future<Map<String, dynamic>> analyzeSecurity() async {
+    try {
+      return await _passwordService.analyzeSecurity();
+    } catch (e) {
+      return {};
+    }
+  }
+
+  /// Obter sugestões de segurança para uma senha específica
+  Future<List<String>> getSecuritySuggestions(PasswordEntry password) async {
+    try {
+      return await _passwordService.suggestSecurityImprovements(password);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Verificar se uma senha foi comprometida
+  Future<bool> checkPasswordBreach(String password) async {
+    try {
+      return await _passwordService.checkPasswordBreach(password);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Verificar se uma senha é reutilizada
+  Future<bool> checkPasswordReuse(String password, String excludeId) async {
+    try {
+      return await _passwordService.checkPasswordReuse(password, excludeId);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Adicionar senha ao histórico
+  Future<void> addToPasswordHistory(
+      PasswordEntry password, String oldPassword) async {
+    try {
+      await _passwordService.addToPasswordHistory(password, oldPassword);
+      await _loadInitialData();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  /// Gerar código 2FA
+  String generateTwoFactorSecret() {
+    return _passwordService.generateTwoFactorSecret();
+  }
+
+  /// Verificar código 2FA
+  bool verifyTwoFactorCode(String secret, String code) {
+    return _passwordService.verifyTwoFactorCode(secret, code);
+  }
+
+  /// Criar vault seguro
+  Future<String> createVault(String name, String description) async {
+    try {
+      return await _passwordService.createVault(name, description);
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return '';
+    }
+  }
+
+  /// Mover entrada para vault
+  Future<void> moveToVault(PasswordEntry password, String vaultId) async {
+    try {
+      await _passwordService.moveToVault(password, vaultId);
+      await _loadInitialData();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  /// Configurar acesso de emergência
+  Future<void> setupEmergencyAccess(
+      PasswordEntry password, String contactEmail, int days) async {
+    try {
+      await _passwordService.setupEmergencyAccess(password, contactEmail, days);
+      await _loadInitialData();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  /// Verificar acesso de emergência
+  Future<bool> checkEmergencyAccess(PasswordEntry password) async {
+    try {
+      return await _passwordService.checkEmergencyAccess(password);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // NOVOS FILTROS AVANÇADOS
+  Future<List<PasswordEntry>> getCompromisedPasswords() async {
+    try {
+      return await _passwordService.getCompromisedPasswords();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<PasswordEntry>> getReusedPasswords() async {
+    try {
+      return await _passwordService.getReusedPasswords();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<PasswordEntry>> getOldPasswords() async {
+    try {
+      return await _passwordService.getOldPasswords();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<PasswordEntry>> getPasswordsWith2FA() async {
+    try {
+      return await _passwordService.getPasswordsWith2FA();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<PasswordEntry>> getPasswordsInVault() async {
+    try {
+      return await _passwordService.getPasswordsInVault();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<PasswordEntry>> getPinnedPasswords() async {
+    try {
+      return await _passwordService.getPinnedPasswords();
+    } catch (e) {
+      return [];
+    }
+  }
+
   // Métodos de compatibilidade com a interface
   void setSearchQuery(String query) {
     state = state.copyWith(searchQuery: query);
+    _applyFilters();
   }
 
   void setSelectedCategory(String? category) {
     state = state.copyWith(selectedCategory: category);
+    _applyFilters();
   }
 
   void setSelectedFolder(String? folderId) {
     state = state.copyWith(selectedFolderId: folderId);
+    _applyFilters();
   }
 
   void toggleFavoritesOnly() {
     state = state.copyWith(showFavoritesOnly: !state.showFavoritesOnly);
+    _applyFilters();
   }
 
   void toggleWeakOnly() {
     state = state.copyWith(showWeakOnly: !state.showWeakOnly);
+    _applyFilters();
   }
 
   void toggleExpiredOnly() {
     state = state.copyWith(showExpiredOnly: !state.showExpiredOnly);
+    _applyFilters();
+  }
+
+  // NOVOS TOGGLES PARA FILTROS AVANÇADOS
+  void toggleCompromisedOnly() {
+    state = state.copyWith(showCompromisedOnly: !state.showCompromisedOnly);
+    _applyFilters();
+  }
+
+  void toggleReusedOnly() {
+    state = state.copyWith(showReusedOnly: !state.showReusedOnly);
+    _applyFilters();
+  }
+
+  void toggleOldOnly() {
+    state = state.copyWith(showOldOnly: !state.showOldOnly);
+    _applyFilters();
+  }
+
+  void toggleWith2FAOnly() {
+    state = state.copyWith(showWith2FAOnly: !state.showWith2FAOnly);
+    _applyFilters();
+  }
+
+  void toggleInVaultOnly() {
+    state = state.copyWith(showInVaultOnly: !state.showInVaultOnly);
+    _applyFilters();
+  }
+
+  void togglePinnedOnly() {
+    state = state.copyWith(showPinnedOnly: !state.showPinnedOnly);
+    _applyFilters();
   }
 
   void clearFilters() {
@@ -266,7 +558,14 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
       showFavoritesOnly: false,
       showWeakOnly: false,
       showExpiredOnly: false,
+      showCompromisedOnly: false,
+      showReusedOnly: false,
+      showOldOnly: false,
+      showWith2FAOnly: false,
+      showInVaultOnly: false,
+      showPinnedOnly: false,
     );
+    _applyFilters();
   }
 
   Future<void> refresh() async {
@@ -282,6 +581,12 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
   Future<void> toggleArchived(String id) async {
     final password = state.passwords.firstWhere((p) => p.id == id);
     final updatedPassword = password.copyWith(isArchived: !password.isArchived);
+    await updatePassword(updatedPassword);
+  }
+
+  Future<void> togglePinned(String id) async {
+    final password = state.passwords.firstWhere((p) => p.id == id);
+    final updatedPassword = password.copyWith(isPinned: !password.isPinned);
     await updatePassword(updatedPassword);
   }
 
@@ -360,20 +665,9 @@ final passwordProvider =
   ref.listen<UserProfile?>(currentProfileProvider, (prevProfile, currProfile) {
     final workspace = ref.read(currentWorkspaceProvider);
     final defaultWorkspaceId = ref.read(passwordsWorkspaceProvider);
-
-    debugPrint(
-        '🔍 [PasswordProvider] Profile mudou: ${prevProfile?.name} → ${currProfile?.name}');
-    debugPrint(
-        '🔍 [PasswordProvider] Workspace atual: ${workspace?.name} (${workspace?.id})');
-    debugPrint('🔍 [PasswordProvider] Workspace default: $defaultWorkspaceId');
-
     if (currProfile != null) {
       final workspaceId = workspace?.id ?? defaultWorkspaceId;
-      debugPrint(
-          '[PasswordProvider] Mudou workspace/profile: ${currProfile.name}/$workspaceId');
       notifier.setContext(currProfile.name, workspaceId);
-    } else {
-      debugPrint('[PasswordProvider] Profile é null, não definindo contexto');
     }
   });
 
@@ -382,19 +676,9 @@ final passwordProvider =
       (prevWorkspace, currWorkspace) {
     final profile = ref.read(currentProfileProvider);
     final defaultWorkspaceId = ref.read(passwordsWorkspaceProvider);
-
-    debugPrint(
-        '🔍 [PasswordProvider] Workspace mudou: ${prevWorkspace?.name} → ${currWorkspace?.name}');
-    debugPrint('🔍 [PasswordProvider] Profile atual: ${profile?.name}');
-    debugPrint('🔍 [PasswordProvider] Workspace default: $defaultWorkspaceId');
-
     if (profile != null) {
       final workspaceId = currWorkspace?.id ?? defaultWorkspaceId;
-      debugPrint(
-          '[PasswordProvider] Mudou workspace/profile: ${profile.name}/$workspaceId');
       notifier.setContext(profile.name, workspaceId);
-    } else {
-      debugPrint('[PasswordProvider] Profile é null, não definindo contexto');
     }
   });
 
@@ -436,6 +720,45 @@ final isUpdatingProvider = Provider<bool>((ref) {
 
 final isDeletingProvider = Provider<bool>((ref) {
   return ref.watch(passwordProvider).isDeleting;
+});
+
+// NOVOS PROVIDERS PARA FUNCIONALIDADES AVANÇADAS
+final securityAnalysisProvider = Provider<Map<String, dynamic>>((ref) {
+  return ref.watch(passwordProvider).securityAnalysis;
+});
+
+final securitySuggestionsProvider = Provider<List<String>>((ref) {
+  return ref.watch(passwordProvider).securitySuggestions;
+});
+
+final compromisedPasswordsProvider = Provider<List<PasswordEntry>>((ref) {
+  final passwords = ref.watch(passwordsProvider);
+  return passwords.where((p) => p.isCompromised).toList();
+});
+
+final reusedPasswordsProvider = Provider<List<PasswordEntry>>((ref) {
+  final passwords = ref.watch(passwordsProvider);
+  return passwords.where((p) => p.isReused).toList();
+});
+
+final oldPasswordsProvider = Provider<List<PasswordEntry>>((ref) {
+  final passwords = ref.watch(passwordsProvider);
+  return passwords.where((p) => p.isOldPassword).toList();
+});
+
+final passwordsWith2FAProvider = Provider<List<PasswordEntry>>((ref) {
+  final passwords = ref.watch(passwordsProvider);
+  return passwords.where((p) => p.hasTwoFactor).toList();
+});
+
+final passwordsInVaultProvider = Provider<List<PasswordEntry>>((ref) {
+  final passwords = ref.watch(passwordsProvider);
+  return passwords.where((p) => p.isInSecureVault).toList();
+});
+
+final pinnedPasswordsProvider = Provider<List<PasswordEntry>>((ref) {
+  final passwords = ref.watch(passwordsProvider);
+  return passwords.where((p) => p.isPinned).toList();
 });
 
 // Provider para inicializar contexto do workspace

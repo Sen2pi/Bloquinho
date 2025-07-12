@@ -48,6 +48,7 @@ AgendaItem _$AgendaItemFromJson(Map<String, dynamic> json) => AgendaItem(
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      workspaceId: json['workspaceId'] as String?,
     );
 
 Map<String, dynamic> _$AgendaItemToJson(AgendaItem instance) =>
@@ -76,6 +77,7 @@ Map<String, dynamic> _$AgendaItemToJson(AgendaItem instance) =>
       'completedAt': instance.completedAt?.toIso8601String(),
       'notes': instance.notes,
       'attachments': instance.attachments,
+      'workspaceId': instance.workspaceId,
     };
 
 const _$AgendaItemTypeEnumMap = {

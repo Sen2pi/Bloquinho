@@ -39,6 +39,31 @@ class PasswordEntry extends Equatable {
   final bool autoFillEnabled;
   final String? workspaceId;
 
+  // NOVOS CAMPOS PARA FUNCIONALIDADES AVANÇADAS
+  final List<PasswordHistory> passwordHistory;
+  final String? masterPassword;
+  final bool isBreached;
+  final DateTime? breachDate;
+  final List<String> breachSources;
+  final bool isReused;
+  final List<String> reusedIn;
+  final String? securityNotes;
+  final bool isPinned;
+  final int usageCount;
+  final DateTime? lastPasswordChange;
+  final String? twoFactorSecret;
+  final bool twoFactorEnabled;
+  final String? recoveryEmail;
+  final String? recoveryPhone;
+  final Map<String, String> securityQuestions;
+  final bool isEmergencyAccess;
+  final String? emergencyContact;
+  final DateTime? emergencyExpiry;
+  final String? vaultId;
+  final bool isInVault;
+  final String? vaultName;
+  final Map<String, dynamic> metadata;
+
   const PasswordEntry({
     required this.id,
     required this.title,
@@ -64,6 +89,29 @@ class PasswordEntry extends Equatable {
     this.expiresAt,
     this.autoFillEnabled = true,
     this.workspaceId,
+    this.passwordHistory = const [],
+    this.masterPassword,
+    this.isBreached = false,
+    this.breachDate,
+    this.breachSources = const [],
+    this.isReused = false,
+    this.reusedIn = const [],
+    this.securityNotes,
+    this.isPinned = false,
+    this.usageCount = 0,
+    this.lastPasswordChange,
+    this.twoFactorSecret,
+    this.twoFactorEnabled = false,
+    this.recoveryEmail,
+    this.recoveryPhone,
+    this.securityQuestions = const {},
+    this.isEmergencyAccess = false,
+    this.emergencyContact,
+    this.emergencyExpiry,
+    this.vaultId,
+    this.isInVault = false,
+    this.vaultName,
+    this.metadata = const {},
   });
 
   factory PasswordEntry.fromJson(Map<String, dynamic> json) =>
@@ -96,6 +144,29 @@ class PasswordEntry extends Equatable {
     DateTime? expiresAt,
     bool? autoFillEnabled,
     String? workspaceId,
+    List<PasswordHistory>? passwordHistory,
+    String? masterPassword,
+    bool? isBreached,
+    DateTime? breachDate,
+    List<String>? breachSources,
+    bool? isReused,
+    List<String>? reusedIn,
+    String? securityNotes,
+    bool? isPinned,
+    int? usageCount,
+    DateTime? lastPasswordChange,
+    String? twoFactorSecret,
+    bool? twoFactorEnabled,
+    String? recoveryEmail,
+    String? recoveryPhone,
+    Map<String, String>? securityQuestions,
+    bool? isEmergencyAccess,
+    String? emergencyContact,
+    DateTime? emergencyExpiry,
+    String? vaultId,
+    bool? isInVault,
+    String? vaultName,
+    Map<String, dynamic>? metadata,
   }) {
     return PasswordEntry(
       id: id ?? this.id,
@@ -122,6 +193,29 @@ class PasswordEntry extends Equatable {
       expiresAt: expiresAt ?? this.expiresAt,
       autoFillEnabled: autoFillEnabled ?? this.autoFillEnabled,
       workspaceId: workspaceId ?? this.workspaceId,
+      passwordHistory: passwordHistory ?? this.passwordHistory,
+      masterPassword: masterPassword ?? this.masterPassword,
+      isBreached: isBreached ?? this.isBreached,
+      breachDate: breachDate ?? this.breachDate,
+      breachSources: breachSources ?? this.breachSources,
+      isReused: isReused ?? this.isReused,
+      reusedIn: reusedIn ?? this.reusedIn,
+      securityNotes: securityNotes ?? this.securityNotes,
+      isPinned: isPinned ?? this.isPinned,
+      usageCount: usageCount ?? this.usageCount,
+      lastPasswordChange: lastPasswordChange ?? this.lastPasswordChange,
+      twoFactorSecret: twoFactorSecret ?? this.twoFactorSecret,
+      twoFactorEnabled: twoFactorEnabled ?? this.twoFactorEnabled,
+      recoveryEmail: recoveryEmail ?? this.recoveryEmail,
+      recoveryPhone: recoveryPhone ?? this.recoveryPhone,
+      securityQuestions: securityQuestions ?? this.securityQuestions,
+      isEmergencyAccess: isEmergencyAccess ?? this.isEmergencyAccess,
+      emergencyContact: emergencyContact ?? this.emergencyContact,
+      emergencyExpiry: emergencyExpiry ?? this.emergencyExpiry,
+      vaultId: vaultId ?? this.vaultId,
+      isInVault: isInVault ?? this.isInVault,
+      vaultName: vaultName ?? this.vaultName,
+      metadata: metadata ?? this.metadata,
     );
   }
 
@@ -151,6 +245,29 @@ class PasswordEntry extends Equatable {
         expiresAt,
         autoFillEnabled,
         workspaceId,
+        passwordHistory,
+        masterPassword,
+        isBreached,
+        breachDate,
+        breachSources,
+        isReused,
+        reusedIn,
+        securityNotes,
+        isPinned,
+        usageCount,
+        lastPasswordChange,
+        twoFactorSecret,
+        twoFactorEnabled,
+        recoveryEmail,
+        recoveryPhone,
+        securityQuestions,
+        isEmergencyAccess,
+        emergencyContact,
+        emergencyExpiry,
+        vaultId,
+        isInVault,
+        vaultName,
+        metadata,
       ];
 
   // Métodos de utilidade
@@ -224,6 +341,61 @@ class PasswordEntry extends Equatable {
         return 'Muito Forte';
     }
   }
+
+  // NOVOS MÉTODOS PARA FUNCIONALIDADES AVANÇADAS
+
+  /// Verificar se a senha foi comprometida
+  bool get isCompromised => isBreached || isReused;
+
+  /// Obter a senha mais recente do histórico
+  String? get previousPassword {
+    if (passwordHistory.isEmpty) return null;
+    return passwordHistory.first.password;
+  }
+
+  /// Verificar se tem 2FA ativo
+  bool get hasTwoFactor => twoFactorEnabled && twoFactorSecret != null;
+
+  /// Verificar se tem acesso de emergência
+  bool get hasEmergencyAccess => isEmergencyAccess && emergencyContact != null;
+
+  /// Verificar se está em um vault
+  bool get isInSecureVault => isInVault && vaultId != null;
+
+  /// Obter idade da senha em dias
+  int get passwordAge {
+    final changeDate = lastPasswordChange ?? createdAt;
+    return DateTime.now().difference(changeDate).inDays;
+  }
+
+  /// Verificar se a senha é antiga (mais de 90 dias)
+  bool get isOldPassword => passwordAge > 90;
+
+  /// Obter nível de segurança geral
+  SecurityLevel get securityLevel {
+    if (isCompromised) return SecurityLevel.critical;
+    if (isOldPassword) return SecurityLevel.warning;
+    if (strength == PasswordStrength.veryWeak ||
+        strength == PasswordStrength.weak) {
+      return SecurityLevel.warning;
+    }
+    if (hasTwoFactor) return SecurityLevel.excellent;
+    return SecurityLevel.good;
+  }
+
+  /// Obter cor baseada no nível de segurança
+  Color get securityColor {
+    switch (securityLevel) {
+      case SecurityLevel.critical:
+        return Colors.red;
+      case SecurityLevel.warning:
+        return Colors.orange;
+      case SecurityLevel.good:
+        return Colors.green;
+      case SecurityLevel.excellent:
+        return Colors.blue;
+    }
+  }
 }
 
 enum PasswordStrength {
@@ -232,6 +404,34 @@ enum PasswordStrength {
   medium,
   strong,
   veryStrong,
+}
+
+enum SecurityLevel {
+  critical,
+  warning,
+  good,
+  excellent,
+}
+
+@JsonSerializable()
+class PasswordHistory extends Equatable {
+  final String password;
+  final DateTime changedAt;
+  final String? reason;
+
+  const PasswordHistory({
+    required this.password,
+    required this.changedAt,
+    this.reason,
+  });
+
+  factory PasswordHistory.fromJson(Map<String, dynamic> json) =>
+      _$PasswordHistoryFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PasswordHistoryToJson(this);
+
+  @override
+  List<Object?> get props => [password, changedAt, reason];
 }
 
 @JsonSerializable()

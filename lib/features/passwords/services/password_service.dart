@@ -15,6 +15,8 @@ class PasswordService {
   static const String _foldersBoxName = 'password_folders';
   static const String _masterKey = 'master_password_hash';
   static const String _settingsKey = 'password_settings';
+  static const String _vaultsKey = 'password_vaults';
+  static const String _breachDataKey = 'breach_data';
 
   static final PasswordService _instance = PasswordService._internal();
   factory PasswordService() => _instance;
@@ -28,11 +30,19 @@ class PasswordService {
   String? _currentWorkspaceId;
   String? _currentProfileName;
 
+  // NOVOS CAMPOS PARA FUNCIONALIDADES AVANÇADAS
+  final Map<String, List<String>> _breachDatabase = {};
+  final Map<String, String> _vaults = {};
+  final Map<String, dynamic> _securitySettings = {};
+
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
       await _workspaceStorage.initialize();
+      await _loadBreachDatabase();
+      await _loadVaults();
+      await _loadSecuritySettings();
       _isInitialized = true;
     } catch (e) {
       throw Exception('Erro ao inicializar PasswordService: $e');
@@ -172,6 +182,284 @@ class PasswordService {
     }
   }
 
+  // NOVAS FUNCIONALIDADES AVANÇADAS
+
+  /// Verificar se uma senha foi comprometida
+  Future<bool> checkPasswordBreach(String password) async {
+    await _ensureInitialized();
+
+    // Simular verificação de violação (em produção, seria uma API real)
+    final hash = sha256.convert(utf8.encode(password)).toString();
+    return _breachDatabase.containsKey(hash);
+  }
+
+  /// Verificar se uma senha é reutilizada
+  Future<bool> checkPasswordReuse(String password, String excludeId) async {
+    await _ensureInitialized();
+
+    final allPasswords = await getAllPasswords();
+    return allPasswords
+        .any((entry) => entry.id != excludeId && entry.password == password);
+  }
+
+  /// Adicionar senha ao histórico
+  Future<void> addToPasswordHistory(
+      PasswordEntry entry, String oldPassword) async {
+    await _ensureInitialized();
+
+    final history = PasswordHistory(
+      password: oldPassword,
+      changedAt: DateTime.now(),
+      reason: 'Senha alterada',
+    );
+
+    final updatedEntry = entry.copyWith(
+      passwordHistory: [
+        history,
+        ...entry.passwordHistory.take(4)
+      ], // Manter apenas 5 últimas
+      lastPasswordChange: DateTime.now(),
+    );
+
+    await updatePassword(updatedEntry);
+  }
+
+  /// Gerar código 2FA
+  String generateTwoFactorSecret() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    final random = Random.secure();
+    return List.generate(16, (index) => chars[random.nextInt(chars.length)])
+        .join();
+  }
+
+  /// Verificar código 2FA
+  bool verifyTwoFactorCode(String secret, String code) {
+    // Implementação simplificada de TOTP
+    // Em produção, usar biblioteca TOTP real
+    if (code.length != 6) return false;
+
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 30000; // 30 segundos
+    final expectedCode = _generateTOTP(secret, now);
+    return code == expectedCode;
+  }
+
+  String _generateTOTP(String secret, int time) {
+    // Implementação simplificada
+    final hash = sha256.convert(utf8.encode('$secret$time')).toString();
+    return hash.substring(0, 6).toUpperCase();
+  }
+
+  /// Criar vault seguro
+  Future<String> createVault(String name, String description) async {
+    await _ensureInitialized();
+
+    final vaultId = _uuid.v4();
+    final vault = {
+      'id': vaultId,
+      'name': name,
+      'description': description,
+      'createdAt': DateTime.now().toIso8601String(),
+      'entryCount': 0,
+    };
+
+    _vaults[vaultId] = jsonEncode(vault);
+    await _saveVaults();
+
+    return vaultId;
+  }
+
+  /// Mover entrada para vault
+  Future<void> moveToVault(PasswordEntry entry, String vaultId) async {
+    await _ensureInitialized();
+
+    final updatedEntry = entry.copyWith(
+      vaultId: vaultId,
+      isInVault: true,
+      vaultName: _getVaultName(vaultId),
+    );
+
+    await updatePassword(updatedEntry);
+  }
+
+  String? _getVaultName(String vaultId) {
+    try {
+      final vaultData = jsonDecode(_vaults[vaultId] ?? '{}');
+      return vaultData['name'];
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Configurar acesso de emergência
+  Future<void> setupEmergencyAccess(
+      PasswordEntry entry, String contactEmail, int days) async {
+    await _ensureInitialized();
+
+    final updatedEntry = entry.copyWith(
+      isEmergencyAccess: true,
+      emergencyContact: contactEmail,
+      emergencyExpiry: DateTime.now().add(Duration(days: days)),
+    );
+
+    await updatePassword(updatedEntry);
+  }
+
+  /// Verificar acesso de emergência
+  Future<bool> checkEmergencyAccess(PasswordEntry entry) async {
+    if (!entry.isEmergencyAccess || entry.emergencyExpiry == null) {
+      return false;
+    }
+
+    return DateTime.now().isBefore(entry.emergencyExpiry!);
+  }
+
+  /// Analisar segurança geral
+  Future<Map<String, dynamic>> analyzeSecurity() async {
+    await _ensureInitialized();
+
+    final allPasswords = await getAllPasswords();
+    final analysis = {
+      'total': allPasswords.length,
+      'compromised': 0,
+      'reused': 0,
+      'weak': 0,
+      'old': 0,
+      'with2FA': 0,
+      'inVault': 0,
+      'expired': 0,
+      'expiringSoon': 0,
+    };
+
+    for (final entry in allPasswords) {
+      if (entry.isCompromised)
+        analysis['compromised'] = (analysis['compromised'] as int) + 1;
+      if (entry.isReused) analysis['reused'] = (analysis['reused'] as int) + 1;
+      if (entry.strength == PasswordStrength.veryWeak ||
+          entry.strength == PasswordStrength.weak) {
+        analysis['weak'] = (analysis['weak'] as int) + 1;
+      }
+      if (entry.isOldPassword) analysis['old'] = (analysis['old'] as int) + 1;
+      if (entry.hasTwoFactor)
+        analysis['with2FA'] = (analysis['with2FA'] as int) + 1;
+      if (entry.isInSecureVault)
+        analysis['inVault'] = (analysis['inVault'] as int) + 1;
+      if (entry.isExpired)
+        analysis['expired'] = (analysis['expired'] as int) + 1;
+      if (entry.isExpiringSoon)
+        analysis['expiringSoon'] = (analysis['expiringSoon'] as int) + 1;
+    }
+
+    return analysis;
+  }
+
+  /// Sugerir melhorias de segurança
+  Future<List<String>> suggestSecurityImprovements(PasswordEntry entry) async {
+    final suggestions = <String>[];
+
+    if (entry.strength == PasswordStrength.veryWeak ||
+        entry.strength == PasswordStrength.weak) {
+      suggestions
+          .add('Sua senha é muito fraca. Considere usar uma senha mais forte.');
+    }
+
+    if (entry.isOldPassword) {
+      suggestions.add(
+          'Sua senha não foi alterada há mais de 90 dias. Considere alterá-la.');
+    }
+
+    if (entry.isReused) {
+      suggestions.add(
+          'Esta senha está sendo reutilizada em outras contas. Use senhas únicas.');
+    }
+
+    if (entry.isBreached) {
+      suggestions.add(
+          'Esta senha foi comprometida em uma violação de dados. Altere imediatamente.');
+    }
+
+    if (!entry.hasTwoFactor) {
+      suggestions
+          .add('Ative a autenticação de dois fatores para maior segurança.');
+    }
+
+    if (!entry.isInSecureVault) {
+      suggestions.add('Considere mover esta entrada para um vault seguro.');
+    }
+
+    if (entry.expiresAt != null && entry.isExpired) {
+      suggestions.add('Esta senha expirou. Altere-a imediatamente.');
+    }
+
+    return suggestions;
+  }
+
+  /// Carregar banco de dados de violações (simulado)
+  Future<void> _loadBreachDatabase() async {
+    // Em produção, isso seria carregado de uma API real
+    _breachDatabase.clear();
+
+    // Simular algumas senhas comprometidas conhecidas
+    final commonPasswords = [
+      'password',
+      '123456',
+      'qwerty',
+      'admin',
+      'letmein',
+    ];
+
+    for (final password in commonPasswords) {
+      final hash = sha256.convert(utf8.encode(password)).toString();
+      _breachDatabase[hash] = ['Simulação de violação'];
+    }
+  }
+
+  /// Carregar vaults
+  Future<void> _loadVaults() async {
+    try {
+      final vaultsData = await _secureStorage.read(key: _vaultsKey);
+      if (vaultsData != null) {
+        final vaults = jsonDecode(vaultsData) as Map<String, dynamic>;
+        _vaults.clear();
+        vaults.forEach((key, value) => _vaults[key] = value.toString());
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar vaults: $e');
+    }
+  }
+
+  /// Salvar vaults
+  Future<void> _saveVaults() async {
+    try {
+      await _secureStorage.write(key: _vaultsKey, value: jsonEncode(_vaults));
+    } catch (e) {
+      debugPrint('Erro ao salvar vaults: $e');
+    }
+  }
+
+  /// Carregar configurações de segurança
+  Future<void> _loadSecuritySettings() async {
+    try {
+      final settingsData = await _secureStorage.read(key: _settingsKey);
+      if (settingsData != null) {
+        _securitySettings.clear();
+        _securitySettings
+            .addAll(jsonDecode(settingsData) as Map<String, dynamic>);
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar configurações de segurança: $e');
+    }
+  }
+
+  /// Salvar configurações de segurança
+  Future<void> _saveSecuritySettings() async {
+    try {
+      await _secureStorage.write(
+          key: _settingsKey, value: jsonEncode(_securitySettings));
+    } catch (e) {
+      debugPrint('Erro ao salvar configurações de segurança: $e');
+    }
+  }
+
   // CRUD Operations
   Future<List<PasswordEntry>> getAllPasswords() async {
     await _ensureInitialized();
@@ -225,6 +513,8 @@ class PasswordService {
       updatedAt: now,
       strength: validatePasswordStrength(entry.password),
       workspaceId: _currentWorkspaceId, // Definir workspace
+      lastPasswordChange: now,
+      usageCount: 0,
     );
 
     // Salvar no workspace storage
@@ -359,6 +649,37 @@ class PasswordService {
         .toList();
   }
 
+  // NOVOS FILTROS AVANÇADOS
+  Future<List<PasswordEntry>> getCompromisedPasswords() async {
+    final allPasswords = await getAllPasswords();
+    return allPasswords.where((entry) => entry.isCompromised).toList();
+  }
+
+  Future<List<PasswordEntry>> getReusedPasswords() async {
+    final allPasswords = await getAllPasswords();
+    return allPasswords.where((entry) => entry.isReused).toList();
+  }
+
+  Future<List<PasswordEntry>> getOldPasswords() async {
+    final allPasswords = await getAllPasswords();
+    return allPasswords.where((entry) => entry.isOldPassword).toList();
+  }
+
+  Future<List<PasswordEntry>> getPasswordsWith2FA() async {
+    final allPasswords = await getAllPasswords();
+    return allPasswords.where((entry) => entry.hasTwoFactor).toList();
+  }
+
+  Future<List<PasswordEntry>> getPasswordsInVault() async {
+    final allPasswords = await getAllPasswords();
+    return allPasswords.where((entry) => entry.isInSecureVault).toList();
+  }
+
+  Future<List<PasswordEntry>> getPinnedPasswords() async {
+    final allPasswords = await getAllPasswords();
+    return allPasswords.where((entry) => entry.isPinned).toList();
+  }
+
   // Estatísticas
   Future<Map<String, dynamic>> getPasswordStats() async {
     final allPasswords = await getAllPasswords();
@@ -370,6 +691,12 @@ class PasswordService {
       'weakPasswords': 0,
       'reusedPasswords': 0,
       'oldPasswords': 0,
+      'compromisedPasswords': 0,
+      'passwordsWith2FA': 0,
+      'passwordsInVault': 0,
+      'pinnedPasswords': 0,
+      'expiredPasswords': 0,
+      'expiringSoonPasswords': 0,
     };
 
     final passwordHashes = <String, int>{};
@@ -402,6 +729,14 @@ class PasswordService {
       if (entry.updatedAt.isBefore(thirtyDaysAgo)) {
         stats['oldPasswords']++;
       }
+
+      // Novas estatísticas
+      if (entry.isCompromised) stats['compromisedPasswords']++;
+      if (entry.hasTwoFactor) stats['passwordsWith2FA']++;
+      if (entry.isInSecureVault) stats['passwordsInVault']++;
+      if (entry.isPinned) stats['pinnedPasswords']++;
+      if (entry.isExpired) stats['expiredPasswords']++;
+      if (entry.isExpiringSoon) stats['expiringSoonPasswords']++;
     }
 
     return stats;

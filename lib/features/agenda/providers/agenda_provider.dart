@@ -518,20 +518,9 @@ final agendaProvider =
   ref.listen<UserProfile?>(currentProfileProvider, (prevProfile, currProfile) {
     final workspace = ref.read(currentWorkspaceProvider);
     final defaultWorkspaceId = ref.read(agendaWorkspaceProvider);
-
-    debugPrint(
-        '🔍 [AgendaProvider] Profile mudou: ${prevProfile?.name} → ${currProfile?.name}');
-    debugPrint(
-        '🔍 [AgendaProvider] Workspace atual: ${workspace?.name} (${workspace?.id})');
-    debugPrint('🔍 [AgendaProvider] Workspace default: $defaultWorkspaceId');
-
     if (currProfile != null) {
       final workspaceId = workspace?.id ?? defaultWorkspaceId;
-      debugPrint(
-          '[AgendaProvider] Mudou workspace/profile: ${currProfile.name}/$workspaceId');
       notifier.setContext(currProfile.name, workspaceId);
-    } else {
-      debugPrint('[AgendaProvider] Profile é null, não definindo contexto');
     }
   });
 
@@ -540,19 +529,9 @@ final agendaProvider =
       (prevWorkspace, currWorkspace) {
     final profile = ref.read(currentProfileProvider);
     final defaultWorkspaceId = ref.read(agendaWorkspaceProvider);
-
-    debugPrint(
-        '🔍 [AgendaProvider] Workspace mudou: ${prevWorkspace?.name} → ${currWorkspace?.name}');
-    debugPrint('🔍 [AgendaProvider] Profile atual: ${profile?.name}');
-    debugPrint('🔍 [AgendaProvider] Workspace default: $defaultWorkspaceId');
-
     if (profile != null) {
       final workspaceId = currWorkspace?.id ?? defaultWorkspaceId;
-      debugPrint(
-          '[AgendaProvider] Mudou workspace/profile: ${profile.name}/$workspaceId');
       notifier.setContext(profile.name, workspaceId);
-    } else {
-      debugPrint('[AgendaProvider] Profile é null, não definindo contexto');
     }
   });
 

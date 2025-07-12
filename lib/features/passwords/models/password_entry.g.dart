@@ -45,6 +45,49 @@ PasswordEntry _$PasswordEntryFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['expiresAt'] as String),
       autoFillEnabled: json['autoFillEnabled'] as bool? ?? true,
+      workspaceId: json['workspaceId'] as String?,
+      passwordHistory: (json['passwordHistory'] as List<dynamic>?)
+              ?.map((e) => PasswordHistory.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      masterPassword: json['masterPassword'] as String?,
+      isBreached: json['isBreached'] as bool? ?? false,
+      breachDate: json['breachDate'] == null
+          ? null
+          : DateTime.parse(json['breachDate'] as String),
+      breachSources: (json['breachSources'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      isReused: json['isReused'] as bool? ?? false,
+      reusedIn: (json['reusedIn'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      securityNotes: json['securityNotes'] as String?,
+      isPinned: json['isPinned'] as bool? ?? false,
+      usageCount: (json['usageCount'] as num?)?.toInt() ?? 0,
+      lastPasswordChange: json['lastPasswordChange'] == null
+          ? null
+          : DateTime.parse(json['lastPasswordChange'] as String),
+      twoFactorSecret: json['twoFactorSecret'] as String?,
+      twoFactorEnabled: json['twoFactorEnabled'] as bool? ?? false,
+      recoveryEmail: json['recoveryEmail'] as String?,
+      recoveryPhone: json['recoveryPhone'] as String?,
+      securityQuestions:
+          (json['securityQuestions'] as Map<String, dynamic>?)?.map(
+                (k, e) => MapEntry(k, e as String),
+              ) ??
+              const {},
+      isEmergencyAccess: json['isEmergencyAccess'] as bool? ?? false,
+      emergencyContact: json['emergencyContact'] as String?,
+      emergencyExpiry: json['emergencyExpiry'] == null
+          ? null
+          : DateTime.parse(json['emergencyExpiry'] as String),
+      vaultId: json['vaultId'] as String?,
+      isInVault: json['isInVault'] as bool? ?? false,
+      vaultName: json['vaultName'] as String?,
+      metadata: json['metadata'] as Map<String, dynamic>? ?? const {},
     );
 
 Map<String, dynamic> _$PasswordEntryToJson(PasswordEntry instance) =>
@@ -72,6 +115,30 @@ Map<String, dynamic> _$PasswordEntryToJson(PasswordEntry instance) =>
       'sharedWith': instance.sharedWith,
       'expiresAt': instance.expiresAt?.toIso8601String(),
       'autoFillEnabled': instance.autoFillEnabled,
+      'workspaceId': instance.workspaceId,
+      'passwordHistory': instance.passwordHistory,
+      'masterPassword': instance.masterPassword,
+      'isBreached': instance.isBreached,
+      'breachDate': instance.breachDate?.toIso8601String(),
+      'breachSources': instance.breachSources,
+      'isReused': instance.isReused,
+      'reusedIn': instance.reusedIn,
+      'securityNotes': instance.securityNotes,
+      'isPinned': instance.isPinned,
+      'usageCount': instance.usageCount,
+      'lastPasswordChange': instance.lastPasswordChange?.toIso8601String(),
+      'twoFactorSecret': instance.twoFactorSecret,
+      'twoFactorEnabled': instance.twoFactorEnabled,
+      'recoveryEmail': instance.recoveryEmail,
+      'recoveryPhone': instance.recoveryPhone,
+      'securityQuestions': instance.securityQuestions,
+      'isEmergencyAccess': instance.isEmergencyAccess,
+      'emergencyContact': instance.emergencyContact,
+      'emergencyExpiry': instance.emergencyExpiry?.toIso8601String(),
+      'vaultId': instance.vaultId,
+      'isInVault': instance.isInVault,
+      'vaultName': instance.vaultName,
+      'metadata': instance.metadata,
     };
 
 const _$PasswordStrengthEnumMap = {
@@ -81,6 +148,20 @@ const _$PasswordStrengthEnumMap = {
   PasswordStrength.strong: 'strong',
   PasswordStrength.veryStrong: 'veryStrong',
 };
+
+PasswordHistory _$PasswordHistoryFromJson(Map<String, dynamic> json) =>
+    PasswordHistory(
+      password: json['password'] as String,
+      changedAt: DateTime.parse(json['changedAt'] as String),
+      reason: json['reason'] as String?,
+    );
+
+Map<String, dynamic> _$PasswordHistoryToJson(PasswordHistory instance) =>
+    <String, dynamic>{
+      'password': instance.password,
+      'changedAt': instance.changedAt.toIso8601String(),
+      'reason': instance.reason,
+    };
 
 PasswordFolder _$PasswordFolderFromJson(Map<String, dynamic> json) =>
     PasswordFolder(
