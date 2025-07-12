@@ -100,7 +100,28 @@ class _TableEditorScreenState extends State<TableEditorScreen> {
 
   Future<void> _addRow() async {
     try {
-      final updatedTable = await _databaseService.addRow(_table.id);
+      final now = DateTime.now();
+      final rowId = 'row_${now.millisecondsSinceEpoch}';
+
+      // Criar células vazias para cada coluna
+      final cells = <String, DatabaseCellValue>{};
+      for (final column in _table.columns) {
+        cells[column.id] = DatabaseCellValue(
+          columnId: column.id,
+          value: null,
+          lastModified: now,
+        );
+      }
+
+      final newRow = DatabaseRow(
+        id: rowId,
+        tableId: _table.id,
+        cells: cells,
+        createdAt: now,
+        lastModified: now,
+      );
+
+      final updatedTable = await _databaseService.addRow(_table.id, newRow);
       setState(() => _table = updatedTable);
     } catch (e) {
       if (mounted) {

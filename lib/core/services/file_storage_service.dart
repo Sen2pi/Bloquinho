@@ -6,18 +6,25 @@ import 'package:path/path.dart' as path;
 import '../models/user_profile.dart';
 
 /// Serviço para gerenciar a estrutura organizada de dados locais
-/// Estrutura: data/profile/[nome_profile]/workspaces/, settings.json, profile_photo.jpg
-class LocalStorageService {
+/// Estrutura: data/profile/[nome_profile]/workspaces/[workspace_name]/[componente]/
+class FileStorageService {
   static const String _dataFolder = 'data';
   static const String _profileFolder = 'profile';
   static const String _workspacesFolder = 'workspaces';
   static const String _settingsFile = 'settings.json';
   static const String _profilePhotoFile = 'profile_photo.jpg';
 
+  // Componentes principais
+  static const String _bloquinhoFolder = 'bloquinho';
+  static const String _documentsFolder = 'documents';
+  static const String _agendaFolder = 'agenda';
+  static const String _passwordsFolder = 'passwords';
+  static const String _databasesFolder = 'databases';
+
   /// Instância singleton
-  static final LocalStorageService _instance = LocalStorageService._internal();
-  factory LocalStorageService() => _instance;
-  LocalStorageService._internal();
+  static final FileStorageService _instance = FileStorageService._internal();
+  factory FileStorageService() => _instance;
+  FileStorageService._internal();
 
   String? _basePath;
   bool _isInitialized = false;
@@ -45,9 +52,9 @@ class LocalStorageService {
       }
 
       _isInitialized = true;
-      debugPrint('✅ LocalStorageService inicializado: $_basePath');
+      debugPrint('✅ FileStorageService inicializado: $_basePath');
     } catch (e) {
-      debugPrint('❌ Erro ao inicializar LocalStorageService: $e');
+      debugPrint('❌ Erro ao inicializar FileStorageService: $e');
       throw Exception('Erro ao inicializar armazenamento local: $e');
     }
   }
@@ -154,8 +161,8 @@ class LocalStorageService {
         await workspacesDir.create(recursive: true);
       }
 
-      // Criar workspace padrão "Pessoal" apenas se não existir
-      await ensureWorkspaceExists(profileName, 'Pessoal');
+      // Criar workspace padrão "Pessoal" com estrutura completa
+      await _createDefaultWorkspaceStructure(profilePath, 'Pessoal');
 
       debugPrint('✅ Estrutura criada para perfil: $profilePath');
       return profilePath;
@@ -167,40 +174,36 @@ class LocalStorageService {
 
   /// Criar estrutura padrão do workspace
   Future<void> _createDefaultWorkspaceStructure(
-      String profileName, String workspaceName) async {
+      String profilePath, String workspaceName) async {
     try {
-      final safeName = _sanitizeFileName(profileName);
       final safeWorkspaceName = _sanitizeFileName(workspaceName);
-      final workspacePath = path.join(_basePath!, _profileFolder, safeName,
-          _workspacesFolder, safeWorkspaceName);
+      final workspacePath =
+          path.join(profilePath, _workspacesFolder, safeWorkspaceName);
       final workspaceDir = Directory(workspacePath);
 
-      // Verificar se o workspace já existe
-      if (await workspaceDir.exists()) {
-        debugPrint('✅ Workspace já existe: $workspacePath');
-        return;
+      if (!await workspaceDir.exists()) {
+        await workspaceDir.create(recursive: true);
       }
 
-      // Criar workspace apenas se não existir
-      await workspaceDir.create(recursive: true);
-
       // Criar pastas específicas do workspace
-      final folders = ['bloquinho', 'database', 'documents', 'agenda'];
+      final folders = [
+        _bloquinhoFolder,
+        _documentsFolder,
+        _agendaFolder,
+        _passwordsFolder,
+        _databasesFolder
+      ];
 
       for (final folder in folders) {
         final folderPath = path.join(workspacePath, folder);
         final folderDir = Directory(folderPath);
 
-        // Verificar se a pasta já existe
-        if (await folderDir.exists()) {
-          debugPrint('✅ Pasta já existe: $folderPath');
-          continue;
+        if (!await folderDir.exists()) {
+          await folderDir.create(recursive: true);
         }
 
-        await folderDir.create(recursive: true);
-
-        // Criar arquivos padrão para cada pasta apenas se não existirem
-        await _createDefaultFiles(folderPath, folder, workspaceName);
+        // Criar arquivos padrão para cada pasta
+        await _createDefaultFiles(folderPath, folder);
       }
 
       debugPrint('✅ Estrutura do workspace criada: $workspacePath');
@@ -211,18 +214,17 @@ class LocalStorageService {
   }
 
   /// Criar arquivos padrão para cada pasta
-  Future<void> _createDefaultFiles(
-      String folderPath, String folderType, String workspaceName) async {
+  Future<void> _createDefaultFiles(String folderPath, String folderType) async {
     try {
       switch (folderType) {
-        case 'bloquinho':
+        case _bloquinhoFolder:
           // Criar página inicial do Bloquinho
           final welcomeFile = File(path.join(folderPath, 'Bem-vindo.md'));
           if (!await welcomeFile.exists()) {
             await welcomeFile.writeAsString('''
 # Bem-vindo ao Bloquinho! 🎉
 
-Esta é sua primeira página no workspace **$workspaceName**. Aqui você pode:
+Esta é sua primeira página no Bloquinho. Aqui você pode:
 
 - **Criar páginas** para suas notas e ideias
 - **Organizar conteúdo** em pastas e subpastas
@@ -241,13 +243,13 @@ Boa escrita! ✨
           }
           break;
 
-        case 'database':
+        case _databasesFolder:
           // Criar arquivo de configuração da base de dados
           final dbConfigFile = File(path.join(folderPath, 'config.json'));
           if (!await dbConfigFile.exists()) {
             await dbConfigFile.writeAsString('''
 {
-  "workspace": "$workspaceName",
+  "workspace": "Pessoal",
   "createdAt": "${DateTime.now().toIso8601String()}",
   "tables": [],
   "version": "1.0"
@@ -256,13 +258,13 @@ Boa escrita! ✨
           }
           break;
 
-        case 'documents':
+        case _documentsFolder:
           // Criar arquivo de índice de documentos
           final docsIndexFile = File(path.join(folderPath, 'index.json'));
           if (!await docsIndexFile.exists()) {
             await docsIndexFile.writeAsString('''
 {
-  "workspace": "$workspaceName",
+  "workspace": "Pessoal",
   "createdAt": "${DateTime.now().toIso8601String()}",
   "documents": [],
   "categories": ["pessoal", "trabalho", "estudos"],
@@ -272,17 +274,34 @@ Boa escrita! ✨
           }
           break;
 
-        case 'agenda':
+        case _agendaFolder:
           // Criar arquivo de configuração da agenda
           final agendaConfigFile = File(path.join(folderPath, 'config.json'));
           if (!await agendaConfigFile.exists()) {
             await agendaConfigFile.writeAsString('''
 {
-  "workspace": "$workspaceName",
+  "workspace": "Pessoal",
   "createdAt": "${DateTime.now().toIso8601String()}",
   "events": [],
   "reminders": [],
   "categories": ["pessoal", "trabalho", "saúde"],
+  "version": "1.0"
+}
+''');
+          }
+          break;
+
+        case _passwordsFolder:
+          // Criar arquivo de configuração das senhas
+          final passwordsConfigFile =
+              File(path.join(folderPath, 'config.json'));
+          if (!await passwordsConfigFile.exists()) {
+            await passwordsConfigFile.writeAsString('''
+{
+  "workspace": "Pessoal",
+  "createdAt": "${DateTime.now().toIso8601String()}",
+  "passwords": [],
+  "categories": ["pessoal", "trabalho", "financeiro"],
   "version": "1.0"
 }
 ''');
@@ -377,7 +396,7 @@ Boa escrita! ✨
     }
   }
 
-  /// Obter diretório de workspaces para um perfil
+  /// Obter pasta de workspaces para um perfil
   Future<Directory?> getWorkspacesDirectory(String profileName) async {
     await _ensureInitialized();
 
@@ -392,78 +411,15 @@ Boa escrita! ✨
       if (await workspacesDir.exists()) {
         return workspacesDir;
       }
-
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao obter diretório de workspaces: $e');
-      return null;
-    }
-  }
-
-  /// Verificar se workspace existe
-  Future<bool> workspaceExists(String profileName, String workspaceName) async {
-    await _ensureInitialized();
-
-    if (kIsWeb) return false;
-
-    try {
-      final safeName = _sanitizeFileName(profileName);
-      final safeWorkspaceName = _sanitizeFileName(workspaceName);
-      final workspacePath = path.join(_basePath!, _profileFolder, safeName,
-          _workspacesFolder, safeWorkspaceName);
-      final workspaceDir = Directory(workspacePath);
-
-      return await workspaceDir.exists();
-    } catch (e) {
-      debugPrint('❌ Erro ao verificar existência do workspace: $e');
-      return false;
-    }
-  }
-
-  /// Criar workspace se não existir
-  Future<void> ensureWorkspaceExists(
-      String profileName, String workspaceName) async {
-    await _ensureInitialized();
-
-    if (kIsWeb) return;
-
-    try {
-      final exists = await workspaceExists(profileName, workspaceName);
-      if (!exists) {
-        await _createDefaultWorkspaceStructure(profileName, workspaceName);
-      }
-    } catch (e) {
-      debugPrint('❌ Erro ao garantir existência do workspace: $e');
-    }
-  }
-
-  /// Obter caminho do workspace
-  Future<String?> getWorkspacePath(
-      String profileName, String workspaceName) async {
-    await _ensureInitialized();
-
-    if (kIsWeb) return null;
-
-    try {
-      final safeName = _sanitizeFileName(profileName);
-      final safeWorkspaceName = _sanitizeFileName(workspaceName);
-      final workspacePath = path.join(_basePath!, _profileFolder, safeName,
-          _workspacesFolder, safeWorkspaceName);
-
-      final workspaceDir = Directory(workspacePath);
-      if (await workspaceDir.exists()) {
-        return workspacePath;
-      }
-
-      return null;
-    } catch (e) {
-      debugPrint('❌ Erro ao obter caminho do workspace: $e');
+      debugPrint('❌ Erro ao obter pasta de workspaces: $e');
       return null;
     }
   }
 
   /// Criar workspace para um perfil
-  Future<String?> createWorkspace(
+  Future<Directory> createWorkspace(
       String profileName, String workspaceName) async {
     await _ensureInitialized();
 
@@ -472,46 +428,25 @@ Boa escrita! ✨
     }
 
     try {
-      // Verificar se o workspace já existe
-      final exists = await workspaceExists(profileName, workspaceName);
-      if (exists) {
-        debugPrint('✅ Workspace já existe: $workspaceName');
-        return await getWorkspacePath(profileName, workspaceName);
-      }
-
-      // Criar workspace apenas se não existir
-      await _createDefaultWorkspaceStructure(profileName, workspaceName);
-
-      final workspacePath = await getWorkspacePath(profileName, workspaceName);
-      debugPrint('✅ Workspace criado: $workspacePath');
-      return workspacePath;
-    } catch (e) {
-      debugPrint('❌ Erro ao criar workspace: $e');
-      return null;
-    }
-  }
-
-  /// Obter workspace existente (sem criar)
-  Future<Directory?> getWorkspace(
-      String profileName, String workspaceName) async {
-    await _ensureInitialized();
-
-    if (kIsWeb) return null;
-
-    try {
       final safeName = _sanitizeFileName(profileName);
       final safeWorkspaceName = _sanitizeFileName(workspaceName);
       final workspacePath = path.join(_basePath!, _profileFolder, safeName,
           _workspacesFolder, safeWorkspaceName);
 
       final workspaceDir = Directory(workspacePath);
-      if (await workspaceDir.exists()) {
-        return workspaceDir;
+      if (!await workspaceDir.exists()) {
+        await workspaceDir.create(recursive: true);
       }
-      return null;
+
+      // Criar estrutura completa do workspace
+      await _createDefaultWorkspaceStructure(
+          path.join(_basePath!, _profileFolder, safeName), workspaceName);
+
+      debugPrint('✅ Workspace criado: $workspacePath');
+      return workspaceDir;
     } catch (e) {
-      debugPrint('❌ Erro ao obter workspace: $e');
-      return null;
+      debugPrint('❌ Erro ao criar workspace: $e');
+      throw Exception('Erro ao criar workspace: $e');
     }
   }
 
@@ -553,23 +488,139 @@ Boa escrita! ✨
     }
   }
 
-  /// Deletar todos os perfis
-  Future<void> deleteAllProfiles() async {
+  /// Obter diretório de um componente específico
+  Future<Directory?> getComponentDirectory(
+      String profileName, String workspaceName, String componentName) async {
+    await _ensureInitialized();
+
+    if (kIsWeb) return null;
+
+    try {
+      final workspacesDir = await getWorkspacesDirectory(profileName);
+      if (workspacesDir == null) return null;
+
+      final workspaceDir =
+          Directory(path.join(workspacesDir.path, workspaceName));
+      if (!await workspaceDir.exists()) return null;
+
+      final componentDir =
+          Directory(path.join(workspaceDir.path, componentName));
+      if (!await componentDir.exists()) {
+        await componentDir.create(recursive: true);
+      }
+
+      return componentDir;
+    } catch (e) {
+      debugPrint('❌ Erro ao obter diretório do componente: $e');
+      return null;
+    }
+  }
+
+  /// Salvar arquivo em um componente específico
+  Future<void> saveFile(String profileName, String workspaceName,
+      String componentName, String fileName, String content) async {
     await _ensureInitialized();
 
     if (kIsWeb) {
-      throw Exception('Deleção de perfis não suportada no web');
+      throw Exception('Salvamento de arquivo não suportado no web');
     }
 
     try {
-      final profilesDir = Directory(path.join(_basePath!, _profileFolder));
-      if (await profilesDir.exists()) {
-        await profilesDir.delete(recursive: true);
-        debugPrint('✅ Todos os perfis deletados');
+      final componentDir = await getComponentDirectory(
+          profileName, workspaceName, componentName);
+      if (componentDir == null) {
+        throw Exception('Componente não encontrado');
+      }
+
+      final filePath = path.join(componentDir.path, fileName);
+      final file = File(filePath);
+
+      // Criar diretório pai se não existir
+      final parentDir = Directory(path.dirname(filePath));
+      if (!await parentDir.exists()) {
+        await parentDir.create(recursive: true);
+      }
+
+      await file.writeAsString(content);
+      debugPrint('✅ Arquivo salvo: $filePath');
+    } catch (e) {
+      debugPrint('❌ Erro ao salvar arquivo: $e');
+      throw Exception('Erro ao salvar arquivo: $e');
+    }
+  }
+
+  /// Carregar arquivo de um componente específico
+  Future<String?> loadFile(String profileName, String workspaceName,
+      String componentName, String fileName) async {
+    await _ensureInitialized();
+
+    if (kIsWeb) return null;
+
+    try {
+      final componentDir = await getComponentDirectory(
+          profileName, workspaceName, componentName);
+      if (componentDir == null) return null;
+
+      final filePath = path.join(componentDir.path, fileName);
+      final file = File(filePath);
+
+      if (await file.exists()) {
+        return await file.readAsString();
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ Erro ao carregar arquivo: $e');
+      return null;
+    }
+  }
+
+  /// Listar arquivos de um componente específico
+  Future<List<String>> listFiles(
+      String profileName, String workspaceName, String componentName) async {
+    await _ensureInitialized();
+
+    if (kIsWeb) return [];
+
+    try {
+      final componentDir = await getComponentDirectory(
+          profileName, workspaceName, componentName);
+      if (componentDir == null) return [];
+
+      final entities = await componentDir.list(followLinks: false).toList();
+      final files = entities.whereType<File>().toList();
+      return files.map((file) => path.basename(file.path)).toList();
+    } catch (e) {
+      debugPrint('❌ Erro ao listar arquivos: $e');
+      return [];
+    }
+  }
+
+  /// Deletar arquivo de um componente específico
+  Future<void> deleteFile(String profileName, String workspaceName,
+      String componentName, String fileName) async {
+    await _ensureInitialized();
+
+    if (kIsWeb) {
+      throw Exception('Deleção de arquivo não suportada no web');
+    }
+
+    try {
+      final componentDir = await getComponentDirectory(
+          profileName, workspaceName, componentName);
+      if (componentDir == null) {
+        throw Exception('Componente não encontrado');
+      }
+
+      final filePath = path.join(componentDir.path, fileName);
+      final file = File(filePath);
+
+      if (await file.exists()) {
+        await file.delete();
+        debugPrint('✅ Arquivo deletado: $filePath');
       }
     } catch (e) {
-      debugPrint('❌ Erro ao deletar todos os perfis: $e');
-      throw Exception('Erro ao deletar todos os perfis: $e');
+      debugPrint('❌ Erro ao deletar arquivo: $e');
+      throw Exception('Erro ao deletar arquivo: $e');
     }
   }
 
@@ -625,69 +676,6 @@ Boa escrita! ✨
     }
   }
 
-  /// Obter dados por chave (para compatibilidade com sistema de documentos)
-  Future<String?> getData(String key) async {
-    await _ensureInitialized();
-
-    if (kIsWeb) {
-      // No web, usar localStorage
-      return null; // Implementar se necessário
-    }
-
-    try {
-      // Usar o primeiro perfil disponível para armazenar dados
-      final profiles = await getExistingProfiles();
-      if (profiles.isEmpty) return null;
-
-      final profilePath = await createProfileStructure(profiles.first.name);
-      final dataFile = File(path.join(profilePath, '${key}.json'));
-
-      if (await dataFile.exists()) {
-        return await dataFile.readAsString();
-      }
-      return null;
-    } catch (e) {
-      debugPrint('❌ Erro ao obter dados: $e');
-      return null;
-    }
-  }
-
-  /// Salvar dados por chave (para compatibilidade com sistema de documentos)
-  Future<void> saveData(String key, String data) async {
-    await _ensureInitialized();
-
-    if (kIsWeb) {
-      // No web, usar localStorage
-      return; // Implementar se necessário
-    }
-
-    try {
-      // Usar o primeiro perfil disponível para armazenar dados
-      final profiles = await getExistingProfiles();
-      if (profiles.isEmpty) {
-        // Criar perfil padrão se não existir
-        final defaultProfile = UserProfile(
-          id: 'default',
-          name: 'Default',
-          email: 'default@example.com',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-        await saveProfile(defaultProfile);
-      }
-
-      final profilePath = await createProfileStructure(
-          profiles.isNotEmpty ? profiles.first.name : 'Default');
-      final dataFile = File(path.join(profilePath, '${key}.json'));
-
-      await dataFile.writeAsString(data);
-      debugPrint('✅ Dados salvos: ${dataFile.path}');
-    } catch (e) {
-      debugPrint('❌ Erro ao salvar dados: $e');
-      throw Exception('Erro ao salvar dados: $e');
-    }
-  }
-
   /// Sanitizar nome de arquivo/pasta
   String _sanitizeFileName(String name) {
     // Remover caracteres especiais e espaços
@@ -723,18 +711,5 @@ Boa escrita! ✨
   Future<void> dispose() async {
     _isInitialized = false;
     _basePath = null;
-  }
-
-  /// Retorna o caminho da pasta do perfil se existir, ou null
-  Future<String?> getProfilePath(String profileName) async {
-    await _ensureInitialized();
-    if (kIsWeb) return null;
-    final safeName = _sanitizeFileName(profileName);
-    final profilePath = path.join(_basePath!, _profileFolder, safeName);
-    final profileDir = Directory(profilePath);
-    if (await profileDir.exists()) {
-      return profilePath;
-    }
-    return null;
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:bloquinho/core/models/database_models.dart';
 import 'package:bloquinho/core/services/local_storage_service.dart';
+import 'package:bloquinho/core/services/workspace_storage_service.dart';
 
 /// Serviço para gerenciar operações do sistema de database
 class DatabaseService {
@@ -15,6 +16,7 @@ class DatabaseService {
   bool _initialized = false;
   List<DatabaseTable> _tables = [];
   String? _currentWorkspaceId;
+  final WorkspaceStorageService _workspaceStorage = WorkspaceStorageService();
 
   /// Instância singleton
   static final DatabaseService _instance = DatabaseService._internal();
@@ -26,6 +28,7 @@ class DatabaseService {
     if (_initialized) return;
 
     try {
+      await _workspaceStorage.initialize();
       _box = await Hive.openBox<String>(_boxName);
       await _loadTables();
       _initialized = true;
@@ -106,7 +109,9 @@ class DatabaseService {
   }
 
   /// Define o workspace atual
-  void setCurrentWorkspace(String workspaceId) {
+  Future<void> setCurrentWorkspace(String workspaceId) async {
+    await _ensureInitialized();
+
     final previousWorkspace = _currentWorkspaceId;
     _currentWorkspaceId = workspaceId;
 
@@ -123,6 +128,9 @@ class DatabaseService {
       debugPrint('  - ${table.name} (workspace: ${table.workspaceId})');
     }
   }
+
+  /// Obter workspace atual
+  String? get currentWorkspaceId => _currentWorkspaceId;
 
   /// Migra tabelas sem workspaceId para o workspace atual
   void _migrateOrphanTables() {
@@ -197,63 +205,44 @@ class DatabaseService {
       description: description,
       icon: icon,
       color: color,
-    ).copyWith(workspaceId: _currentWorkspaceId);
+    ).copyWith(workspaceId: _currentWorkspaceId); // Definir workspace atual
 
     _tables.add(table);
     await _saveTables();
 
     debugPrint(
-        '✅ Tabela criada: ${table.name} (${table.id}) para workspace $_currentWorkspaceId');
+        '✅ Tabela criada: ${table.name} (workspace: ${table.workspaceId})');
     return table;
   }
 
-  /// Atualiza uma tabela
+  /// Atualiza uma tabela existente
   Future<DatabaseTable> updateTable(DatabaseTable table) async {
     await _ensureInitialized();
 
     final index = _tables.indexWhere((t) => t.id == table.id);
-    if (index == -1) {
-      throw Exception('Tabela não encontrada: ${table.id}');
+    if (index != -1) {
+      final updatedTable = table.copyWith(
+        lastModified: DateTime.now(),
+        workspaceId: _currentWorkspaceId, // Garantir workspace atual
+      );
+      _tables[index] = updatedTable;
+      await _saveTables();
+      debugPrint('✅ Tabela atualizada: ${table.name}');
+      return updatedTable;
     }
-
-    final updatedTable = table.copyWith(lastModified: DateTime.now());
-    _tables[index] = updatedTable;
-    await _saveTables();
-
-    debugPrint('✅ Tabela atualizada: ${updatedTable.name}');
-    return updatedTable;
+    return table;
   }
 
-  /// Remove uma tabela
+  /// Deleta uma tabela
   Future<void> deleteTable(String tableId) async {
     await _ensureInitialized();
 
-    final table = getTable(tableId);
-    if (table == null) {
-      throw Exception('Tabela não encontrada: $tableId');
-    }
-
-    _tables.removeWhere((t) => t.id == tableId);
+    _tables.removeWhere((table) => table.id == tableId);
     await _saveTables();
-
-    // Remover arquivo local também
-    try {
-      final localStorage = LocalStorageService();
-      final dataPath = await localStorage.getBasePath();
-      if (dataPath != null) {
-        final tableFile = File('$dataPath/database/$tableId.json');
-        if (await tableFile.exists()) {
-          await tableFile.delete();
-        }
-      }
-    } catch (e) {
-      debugPrint('⚠️ Erro ao remover arquivo local: $e');
-    }
-
-    debugPrint('🗑️ Tabela removida: ${table.name}');
+    debugPrint('🗑️ Tabela deletada: $tableId');
   }
 
-  /// Adiciona uma coluna a uma tabela
+  /// Adiciona uma coluna à tabela
   Future<DatabaseTable> addColumn(String tableId, DatabaseColumn column) async {
     await _ensureInitialized();
 
@@ -263,10 +252,11 @@ class DatabaseService {
     }
 
     final updatedTable = table.addColumn(column);
-    return await updateTable(updatedTable);
+    await updateTable(updatedTable);
+    return updatedTable;
   }
 
-  /// Remove uma coluna de uma tabela
+  /// Remove uma coluna da tabela
   Future<DatabaseTable> removeColumn(String tableId, String columnId) async {
     await _ensureInitialized();
 
@@ -276,10 +266,11 @@ class DatabaseService {
     }
 
     final updatedTable = table.removeColumn(columnId);
-    return await updateTable(updatedTable);
+    await updateTable(updatedTable);
+    return updatedTable;
   }
 
-  /// Atualiza uma coluna de uma tabela
+  /// Atualiza uma coluna da tabela
   Future<DatabaseTable> updateColumn(
       String tableId, DatabaseColumn column) async {
     await _ensureInitialized();
@@ -290,12 +281,12 @@ class DatabaseService {
     }
 
     final updatedTable = table.updateColumn(column);
-    return await updateTable(updatedTable);
+    await updateTable(updatedTable);
+    return updatedTable;
   }
 
-  /// Adiciona uma linha a uma tabela
-  Future<DatabaseTable> addRow(String tableId,
-      {Map<String, dynamic>? initialData}) async {
+  /// Adiciona uma linha à tabela
+  Future<DatabaseTable> addRow(String tableId, DatabaseRow row) async {
     await _ensureInitialized();
 
     final table = getTable(tableId);
@@ -303,33 +294,12 @@ class DatabaseService {
       throw Exception('Tabela não encontrada: $tableId');
     }
 
-    final now = DateTime.now();
-    final rowId = 'row_${now.millisecondsSinceEpoch}';
-
-    // Criar células iniciais baseadas nas colunas existentes
-    final cells = <String, DatabaseCellValue>{};
-    for (final column in table.columns) {
-      final initialValue = initialData?[column.id];
-      cells[column.id] = DatabaseCellValue(
-        columnId: column.id,
-        value: initialValue,
-        lastModified: now,
-      );
-    }
-
-    final row = DatabaseRow(
-      id: rowId,
-      tableId: tableId,
-      cells: cells,
-      createdAt: now,
-      lastModified: now,
-    );
-
     final updatedTable = table.addRow(row);
-    return await updateTable(updatedTable);
+    await updateTable(updatedTable);
+    return updatedTable;
   }
 
-  /// Remove uma linha de uma tabela
+  /// Remove uma linha da tabela
   Future<DatabaseTable> removeRow(String tableId, String rowId) async {
     await _ensureInitialized();
 
@@ -339,16 +309,13 @@ class DatabaseService {
     }
 
     final updatedTable = table.removeRow(rowId);
-    return await updateTable(updatedTable);
+    await updateTable(updatedTable);
+    return updatedTable;
   }
 
-  /// Atualiza uma célula específica
+  /// Atualiza uma célula da tabela
   Future<DatabaseTable> updateCell(
-    String tableId,
-    String rowId,
-    String columnId,
-    dynamic value,
-  ) async {
+      String tableId, String rowId, String columnId, dynamic value) async {
     await _ensureInitialized();
 
     final table = getTable(tableId);
@@ -363,15 +330,13 @@ class DatabaseService {
 
     final updatedRow = row.setCell(columnId, value);
     final updatedTable = table.updateRow(updatedRow);
-    return await updateTable(updatedTable);
+    await updateTable(updatedTable);
+    return updatedTable;
   }
 
   /// Atualiza múltiplas células de uma linha
   Future<DatabaseTable> updateRowCells(
-    String tableId,
-    String rowId,
-    Map<String, dynamic> updates,
-  ) async {
+      String tableId, String rowId, Map<String, dynamic> cells) async {
     await _ensureInitialized();
 
     final table = getTable(tableId);
@@ -385,12 +350,13 @@ class DatabaseService {
     }
 
     DatabaseRow updatedRow = row;
-    for (final entry in updates.entries) {
+    for (final entry in cells.entries) {
       updatedRow = updatedRow.setCell(entry.key, entry.value);
     }
 
     final updatedTable = table.updateRow(updatedRow);
-    return await updateTable(updatedTable);
+    await updateTable(updatedTable);
+    return updatedTable;
   }
 
   /// Duplica uma tabela

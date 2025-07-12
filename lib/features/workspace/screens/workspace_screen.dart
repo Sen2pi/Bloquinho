@@ -3,10 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/l10n/app_strings.dart';
-
 import '../../../shared/providers/theme_provider.dart';
-import '../../../shared/providers/language_provider.dart';
 import '../../../shared/providers/workspace_provider.dart';
 import '../../../shared/providers/user_profile_provider.dart';
 import '../../../shared/widgets/cloud_sync_indicator.dart';
@@ -21,8 +18,11 @@ import '../../database/screens/database_list_screen.dart';
 import '../../database/widgets/database_section_widget.dart';
 import '../../../shared/providers/database_provider.dart';
 import '../../passwords/screens/password_manager_screen.dart';
+import '../../passwords/providers/password_provider.dart';
 import '../../agenda/screens/agenda_screen.dart';
+import '../../agenda/providers/agenda_provider.dart';
 import '../../documentos/screens/documentos_screen.dart';
+import '../../documentos/providers/documentos_provider.dart';
 import '../../bloquinho/screens/bloco_editor_screen.dart';
 import '../../bloquinho/widgets/page_tree_widget.dart';
 import '../../bloquinho/providers/pages_provider.dart';
@@ -194,7 +194,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text(
-                        ref.read(appStringsProvider).sidebarSystem,
+                        'Sistema',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: Colors.grey[600],
                               fontWeight: FontWeight.w500,
@@ -206,14 +206,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
                   _buildSidebarItem(
                     icon: PhosphorIcons.downloadSimple(),
-                    label: ref.read(appStringsProvider).sidebarBackup,
+                    label: 'Backup',
                     sectionId: 'backup',
                     isDarkMode: isDarkMode,
                     onTap: () => context.pushNamed('backup'),
                   ),
                   _buildSidebarItem(
                     icon: PhosphorIcons.trash(),
-                    label: ref.read(appStringsProvider).sidebarTrash,
+                    label: 'Lixeira',
                     sectionId: 'trash',
                     isDarkMode: isDarkMode,
                     onTap: () => _handleSectionTap('trash'),
@@ -240,10 +240,42 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             // Dropdown de workspace
             Expanded(
               child: PopupMenuButton<String>(
-                onSelected: (workspaceId) {
+                onSelected: (workspaceId) async {
                   ref
                       .read(workspaceProvider.notifier)
                       .selectWorkspace(workspaceId);
+
+                  // Recarregar todos os providers para o novo workspace
+                  final currentProfile = ref.read(currentProfileProvider);
+                  final newWorkspace = ref.read(workspaceProvider);
+
+                  if (currentProfile != null && newWorkspace != null) {
+                    // Recarregar páginas
+                    final pagesNotifier = ref.read(pagesNotifierProvider((
+                      profileName: currentProfile.name,
+                      workspaceName: newWorkspace.name
+                    )));
+                    await pagesNotifier.reloadPagesForWorkspace(
+                      currentProfile.name,
+                      newWorkspace.name,
+                    );
+
+                    // Recarregar outros providers
+                    await ref
+                        .read(passwordProvider.notifier)
+                        .reloadForContext(currentProfile.name, workspaceId);
+                    await ref
+                        .read(agendaProvider.notifier)
+                        .reloadForWorkspace(workspaceId);
+                    await ref
+                        .read(documentosProvider.notifier)
+                        .reloadForWorkspace(workspaceId);
+
+                    // Recarregar database
+                    await ref
+                        .read(databaseNotifierProvider.notifier)
+                        .reloadForWorkspace(workspaceId);
+                  }
                 },
                 itemBuilder: (context) {
                   final workspaces = ref.read(workspacesProvider);
@@ -289,10 +321,42 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
           ] else ...[
             // Ícone do workspace quando collapsed
             PopupMenuButton<String>(
-              onSelected: (workspaceId) {
+              onSelected: (workspaceId) async {
                 ref
                     .read(workspaceProvider.notifier)
                     .selectWorkspace(workspaceId);
+
+                // Recarregar todos os providers para o novo workspace
+                final currentProfile = ref.read(currentProfileProvider);
+                final newWorkspace = ref.read(workspaceProvider);
+
+                if (currentProfile != null && newWorkspace != null) {
+                  // Recarregar páginas
+                  final pagesNotifier = ref.read(pagesNotifierProvider((
+                    profileName: currentProfile.name,
+                    workspaceName: newWorkspace.name
+                  )));
+                  await pagesNotifier.reloadPagesForWorkspace(
+                    currentProfile.name,
+                    newWorkspace.name,
+                  );
+
+                  // Recarregar outros providers
+                  await ref
+                      .read(passwordProvider.notifier)
+                      .reloadForContext(currentProfile.name, workspaceId);
+                  await ref
+                      .read(agendaProvider.notifier)
+                      .reloadForWorkspace(workspaceId);
+                  await ref
+                      .read(documentosProvider.notifier)
+                      .reloadForWorkspace(workspaceId);
+
+                  // Recarregar database
+                  await ref
+                      .read(databaseNotifierProvider.notifier)
+                      .reloadForWorkspace(workspaceId);
+                }
               },
               itemBuilder: (context) {
                 final workspaces = ref.read(workspacesProvider);
@@ -715,7 +779,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         context.pushNamed('profile');
         break;
       case 'settings':
-        context.pushNamed('settings');
+        // Implementar navegação para configurações
         break;
       case 'logout':
         final confirmed = await showDialog<bool>(

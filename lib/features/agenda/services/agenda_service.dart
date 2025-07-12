@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
+import 'package:bloquinho/core/services/workspace_storage_service.dart';
 
 import '../models/agenda_item.dart';
 import '../../../shared/providers/database_provider.dart';
@@ -16,13 +18,16 @@ class AgendaService {
 
   late Box<dynamic> _agendaBox;
   final Uuid _uuid = const Uuid();
+  final WorkspaceStorageService _workspaceStorage = WorkspaceStorageService();
 
   bool _isInitialized = false;
+  String? _currentWorkspaceId;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
+      await _workspaceStorage.initialize();
       _agendaBox = await Hive.openBox(_boxName);
       _isInitialized = true;
     } catch (e) {
@@ -30,19 +35,56 @@ class AgendaService {
     }
   }
 
+  /// Definir workspace atual
+  Future<void> setCurrentWorkspace(String workspaceId) async {
+    await _ensureInitialized();
+
+    if (_currentWorkspaceId != workspaceId) {
+      debugPrint('🔄 AgendaService: Workspace mudou para $workspaceId');
+      _currentWorkspaceId = workspaceId;
+    }
+  }
+
+  /// Obter workspace atual
+  String? get currentWorkspaceId => _currentWorkspaceId;
+
   // CRUD Operations
   Future<List<AgendaItem>> getAllItems() async {
     await _ensureInitialized();
+
+    if (_currentWorkspaceId == null) {
+      debugPrint('⚠️ Nenhum workspace selecionado para agenda');
+      return [];
+    }
+
     final List<AgendaItem> items = [];
 
-    for (final key in _agendaBox.keys) {
-      final data = _agendaBox.get(key);
-      if (data != null) {
+    // Carregar do workspace storage primeiro
+    final workspaceData = await _workspaceStorage.loadWorkspaceData('agenda');
+    if (workspaceData != null) {
+      final itemsData = workspaceData['items'] as List<dynamic>? ?? [];
+      for (final data in itemsData) {
         try {
           final item = AgendaItem.fromJson(Map<String, dynamic>.from(data));
           items.add(item);
         } catch (e) {
+          debugPrint('⚠️ Erro ao carregar item da agenda do workspace: $e');
           continue;
+        }
+      }
+    }
+
+    // Fallback para Hive (migração)
+    if (items.isEmpty) {
+      for (final key in _agendaBox.keys) {
+        final data = _agendaBox.get(key);
+        if (data != null) {
+          try {
+            final item = AgendaItem.fromJson(Map<String, dynamic>.from(data));
+            items.add(item);
+          } catch (e) {
+            continue;
+          }
         }
       }
     }
@@ -54,37 +96,95 @@ class AgendaService {
 
   Future<AgendaItem?> getItemById(String id) async {
     await _ensureInitialized();
-    final data = _agendaBox.get(id);
-    if (data != null) {
-      return AgendaItem.fromJson(Map<String, dynamic>.from(data));
+
+    final allItems = await getAllItems();
+    try {
+      return allItems.firstWhere((item) => item.id == id);
+    } catch (e) {
+      return null;
     }
-    return null;
   }
 
   Future<String> createItem(AgendaItem item) async {
     await _ensureInitialized();
+
+    if (_currentWorkspaceId == null) {
+      throw Exception('Workspace não definido');
+    }
 
     final now = DateTime.now();
     final newItem = item.copyWith(
       id: _uuid.v4(),
       createdAt: now,
       updatedAt: now,
+      workspaceId: _currentWorkspaceId, // Definir workspace
     );
 
+    // Salvar no workspace storage
+    final allItems = await getAllItems();
+    allItems.add(newItem);
+    await _saveItemsToWorkspace(allItems);
+
+    // Manter compatibilidade com Hive
     await _agendaBox.put(newItem.id, newItem.toJson());
+
+    debugPrint(
+        '✅ Item da agenda criado no workspace $_currentWorkspaceId: ${newItem.title}');
     return newItem.id;
   }
 
   Future<void> updateItem(AgendaItem item) async {
     await _ensureInitialized();
 
-    final updatedItem = item.copyWith(updatedAt: DateTime.now());
+    if (_currentWorkspaceId == null) {
+      throw Exception('Workspace não definido');
+    }
+
+    final updatedItem = item.copyWith(
+      updatedAt: DateTime.now(),
+      workspaceId: _currentWorkspaceId, // Garantir workspace
+    );
+
+    // Atualizar no workspace storage
+    final allItems = await getAllItems();
+    final index = allItems.indexWhere((i) => i.id == item.id);
+    if (index != -1) {
+      allItems[index] = updatedItem;
+      await _saveItemsToWorkspace(allItems);
+    }
+
+    // Manter compatibilidade com Hive
     await _agendaBox.put(updatedItem.id, updatedItem.toJson());
+
+    debugPrint(
+        '✅ Item da agenda atualizado no workspace $_currentWorkspaceId: ${updatedItem.title}');
   }
 
   Future<void> deleteItem(String id) async {
     await _ensureInitialized();
+
+    // Remover do workspace storage
+    final allItems = await getAllItems();
+    allItems.removeWhere((i) => i.id == id);
+    await _saveItemsToWorkspace(allItems);
+
+    // Manter compatibilidade com Hive
     await _agendaBox.delete(id);
+
+    debugPrint(
+        '🗑️ Item da agenda deletado do workspace $_currentWorkspaceId: $id');
+  }
+
+  /// Salvar itens no workspace storage
+  Future<void> _saveItemsToWorkspace(List<AgendaItem> items) async {
+    if (_currentWorkspaceId == null) return;
+
+    final data = {
+      'items': items.map((i) => i.toJson()).toList(),
+      'lastModified': DateTime.now().toIso8601String(),
+    };
+
+    await _workspaceStorage.saveWorkspaceData('agenda', data);
   }
 
   // Busca e filtros

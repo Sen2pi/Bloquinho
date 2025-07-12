@@ -5,6 +5,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../models/page_model.dart';
 import '../providers/pages_provider.dart';
 import '../../../shared/providers/theme_provider.dart';
+import '../../../shared/providers/user_profile_provider.dart';
+import '../../../shared/providers/workspace_provider.dart';
 import '../../../core/theme/app_colors.dart';
 
 class PageChildrenList extends ConsumerWidget {
@@ -22,7 +24,16 @@ class PageChildrenList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDarkMode = ref.watch(isDarkModeProvider);
-    final pages = ref.watch(pagesProvider);
+    final currentProfile = ref.watch(currentProfileProvider);
+    final currentWorkspace = ref.watch(currentWorkspaceProvider);
+
+    List<PageModel> pages = [];
+    if (currentProfile != null && currentWorkspace != null) {
+      pages = ref.watch(pagesProvider((
+        profileName: currentProfile.name,
+        workspaceName: currentWorkspace.name
+      )));
+    }
     final currentPage = pages.firstWhere(
       (p) => p.id == currentPageId,
       orElse: () => PageModel.create(title: 'Página não encontrada'),
@@ -167,14 +178,23 @@ class PageChildrenList extends ConsumerWidget {
             onPressed: () {
               if (titleController.text.trim().isNotEmpty) {
                 // Usar o provider para criar página
-                ref.read(pagesProvider.notifier).state = [
-                  ...ref.read(pagesProvider.notifier).state,
-                  PageModel.create(
-                    title: titleController.text.trim(),
-                    icon: selectedIcon,
-                    parentId: currentPageId,
-                  ),
-                ];
+                final currentProfile = ref.read(currentProfileProvider);
+                final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+                if (currentProfile != null && currentWorkspace != null) {
+                  final pagesNotifier = ref.read(pagesNotifierProvider((
+                    profileName: currentProfile.name,
+                    workspaceName: currentWorkspace.name
+                  )));
+                  pagesNotifier.state = [
+                    ...pagesNotifier.state,
+                    PageModel.create(
+                      title: titleController.text.trim(),
+                      icon: selectedIcon,
+                      parentId: currentPageId,
+                    ),
+                  ];
+                }
                 Navigator.of(context).pop();
               }
             },

@@ -74,9 +74,9 @@ void main() {
       }
 
       try {
-        final workspaceDir =
+        final workspacePath =
             await service.createWorkspace('teste_usuario', 'workspace1');
-        expect(workspaceDir, isNotNull);
+        expect(workspacePath, isNotNull);
       } catch (e) {
         // Pode falhar se a pasta do perfil não existir, o que é ok para este teste
         expect(e, isA<Exception>());

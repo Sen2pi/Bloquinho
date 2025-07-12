@@ -185,7 +185,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       // Criar os 3 workspaces padrão
       final workspaces = ['Pessoal', 'Trabalho', 'Projetos'];
       for (final workspaceName in workspaces) {
-        await localStorageService.createWorkspace(name, workspaceName);
+        // Criar estrutura de pastas para o perfil
+        await localStorageService.createProfileStructure(name);
+
+        // Criar workspace padrão
+        final workspacePath =
+            await localStorageService.createWorkspace(name, workspaceName);
+        if (workspacePath == null) {
+          throw Exception('Erro ao criar workspace padrão');
+        }
 
         // Criar estrutura inicial do bloquinho para cada workspace
         final bloquinhoStorage = BloquinhoStorageService();

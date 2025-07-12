@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/password_entry.dart';
 import '../services/password_service.dart';
@@ -9,6 +10,7 @@ class PasswordState extends Equatable {
   final List<PasswordEntry> passwords;
   final List<PasswordFolder> folders;
   final List<PasswordEntry> filteredPasswords;
+  final List<PasswordEntry> searchResults;
   final String searchQuery;
   final String? selectedCategory;
   final String? selectedFolderId;
@@ -26,6 +28,7 @@ class PasswordState extends Equatable {
     this.passwords = const [],
     this.folders = const [],
     this.filteredPasswords = const [],
+    this.searchResults = const [],
     this.searchQuery = '',
     this.selectedCategory,
     this.selectedFolderId,
@@ -44,6 +47,7 @@ class PasswordState extends Equatable {
     List<PasswordEntry>? passwords,
     List<PasswordFolder>? folders,
     List<PasswordEntry>? filteredPasswords,
+    List<PasswordEntry>? searchResults,
     String? searchQuery,
     String? selectedCategory,
     String? selectedFolderId,
@@ -61,6 +65,7 @@ class PasswordState extends Equatable {
       passwords: passwords ?? this.passwords,
       folders: folders ?? this.folders,
       filteredPasswords: filteredPasswords ?? this.filteredPasswords,
+      searchResults: searchResults ?? this.searchResults,
       searchQuery: searchQuery ?? this.searchQuery,
       selectedCategory: selectedCategory ?? this.selectedCategory,
       selectedFolderId: selectedFolderId ?? this.selectedFolderId,
@@ -81,6 +86,7 @@ class PasswordState extends Equatable {
         passwords,
         folders,
         filteredPasswords,
+        searchResults,
         searchQuery,
         selectedCategory,
         selectedFolderId,
@@ -99,116 +105,179 @@ class PasswordState extends Equatable {
 // Notifier para gerenciar o estado
 class PasswordNotifier extends StateNotifier<PasswordState> {
   final PasswordService _passwordService;
+  String? _currentWorkspaceId;
+  String? _currentProfileName;
+  bool _isInitialized = false;
 
   PasswordNotifier(this._passwordService) : super(const PasswordState()) {
     _loadInitialData();
+  }
+
+  /// Recarregar dados para novo workspace
+  Future<void> reloadForWorkspace(String workspaceId) async {
+    if (_currentWorkspaceId == workspaceId && _isInitialized) return;
+
+    _currentWorkspaceId = workspaceId;
+    debugPrint('🔄 PasswordNotifier: Recarregando para workspace $workspaceId');
+    await _loadInitialData();
+  }
+
+  /// Recarregar dados para novo contexto (perfil + workspace)
+  Future<void> reloadForContext(String profileName, String workspaceId) async {
+    final newContext = '$profileName/$workspaceId';
+    final currentContext = '$_currentProfileName/$_currentWorkspaceId';
+
+    if (newContext == currentContext && _isInitialized) return;
+
+    _currentProfileName = profileName;
+    _currentWorkspaceId = workspaceId;
+    debugPrint('🔄 PasswordNotifier: Recarregando para contexto $newContext');
+    await _loadInitialData();
   }
 
   Future<void> _loadInitialData() async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      final passwords = await _passwordService.getAllPasswords();
-      final folders = await _passwordService.getAllFolders();
-      final stats = await _passwordService.getPasswordStats();
+      // Definir contexto completo no serviço
+      if (_currentProfileName != null && _currentWorkspaceId != null) {
+        await _passwordService.setContext(
+            _currentProfileName!, _currentWorkspaceId!);
+      } else if (_currentWorkspaceId != null) {
+        await _passwordService.setCurrentWorkspace(_currentWorkspaceId!);
+      }
 
+      final passwords = await _passwordService.getAllPasswords();
       state = state.copyWith(
         passwords: passwords,
-        folders: folders,
-        stats: stats,
         isLoading: false,
+        error: null,
       );
-
-      _applyFilters();
+      _isInitialized = true;
+      debugPrint(
+          '✅ PasswordNotifier: ${passwords.length} passwords carregados');
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Erro ao carregar dados: $e',
+        error: e.toString(),
+      );
+      debugPrint('❌ PasswordNotifier: Erro ao carregar passwords: $e');
+    }
+  }
+
+  Future<void> addPassword(PasswordEntry password) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      final id = await _passwordService.createPassword(password);
+      await _loadInitialData();
+      debugPrint('✅ Password adicionado: $id');
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      debugPrint('❌ Erro ao adicionar password: $e');
+    }
+  }
+
+  Future<void> updatePassword(PasswordEntry password) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      await _passwordService.updatePassword(password);
+      await _loadInitialData();
+      debugPrint('✅ Password atualizado: ${password.id}');
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      debugPrint('❌ Erro ao atualizar password: $e');
+    }
+  }
+
+  Future<void> deletePassword(String id) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      await _passwordService.deletePassword(id);
+      await _loadInitialData();
+      debugPrint('✅ Password deletado: $id');
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      debugPrint('❌ Erro ao deletar password: $e');
+    }
+  }
+
+  Future<void> deleteMultiplePasswords(List<String> ids) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      await _passwordService.deleteMultiplePasswords(ids);
+      await _loadInitialData();
+      debugPrint('✅ ${ids.length} passwords deletados');
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      debugPrint('❌ Erro ao deletar múltiplos passwords: $e');
+    }
+  }
+
+  Future<void> searchPasswords(String query) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      final results = await _passwordService.searchPasswords(query);
+      state = state.copyWith(
+        searchResults: results,
+        isLoading: false,
+        error: null,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
       );
     }
   }
 
-  void _applyFilters() {
-    List<PasswordEntry> filtered = state.passwords;
-
-    // Aplicar filtro de busca
-    if (state.searchQuery.isNotEmpty) {
-      filtered = filtered.where((entry) {
-        final query = state.searchQuery.toLowerCase();
-        return entry.title.toLowerCase().contains(query) ||
-            entry.username.toLowerCase().contains(query) ||
-            entry.website?.toLowerCase().contains(query) == true ||
-            entry.notes?.toLowerCase().contains(query) == true ||
-            entry.category?.toLowerCase().contains(query) == true ||
-            entry.tags.any((tag) => tag.toLowerCase().contains(query));
-      }).toList();
-    }
-
-    // Aplicar filtro de categoria
-    if (state.selectedCategory != null) {
-      filtered = filtered
-          .where((entry) => entry.category == state.selectedCategory)
-          .toList();
-    }
-
-    // Aplicar filtro de pasta
-    if (state.selectedFolderId != null) {
-      filtered = filtered
-          .where((entry) => entry.folderId == state.selectedFolderId)
-          .toList();
-    }
-
-    // Aplicar filtro de favoritos
-    if (state.showFavoritesOnly) {
-      filtered = filtered.where((entry) => entry.isFavorite).toList();
-    }
-
-    // Aplicar filtro de senhas fracas
-    if (state.showWeakOnly) {
-      filtered = filtered
-          .where((entry) =>
-              entry.strength == PasswordStrength.veryWeak ||
-              entry.strength == PasswordStrength.weak)
-          .toList();
-    }
-
-    // Aplicar filtro de senhas expiradas
-    if (state.showExpiredOnly) {
-      filtered = filtered.where((entry) => entry.isExpired).toList();
-    }
-
-    state = state.copyWith(filteredPasswords: filtered);
+  void clearSearch() {
+    state = state.copyWith(searchResults: []);
   }
 
-  // Ações do usuário
+  Future<Map<String, dynamic>> getStats() async {
+    try {
+      return await _passwordService.getPasswordStats();
+    } catch (e) {
+      debugPrint('❌ Erro ao obter estatísticas: $e');
+      return {};
+    }
+  }
+
+  // Métodos de compatibilidade com a interface
   void setSearchQuery(String query) {
     state = state.copyWith(searchQuery: query);
-    _applyFilters();
   }
 
   void setSelectedCategory(String? category) {
     state = state.copyWith(selectedCategory: category);
-    _applyFilters();
   }
 
   void setSelectedFolder(String? folderId) {
     state = state.copyWith(selectedFolderId: folderId);
-    _applyFilters();
   }
 
   void toggleFavoritesOnly() {
     state = state.copyWith(showFavoritesOnly: !state.showFavoritesOnly);
-    _applyFilters();
   }
 
   void toggleWeakOnly() {
     state = state.copyWith(showWeakOnly: !state.showWeakOnly);
-    _applyFilters();
   }
 
   void toggleExpiredOnly() {
     state = state.copyWith(showExpiredOnly: !state.showExpiredOnly);
-    _applyFilters();
   }
 
   void clearFilters() {
@@ -220,101 +289,10 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
       showWeakOnly: false,
       showExpiredOnly: false,
     );
-    _applyFilters();
   }
 
-  // CRUD Operations
-  Future<void> createPassword(PasswordEntry entry) async {
-    try {
-      state = state.copyWith(isCreating: true, error: null);
-
-      final id = await _passwordService.createPassword(entry);
-      final newEntry = entry.copyWith(id: id);
-
-      final updatedPasswords = [newEntry, ...state.passwords];
-      state = state.copyWith(
-        passwords: updatedPasswords,
-        isCreating: false,
-      );
-
-      _applyFilters();
-      await _updateStats();
-    } catch (e) {
-      state = state.copyWith(
-        isCreating: false,
-        error: 'Erro ao criar senha: $e',
-      );
-    }
-  }
-
-  Future<void> updatePassword(PasswordEntry entry) async {
-    try {
-      state = state.copyWith(isUpdating: true, error: null);
-
-      await _passwordService.updatePassword(entry);
-
-      final updatedPasswords =
-          state.passwords.map((p) => p.id == entry.id ? entry : p).toList();
-
-      state = state.copyWith(
-        passwords: updatedPasswords,
-        isUpdating: false,
-      );
-
-      _applyFilters();
-      await _updateStats();
-    } catch (e) {
-      state = state.copyWith(
-        isUpdating: false,
-        error: 'Erro ao atualizar senha: $e',
-      );
-    }
-  }
-
-  Future<void> deletePassword(String id) async {
-    try {
-      state = state.copyWith(isDeleting: true, error: null);
-
-      await _passwordService.deletePassword(id);
-
-      final updatedPasswords =
-          state.passwords.where((p) => p.id != id).toList();
-      state = state.copyWith(
-        passwords: updatedPasswords,
-        isDeleting: false,
-      );
-
-      _applyFilters();
-      await _updateStats();
-    } catch (e) {
-      state = state.copyWith(
-        isDeleting: false,
-        error: 'Erro ao deletar senha: $e',
-      );
-    }
-  }
-
-  Future<void> deleteMultiplePasswords(List<String> ids) async {
-    try {
-      state = state.copyWith(isDeleting: true, error: null);
-
-      await _passwordService.deleteMultiplePasswords(ids);
-
-      final updatedPasswords =
-          state.passwords.where((p) => !ids.contains(p.id)).toList();
-      state = state.copyWith(
-        passwords: updatedPasswords,
-        isDeleting: false,
-      );
-
-      _applyFilters();
-      await _updateStats();
-    } catch (e) {
-      state = state.copyWith(
-        isDeleting: false,
-        error: 'Erro ao deletar senhas: $e',
-      );
-    }
+  Future<void> refresh() async {
+    await _loadInitialData();
   }
 
   Future<void> toggleFavorite(String id) async {
@@ -329,95 +307,10 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
     await updatePassword(updatedPassword);
   }
 
-  // Gestão de pastas
-  Future<void> createFolder(PasswordFolder folder) async {
-    try {
-      state = state.copyWith(isCreating: true, error: null);
-
-      final id = await _passwordService.createFolder(folder);
-      final newFolder = folder.copyWith(id: id);
-
-      final updatedFolders = [newFolder, ...state.folders];
-      state = state.copyWith(
-        folders: updatedFolders,
-        isCreating: false,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isCreating: false,
-        error: 'Erro ao criar pasta: $e',
-      );
-    }
+  Future<void> createPassword(PasswordEntry entry) async {
+    await addPassword(entry);
   }
 
-  Future<void> updateFolder(PasswordFolder folder) async {
-    try {
-      state = state.copyWith(isUpdating: true, error: null);
-
-      await _passwordService.updateFolder(folder);
-
-      final updatedFolders =
-          state.folders.map((f) => f.id == folder.id ? folder : f).toList();
-
-      state = state.copyWith(
-        folders: updatedFolders,
-        isUpdating: false,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isUpdating: false,
-        error: 'Erro ao atualizar pasta: $e',
-      );
-    }
-  }
-
-  Future<void> deleteFolder(String folderId) async {
-    try {
-      state = state.copyWith(isDeleting: true, error: null);
-
-      await _passwordService.deleteFolder(folderId);
-
-      final updatedFolders =
-          state.folders.where((f) => f.id != folderId).toList();
-      state = state.copyWith(
-        folders: updatedFolders,
-        isDeleting: false,
-      );
-
-      // Recarregar senhas para atualizar folderId
-      await _loadInitialData();
-    } catch (e) {
-      state = state.copyWith(
-        isDeleting: false,
-        error: 'Erro ao deletar pasta: $e',
-      );
-    }
-  }
-
-  // Utilitários
-  Future<void> _updateStats() async {
-    try {
-      final stats = await _passwordService.getPasswordStats();
-      state = state.copyWith(stats: stats);
-    } catch (e) {
-      // Ignorar erros de estatísticas
-    }
-  }
-
-  Future<void> refresh() async {
-    await _loadInitialData();
-  }
-
-  void clearError() {
-    state = state.copyWith(error: null);
-  }
-
-  void replaceAll(List<PasswordEntry> items) {
-    state = state.copyWith(passwords: items);
-    _applyFilters();
-  }
-
-  // Geração de senhas
   String generatePassword({
     int length = 16,
     bool includeUppercase = true,
@@ -440,7 +333,6 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
     return _passwordService.validatePasswordStrength(password);
   }
 
-  // Exportação e importação
   Future<Map<String, dynamic>> exportPasswords() async {
     return await _passwordService.exportPasswords();
   }
@@ -448,7 +340,6 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
   Future<void> importPasswords(Map<String, dynamic> data) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
-
       await _passwordService.importPasswords(data);
       await _loadInitialData();
     } catch (e) {
@@ -457,6 +348,14 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
         error: 'Erro ao importar senhas: $e',
       );
     }
+  }
+
+  void replaceAll(List<PasswordEntry> items) {
+    state = state.copyWith(passwords: items);
+  }
+
+  void clearError() {
+    state = state.copyWith(error: null);
   }
 }
 

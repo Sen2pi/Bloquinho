@@ -37,6 +37,7 @@ class PasswordEntry extends Equatable {
   final List<String> sharedWith;
   final DateTime? expiresAt;
   final bool autoFillEnabled;
+  final String? workspaceId;
 
   const PasswordEntry({
     required this.id,
@@ -62,6 +63,7 @@ class PasswordEntry extends Equatable {
     this.sharedWith = const [],
     this.expiresAt,
     this.autoFillEnabled = true,
+    this.workspaceId,
   });
 
   factory PasswordEntry.fromJson(Map<String, dynamic> json) =>
@@ -93,6 +95,7 @@ class PasswordEntry extends Equatable {
     List<String>? sharedWith,
     DateTime? expiresAt,
     bool? autoFillEnabled,
+    String? workspaceId,
   }) {
     return PasswordEntry(
       id: id ?? this.id,
@@ -118,6 +121,7 @@ class PasswordEntry extends Equatable {
       sharedWith: sharedWith ?? this.sharedWith,
       expiresAt: expiresAt ?? this.expiresAt,
       autoFillEnabled: autoFillEnabled ?? this.autoFillEnabled,
+      workspaceId: workspaceId ?? this.workspaceId,
     );
   }
 
@@ -146,6 +150,7 @@ class PasswordEntry extends Equatable {
         sharedWith,
         expiresAt,
         autoFillEnabled,
+        workspaceId,
       ];
 
   // Métodos de utilidade

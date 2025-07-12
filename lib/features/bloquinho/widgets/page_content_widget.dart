@@ -9,6 +9,8 @@ import '../models/page_model.dart';
 import '../providers/pages_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../screens/bloco_editor_screen.dart';
+import '../../../shared/providers/user_profile_provider.dart';
+import '../../../shared/providers/workspace_provider.dart';
 
 class PageContentWidget extends ConsumerStatefulWidget {
   final String pageId;
@@ -176,7 +178,16 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
   }
 
   String getPageContent(String pageId) {
-    final pages = ref.read(pagesProvider);
+    final currentProfile = ref.read(currentProfileProvider);
+    final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+    List<PageModel> pages = [];
+    if (currentProfile != null && currentWorkspace != null) {
+      pages = ref.read(pagesProvider((
+        profileName: currentProfile.name,
+        workspaceName: currentWorkspace.name
+      )));
+    }
     final page = pages.firstWhere(
       (p) => p.id == pageId,
       orElse: () => PageModel.create(title: 'Página não encontrada'),
@@ -185,15 +196,36 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
   }
 
   void updatePageContent(String pageId, String content) {
-    ref.read(pagesProvider.notifier).updatePageContent(pageId, content);
+    final currentProfile = ref.read(currentProfileProvider);
+    final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+    if (currentProfile != null && currentWorkspace != null) {
+      final pagesNotifier = ref.read(pagesNotifierProvider((
+        profileName: currentProfile.name,
+        workspaceName: currentWorkspace.name
+      )));
+      pagesNotifier.updatePageContent(pageId, content);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final page = ref.watch(pagesProvider).firstWhere(
-          (p) => p.id == widget.pageId,
-          orElse: () => PageModel.create(title: 'Página não encontrada'),
-        );
+    final currentProfile = ref.watch(currentProfileProvider);
+    final currentWorkspace = ref.watch(currentWorkspaceProvider);
+
+    PageModel page;
+    if (currentProfile != null && currentWorkspace != null) {
+      final pages = ref.watch(pagesProvider((
+        profileName: currentProfile.name,
+        workspaceName: currentWorkspace.name
+      )));
+      page = pages.firstWhere(
+        (p) => p.id == widget.pageId,
+        orElse: () => PageModel.create(title: 'Página não encontrada'),
+      );
+    } else {
+      page = PageModel.create(title: 'Página não encontrada');
+    }
 
     return Column(
       children: [

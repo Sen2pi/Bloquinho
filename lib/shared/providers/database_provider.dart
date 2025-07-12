@@ -12,11 +12,11 @@ final databaseServiceProvider = Provider<DatabaseService>((ref) {
   // Observar mudanças no workspace atual
   ref.listen<String?>(
     currentWorkspaceIdProvider,
-    (previous, current) {
+    (previous, current) async {
       if (current != null && current != previous) {
         debugPrint(
             '🔄 Provider detectou mudança de workspace: $previous → $current');
-        databaseService.setCurrentWorkspace(current);
+        await databaseService.setCurrentWorkspace(current);
         debugPrint('✅ Workspace definido no DatabaseService');
       }
     },
@@ -33,42 +33,21 @@ final currentWorkspaceIdProvider = Provider<String?>((ref) {
 /// Provider para tabelas do workspace atual
 final databaseTablesProvider = FutureProvider<List<DatabaseTable>>((ref) async {
   final databaseService = ref.watch(databaseServiceProvider);
-  final currentWorkspaceId = ref.watch(currentWorkspaceIdProvider);
-
-  debugPrint(
-      '🔄 databaseTablesProvider executando para workspace: $currentWorkspaceId');
-
-  // Garantir que o serviço está inicializado
-  await databaseService.initialize();
-
-  // Definir workspace atual (força re-filtro)
-  if (currentWorkspaceId != null) {
-    databaseService.setCurrentWorkspace(currentWorkspaceId);
-  }
-
-  final tables = databaseService.tables;
-  debugPrint(
-      '📋 Provider retornando ${tables.length} tabelas para workspace "$currentWorkspaceId"');
-
-  return tables;
+  return databaseService.tables;
 });
 
-/// Provider para buscar uma tabela específica
+/// Provider para uma tabela específica
 final databaseTableProvider =
-    Provider.family<DatabaseTable?, String>((ref, tableId) {
-  final tables = ref.watch(databaseTablesProvider);
+    FutureProvider.family<DatabaseTable?, String>((ref, tableId) async {
+  final databaseService = ref.watch(databaseServiceProvider);
+  return databaseService.getTable(tableId);
+});
 
-  return tables.when(
-    data: (tablesList) {
-      try {
-        return tablesList.firstWhere((table) => table.id == tableId);
-      } catch (e) {
-        return null;
-      }
-    },
-    loading: () => null,
-    error: (error, stack) => null,
-  );
+/// Provider para busca de tabelas
+final databaseSearchProvider =
+    FutureProvider.family<List<DatabaseTable>, String>((ref, query) async {
+  final databaseService = ref.watch(databaseServiceProvider);
+  return databaseService.searchTables(query);
 });
 
 /// Provider para contar tabelas do workspace atual
@@ -87,6 +66,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<List<DatabaseTable>>> {
   final Ref ref;
   late final DatabaseService _databaseService;
   String? _lastWorkspaceId;
+  bool _isInitialized = false;
 
   DatabaseNotifier(this.ref) : super(const AsyncValue.loading()) {
     _databaseService = ref.read(databaseServiceProvider);
@@ -97,7 +77,12 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<List<DatabaseTable>>> {
         debugPrint(
             '🔄 DatabaseNotifier detectou mudança: $previous → $current');
         _lastWorkspaceId = current;
-        _loadTables(); // Recarregar tabelas para o novo workspace
+        _databaseService.setCurrentWorkspace(current);
+
+        // Só recarregar se já foi inicializado
+        if (_isInitialized) {
+          _loadTables();
+        }
       }
     });
 
@@ -107,6 +92,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<List<DatabaseTable>>> {
   Future<void> _init() async {
     try {
       await _databaseService.initialize();
+      _isInitialized = true;
 
       // Definir workspace inicial se disponível
       final currentWorkspaceId = ref.read(currentWorkspaceIdProvider);
@@ -137,6 +123,16 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<List<DatabaseTable>>> {
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
+  }
+
+  /// Forçar recarregamento para novo workspace
+  Future<void> reloadForWorkspace(String workspaceId) async {
+    if (_lastWorkspaceId == workspaceId && _isInitialized) return;
+
+    _lastWorkspaceId = workspaceId;
+    _databaseService.setCurrentWorkspace(workspaceId);
+    debugPrint('🔄 DatabaseNotifier: Recarregando para workspace $workspaceId');
+    await _loadTables();
   }
 
   /// Criar nova tabela

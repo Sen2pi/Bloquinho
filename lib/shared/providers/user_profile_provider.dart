@@ -433,6 +433,24 @@ final avatarFileProvider = FutureProvider<File?>((ref) async {
   return await notifier.getAvatarFile();
 });
 
+/// Provider para avatar URL (para OAuth2)
+final avatarUrlProvider = Provider<String?>((ref) {
+  final profile = ref.watch(currentProfileProvider);
+  return profile?.avatarUrl;
+});
+
+/// Provider para verificar se tem avatar customizado
+final hasCustomAvatarProvider = Provider<bool>((ref) {
+  final profile = ref.watch(currentProfileProvider);
+  return profile?.hasCustomAvatar ?? false;
+});
+
+/// Provider para avatar path local
+final avatarPathProvider = Provider<String?>((ref) {
+  final profile = ref.watch(currentProfileProvider);
+  return profile?.avatarPath;
+});
+
 /// Provider para verificar se deve mostrar onboarding
 final shouldShowOnboardingProvider = Provider<bool>((ref) {
   final hasProfile = ref.watch(hasProfileProvider);

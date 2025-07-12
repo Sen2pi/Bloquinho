@@ -31,13 +31,10 @@ class BloquinhoStorageService {
   Future<Directory?> getBloquinhoDirectory(
       String profileName, String workspaceName) async {
     try {
-      final workspacesDir =
-          await _localStorageService.getWorkspacesDirectory(profileName);
-      if (workspacesDir == null) return null;
-
+      // Usar o novo método getWorkspace para obter workspace existente
       final workspaceDir =
-          Directory(path.join(workspacesDir.path, workspaceName));
-      if (!await workspaceDir.exists()) return null;
+          await _localStorageService.getWorkspace(profileName, workspaceName);
+      if (workspaceDir == null) return null;
 
       final bloquinhoDir =
           Directory(path.join(workspaceDir.path, _bloquinhoFolder));
@@ -56,8 +53,22 @@ class BloquinhoStorageService {
   Future<Directory> createBloquinhoDirectory(
       String profileName, String workspaceName) async {
     try {
-      final workspaceDir = await _localStorageService.createWorkspace(
-          profileName, workspaceName);
+      // Primeiro tentar obter workspace existente
+      Directory? workspaceDir =
+          await _localStorageService.getWorkspace(profileName, workspaceName);
+
+      // Se não existir, criar
+      if (workspaceDir == null) {
+        final workspacePath = await _localStorageService.createWorkspace(
+            profileName, workspaceName);
+
+        if (workspacePath == null) {
+          throw Exception('Erro ao criar workspace');
+        }
+
+        workspaceDir = Directory(workspacePath);
+      }
+
       final bloquinhoDir =
           Directory(path.join(workspaceDir.path, _bloquinhoFolder));
 
@@ -88,12 +99,8 @@ class BloquinhoStorageService {
             await createBloquinhoDirectory(profileName, workspaceName);
       }
 
-      // Carregar todas as páginas primeiro para determinar hierarquia
-      final allPages = await loadAllPages(profileName, workspaceName);
-
       // Determinar caminho do arquivo baseado na hierarquia
-      final filePath =
-          await _getPageFilePath(page, bloquinhoDir.path, allPages);
+      final filePath = _getPageFilePath(page, bloquinhoDir.path);
       final file = File(filePath);
 
       // Criar diretório pai se não existir
@@ -105,10 +112,11 @@ class BloquinhoStorageService {
       // Salvar conteúdo markdown
       await file.writeAsString(page.content);
 
-      // Salvar metadados da página
+      // Salvar metadados da página (incluindo ícone)
       await _savePageMetadata(page, bloquinhoDir.path);
 
-      debugPrint('✅ Página salva: $filePath');
+      debugPrint(
+          '✅ Página salva: $filePath (ícone: ${page.icon ?? 'sem ícone'})');
     } catch (e) {
       debugPrint('❌ Erro ao salvar página: $e');
       throw Exception('Erro ao salvar página: $e');
@@ -146,13 +154,196 @@ class BloquinhoStorageService {
       if (bloquinhoDir == null) return [];
 
       final pages = <PageModel>[];
-      await _loadPagesRecursively(bloquinhoDir, pages, null);
 
+      // Carregar estrutura hierárquica completa
+      await _loadHierarchicalStructure(bloquinhoDir, pages, null, '');
+
+      // Atualizar childrenIds baseado na hierarquia carregada
+      _updateChildrenIds(pages);
+
+      debugPrint('✅ Estrutura hierárquica carregada: ${pages.length} páginas');
       return pages;
     } catch (e) {
       debugPrint('❌ Erro ao carregar páginas: $e');
       return [];
     }
+  }
+
+  /// Carregar estrutura hierárquica baseada em pastas e arquivos
+  Future<void> _loadHierarchicalStructure(Directory dir, List<PageModel> pages,
+      String? parentId, String currentPath) async {
+    try {
+      final entities = await dir.list().toList();
+      // 1. Processar arquivos .md na raiz (páginas raiz)
+      final rootMdFiles = entities
+          .where((e) => e is File && e.path.endsWith(_pageExtension))
+          .cast<File>()
+          .toList();
+      final dirFolders = entities.whereType<Directory>().toList();
+      // Map para associar nome do arquivo ao id da página criada
+      final Map<String, String> pageTitleToId = {};
+      // Criar páginas raiz
+      for (final file in rootMdFiles) {
+        final pageId = path.basenameWithoutExtension(file.path);
+        final title = _desanitizeFileName(pageId);
+        final content = await file.readAsString();
+        PageModel? metadata = await _loadPageMetadata(pageId, dir.path);
+        PageModel page;
+        if (metadata != null) {
+          page = metadata.copyWith(content: content, parentId: parentId);
+        } else {
+          page = PageModel.create(
+              title: title, parentId: parentId, content: content);
+          await _savePageMetadata(page, dir.path);
+        }
+        pages.add(page);
+        pageTitleToId[title] = page.id;
+      }
+      // 2. Processar pastas (subpáginas)
+      for (final folder in dirFolders) {
+        final folderName = path.basename(folder.path);
+        final folderMdFile =
+            File(path.join(folder.path, folderName + _pageExtension));
+        String? parentPageId;
+        // O parentId da subpágina é o id da página raiz com mesmo nome da pasta, ou o parentId herdado
+        if (pageTitleToId.containsKey(_desanitizeFileName(folderName))) {
+          parentPageId = pageTitleToId[_desanitizeFileName(folderName)];
+        } else if (pages.isNotEmpty) {
+          // fallback: se não achar, usar a última página raiz criada
+          parentPageId = pages.last.id;
+        } else {
+          parentPageId = parentId;
+        }
+        // Processar subpasta recursivamente
+        await _processPageDirectory(folder, pages, parentPageId,
+            currentPath.isEmpty ? folderName : '$currentPath/$folderName');
+      }
+    } catch (e) {
+      debugPrint('❌ Erro ao carregar estrutura hierárquica: $e');
+    }
+  }
+
+  /// Processar arquivo de página
+  Future<void> _processPageFile(File file, List<PageModel> pages,
+      String? parentId, String currentPath) async {
+    try {
+      final pageId = path.basenameWithoutExtension(file.path);
+      final title = _desanitizeFileName(pageId);
+      final content = await file.readAsString();
+
+      // Verificar se já existe uma página com este título (evitar duplicatas)
+      final existingPage = pages.firstWhere(
+        (p) => p.title == title,
+        orElse: () => PageModel.create(title: ''),
+      );
+
+      if (existingPage.title.isNotEmpty) {
+        debugPrint('⚠️ Página já existe, ignorando: ${existingPage.title}');
+        return;
+      }
+
+      // Tentar carregar metadados existentes
+      PageModel? metadata =
+          await _loadPageMetadata(pageId, path.dirname(file.path));
+
+      PageModel page;
+      if (metadata != null) {
+        // Usar metadados existentes, mas atualizar conteúdo e parentId
+        page = metadata.copyWith(
+          content: content,
+          parentId: parentId,
+        );
+        debugPrint(
+            '📄 Página carregada (metadados): ${page.title} (ID: ${page.id})');
+      } else {
+        // Criar nova página
+        page = PageModel.create(
+          title: title,
+          parentId: parentId,
+          content: content,
+        );
+        debugPrint('📄 Nova página criada: ${page.title} (ID: ${page.id})');
+
+        // Salvar metadados para futuras referências
+        await _savePageMetadata(page, path.dirname(file.path));
+      }
+
+      pages.add(page);
+    } catch (e) {
+      debugPrint('❌ Erro ao processar arquivo de página: $e');
+    }
+  }
+
+  /// Processar diretório de página (subpáginas)
+  Future<void> _processPageDirectory(Directory dir, List<PageModel> pages,
+      String? parentId, String currentPath) async {
+    try {
+      final dirName = path.basename(dir.path);
+      final pageId = _sanitizeFileName(dirName);
+      final title = _desanitizeFileName(dirName);
+      final pageFile = File('${dir.path}/$dirName$_pageExtension');
+      PageModel? page;
+      if (await pageFile.exists()) {
+        final content = await pageFile.readAsString();
+        PageModel? metadata = await _loadPageMetadata(pageId, dir.path);
+        if (metadata != null) {
+          page = metadata.copyWith(content: content, parentId: parentId);
+        } else {
+          page = PageModel.create(
+              title: title, parentId: parentId, content: content);
+          await _savePageMetadata(page, dir.path);
+        }
+        pages.add(page);
+      }
+      // Processar outros arquivos .md dentro da pasta (exceto o principal)
+      final entities = await dir.list().toList();
+      for (final entity in entities) {
+        if (entity is File && entity.path.endsWith(_pageExtension)) {
+          final fileName = path.basenameWithoutExtension(entity.path);
+          if (fileName != dirName) {
+            final subParentId = page?.id ?? parentId;
+            await _processPageFile(entity, pages, subParentId, currentPath);
+          }
+        }
+      }
+      // Processar subdiretórios recursivamente
+      for (final entity in entities) {
+        if (entity is Directory) {
+          final subParentId = page?.id ?? parentId;
+          await _processPageDirectory(entity, pages, subParentId,
+              currentPath.isEmpty ? dirName : '$currentPath/$dirName');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Erro ao processar diretório de página: $e');
+    }
+  }
+
+  /// Atualizar childrenIds baseado na hierarquia carregada
+  void _updateChildrenIds(List<PageModel> pages) {
+    // Criar mapa de parentId -> List<PageModel>
+    final childrenMap = <String, List<PageModel>>{};
+
+    for (final page in pages) {
+      if (page.parentId != null) {
+        childrenMap.putIfAbsent(page.parentId!, () => []).add(page);
+      }
+    }
+
+    // Atualizar childrenIds de cada página
+    for (final page in pages) {
+      final children = childrenMap[page.id] ?? [];
+      final childrenIds = children.map((child) => child.id).toList();
+
+      if (childrenIds.isNotEmpty) {
+        final index = pages.indexOf(page);
+        if (index != -1) {
+          pages[index] = page.copyWith(childrenIds: childrenIds);
+        }
+      }
+    }
+
+    debugPrint('🔄 ChildrenIds atualizados para ${pages.length} páginas');
   }
 
   /// Renomear página (arquivo e pasta)
@@ -170,9 +361,6 @@ class BloquinhoStorageService {
             await createBloquinhoDirectory(profileName, workspaceName);
       }
 
-      // Carregar todas as páginas primeiro para determinar hierarquia
-      final allPages = await loadAllPages(profileName, workspaceName);
-
       // Carregar página atual
       final currentPage = await loadPage(pageId, profileName, workspaceName);
       if (currentPage == null) {
@@ -180,11 +368,9 @@ class BloquinhoStorageService {
       }
 
       // Obter caminhos antigo e novo
-      final oldPath =
-          await _getPageFilePath(currentPage, bloquinhoDir.path, allPages);
+      final oldPath = _getPageFilePath(currentPage, bloquinhoDir.path);
       final newPage = currentPage.copyWith(title: newTitle);
-      final newPath =
-          await _getPageFilePath(newPage, bloquinhoDir.path, allPages);
+      final newPath = _getPageFilePath(newPage, bloquinhoDir.path);
 
       // Renomear arquivo/pasta
       final oldFile = File(oldPath);
@@ -233,9 +419,6 @@ class BloquinhoStorageService {
             await createBloquinhoDirectory(profileName, workspaceName);
       }
 
-      // Carregar todas as páginas primeiro para determinar hierarquia
-      final allPages = await loadAllPages(profileName, workspaceName);
-
       // Carregar página para obter informações
       final page = await loadPage(pageId, profileName, workspaceName);
       if (page == null) {
@@ -243,8 +426,7 @@ class BloquinhoStorageService {
       }
 
       // Obter caminho da página
-      final pagePath =
-          await _getPageFilePath(page, bloquinhoDir.path, allPages);
+      final pagePath = _getPageFilePath(page, bloquinhoDir.path);
       final pageDir = Directory(pagePath.replaceAll(_pageExtension, ''));
 
       // Deletar arquivo da página
@@ -326,94 +508,17 @@ class BloquinhoStorageService {
 
   // Métodos auxiliares privados
 
-  /// Obter caminho do arquivo da página seguindo a nova estrutura hierárquica
-  Future<String> _getPageFilePath(
-      PageModel page, String bloquinhoPath, List<PageModel> allPages) async {
+  /// Obter caminho do arquivo da página
+  String _getPageFilePath(PageModel page, String bloquinhoPath) {
     final safeTitle = _sanitizeFileName(page.title);
 
     if (page.parentId == null) {
-      // Página raiz - sempre usar o arquivo principal "bloquinho.md"
-      if (page.title.toLowerCase() == 'bloquinho' ||
-          page.title == 'Bem-vindo ao Bloquinho!' ||
-          allPages.where((p) => p.parentId == null).length == 1) {
-        return path.join(bloquinhoPath, 'bloquinho$_pageExtension');
-      } else {
-        // Se não for a página principal, criar pasta + arquivo
-        final pageFolderPath = path.join(bloquinhoPath, safeTitle);
-        return path.join(pageFolderPath, '$safeTitle$_pageExtension');
-      }
+      // Página raiz
+      return path.join(bloquinhoPath, '$safeTitle$_pageExtension');
     } else {
-      // Subpágina - construir caminho hierárquico
-      final hierarchyPath = await _buildHierarchyPath(page, allPages);
-      final fullPath =
-          path.join(bloquinhoPath, hierarchyPath, '$safeTitle$_pageExtension');
-      return fullPath;
-    }
-  }
-
-  /// Construir caminho hierárquico para uma página
-  Future<String> _buildHierarchyPath(
-      PageModel page, List<PageModel> allPages) async {
-    final pathSegments = <String>[];
-    PageModel? currentPage = page;
-
-    // Construir caminho da página atual até a raiz
-    while (currentPage?.parentId != null) {
-      final parent = allPages.firstWhere(
-        (p) => p.id == currentPage!.parentId,
-        orElse: () => currentPage!, // Se não encontrar, usar a página atual
-      );
-
-      // Se não encontrou o parent, parar para evitar loop infinito
-      if (parent.id == currentPage!.id) {
-        debugPrint(
-            '⚠️ Parent não encontrado para página: ${currentPage.title}');
-        break;
-      }
-
-      final safeParentTitle = _sanitizeFileName(parent.title);
-      pathSegments.insert(0, safeParentTitle);
-      currentPage = parent;
-    }
-
-    return pathSegments.join(path.separator);
-  }
-
-  /// Carregar páginas recursivamente
-  Future<void> _loadPagesRecursively(
-      Directory dir, List<PageModel> pages, String? parentId) async {
-    try {
-      final entities = await dir.list().toList();
-
-      for (final entity in entities) {
-        if (entity is File && entity.path.endsWith(_pageExtension)) {
-          // Carregar página
-          final pageId = path.basenameWithoutExtension(entity.path);
-          final metadata = await _loadPageMetadata(pageId, dir.path);
-          if (metadata != null) {
-            final content = await entity.readAsString();
-            pages.add(metadata.copyWith(content: content, parentId: parentId));
-          }
-        } else if (entity is Directory) {
-          // Verificar se existe arquivo markdown correspondente
-          final pageFile = File('${entity.path}$_pageExtension');
-          if (await pageFile.exists()) {
-            final pageId = path.basenameWithoutExtension(pageFile.path);
-            final metadata = await _loadPageMetadata(pageId, dir.path);
-            if (metadata != null) {
-              final content = await pageFile.readAsString();
-              final page =
-                  metadata.copyWith(content: content, parentId: parentId);
-              pages.add(page);
-
-              // Carregar subpáginas recursivamente
-              await _loadPagesRecursively(entity, pages, page.id);
-            }
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('❌ Erro ao carregar páginas recursivamente: $e');
+      // Subpágina - criar pasta com nome da página
+      final pageDir = path.join(bloquinhoPath, safeTitle);
+      return path.join(pageDir, '$safeTitle$_pageExtension');
     }
   }
 
@@ -474,8 +579,18 @@ class BloquinhoStorageService {
   /// Carregar conteúdo da página
   Future<String> _loadPageContent(String pageId, String bloquinhoPath) async {
     try {
-      // TODO: Implementar lógica para encontrar arquivo correto baseado no pageId
-      // Por enquanto, retornar string vazia
+      // Procurar arquivo .md com o pageId
+      final dir = Directory(bloquinhoPath);
+      final entities = await dir.list().toList();
+
+      for (final entity in entities) {
+        if (entity is File && entity.path.endsWith(_pageExtension)) {
+          final filePageId = path.basenameWithoutExtension(entity.path);
+          if (filePageId == pageId) {
+            return await entity.readAsString();
+          }
+        }
+      }
       return '';
     } catch (e) {
       debugPrint('❌ Erro ao carregar conteúdo: $e');
@@ -572,5 +687,10 @@ class BloquinhoStorageService {
         .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
         .replaceAll(RegExp(r'\s+'), '_')
         .trim();
+  }
+
+  /// Desanitizar nome de arquivo (converter de volta para título legível)
+  String _desanitizeFileName(String fileName) {
+    return fileName.replaceAll('_', ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 import '../models/cartao_credito.dart';
 import '../models/cartao_fidelizacao.dart';
@@ -100,9 +101,21 @@ class DocumentosNotifier extends StateNotifier<DocumentosState> {
   static const String _cartoesCreditoKey = 'cartoes_credito';
   static const String _cartoesFidelizacaoKey = 'cartoes_fidelizacao';
   static const String _documentosIdentificacaoKey = 'documentos_identificacao';
+  String? _currentWorkspaceId;
+  bool _isInitialized = false;
 
   DocumentosNotifier(this._storageService) : super(const DocumentosState()) {
     _loadDocumentos();
+  }
+
+  /// Recarregar dados para novo workspace
+  Future<void> reloadForWorkspace(String workspaceId) async {
+    if (_currentWorkspaceId == workspaceId && _isInitialized) return;
+
+    _currentWorkspaceId = workspaceId;
+    debugPrint(
+        '🔄 DocumentosNotifier: Recarregando para workspace $workspaceId');
+    await _loadDocumentos();
   }
 
   /// Carregar documentos do storage
@@ -143,6 +156,8 @@ class DocumentosNotifier extends StateNotifier<DocumentosState> {
         documentosIdentificacao: documentosIdentificacao,
         isLoading: false,
       );
+
+      _isInitialized = true;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

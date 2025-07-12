@@ -262,11 +262,15 @@ class BackupService {
       }
 
       // Criar workspace
-      final workspaceDir =
+      final workspaceDirPath =
           await _localStorage.createWorkspace(profileName, workspaceName);
 
+      if (workspaceDirPath == null) {
+        throw Exception('Erro ao criar workspace');
+      }
+
       // Importar estrutura do Bloquinho
-      final bloquinhoDir = Directory(path.join(workspaceDir.path, 'bloquinho'));
+      final bloquinhoDir = Directory(path.join(workspaceDirPath, 'bloquinho'));
       if (!await bloquinhoDir.exists()) {
         await bloquinhoDir.create(recursive: true);
       }
@@ -282,7 +286,7 @@ class BackupService {
       return {
         'success': true,
         'importedPages': importedPages,
-        'workspacePath': workspaceDir.path,
+        'workspacePath': workspaceDirPath,
       };
     } catch (e) {
       debugPrint('❌ Erro ao importar workspace: $e');

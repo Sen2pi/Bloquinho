@@ -9,6 +9,7 @@ import 'core/theme/app_theme.dart';
 import 'core/models/app_language.dart';
 import 'core/services/user_profile_service.dart';
 import 'core/services/local_storage_service.dart';
+import 'core/services/file_storage_service.dart';
 import 'core/services/oauth2_service.dart';
 import 'shared/providers/theme_provider.dart';
 import 'shared/providers/language_provider.dart';
@@ -20,7 +21,6 @@ import 'features/backup/screens/backup_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'features/profile/screens/profile_edit_screen.dart';
 import 'features/profile/screens/storage_settings_screen.dart';
-import 'features/settings/screens/settings_screen.dart';
 import 'features/agenda/screens/agenda_screen.dart';
 import 'features/passwords/screens/password_manager_screen.dart';
 import 'features/documentos/screens/documentos_screen.dart';
@@ -60,10 +60,15 @@ Future<void> _initializeServices() async {
   try {
     // Hive já foi inicializado no main()
 
-    // Inicializar LocalStorageService
+    // Inicializar LocalStorageService (sistema antigo para compatibilidade)
     final localStorageService = LocalStorageService();
     await localStorageService.initialize();
     debugPrint('✅ LocalStorageService inicializado');
+
+    // Inicializar FileStorageService (novo sistema)
+    final fileStorageService = FileStorageService();
+    await fileStorageService.initialize();
+    debugPrint('✅ FileStorageService inicializado');
 
     // Inicializar OAuth2Service
     await OAuth2Service.initialize();
@@ -158,11 +163,6 @@ final GoRouter _router = GoRouter(
           builder: (context, state) => const StorageSettingsScreen(),
         ),
         GoRoute(
-          path: 'settings',
-          name: 'settings',
-          builder: (context, state) => const SettingsScreen(),
-        ),
-        GoRoute(
           path: 'agenda',
           name: 'agenda',
           builder: (context, state) => const AgendaScreen(),
@@ -194,13 +194,11 @@ final GoRouter _router = GoRouter(
 );
 
 // Tela de autenticação (placeholder)
-class AuthScreen extends ConsumerWidget {
+class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final strings = ref.watch(appStringsProvider);
-
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
         child: Column(
@@ -212,17 +210,17 @@ class AuthScreen extends ConsumerWidget {
               width: 120,
             ),
             const SizedBox(height: 32),
-            Text(
-              strings.appTitle,
-              style: const TextStyle(
+            const Text(
+              'Bloquinho',
+              style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
-            Text(
-              strings.appSubtitle,
-              style: const TextStyle(
+            const Text(
+              'Seu workspace pessoal',
+              style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey,
               ),
@@ -232,7 +230,7 @@ class AuthScreen extends ConsumerWidget {
               onPressed: () {
                 context.goNamed('workspace');
               },
-              child: Text(strings.enterButton),
+              child: const Text('Entrar'),
             ),
           ],
         ),
@@ -242,16 +240,14 @@ class AuthScreen extends ConsumerWidget {
 }
 
 // Tela de página não encontrada
-class NotFoundScreen extends ConsumerWidget {
+class NotFoundScreen extends StatelessWidget {
   const NotFoundScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final strings = ref.watch(appStringsProvider);
-
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(strings.pageNotFound),
+        title: const Text('Página não encontrada'),
       ),
       body: Center(
         child: Column(
@@ -263,14 +259,14 @@ class NotFoundScreen extends ConsumerWidget {
               color: Colors.grey,
             ),
             const SizedBox(height: 16),
-            Text(
-              strings.pageNotFound,
-              style: const TextStyle(fontSize: 24),
+            const Text(
+              'Página não encontrada',
+              style: TextStyle(fontSize: 24),
             ),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () => context.goNamed('workspace'),
-              child: Text(strings.backToHome),
+              child: const Text('Voltar ao início'),
             ),
           ],
         ),

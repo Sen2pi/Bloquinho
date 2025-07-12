@@ -107,9 +107,20 @@ class AgendaState extends Equatable {
 // Notifier para gerenciar o estado
 class AgendaNotifier extends StateNotifier<AgendaState> {
   final AgendaService _agendaService;
+  String? _currentWorkspaceId;
+  bool _isInitialized = false;
 
   AgendaNotifier(this._agendaService) : super(const AgendaState()) {
     _loadInitialData();
+  }
+
+  /// Recarregar dados para novo workspace
+  Future<void> reloadForWorkspace(String workspaceId) async {
+    if (_currentWorkspaceId == workspaceId && _isInitialized) return;
+
+    _currentWorkspaceId = workspaceId;
+    debugPrint('🔄 AgendaNotifier: Recarregando para workspace $workspaceId');
+    await _loadInitialData();
   }
 
   Future<void> _loadInitialData() async {
@@ -133,6 +144,7 @@ class AgendaNotifier extends StateNotifier<AgendaState> {
         isLoading: false,
       );
 
+      _isInitialized = true;
       _applyFilters();
     } catch (e) {
       state = state.copyWith(

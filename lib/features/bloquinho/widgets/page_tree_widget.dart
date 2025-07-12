@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import '../models/page_model.dart';
 import '../providers/pages_provider.dart';
+import '../../../shared/providers/user_profile_provider.dart';
+import '../../../shared/providers/workspace_provider.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -32,7 +34,16 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
   }
 
   void _autoExpandPages() {
-    final pages = ref.read(pagesProvider);
+    final currentProfile = ref.read(currentProfileProvider);
+    final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+    List<PageModel> pages = [];
+    if (currentProfile != null && currentWorkspace != null) {
+      pages = ref.read(pagesProvider((
+        profileName: currentProfile.name,
+        workspaceName: currentWorkspace.name
+      )));
+    }
     final pagesWithChildren = pages
         .where((page) => pages.any((p) => p.parentId == page.id))
         .map((page) => page.id)
@@ -45,7 +56,9 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = ref.watch(pagesProvider);
+    final currentProfile = ref.watch(currentProfileProvider);
+    final currentWorkspace = ref.watch(currentWorkspaceProvider);
+    final pages = ref.watch(currentPagesProvider);
     String? currentPageId;
     final isDarkMode = ref.watch(isDarkModeProvider);
 
@@ -468,10 +481,13 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
             onPressed: () {
               final title = titleController.text.trim();
               if (title.isNotEmpty) {
-                ref.read(pagesProvider.notifier).createPage(
-                      title: title,
-                      parentId: parentId,
-                    );
+                final currentProfile = ref.read(currentProfileProvider);
+                final currentWorkspace = ref.read(currentWorkspaceProvider);
+                final notifier = ref.read(pagesProvider((
+                  profileName: currentProfile?.name,
+                  workspaceName: currentWorkspace?.name
+                )).notifier);
+                notifier.createPage(title: title, parentId: parentId);
                 Navigator.of(context).pop();
               }
             },
@@ -505,10 +521,13 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
             onPressed: () {
               final title = titleController.text.trim();
               if (title.isNotEmpty) {
-                ref.read(pagesProvider.notifier).updatePage(
-                      page.id,
-                      title: title,
-                    );
+                final currentProfile = ref.read(currentProfileProvider);
+                final currentWorkspace = ref.read(currentWorkspaceProvider);
+                final notifier = ref.read(pagesProvider((
+                  profileName: currentProfile?.name,
+                  workspaceName: currentWorkspace?.name
+                )).notifier);
+                notifier.updatePage(page.id, title: title);
                 Navigator.of(context).pop();
               }
             },
@@ -539,7 +558,13 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
           ),
           ElevatedButton(
             onPressed: () {
-              ref.read(pagesProvider.notifier).removePage(page.id);
+              final currentProfile = ref.read(currentProfileProvider);
+              final currentWorkspace = ref.read(currentWorkspaceProvider);
+              final notifier = ref.read(pagesProvider((
+                profileName: currentProfile?.name,
+                workspaceName: currentWorkspace?.name
+              )).notifier);
+              notifier.removePage(page.id);
               Navigator.of(context).pop();
             },
             style: ElevatedButton.styleFrom(
@@ -552,4 +577,13 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
       ),
     );
   }
+}
+
+ProviderListenable<List<PageModel>> _pagesProviderForContext(WidgetRef ref) {
+  final currentProfile = ref.watch(currentProfileProvider);
+  final currentWorkspace = ref.watch(currentWorkspaceProvider);
+  return pagesProvider((
+    profileName: currentProfile?.name,
+    workspaceName: currentWorkspace?.name
+  )) as ProviderListenable<List<PageModel>>;
 }

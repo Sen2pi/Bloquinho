@@ -12,7 +12,24 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
   String? _currentProfileName;
   String? _currentWorkspaceName;
 
-  PagesNotifier() : super([]);
+  PagesNotifier() : super([]) {
+    // Inicializar automaticamente
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await initialize();
+
+      // Carregar páginas do workspace atual se disponível
+      if (_currentProfileName != null && _currentWorkspaceName != null) {
+        await loadPagesFromWorkspace(
+            _currentProfileName, _currentWorkspaceName);
+      }
+    } catch (e) {
+      debugPrint('❌ Erro na inicialização do PagesNotifier: $e');
+    }
+  }
 
   /// Inicializar provider carregando páginas do armazenamento
   Future<void> initialize() async {
@@ -76,6 +93,12 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
   /// Recarregar páginas quando o workspace muda
   Future<void> reloadPages() async {
     await loadPagesFromWorkspace(_currentProfileName, _currentWorkspaceName);
+  }
+
+  /// Recarregar páginas quando o workspace muda
+  Future<void> reloadPagesForWorkspace(
+      String profileName, String workspaceName) async {
+    await loadPagesFromWorkspace(profileName, workspaceName);
   }
 
   PageModel? getById(String id) {
@@ -167,7 +190,7 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       }
 
       if (kDebugMode) {
-        print('✅ Página atualizada: $id');
+        print('✅ Página atualizada: $id (ícone: ${icon ?? 'mantido'})');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -372,20 +395,64 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
   }
 }
 
-final pagesProvider = StateNotifierProvider<PagesNotifier, List<PageModel>>(
-    (ref) => PagesNotifier());
+final pagesProvider = StateNotifierProvider.family<PagesNotifier,
+    List<PageModel>, ({String? profileName, String? workspaceName})>(
+  (ref, context) => PagesNotifier()
+    ..loadPagesFromWorkspace(context.profileName, context.workspaceName),
+);
+
+// Provider proxy para acessar o notifier
+final pagesNotifierProvider = Provider.family<PagesNotifier,
+    ({String? profileName, String? workspaceName})>(
+  (ref, context) => ref.read(pagesProvider(context).notifier),
+);
 
 // Provider para carregar páginas automaticamente quando o contexto muda
 final pagesLoaderProvider = Provider<void>((ref) {
   final currentProfile = ref.watch(currentProfileProvider);
   final currentWorkspace = ref.watch(currentWorkspaceProvider);
-  final pagesNotifier = ref.read(pagesProvider.notifier);
 
-  // Carregar páginas quando o contexto muda
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    pagesNotifier.loadPagesFromWorkspace(
-      currentProfile?.name,
-      currentWorkspace?.name,
-    );
-  });
+  if (currentProfile != null && currentWorkspace != null) {
+    final pagesNotifier = ref.read(pagesNotifierProvider((
+      profileName: currentProfile.name,
+      workspaceName: currentWorkspace.name
+    )));
+
+    // Carregar páginas quando o contexto muda
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      pagesNotifier.loadPagesFromWorkspace(
+        currentProfile.name,
+        currentWorkspace.name,
+      );
+    });
+  }
+});
+
+final currentPagesProvider = Provider<List<PageModel>>((ref) {
+  final currentProfile = ref.watch(currentProfileProvider);
+  final currentWorkspace = ref.watch(currentWorkspaceProvider);
+
+  if (currentProfile == null || currentWorkspace == null) {
+    return [];
+  }
+
+  return ref.watch(pagesProvider((
+    profileName: currentProfile.name,
+    workspaceName: currentWorkspace.name
+  )));
+});
+
+// Provider para acessar o notifier do contexto atual
+final currentPagesNotifierProvider = Provider<PagesNotifier?>((ref) {
+  final currentProfile = ref.watch(currentProfileProvider);
+  final currentWorkspace = ref.watch(currentWorkspaceProvider);
+
+  if (currentProfile == null || currentWorkspace == null) {
+    return null;
+  }
+
+  return ref.read(pagesNotifierProvider((
+    profileName: currentProfile.name,
+    workspaceName: currentWorkspace.name
+  )));
 });

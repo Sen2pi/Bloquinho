@@ -103,7 +103,10 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         return;
       }
 
-      final pages = ref.read(pagesProvider);
+      final pages = ref.read(pagesProvider((
+        profileName: currentProfile.name,
+        workspaceName: currentWorkspace.name
+      )));
       final page = pages.firstWhere(
         (p) => p.id == pageId,
         orElse: () => PageModel.create(title: 'Página não encontrada'),
@@ -138,13 +141,21 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     try {
       // Se não tem documentId, criar página raiz
       if (widget.documentId == null) {
-        final pagesNotifier = ref.read(pagesProvider.notifier);
-        final newPage = PageModel.create(
-          title: widget.documentTitle ?? 'Nova Página',
-        );
-        pagesNotifier.state = [...pagesNotifier.state, newPage];
-        _currentPageId = newPage.id;
-        _navigationStack = [newPage.id];
+        final currentProfile = ref.read(currentProfileProvider);
+        final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+        if (currentProfile != null && currentWorkspace != null) {
+          final pagesNotifier = ref.read(pagesNotifierProvider((
+            profileName: currentProfile.name,
+            workspaceName: currentWorkspace.name
+          )));
+          final newPage = PageModel.create(
+            title: widget.documentTitle ?? 'Nova Página',
+          );
+          pagesNotifier.state = [...pagesNotifier.state, newPage];
+          _currentPageId = newPage.id;
+          _navigationStack = [newPage.id];
+        }
       } else {
         _currentPageId = widget.documentId!;
         _navigationStack = [widget.documentId!];
@@ -183,13 +194,21 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   }
 
   void _createSubPage(String parentId) {
-    final pagesNotifier = ref.read(pagesProvider.notifier);
-    final newPage = PageModel.create(
-      title: 'Nova Subpágina',
-      parentId: parentId,
-    );
-    pagesNotifier.state = [...pagesNotifier.state, newPage];
-    _navigateToPage(newPage.id);
+    final currentProfile = ref.read(currentProfileProvider);
+    final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+    if (currentProfile != null && currentWorkspace != null) {
+      final pagesNotifier = ref.read(pagesNotifierProvider((
+        profileName: currentProfile.name,
+        workspaceName: currentWorkspace.name
+      )));
+      final newPage = PageModel.create(
+        title: 'Nova Subpágina',
+        parentId: parentId,
+      );
+      pagesNotifier.state = [...pagesNotifier.state, newPage];
+      _navigateToPage(newPage.id);
+    }
   }
 
   @override
@@ -197,23 +216,42 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     final isDarkMode = ref.watch(isDarkModeProvider);
     final editorState = ref.watch(editorControllerProvider);
     final currentWorkspace = ref.watch(currentWorkspaceProvider);
-    final pages = ref.watch(pagesProvider);
-    final currentPage = pages.firstWhere(
-      (p) => p.id == _currentPageId,
-      orElse: () => PageModel.create(title: 'Página não encontrada'),
-    );
+    final currentProfile = ref.watch(currentProfileProvider);
 
+    if (currentProfile != null && currentWorkspace != null) {
+      final pages = ref.watch(pagesProvider((
+        profileName: currentProfile.name,
+        workspaceName: currentWorkspace.name
+      )));
+      final currentPage = pages.firstWhere(
+        (p) => p.id == _currentPageId,
+        orElse: () => PageModel.create(title: 'Página não encontrada'),
+      );
+
+      return Theme(
+        data: isDarkMode ? ThemeData.dark() : ThemeData.light(),
+        child: Scaffold(
+          backgroundColor:
+              isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+          appBar: _isFullscreen
+              ? null
+              : _buildAppBar(isDarkMode, editorState, currentPage),
+          body: _buildBody(isDarkMode, editorState, currentPage),
+          floatingActionButton: _buildFloatingActionButton(editorState),
+          bottomNavigationBar: _buildBottomBar(isDarkMode, editorState),
+        ),
+      );
+    }
+
+    // Fallback quando não há contexto
     return Theme(
       data: isDarkMode ? ThemeData.dark() : ThemeData.light(),
       child: Scaffold(
         backgroundColor:
             isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
-        appBar: _isFullscreen
-            ? null
-            : _buildAppBar(isDarkMode, editorState, currentPage),
-        body: _buildBody(isDarkMode, editorState, currentPage),
-        floatingActionButton: _buildFloatingActionButton(editorState),
-        bottomNavigationBar: _buildBottomBar(isDarkMode, editorState),
+        appBar: AppBar(title: const Text('Erro: Contexto não disponível')),
+        body: const Center(
+            child: Text('Erro: Perfil ou workspace não disponível')),
       ),
     );
   }
@@ -263,7 +301,19 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
                         children: _navigationStack.asMap().entries.map((entry) {
                           final index = entry.key;
                           final pageId = entry.value;
-                          final pages = ref.read(pagesProvider.notifier).state;
+                          final currentProfile =
+                              ref.read(currentProfileProvider);
+                          final currentWorkspace =
+                              ref.read(currentWorkspaceProvider);
+
+                          List<PageModel> pages = [];
+                          if (currentProfile != null &&
+                              currentWorkspace != null) {
+                            pages = ref.read(pagesProvider((
+                              profileName: currentProfile.name,
+                              workspaceName: currentWorkspace.name
+                            )));
+                          }
                           PageModel? page;
                           try {
                             page = pages.firstWhere((p) => p.id == pageId);
@@ -479,10 +529,19 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
               return GestureDetector(
                 onTap: () {
-                  ref.read(pagesProvider.notifier).updatePage(
-                        page.id,
-                        icon: icon,
-                      );
+                  final currentProfile = ref.read(currentProfileProvider);
+                  final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+                  if (currentProfile != null && currentWorkspace != null) {
+                    final pagesNotifier = ref.read(pagesNotifierProvider((
+                      profileName: currentProfile.name,
+                      workspaceName: currentWorkspace.name
+                    )));
+                    pagesNotifier.updatePage(
+                      page.id,
+                      icon: icon,
+                    );
+                  }
                   Navigator.of(context).pop();
                 },
                 child: Container(
@@ -542,10 +601,19 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
           ElevatedButton(
             onPressed: () {
               if (titleController.text.trim().isNotEmpty) {
-                ref.read(pagesProvider.notifier).updatePage(
-                      page.id,
-                      title: titleController.text.trim(),
-                    );
+                final currentProfile = ref.read(currentProfileProvider);
+                final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+                if (currentProfile != null && currentWorkspace != null) {
+                  final pagesNotifier = ref.read(pagesNotifierProvider((
+                    profileName: currentProfile.name,
+                    workspaceName: currentWorkspace.name
+                  )));
+                  pagesNotifier.updatePage(
+                    page.id,
+                    title: titleController.text.trim(),
+                  );
+                }
                 Navigator.of(context).pop();
               }
             },
@@ -1238,7 +1306,16 @@ class _SubPagesBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pages = ref.watch(pagesProvider);
+    final currentProfile = ref.watch(currentProfileProvider);
+    final currentWorkspace = ref.watch(currentWorkspaceProvider);
+
+    List<PageModel> pages = [];
+    if (currentProfile != null && currentWorkspace != null) {
+      pages = ref.watch(pagesProvider((
+        profileName: currentProfile.name,
+        workspaceName: currentWorkspace.name
+      )));
+    }
     final subPages = pages.where((p) => p.parentId == parentPage.id).toList();
 
     return Container(

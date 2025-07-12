@@ -51,6 +51,7 @@ class AgendaItem extends Equatable {
   final DateTime? completedAt;
   final String? notes;
   final List<String> attachments;
+  final String? workspaceId;
 
   const AgendaItem({
     required this.id,
@@ -77,6 +78,7 @@ class AgendaItem extends Equatable {
     this.completedAt,
     this.notes,
     this.attachments = const [],
+    this.workspaceId,
   });
 
   factory AgendaItem.fromJson(Map<String, dynamic> json) =>
@@ -109,6 +111,7 @@ class AgendaItem extends Equatable {
     DateTime? completedAt,
     String? notes,
     List<String>? attachments,
+    String? workspaceId,
   }) {
     return AgendaItem(
       id: id ?? this.id,
@@ -135,6 +138,7 @@ class AgendaItem extends Equatable {
       completedAt: completedAt ?? this.completedAt,
       notes: notes ?? this.notes,
       attachments: attachments ?? this.attachments,
+      workspaceId: workspaceId ?? this.workspaceId,
     );
   }
 
@@ -164,6 +168,7 @@ class AgendaItem extends Equatable {
         completedAt,
         notes,
         attachments,
+        workspaceId,
       ];
 
   // Métodos de utilidade

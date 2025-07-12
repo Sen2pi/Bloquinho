@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
+import 'package:bloquinho/core/services/workspace_storage_service.dart';
 
 import '../models/password_entry.dart';
 
@@ -21,13 +23,17 @@ class PasswordService {
   late Box<dynamic> _foldersBox;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final Uuid _uuid = const Uuid();
+  final WorkspaceStorageService _workspaceStorage = WorkspaceStorageService();
 
   bool _isInitialized = false;
+  String? _currentWorkspaceId;
+  String? _currentProfileName;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
+      await _workspaceStorage.initialize();
       _passwordsBox = await Hive.openBox(_boxName);
       _foldersBox = await Hive.openBox(_foldersBoxName);
       _isInitialized = true;
@@ -35,6 +41,59 @@ class PasswordService {
       throw Exception('Erro ao inicializar PasswordService: $e');
     }
   }
+
+  /// Definir workspace atual
+  Future<void> setCurrentWorkspace(String workspaceId) async {
+    await _ensureInitialized();
+
+    if (_currentWorkspaceId != workspaceId) {
+      debugPrint('🔄 PasswordService: Workspace mudou para $workspaceId');
+      _currentWorkspaceId = workspaceId;
+
+      // Definir contexto no WorkspaceStorageService se temos perfil
+      if (_currentProfileName != null) {
+        await _workspaceStorage.setContext(_currentProfileName!, workspaceId);
+      }
+    }
+  }
+
+  /// Definir perfil atual
+  Future<void> setCurrentProfile(String profileName) async {
+    await _ensureInitialized();
+
+    if (_currentProfileName != profileName) {
+      debugPrint('🔄 PasswordService: Perfil mudou para $profileName');
+      _currentProfileName = profileName;
+
+      // Definir contexto no WorkspaceStorageService se temos workspace
+      if (_currentWorkspaceId != null) {
+        await _workspaceStorage.setContext(profileName, _currentWorkspaceId!);
+      }
+    }
+  }
+
+  /// Definir contexto completo (perfil + workspace)
+  Future<void> setContext(String profileName, String workspaceId) async {
+    await _ensureInitialized();
+
+    final previousContext = '$_currentProfileName/$_currentWorkspaceId';
+    final newContext = '$profileName/$workspaceId';
+
+    if (previousContext != newContext) {
+      debugPrint('🔄 PasswordService: Contexto mudou para $newContext');
+      _currentProfileName = profileName;
+      _currentWorkspaceId = workspaceId;
+
+      // Definir contexto no WorkspaceStorageService
+      await _workspaceStorage.setContext(profileName, workspaceId);
+    }
+  }
+
+  /// Obter workspace atual
+  String? get currentWorkspaceId => _currentWorkspaceId;
+
+  /// Obter perfil atual
+  String? get currentProfileName => _currentProfileName;
 
   // Geração de senhas seguras
   String generatePassword({
@@ -122,17 +181,42 @@ class PasswordService {
   // CRUD Operations
   Future<List<PasswordEntry>> getAllPasswords() async {
     await _ensureInitialized();
+
+    if (_currentWorkspaceId == null) {
+      debugPrint('⚠️ Nenhum workspace selecionado para passwords');
+      return [];
+    }
+
     final List<PasswordEntry> passwords = [];
 
-    for (final key in _passwordsBox.keys) {
-      final data = _passwordsBox.get(key);
-      if (data != null) {
+    // Carregar do workspace storage primeiro
+    final workspaceData =
+        await _workspaceStorage.loadWorkspaceData('passwords');
+    if (workspaceData != null) {
+      final passwordsData = workspaceData['passwords'] as List<dynamic>? ?? [];
+      for (final data in passwordsData) {
         try {
           final entry = PasswordEntry.fromJson(Map<String, dynamic>.from(data));
           passwords.add(entry);
         } catch (e) {
-          // Ignorar entradas corrompidas
+          debugPrint('⚠️ Erro ao carregar password do workspace: $e');
           continue;
+        }
+      }
+    }
+
+    // Fallback para Hive (migração)
+    if (passwords.isEmpty) {
+      for (final key in _passwordsBox.keys) {
+        final data = _passwordsBox.get(key);
+        if (data != null) {
+          try {
+            final entry =
+                PasswordEntry.fromJson(Map<String, dynamic>.from(data));
+            passwords.add(entry);
+          } catch (e) {
+            continue;
+          }
         }
       }
     }
@@ -142,15 +226,21 @@ class PasswordService {
 
   Future<PasswordEntry?> getPasswordById(String id) async {
     await _ensureInitialized();
-    final data = _passwordsBox.get(id);
-    if (data != null) {
-      return PasswordEntry.fromJson(Map<String, dynamic>.from(data));
+
+    final allPasswords = await getAllPasswords();
+    try {
+      return allPasswords.firstWhere((entry) => entry.id == id);
+    } catch (e) {
+      return null;
     }
-    return null;
   }
 
   Future<String> createPassword(PasswordEntry entry) async {
     await _ensureInitialized();
+
+    if (_currentWorkspaceId == null) {
+      throw Exception('Workspace não definido');
+    }
 
     final now = DateTime.now();
     final newEntry = entry.copyWith(
@@ -158,33 +248,91 @@ class PasswordService {
       createdAt: now,
       updatedAt: now,
       strength: validatePasswordStrength(entry.password),
+      workspaceId: _currentWorkspaceId, // Definir workspace
     );
 
+    // Salvar no workspace storage
+    final allPasswords = await getAllPasswords();
+    allPasswords.add(newEntry);
+    await _savePasswordsToWorkspace(allPasswords);
+
+    // Manter compatibilidade com Hive
     await _passwordsBox.put(newEntry.id, newEntry.toJson());
+
+    debugPrint(
+        '✅ Password criado no workspace $_currentWorkspaceId: ${newEntry.title}');
     return newEntry.id;
   }
 
   Future<void> updatePassword(PasswordEntry entry) async {
     await _ensureInitialized();
 
+    if (_currentWorkspaceId == null) {
+      throw Exception('Workspace não definido');
+    }
+
     final updatedEntry = entry.copyWith(
       updatedAt: DateTime.now(),
       strength: validatePasswordStrength(entry.password),
+      workspaceId: _currentWorkspaceId, // Garantir workspace
     );
 
+    // Atualizar no workspace storage
+    final allPasswords = await getAllPasswords();
+    final index = allPasswords.indexWhere((p) => p.id == entry.id);
+    if (index != -1) {
+      allPasswords[index] = updatedEntry;
+      await _savePasswordsToWorkspace(allPasswords);
+    }
+
+    // Manter compatibilidade com Hive
     await _passwordsBox.put(updatedEntry.id, updatedEntry.toJson());
+
+    debugPrint(
+        '✅ Password atualizado no workspace $_currentWorkspaceId: ${updatedEntry.title}');
   }
 
   Future<void> deletePassword(String id) async {
     await _ensureInitialized();
+
+    // Remover do workspace storage
+    final allPasswords = await getAllPasswords();
+    allPasswords.removeWhere((p) => p.id == id);
+    await _savePasswordsToWorkspace(allPasswords);
+
+    // Manter compatibilidade com Hive
     await _passwordsBox.delete(id);
+
+    debugPrint('🗑️ Password deletado do workspace $_currentWorkspaceId: $id');
   }
 
   Future<void> deleteMultiplePasswords(List<String> ids) async {
     await _ensureInitialized();
+
+    // Remover do workspace storage
+    final allPasswords = await getAllPasswords();
+    allPasswords.removeWhere((p) => ids.contains(p.id));
+    await _savePasswordsToWorkspace(allPasswords);
+
+    // Manter compatibilidade com Hive
     for (final id in ids) {
       await _passwordsBox.delete(id);
     }
+
+    debugPrint(
+        '🗑️ ${ids.length} passwords deletados do workspace $_currentWorkspaceId');
+  }
+
+  /// Salvar passwords no workspace storage
+  Future<void> _savePasswordsToWorkspace(List<PasswordEntry> passwords) async {
+    if (_currentWorkspaceId == null) return;
+
+    final data = {
+      'passwords': passwords.map((p) => p.toJson()).toList(),
+      'lastModified': DateTime.now().toIso8601String(),
+    };
+
+    await _workspaceStorage.saveWorkspaceData('passwords', data);
   }
 
   // Busca e filtros
@@ -205,6 +353,17 @@ class PasswordService {
   Future<List<PasswordEntry>> getPasswordsByCategory(String category) async {
     final allPasswords = await getAllPasswords();
     return allPasswords.where((entry) => entry.category == category).toList();
+  }
+
+  Future<List<PasswordEntry>> getPasswordsByStrength(
+      PasswordStrength strength) async {
+    final allPasswords = await getAllPasswords();
+    return allPasswords.where((entry) => entry.strength == strength).toList();
+  }
+
+  Future<List<PasswordEntry>> getPasswordsByTag(String tag) async {
+    final allPasswords = await getAllPasswords();
+    return allPasswords.where((entry) => entry.tags.contains(tag)).toList();
   }
 
   Future<List<PasswordEntry>> getPasswordsByFolder(String folderId) async {
@@ -240,30 +399,48 @@ class PasswordService {
   Future<Map<String, dynamic>> getPasswordStats() async {
     final allPasswords = await getAllPasswords();
 
-    final total = allPasswords.length;
-    final favorites = allPasswords.where((p) => p.isFavorite).length;
-    final expired = allPasswords.where((p) => p.isExpired).length;
-    final expiringSoon = allPasswords.where((p) => p.isExpiringSoon).length;
-    final weak = allPasswords
-        .where((p) =>
-            p.strength == PasswordStrength.veryWeak ||
-            p.strength == PasswordStrength.weak)
-        .length;
+    final stats = <String, dynamic>{
+      'total': allPasswords.length,
+      'byStrength': <String, int>{},
+      'byCategory': <String, int>{},
+      'weakPasswords': 0,
+      'reusedPasswords': 0,
+      'oldPasswords': 0,
+    };
 
-    final categories = <String, int>{};
+    final passwordHashes = <String, int>{};
+    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+
     for (final entry in allPasswords) {
+      // Contar por força
+      final strengthName = entry.strength.name;
+      stats['byStrength'][strengthName] =
+          (stats['byStrength'][strengthName] ?? 0) + 1;
+
+      // Contar por categoria
       final category = entry.category ?? 'Sem categoria';
-      categories[category] = (categories[category] ?? 0) + 1;
+      stats['byCategory'][category] = (stats['byCategory'][category] ?? 0) + 1;
+
+      // Senhas fracas
+      if (entry.strength == PasswordStrength.veryWeak ||
+          entry.strength == PasswordStrength.weak) {
+        stats['weakPasswords']++;
+      }
+
+      // Senhas reutilizadas
+      final hash = entry.password.hashCode.toString();
+      passwordHashes[hash] = (passwordHashes[hash] ?? 0) + 1;
+      if (passwordHashes[hash]! > 1) {
+        stats['reusedPasswords']++;
+      }
+
+      // Senhas antigas
+      if (entry.updatedAt.isBefore(thirtyDaysAgo)) {
+        stats['oldPasswords']++;
+      }
     }
 
-    return {
-      'total': total,
-      'favorites': favorites,
-      'expired': expired,
-      'expiringSoon': expiringSoon,
-      'weak': weak,
-      'categories': categories,
-    };
+    return stats;
   }
 
   // Gestão de pastas

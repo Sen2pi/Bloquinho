@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../shared/providers/theme_provider.dart';
-import '../../../shared/providers/language_provider.dart';
 import '../providers/documentos_provider.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/l10n/app_strings.dart';
 import '../widgets/cartao_credito_list_widget.dart';
 import '../widgets/cartao_fidelizacao_list_widget.dart';
 import '../widgets/documento_identificacao_list_widget.dart';
@@ -47,7 +45,6 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
     final isDarkMode = ref.watch(isDarkModeProvider);
     final documentosState = ref.watch(documentosProvider);
     final stats = ref.watch(documentosStatsProvider);
-    final strings = ref.watch(appStringsProvider);
 
     return Scaffold(
       backgroundColor:
@@ -58,7 +55,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
           _buildHeader(isDarkMode, stats),
 
           // Tabs
-          _buildTabs(isDarkMode, strings),
+          _buildTabs(isDarkMode),
 
           // Content
           Expanded(
@@ -239,7 +236,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
     );
   }
 
-  Widget _buildTabs(bool isDarkMode, AppStrings strings) {
+  Widget _buildTabs(bool isDarkMode) {
     return Container(
       decoration: BoxDecoration(
         color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
@@ -261,7 +258,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
               children: [
                 Icon(PhosphorIcons.creditCard(), size: 16),
                 const SizedBox(width: 8),
-                Text(strings.creditDebit),
+                const Text('Crédito/Débito'),
               ],
             ),
           ),
@@ -271,7 +268,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
               children: [
                 Icon(PhosphorIcons.star(), size: 16),
                 const SizedBox(width: 8),
-                Text(strings.loyalty),
+                const Text('Fidelização'),
               ],
             ),
           ),
@@ -281,7 +278,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
               children: [
                 Icon(PhosphorIcons.identificationCard(), size: 16),
                 const SizedBox(width: 8),
-                Text(strings.identification),
+                const Text('Identificação'),
               ],
             ),
           ),
@@ -316,72 +313,63 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
   void _showAddCartaoCreditoDialog() {
     // TODO: Implementar diálogo de adicionar cartão de crédito
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(ref.read(appStringsProvider).featureInDevelopment)),
+      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
     );
   }
 
   void _showEditCartaoCreditoDialog(dynamic cartao) {
     // TODO: Implementar diálogo de editar cartão de crédito
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(ref.read(appStringsProvider).featureInDevelopment)),
+      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
     );
   }
 
   void _showDeleteCartaoCreditoDialog(String id) {
     // TODO: Implementar diálogo de deletar cartão de crédito
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(ref.read(appStringsProvider).featureInDevelopment)),
+      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
     );
   }
 
   void _showAddCartaoFidelizacaoDialog() {
     // TODO: Implementar diálogo de adicionar cartão de fidelização
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(ref.read(appStringsProvider).featureInDevelopment)),
+      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
     );
   }
 
   void _showEditCartaoFidelizacaoDialog(dynamic cartao) {
     // TODO: Implementar diálogo de editar cartão de fidelização
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(ref.read(appStringsProvider).featureInDevelopment)),
+      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
     );
   }
 
   void _showDeleteCartaoFidelizacaoDialog(String id) {
     // TODO: Implementar diálogo de deletar cartão de fidelização
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(ref.read(appStringsProvider).featureInDevelopment)),
+      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
     );
   }
 
   void _showAddDocumentoIdentificacaoDialog() {
     // TODO: Implementar diálogo de adicionar documento de identificação
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(ref.read(appStringsProvider).featureInDevelopment)),
+      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
     );
   }
 
   void _showEditDocumentoIdentificacaoDialog(dynamic documento) {
     // TODO: Implementar diálogo de editar documento de identificação
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(ref.read(appStringsProvider).featureInDevelopment)),
+      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
     );
   }
 
   void _showDeleteDocumentoIdentificacaoDialog(String id) {
     // TODO: Implementar diálogo de deletar documento de identificação
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(ref.read(appStringsProvider).featureInDevelopment)),
+      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
     );
   }
 }
