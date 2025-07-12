@@ -20,7 +20,6 @@ class ClipboardParserService {
       final content = data.text!.trim();
       return _analyzeAndConvert(content);
     } catch (e) {
-      debugPrint('❌ Erro ao acessar clipboard: $e');
       return ClipboardParseResult.error('Erro ao acessar clipboard: $e');
     }
   }
@@ -79,7 +78,6 @@ class ClipboardParserService {
         detectedType: contentType,
       );
     } catch (e) {
-      debugPrint('❌ Erro ao analisar conteúdo: $e');
       return ClipboardParseResult.error('Erro ao processar conteúdo: $e');
     }
   }

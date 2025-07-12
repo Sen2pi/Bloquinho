@@ -201,10 +201,7 @@ class BloquinhoFileService {
       if (await oldMetadataFile.exists()) {
         await oldMetadataFile.rename(newMetadataFile.path);
       }
-
-      debugPrint('✅ Página renomeada: $oldTitle -> $newTitle');
     } catch (e) {
-      debugPrint('❌ Erro ao renomear página: $e');
       throw Exception('Erro ao renomear página: $e');
     }
   }
@@ -231,10 +228,8 @@ class BloquinhoFileService {
 
       if (await pageDir.exists()) {
         await pageDir.delete(recursive: true);
-        debugPrint('✅ Página deletada: $pagePath');
       }
     } catch (e) {
-      debugPrint('❌ Erro ao deletar página: $e');
       throw Exception('Erro ao deletar página: $e');
     }
   }
@@ -263,9 +258,8 @@ class BloquinhoFileService {
           parentPageTitle: parentPageTitle,
           metadata: metadata,
         );
-        debugPrint('💾 Auto-save realizado para: $pageTitle');
       } catch (e) {
-        debugPrint('❌ Erro no auto-save: $e');
+        // Erro no auto-save
       }
     });
   }
@@ -293,7 +287,6 @@ class BloquinhoFileService {
 
       return bloquinhoDir;
     } catch (e) {
-      debugPrint('❌ Erro ao obter diretório do Bloquinho: $e');
       return null;
     }
   }
@@ -347,7 +340,7 @@ class BloquinhoFileService {
         await _scanPagesRecursively(dir, pages, dirName);
       }
     } catch (e) {
-      debugPrint('❌ Erro ao escanear páginas: $e');
+      // Erro ao escanear páginas
     }
   }
 

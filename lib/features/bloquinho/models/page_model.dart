@@ -75,9 +75,6 @@ class PageModel {
 
   /// Converter para Map
   Map<String, dynamic> toMap() {
-    debugPrint('🔍 DEBUG: PageModel.toMap:');
-    debugPrint('  - Ícone sendo serializado: "$icon"');
-
     return {
       'id': id,
       'title': title,
@@ -95,10 +92,6 @@ class PageModel {
   factory PageModel.fromMap(Map<String, dynamic> map) {
     final rawIcon = map['icon'];
     final validIcon = PageIcons.getValidIcon(rawIcon);
-
-    debugPrint('🔍 DEBUG: PageModel.fromMap:');
-    debugPrint('  - Ícone bruto do map: "$rawIcon"');
-    debugPrint('  - Ícone após validação: "$validIcon"');
 
     return PageModel(
       id: map['id'] ?? '',

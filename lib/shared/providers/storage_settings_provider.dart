@@ -39,7 +39,7 @@ class StorageSettingsNotifier extends StateNotifier<StorageSettings> {
       _box = await Hive.openBox<String>(_boxName);
       await _loadSettings();
     } catch (e) {
-      print('Erro ao inicializar configurações de storage: $e');
+      // Erro ao inicializar configurações de storage: $e
       // Se falhar a inicialização, manter configurações padrão
     }
   }
@@ -54,7 +54,7 @@ class StorageSettingsNotifier extends StateNotifier<StorageSettings> {
         _initializeService(settings.provider);
       }
     } catch (e) {
-      print('Erro ao carregar configurações: $e');
+      // Erro ao carregar configurações: $e
     }
   }
 
@@ -63,7 +63,7 @@ class StorageSettingsNotifier extends StateNotifier<StorageSettings> {
     try {
       await _box?.put(_settingsKey, state.toJsonString());
     } catch (e) {
-      print('Erro ao salvar configurações: $e');
+      // Erro ao salvar configurações: $e
     }
   }
 

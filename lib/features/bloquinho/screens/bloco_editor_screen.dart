@@ -90,7 +90,6 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
       return page?.content ?? '';
     } catch (e) {
-      debugPrint('❌ Erro ao carregar conteúdo da página: $e');
       return '';
     }
   }
@@ -123,10 +122,8 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
       await bloquinhoStorage.savePage(
           updatedPage, currentProfile.name, currentWorkspace.name);
-
-      debugPrint('✅ Conteúdo da página salvo: $pageId');
     } catch (e) {
-      debugPrint('❌ Erro ao salvar conteúdo da página: $e');
+      // Erro ao salvar
     }
   }
 
@@ -489,11 +486,6 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
               return GestureDetector(
                 onTap: () {
-                  debugPrint('🔍 DEBUG: Usuário selecionou ícone no selector:');
-                  debugPrint('  - Ícone selecionado: "$icon"');
-                  debugPrint('  - Página ID: "${page.id}"');
-                  debugPrint('  - Página título: "${page.title}"');
-
                   final currentProfile = ref.read(currentProfileProvider);
                   final currentWorkspace = ref.read(currentWorkspaceProvider);
 

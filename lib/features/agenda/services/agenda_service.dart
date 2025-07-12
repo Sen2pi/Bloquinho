@@ -40,7 +40,6 @@ class AgendaService {
     await _ensureInitialized();
 
     if (_currentWorkspaceId != workspaceId) {
-      debugPrint('🔄 AgendaService: Workspace mudou para $workspaceId');
       _currentWorkspaceId = workspaceId;
     }
   }
@@ -53,7 +52,6 @@ class AgendaService {
     await _ensureInitialized();
 
     if (_currentWorkspaceId == null) {
-      debugPrint('⚠️ Nenhum workspace selecionado para agenda');
       return [];
     }
 
@@ -68,7 +66,6 @@ class AgendaService {
           final item = AgendaItem.fromJson(Map<String, dynamic>.from(data));
           items.add(item);
         } catch (e) {
-          debugPrint('⚠️ Erro ao carregar item da agenda do workspace: $e');
           continue;
         }
       }
@@ -128,8 +125,6 @@ class AgendaService {
     // Manter compatibilidade com Hive
     await _agendaBox.put(newItem.id, newItem.toJson());
 
-    debugPrint(
-        '✅ Item da agenda criado no workspace $_currentWorkspaceId: ${newItem.title}');
     return newItem.id;
   }
 
@@ -155,9 +150,6 @@ class AgendaService {
 
     // Manter compatibilidade com Hive
     await _agendaBox.put(updatedItem.id, updatedItem.toJson());
-
-    debugPrint(
-        '✅ Item da agenda atualizado no workspace $_currentWorkspaceId: ${updatedItem.title}');
   }
 
   Future<void> deleteItem(String id) async {
@@ -170,9 +162,6 @@ class AgendaService {
 
     // Manter compatibilidade com Hive
     await _agendaBox.delete(id);
-
-    debugPrint(
-        '🗑️ Item da agenda deletado do workspace $_currentWorkspaceId: $id');
   }
 
   /// Salvar itens no workspace storage

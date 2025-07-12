@@ -1064,8 +1064,6 @@ class OAuth2Service {
 
   /// Debug: Verificar tokens salvos no armazenamento
   static Future<void> _debugSavedTokens() async {
-    debugPrint('🔍 DEBUG: Verificando tokens salvos...');
-
     try {
       // Verificar Google tokens
       final googleAccess = await _storage.read(key: 'google_access_token');
@@ -1095,7 +1093,5 @@ class OAuth2Service {
     } catch (e) {
       debugPrint('❌ Erro ao debugar tokens: $e');
     }
-
-    debugPrint('🔍 DEBUG: Fim da verificação de tokens');
   }
 }

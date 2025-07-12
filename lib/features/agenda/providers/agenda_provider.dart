@@ -119,7 +119,6 @@ class AgendaNotifier extends StateNotifier<AgendaState> {
     if (_currentWorkspaceId == workspaceId && _isInitialized) return;
 
     _currentWorkspaceId = workspaceId;
-    debugPrint('🔄 AgendaNotifier: Recarregando para workspace $workspaceId');
     await _loadInitialData();
   }
 
@@ -402,7 +401,7 @@ class AgendaNotifier extends StateNotifier<AgendaState> {
       // Salvar na base de dados
       await databaseService.updateTable(updatedTable);
     } catch (e) {
-      debugPrint('Erro ao atualizar status na base de dados: $e');
+      // Erro ao atualizar status na base de dados
     }
   }
 

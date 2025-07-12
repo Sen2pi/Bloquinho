@@ -366,7 +366,6 @@ class _BlocoToolbarState extends ConsumerState<BlocoToolbar> {
 
   void _insertLink() {
     // TODO: Implementar inserção de link
-    debugPrint('Inserir link');
   }
 
   // Inserção de blocos
@@ -454,17 +453,14 @@ class _BlocoToolbarState extends ConsumerState<BlocoToolbar> {
 
   void _insertTable() {
     // TODO: Implementar inserção de tabela
-    debugPrint('Inserir tabela');
   }
 
   void _insertImage() {
     // TODO: Implementar inserção de imagem
-    debugPrint('Inserir imagem');
   }
 
   void _insertCodeBlock() {
     // TODO: Implementar inserção de bloco de código
-    debugPrint('Inserir bloco de código');
   }
 
   void _showInsertMenuAction() {
@@ -483,33 +479,27 @@ class _BlocoToolbarState extends ConsumerState<BlocoToolbar> {
   // Ações de bloco
   void _moveBlockUp() {
     // TODO: Implementar mover bloco para cima
-    debugPrint('Mover bloco para cima');
   }
 
   void _moveBlockDown() {
     // TODO: Implementar mover bloco para baixo
-    debugPrint('Mover bloco para baixo');
   }
 
   void _duplicateBlock() {
     // TODO: Implementar duplicar bloco
-    debugPrint('Duplicar bloco');
   }
 
   void _deleteBlock() {
     // TODO: Implementar excluir bloco
-    debugPrint('Excluir bloco');
   }
 
   // Ações extras
   void _searchContent() {
     // TODO: Implementar busca
-    debugPrint('Buscar conteúdo');
   }
 
   void _togglePreview() {
     // TODO: Implementar alternar preview
-    debugPrint('Alternar preview');
   }
 
   void _showMoreOptionsAction() {
@@ -550,7 +540,6 @@ class _BlocoToolbarState extends ConsumerState<BlocoToolbar> {
       ],
     ).then((value) {
       // TODO: Implementar ações do menu
-      debugPrint('Ação selecionada: $value');
     });
   }
 }
@@ -914,17 +903,17 @@ extension BlocoToolbarExtension on WidgetRef {
       ToolbarAction(
         icon: PhosphorIcons.textB(),
         tooltip: 'Negrito',
-        onPressed: () => debugPrint('Toggle Bold'),
+        onPressed: () {},
       ),
       ToolbarAction(
         icon: PhosphorIcons.textItalic(),
         tooltip: 'Itálico',
-        onPressed: () => debugPrint('Toggle Italic'),
+        onPressed: () {},
       ),
       ToolbarAction(
         icon: PhosphorIcons.link(),
         tooltip: 'Link',
-        onPressed: () => debugPrint('Insert Link'),
+        onPressed: () {},
       ),
     ];
   }

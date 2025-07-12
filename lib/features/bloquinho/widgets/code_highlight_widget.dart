@@ -625,7 +625,6 @@ class CodeImageExporter {
       final picture = recorder.endRecording();
       return await picture.toImage(width.toInt(), height.toInt());
     } catch (e) {
-      debugPrint('Erro ao exportar código como imagem: $e');
       return null;
     }
   }

@@ -798,7 +798,6 @@ a:hover {
               {'blocos': []});
           return jsonToBlocos(json);
         } catch (e) {
-          debugPrint('Erro ao converter JSON: $e');
           return [BlocoTexto(id: _uuid.v4(), conteudo: conteudo)];
         }
 
