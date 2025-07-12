@@ -32,6 +32,7 @@ class CartaoCredito {
   final String? observacoes;
   final DateTime criadoEm;
   final DateTime atualizadoEm;
+  final String? imagemPath;
 
   CartaoCredito({
     String? id,
@@ -49,6 +50,7 @@ class CartaoCredito {
     this.observacoes,
     DateTime? criadoEm,
     DateTime? atualizadoEm,
+    this.imagemPath,
   })  : id = id ?? const Uuid().v4(),
         criadoEm = criadoEm ?? DateTime.now(),
         atualizadoEm = atualizadoEm ?? DateTime.now();
@@ -163,6 +165,7 @@ class CartaoCredito {
     String? observacoes,
     DateTime? criadoEm,
     DateTime? atualizadoEm,
+    String? imagemPath,
   }) {
     return CartaoCredito(
       id: id ?? this.id,
@@ -180,6 +183,7 @@ class CartaoCredito {
       observacoes: observacoes ?? this.observacoes,
       criadoEm: criadoEm ?? this.criadoEm,
       atualizadoEm: atualizadoEm ?? DateTime.now(),
+      imagemPath: imagemPath ?? this.imagemPath,
     );
   }
 
@@ -200,6 +204,7 @@ class CartaoCredito {
       'observacoes': observacoes,
       'criadoEm': criadoEm.toIso8601String(),
       'atualizadoEm': atualizadoEm.toIso8601String(),
+      'imagemPath': imagemPath,
     };
   }
 
@@ -221,6 +226,7 @@ class CartaoCredito {
       observacoes: json['observacoes'] as String?,
       criadoEm: DateTime.parse(json['criadoEm'] as String),
       atualizadoEm: DateTime.parse(json['atualizadoEm'] as String),
+      imagemPath: json['imagemPath'] as String?,
     );
   }
 }

@@ -27,6 +27,7 @@ class CartaoFidelizacao {
   final String? observacoes;
   final DateTime criadoEm;
   final DateTime atualizadoEm;
+  final String? imagemPath;
 
   CartaoFidelizacao({
     String? id,
@@ -46,6 +47,7 @@ class CartaoFidelizacao {
     this.observacoes,
     DateTime? criadoEm,
     DateTime? atualizadoEm,
+    this.imagemPath,
   })  : id = id ?? const Uuid().v4(),
         criadoEm = criadoEm ?? DateTime.now(),
         atualizadoEm = atualizadoEm ?? DateTime.now();
@@ -156,6 +158,7 @@ class CartaoFidelizacao {
     String? observacoes,
     DateTime? criadoEm,
     DateTime? atualizadoEm,
+    String? imagemPath,
   }) {
     return CartaoFidelizacao(
       id: id ?? this.id,
@@ -175,6 +178,7 @@ class CartaoFidelizacao {
       observacoes: observacoes ?? this.observacoes,
       criadoEm: criadoEm ?? this.criadoEm,
       atualizadoEm: atualizadoEm ?? DateTime.now(),
+      imagemPath: imagemPath ?? this.imagemPath,
     );
   }
 
@@ -195,6 +199,7 @@ class CartaoFidelizacao {
       'email': email,
       'ativo': ativo,
       'observacoes': observacoes,
+      'imagemPath': imagemPath,
       'criadoEm': criadoEm.toIso8601String(),
       'atualizadoEm': atualizadoEm.toIso8601String(),
     };
@@ -219,6 +224,7 @@ class CartaoFidelizacao {
       observacoes: json['observacoes'] as String?,
       criadoEm: DateTime.parse(json['criadoEm'] as String),
       atualizadoEm: DateTime.parse(json['atualizadoEm'] as String),
+      imagemPath: json['imagemPath'] as String?,
     );
   }
 }
