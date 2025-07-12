@@ -147,7 +147,7 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
       color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
       child: ListView.builder(
         shrinkWrap: true,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 6), // Reduzido de 8
         itemCount: rootPages.length,
         itemBuilder: (context, index) {
           final rootPage = rootPages[index];
@@ -282,12 +282,12 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
         // Page item
         Container(
           margin: EdgeInsets.only(
-            left: 12.0 + depth * 18.0, // recuo maior para subníveis
-            top: 2,
-            bottom: 2,
+            left: 8.0 + depth * 16.0, // Reduzido de 12.0 + depth * 18.0
+            top: 1, // Reduzido de 2
+            bottom: 1, // Reduzido de 2
           ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(4), // Reduzido de 6
             color: isSelected
                 ? AppColors.primary.withOpacity(0.13)
                 : Colors.transparent,
@@ -299,7 +299,7 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
             dense: true,
             minLeadingWidth: 0,
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 4,
+              horizontal: 3, // Reduzido de 4
               vertical: 0,
             ),
             leading: Row(
@@ -313,20 +313,21 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
                       isExpanded
                           ? PhosphorIcons.caretDown()
                           : PhosphorIcons.caretRight(),
-                      size: 16,
+                      size: 14, // Reduzido de 16 para 14
                     ),
                     constraints: const BoxConstraints(
-                      minWidth: 24,
-                      minHeight: 24,
+                      minWidth: 20, // Reduzido de 24 para 20
+                      minHeight: 20, // Reduzido de 24 para 20
                     ),
                   )
                 else
-                  const SizedBox(width: 24),
+                  const SizedBox(width: 20), // Reduzido de 24 para 20
 
                 // Emoji do usuário
                 Text(
                   page.icon ?? '📄',
-                  style: const TextStyle(fontSize: 18),
+                  style:
+                      const TextStyle(fontSize: 14), // Reduzido de 18 para 14
                 ),
               ],
             ),
@@ -339,7 +340,7 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
                   style: TextStyle(
                     fontWeight:
                         isSelected ? FontWeight.w600 : FontWeight.normal,
-                    fontSize: 15,
+                    fontSize: 13, // Reduzido de 15 para 13
                     color: Colors.blue,
                     decoration: TextDecoration.underline,
                   ),
@@ -372,7 +373,7 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
       onSelected: (action) => _handlePageAction(action, page),
       icon: Icon(
         PhosphorIcons.dotsThreeVertical(),
-        size: 14,
+        size: 12, // Reduzido de 14 para 12
         color: Colors.grey[400],
       ),
       itemBuilder: (context) => [
@@ -380,7 +381,7 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
           value: 'edit',
           child: Row(
             children: [
-              Icon(PhosphorIcons.pencil(), size: 16),
+              Icon(PhosphorIcons.pencil(), size: 14), // Reduzido de 16 para 14
               const SizedBox(width: 8),
               const Text('Editar'),
             ],
@@ -390,7 +391,7 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
           value: 'add_child',
           child: Row(
             children: [
-              Icon(PhosphorIcons.plus(), size: 16),
+              Icon(PhosphorIcons.plus(), size: 14), // Reduzido de 16 para 14
               const SizedBox(width: 8),
               const Text('Adicionar subpágina'),
             ],
@@ -400,7 +401,8 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
           value: 'move',
           child: Row(
             children: [
-              Icon(PhosphorIcons.arrowsOut(), size: 16),
+              Icon(PhosphorIcons.arrowsOut(),
+                  size: 14), // Reduzido de 16 para 14
               const SizedBox(width: 8),
               const Text('Mover'),
             ],
@@ -410,7 +412,8 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
           value: 'delete',
           child: Row(
             children: [
-              Icon(PhosphorIcons.trash(), size: 16, color: Colors.red),
+              Icon(PhosphorIcons.trash(),
+                  size: 14, color: Colors.red), // Reduzido de 16 para 14
               const SizedBox(width: 8),
               const Text('Excluir', style: TextStyle(color: Colors.red)),
             ],
