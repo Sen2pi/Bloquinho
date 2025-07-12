@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:bloquinho/core/services/data_directory_service.dart';
 
 class ThemeNotifier extends StateNotifier<ThemeMode> {
   static const String _themeKey = 'theme_mode';
@@ -13,7 +14,9 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
   Future<void> _initHive() async {
     try {
       // Hive já foi inicializado globalmente
-      _box = await Hive.openBox('app_settings');
+      final dataDir = await DataDirectoryService().initialize();
+      final dbPath = await DataDirectoryService().getBasePath();
+      _box = await Hive.openBox('app_settings', path: dbPath);
 
       // Carregar tema salvo
       final savedTheme = _box!.get(_themeKey, defaultValue: 'light');
@@ -33,11 +36,15 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
   Future<void> _ensureBoxIsOpen() async {
     if (_box == null || !_box!.isOpen) {
       try {
-        _box = await Hive.openBox('app_settings');
+        final dataDir = await DataDirectoryService().initialize();
+        final dbPath = await DataDirectoryService().getBasePath();
+        _box = await Hive.openBox('app_settings', path: dbPath);
       } catch (e) {
         // Se não conseguir abrir o box, criar um novo
-        await Hive.deleteBoxFromDisk('app_settings');
-        _box = await Hive.openBox('app_settings');
+        final dataDir = await DataDirectoryService().initialize();
+        final dbPath = await DataDirectoryService().getBasePath();
+        await Hive.deleteBoxFromDisk('app_settings', path: dbPath);
+        _box = await Hive.openBox('app_settings', path: dbPath);
       }
     }
   }

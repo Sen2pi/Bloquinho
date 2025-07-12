@@ -3,9 +3,10 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:hive/hive.dart';
+
 import 'package:uuid/uuid.dart';
 import 'package:bloquinho/core/services/workspace_storage_service.dart';
+import 'package:bloquinho/core/services/data_directory_service.dart';
 
 import '../models/password_entry.dart';
 
@@ -19,8 +20,6 @@ class PasswordService {
   factory PasswordService() => _instance;
   PasswordService._internal();
 
-  late Box<dynamic> _passwordsBox;
-  late Box<dynamic> _foldersBox;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final Uuid _uuid = const Uuid();
   final WorkspaceStorageService _workspaceStorage = WorkspaceStorageService();
@@ -34,8 +33,6 @@ class PasswordService {
 
     try {
       await _workspaceStorage.initialize();
-      _passwordsBox = await Hive.openBox(_boxName);
-      _foldersBox = await Hive.openBox(_foldersBoxName);
       _isInitialized = true;
     } catch (e) {
       throw Exception('Erro ao inicializar PasswordService: $e');
@@ -200,22 +197,6 @@ class PasswordService {
       }
     }
 
-    // Fallback para Hive (migração)
-    if (passwords.isEmpty) {
-      for (final key in _passwordsBox.keys) {
-        final data = _passwordsBox.get(key);
-        if (data != null) {
-          try {
-            final entry =
-                PasswordEntry.fromJson(Map<String, dynamic>.from(data));
-            passwords.add(entry);
-          } catch (e) {
-            continue;
-          }
-        }
-      }
-    }
-
     return passwords..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
   }
 
@@ -251,9 +232,6 @@ class PasswordService {
     allPasswords.add(newEntry);
     await _savePasswordsToWorkspace(allPasswords);
 
-    // Manter compatibilidade com Hive
-    await _passwordsBox.put(newEntry.id, newEntry.toJson());
-
     return newEntry.id;
   }
 
@@ -277,9 +255,6 @@ class PasswordService {
       allPasswords[index] = updatedEntry;
       await _savePasswordsToWorkspace(allPasswords);
     }
-
-    // Manter compatibilidade com Hive
-    await _passwordsBox.put(updatedEntry.id, updatedEntry.toJson());
   }
 
   Future<void> deletePassword(String id) async {
@@ -289,9 +264,6 @@ class PasswordService {
     final allPasswords = await getAllPasswords();
     allPasswords.removeWhere((p) => p.id == id);
     await _savePasswordsToWorkspace(allPasswords);
-
-    // Manter compatibilidade com Hive
-    await _passwordsBox.delete(id);
   }
 
   Future<void> deleteMultiplePasswords(List<String> ids) async {
@@ -301,11 +273,6 @@ class PasswordService {
     final allPasswords = await getAllPasswords();
     allPasswords.removeWhere((p) => ids.contains(p.id));
     await _savePasswordsToWorkspace(allPasswords);
-
-    // Manter compatibilidade com Hive
-    for (final id in ids) {
-      await _passwordsBox.delete(id);
-    }
   }
 
   /// Salvar passwords no workspace storage
@@ -314,6 +281,18 @@ class PasswordService {
 
     final data = {
       'passwords': passwords.map((p) => p.toJson()).toList(),
+      'lastModified': DateTime.now().toIso8601String(),
+    };
+
+    await _workspaceStorage.saveWorkspaceData('passwords', data);
+  }
+
+  /// Salvar folders no workspace storage
+  Future<void> _saveFoldersToWorkspace(List<PasswordFolder> folders) async {
+    if (_currentWorkspaceId == null) return;
+
+    final data = {
+      'folders': folders.map((f) => f.toJson()).toList(),
       'lastModified': DateTime.now().toIso8601String(),
     };
 
@@ -433,9 +412,11 @@ class PasswordService {
     await _ensureInitialized();
     final List<PasswordFolder> folders = [];
 
-    for (final key in _foldersBox.keys) {
-      final data = _foldersBox.get(key);
-      if (data != null) {
+    final workspaceData =
+        await _workspaceStorage.loadWorkspaceData('passwords');
+    if (workspaceData != null) {
+      final foldersData = workspaceData['folders'] as List<dynamic>? ?? [];
+      for (final data in foldersData) {
         try {
           final folder =
               PasswordFolder.fromJson(Map<String, dynamic>.from(data));
@@ -459,7 +440,10 @@ class PasswordService {
       updatedAt: now,
     );
 
-    await _foldersBox.put(newFolder.id, newFolder.toJson());
+    final allFolders = await getAllFolders();
+    allFolders.add(newFolder);
+    await _saveFoldersToWorkspace(allFolders);
+
     return newFolder.id;
   }
 
@@ -467,7 +451,12 @@ class PasswordService {
     await _ensureInitialized();
 
     final updatedFolder = folder.copyWith(updatedAt: DateTime.now());
-    await _foldersBox.put(updatedFolder.id, updatedFolder.toJson());
+    final allFolders = await getAllFolders();
+    final index = allFolders.indexWhere((f) => f.id == folder.id);
+    if (index != -1) {
+      allFolders[index] = updatedFolder;
+      await _saveFoldersToWorkspace(allFolders);
+    }
   }
 
   Future<void> deleteFolder(String folderId) async {
@@ -479,7 +468,9 @@ class PasswordService {
       await updatePassword(password.copyWith(folderId: null));
     }
 
-    await _foldersBox.delete(folderId);
+    final allFolders = await getAllFolders();
+    allFolders.removeWhere((f) => f.id == folderId);
+    await _saveFoldersToWorkspace(allFolders);
   }
 
   // Backup e exportação
@@ -503,7 +494,7 @@ class PasswordService {
       for (final folderData in data['folders']) {
         try {
           final folder = PasswordFolder.fromJson(folderData);
-          await _foldersBox.put(folder.id, folder.toJson());
+          await createFolder(folder);
         } catch (e) {
           // Ignorar pastas corrompidas
           continue;
@@ -516,7 +507,7 @@ class PasswordService {
       for (final passwordData in data['passwords']) {
         try {
           final password = PasswordEntry.fromJson(passwordData);
-          await _passwordsBox.put(password.id, password.toJson());
+          await createPassword(password);
         } catch (e) {
           // Ignorar senhas corrompidas
           continue;
@@ -529,20 +520,6 @@ class PasswordService {
   Future<void> _ensureInitialized() async {
     if (!_isInitialized) {
       await initialize();
-    }
-  }
-
-  Future<void> clearAllData() async {
-    await _ensureInitialized();
-    await _passwordsBox.clear();
-    await _foldersBox.clear();
-  }
-
-  Future<void> close() async {
-    if (_isInitialized) {
-      await _passwordsBox.close();
-      await _foldersBox.close();
-      _isInitialized = false;
     }
   }
 }

@@ -46,13 +46,13 @@ class SyncService {
       // Inicializar Hive
       await Hive.initFlutter();
 
-      // Abrir boxes
-      _changeLogBox = await Hive.openBox('change_log');
-      _settingsBox = await Hive.openBox('sync_settings');
-
-      // Obter pasta de armazenamento local usando DataDirectoryService
       final dataDir = await DataDirectoryService().initialize();
       _localStoragePath = await DataDirectoryService().getBasePath();
+
+      // Abrir boxes
+      _changeLogBox = await Hive.openBox('change_log', path: _localStoragePath);
+      _settingsBox =
+          await Hive.openBox('sync_settings', path: _localStoragePath);
 
       // Criar pasta se não existir
       final localDir = Directory(_localStoragePath);

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
+
 import 'package:uuid/uuid.dart';
 import 'package:bloquinho/core/services/workspace_storage_service.dart';
+import 'package:bloquinho/core/services/data_directory_service.dart';
 
 import '../models/agenda_item.dart';
 import '../../../shared/providers/database_provider.dart';
@@ -16,23 +17,33 @@ class AgendaService {
   factory AgendaService() => _instance;
   AgendaService._internal();
 
-  late Box<dynamic> _agendaBox;
   final Uuid _uuid = const Uuid();
   final WorkspaceStorageService _workspaceStorage = WorkspaceStorageService();
 
   bool _isInitialized = false;
   String? _currentWorkspaceId;
+  String? _currentProfileName;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
       await _workspaceStorage.initialize();
-      _agendaBox = await Hive.openBox(_boxName);
       _isInitialized = true;
     } catch (e) {
       throw Exception('Erro ao inicializar AgendaService: $e');
     }
+  }
+
+  /// Definir contexto completo (perfil + workspace)
+  Future<void> setContext(String profileName, String workspaceId) async {
+    await _ensureInitialized();
+
+    _currentProfileName = profileName;
+    _currentWorkspaceId = workspaceId;
+
+    // Definir contexto no workspace storage
+    await _workspaceStorage.setContext(profileName, workspaceId);
   }
 
   /// Definir workspace atual
@@ -67,21 +78,6 @@ class AgendaService {
           items.add(item);
         } catch (e) {
           continue;
-        }
-      }
-    }
-
-    // Fallback para Hive (migração)
-    if (items.isEmpty) {
-      for (final key in _agendaBox.keys) {
-        final data = _agendaBox.get(key);
-        if (data != null) {
-          try {
-            final item = AgendaItem.fromJson(Map<String, dynamic>.from(data));
-            items.add(item);
-          } catch (e) {
-            continue;
-          }
         }
       }
     }
@@ -122,9 +118,6 @@ class AgendaService {
     allItems.add(newItem);
     await _saveItemsToWorkspace(allItems);
 
-    // Manter compatibilidade com Hive
-    await _agendaBox.put(newItem.id, newItem.toJson());
-
     return newItem.id;
   }
 
@@ -147,9 +140,6 @@ class AgendaService {
       allItems[index] = updatedItem;
       await _saveItemsToWorkspace(allItems);
     }
-
-    // Manter compatibilidade com Hive
-    await _agendaBox.put(updatedItem.id, updatedItem.toJson());
   }
 
   Future<void> deleteItem(String id) async {
@@ -159,9 +149,6 @@ class AgendaService {
     final allItems = await getAllItems();
     allItems.removeWhere((i) => i.id == id);
     await _saveItemsToWorkspace(allItems);
-
-    // Manter compatibilidade com Hive
-    await _agendaBox.delete(id);
   }
 
   /// Salvar itens no workspace storage
@@ -426,18 +413,6 @@ class AgendaService {
   Future<void> _ensureInitialized() async {
     if (!_isInitialized) {
       await initialize();
-    }
-  }
-
-  Future<void> clearAllData() async {
-    await _ensureInitialized();
-    await _agendaBox.clear();
-  }
-
-  Future<void> close() async {
-    if (_isInitialized) {
-      await _agendaBox.close();
-      _isInitialized = false;
     }
   }
 }

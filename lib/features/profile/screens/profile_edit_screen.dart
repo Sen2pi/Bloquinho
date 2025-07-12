@@ -218,6 +218,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 hintText: 'Digite seu nome completo',
                 prefixIcon: Icon(Icons.person),
               ),
+              textInputAction: TextInputAction.next,
+              enableInteractiveSelection: true,
+              autocorrect: false,
+              enableSuggestions: true,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Nome é obrigatório';
@@ -240,6 +244,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 prefixIcon: Icon(Icons.email),
               ),
               keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              enableInteractiveSelection: true,
+              autocorrect: false,
+              enableSuggestions: false,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Email é obrigatório';
@@ -264,6 +272,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               ),
               maxLines: 3,
               maxLength: 500,
+              textInputAction: TextInputAction.next,
+              enableInteractiveSelection: true,
+              autocorrect: false,
+              enableSuggestions: true,
               validator: (value) {
                 if (value != null && value.length > 500) {
                   return 'Biografia deve ter no máximo 500 caracteres';
@@ -301,6 +313,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 hintText: 'Sua profissão atual',
                 prefixIcon: Icon(Icons.work),
               ),
+              textInputAction: TextInputAction.next,
+              enableInteractiveSelection: true,
+              autocorrect: false,
+              enableSuggestions: true,
             ),
 
             const SizedBox(height: 16),
@@ -313,6 +329,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 hintText: 'Cidade, País',
                 prefixIcon: Icon(Icons.location_on),
               ),
+              textInputAction: TextInputAction.next,
+              enableInteractiveSelection: true,
+              autocorrect: false,
+              enableSuggestions: true,
             ),
 
             const SizedBox(height: 16),
@@ -326,6 +346,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 prefixIcon: Icon(Icons.phone),
               ),
               keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              enableInteractiveSelection: true,
+              autocorrect: false,
+              enableSuggestions: false,
               validator: (value) {
                 if (value != null && value.isNotEmpty) {
                   final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
@@ -348,6 +372,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 prefixIcon: Icon(Icons.web),
               ),
               keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.done,
+              enableInteractiveSelection: true,
+              autocorrect: false,
+              enableSuggestions: false,
               validator: (value) {
                 if (value != null && value.isNotEmpty) {
                   if (!RegExp(
@@ -420,6 +448,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       prefixIcon: Icon(Icons.favorite),
                     ),
                     onFieldSubmitted: (value) => _addInterest(value),
+                    textInputAction: TextInputAction.done,
+                    enableInteractiveSelection: true,
+                    autocorrect: false,
+                    enableSuggestions: true,
                   ),
                 ),
                 const SizedBox(width: 8),

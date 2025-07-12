@@ -8,6 +8,13 @@ import '../../../core/theme/app_colors.dart';
 import '../widgets/cartao_credito_list_widget.dart';
 import '../widgets/cartao_fidelizacao_list_widget.dart';
 import '../widgets/documento_identificacao_list_widget.dart';
+import '../widgets/add_cartao_credito_dialog.dart';
+import '../widgets/add_cartao_fidelizacao_dialog.dart';
+import '../widgets/add_documento_identificacao_dialog.dart';
+import '../widgets/delete_confirmation_dialog.dart';
+import '../models/cartao_credito.dart';
+import '../models/cartao_fidelizacao.dart';
+import '../models/documento_identificacao.dart';
 
 enum DocumentoTab { cartoesCredito, cartoesFidelizacao, identificacao }
 
@@ -46,10 +53,9 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
     final documentosState = ref.watch(documentosProvider);
     final stats = ref.watch(documentosStatsProvider);
 
-    return Scaffold(
-      backgroundColor:
-          isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
-      body: Column(
+    return Container(
+      color: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+      child: Column(
         children: [
           // Header
           _buildHeader(isDarkMode, stats),
@@ -93,9 +99,6 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
           ),
         ],
       ),
-
-      // Floating Action Button
-      floatingActionButton: _buildFloatingActionButton(isDarkMode),
     );
   }
 
@@ -287,89 +290,143 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
     );
   }
 
-  Widget _buildFloatingActionButton(bool isDarkMode) {
-    return FloatingActionButton(
-      onPressed: () {
-        switch (_selectedTab) {
-          case DocumentoTab.cartoesCredito:
-            _showAddCartaoCreditoDialog();
-            break;
-          case DocumentoTab.cartoesFidelizacao:
-            _showAddCartaoFidelizacaoDialog();
-            break;
-          case DocumentoTab.identificacao:
-            _showAddDocumentoIdentificacaoDialog();
-            break;
-        }
-      },
-      backgroundColor: AppColors.primary,
-      foregroundColor: Colors.white,
-      child: Icon(PhosphorIcons.plus()),
-    );
-  }
-
-  // ===== DIALOGS =====
+  // ===== CARTÕES DE CRÉDITO =====
 
   void _showAddCartaoCreditoDialog() {
-    // TODO: Implementar diálogo de adicionar cartão de crédito
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
+    showDialog(
+      context: context,
+      builder: (context) => AddCartaoCreditoDialog(
+        onAdd: (cartao) {
+          ref.read(documentosProvider.notifier).addCartaoCredito(cartao);
+        },
+      ),
     );
   }
 
-  void _showEditCartaoCreditoDialog(dynamic cartao) {
-    // TODO: Implementar diálogo de editar cartão de crédito
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
+  void _showEditCartaoCreditoDialog(CartaoCredito cartao) {
+    showDialog(
+      context: context,
+      builder: (context) => AddCartaoCreditoDialog(
+        cartao: cartao,
+        onAdd: (cartaoEditado) {
+          ref
+              .read(documentosProvider.notifier)
+              .updateCartaoCredito(cartaoEditado);
+        },
+      ),
     );
   }
 
   void _showDeleteCartaoCreditoDialog(String id) {
-    // TODO: Implementar diálogo de deletar cartão de crédito
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
+    final cartao = ref
+        .read(documentosProvider)
+        .cartoesCredito
+        .firstWhere((c) => c.id == id);
+    showDialog(
+      context: context,
+      builder: (context) => DeleteConfirmationDialog(
+        title: 'Excluir Cartão',
+        message: 'Tem certeza que deseja excluir este cartão?',
+        itemName: '${cartao.nomeBandeira} - ${cartao.numeroMascarado}',
+        onConfirm: () {
+          ref.read(documentosProvider.notifier).removeCartaoCredito(id);
+        },
+      ),
     );
   }
+
+  // ===== CARTÕES DE FIDELIZAÇÃO =====
 
   void _showAddCartaoFidelizacaoDialog() {
-    // TODO: Implementar diálogo de adicionar cartão de fidelização
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
+    showDialog(
+      context: context,
+      builder: (context) => AddCartaoFidelizacaoDialog(
+        onAdd: (cartao) {
+          ref.read(documentosProvider.notifier).addCartaoFidelizacao(cartao);
+        },
+      ),
     );
   }
 
-  void _showEditCartaoFidelizacaoDialog(dynamic cartao) {
-    // TODO: Implementar diálogo de editar cartão de fidelização
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
+  void _showEditCartaoFidelizacaoDialog(CartaoFidelizacao cartao) {
+    showDialog(
+      context: context,
+      builder: (context) => AddCartaoFidelizacaoDialog(
+        cartao: cartao,
+        onAdd: (cartaoEditado) {
+          ref
+              .read(documentosProvider.notifier)
+              .updateCartaoFidelizacao(cartaoEditado);
+        },
+      ),
     );
   }
 
   void _showDeleteCartaoFidelizacaoDialog(String id) {
-    // TODO: Implementar diálogo de deletar cartão de fidelização
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
+    final cartao = ref
+        .read(documentosProvider)
+        .cartoesFidelizacao
+        .firstWhere((c) => c.id == id);
+    showDialog(
+      context: context,
+      builder: (context) => DeleteConfirmationDialog(
+        title: 'Excluir Cartão de Fidelização',
+        message: 'Tem certeza que deseja excluir este cartão de fidelização?',
+        itemName: '${cartao.nome} - ${cartao.empresa}',
+        onConfirm: () {
+          ref.read(documentosProvider.notifier).removeCartaoFidelizacao(id);
+        },
+      ),
     );
   }
+
+  // ===== DOCUMENTOS DE IDENTIFICAÇÃO =====
 
   void _showAddDocumentoIdentificacaoDialog() {
-    // TODO: Implementar diálogo de adicionar documento de identificação
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
+    showDialog(
+      context: context,
+      builder: (context) => AddDocumentoIdentificacaoDialog(
+        onAdd: (documento) {
+          ref
+              .read(documentosProvider.notifier)
+              .addDocumentoIdentificacao(documento);
+        },
+      ),
     );
   }
 
-  void _showEditDocumentoIdentificacaoDialog(dynamic documento) {
-    // TODO: Implementar diálogo de editar documento de identificação
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
+  void _showEditDocumentoIdentificacaoDialog(DocumentoIdentificacao documento) {
+    showDialog(
+      context: context,
+      builder: (context) => AddDocumentoIdentificacaoDialog(
+        documento: documento,
+        onAdd: (documentoEditado) {
+          ref
+              .read(documentosProvider.notifier)
+              .updateDocumentoIdentificacao(documentoEditado);
+        },
+      ),
     );
   }
 
   void _showDeleteDocumentoIdentificacaoDialog(String id) {
-    // TODO: Implementar diálogo de deletar documento de identificação
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
+    final documento = ref
+        .read(documentosProvider)
+        .documentosIdentificacao
+        .firstWhere((d) => d.id == id);
+    showDialog(
+      context: context,
+      builder: (context) => DeleteConfirmationDialog(
+        title: 'Excluir Documento',
+        message:
+            'Tem certeza que deseja excluir este documento de identificação?',
+        itemName: '${documento.nomeTipo} - ${documento.numeroFormatado}',
+        onConfirm: () {
+          ref
+              .read(documentosProvider.notifier)
+              .removeDocumentoIdentificacao(id);
+        },
+      ),
     );
   }
 }

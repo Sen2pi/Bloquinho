@@ -175,6 +175,10 @@ class _PasswordManagerScreenState extends ConsumerState<PasswordManagerScreen> {
               fillColor:
                   isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
             ),
+            textInputAction: TextInputAction.search,
+            enableInteractiveSelection: true,
+            autocorrect: false,
+            enableSuggestions: true,
           ),
         ],
       ),

@@ -97,6 +97,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
           ),
         ],
       ),
+      // Floating Action Button para documentos
+      floatingActionButton: _buildFloatingActionButton(isDarkMode),
     );
   }
 
@@ -133,48 +135,96 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   ...workspaceSections.map((section) {
                     if (section.id.contains('database')) {
                       // Sempre usar o ícone dossier.png
-                      return ListTile(
-                        leading: Image.asset(
-                          'assets/images/dossier.png',
-                          width: 28,
-                          height: 28,
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 2),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () => _handleSectionTap('database'),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              child: Row(
+                                children: [
+                                  Image.asset(
+                                    'assets/images/dossier.png',
+                                    width: 20,
+                                    height: 20,
+                                  ),
+                                  if (_isSidebarExpanded) ...[
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'Base de Dados',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              fontSize: 14,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                        title: _isSidebarExpanded
-                            ? const Text('Base de Dados')
-                            : null,
-                        onTap: () => _handleSectionTap('database'),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 2),
-                        horizontalTitleGap: 12,
                       );
                     }
                     if (section.id.contains('bloquinho')) {
                       return Column(
                         children: [
-                          ListTile(
-                            leading: Image.asset(
-                              isDarkMode
-                                  ? 'assets/images/logoDark.png'
-                                  : 'assets/images/logo.png',
-                              width: 28,
-                              height: 28,
+                          Container(
+                            margin: const EdgeInsets.symmetric(vertical: 2),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: () {
+                                  setState(() {
+                                    _isBloquinhoExpanded =
+                                        !_isBloquinhoExpanded;
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                  child: Row(
+                                    children: [
+                                      Image.asset(
+                                        isDarkMode
+                                            ? 'assets/images/logoDark.png'
+                                            : 'assets/images/logo.png',
+                                        width: 20,
+                                        height: 20,
+                                      ),
+                                      if (_isSidebarExpanded) ...[
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            'Bloquinho',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.copyWith(
+                                                  fontSize: 14,
+                                                ),
+                                          ),
+                                        ),
+                                        Icon(
+                                          _isBloquinhoExpanded
+                                              ? Icons.arrow_drop_down
+                                              : Icons.arrow_right,
+                                          size: 20,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
-                            title: _isSidebarExpanded
-                                ? const Text('Bloquinho')
-                                : null,
-                            onTap: () {
-                              setState(() {
-                                _isBloquinhoExpanded = !_isBloquinhoExpanded;
-                              });
-                            },
-                            trailing: _isSidebarExpanded
-                                ? Icon(_isBloquinhoExpanded
-                                    ? Icons.arrow_drop_down
-                                    : Icons.arrow_right)
-                                : null,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 2),
-                            horizontalTitleGap: 12,
                           ),
                           if (_isBloquinhoExpanded && _isSidebarExpanded)
                             Padding(
@@ -195,8 +245,44 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     }
                     if (section.id.contains('documents') ||
                         section.name.toLowerCase().contains('documentos')) {
-                      return const SizedBox
-                          .shrink(); // Pular item dinâmico de Documentos
+                      // Exibir Documentos com ícone cartao.png
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 2),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () => context.push('/workspace/documentos'),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              child: Row(
+                                children: [
+                                  Image.asset(
+                                    'assets/images/cartao.png',
+                                    width: 20,
+                                    height: 20,
+                                  ),
+                                  if (_isSidebarExpanded) ...[
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'Documentos',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              fontSize: 14,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
                     }
                     return _buildSectionItem(
                       section: section,
@@ -409,18 +495,18 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     // Recarregar outros providers
                     await ref
                         .read(passwordProvider.notifier)
-                        .reloadForContext(currentProfile.name, workspaceId);
+                        .setContext(currentProfile.name, newWorkspace.id);
                     await ref
                         .read(agendaProvider.notifier)
-                        .reloadForWorkspace(workspaceId);
+                        .setContext(currentProfile.name, newWorkspace.id);
                     await ref
                         .read(documentosProvider.notifier)
-                        .reloadForWorkspace(workspaceId);
+                        .setContext(currentProfile.name, newWorkspace.id);
 
                     // Recarregar database
                     await ref
                         .read(databaseNotifierProvider.notifier)
-                        .reloadForWorkspace(workspaceId);
+                        .setContext(currentProfile.name, newWorkspace.id);
                   }
                 },
                 itemBuilder: (context) {
@@ -490,18 +576,18 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   // Recarregar outros providers
                   await ref
                       .read(passwordProvider.notifier)
-                      .reloadForContext(currentProfile.name, workspaceId);
+                      .setContext(currentProfile.name, newWorkspace.id);
                   await ref
                       .read(agendaProvider.notifier)
-                      .reloadForWorkspace(workspaceId);
+                      .setContext(currentProfile.name, newWorkspace.id);
                   await ref
                       .read(documentosProvider.notifier)
-                      .reloadForWorkspace(workspaceId);
+                      .setContext(currentProfile.name, newWorkspace.id);
 
                   // Recarregar database
                   await ref
                       .read(databaseNotifierProvider.notifier)
-                      .reloadForWorkspace(workspaceId);
+                      .setContext(currentProfile.name, newWorkspace.id);
                 }
               },
               itemBuilder: (context) {
@@ -586,6 +672,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                             fontWeight: isSelected
                                 ? FontWeight.w500
                                 : FontWeight.normal,
+                            fontSize: 14, // Tamanho uniforme
                           ),
                     ),
                   ),
@@ -599,7 +686,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                       ),
                       child: Text(
                         '${section.itemCount}',
-                        style: Theme.of(context).textTheme.labelSmall,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              fontSize: 11, // Tamanho uniforme
+                            ),
                       ),
                     ),
                   ],
@@ -624,14 +713,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     if (section.hasCustomIcon) {
       return Image.asset(
         section.customIconPath!,
-        width: 18,
-        height: 18,
+        width: 20, // Tamanho uniforme
+        height: 20, // Tamanho uniforme
         // Removido o filtro de cor para manter as cores originais
         errorBuilder: (context, error, stackTrace) {
           // Fallback para ícone MaterialIcons se a imagem falhar
           return Icon(
             section.icon,
-            size: 18,
+            size: 20, // Tamanho uniforme
             color: iconColor,
           );
         },
@@ -640,7 +729,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
     return Icon(
       section.icon,
-      size: 18,
+      size: 20, // Tamanho uniforme
       color: iconColor,
     );
   }
@@ -660,7 +749,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          onTap: onTap ?? () => _handleSectionTap(sectionId),
+          onTap: onTap,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
@@ -675,7 +764,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               children: [
                 Icon(
                   icon,
-                  size: 18,
+                  size: 20, // Tamanho uniforme
                   color: isSelected
                       ? AppColors.primary
                       : (isDarkMode
@@ -692,6 +781,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                             fontWeight: isSelected
                                 ? FontWeight.w500
                                 : FontWeight.normal,
+                            fontSize: 14, // Tamanho uniforme
                           ),
                     ),
                   ),
@@ -767,96 +857,114 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
           // Perfil do usuário
           if (_isSidebarExpanded) ...[
-            Row(
-              children: [
-                // Avatar
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: () => context.pushNamed('profile'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: currentProfile != null
-                          ? ProfileAvatar(
-                              profile: currentProfile,
-                              size: 32,
-                              showLoadingIndicator: false,
-                            )
-                          : CircleAvatar(
-                              radius: 16,
-                              backgroundColor: AppColors.primary,
-                              child: const Icon(
-                                Icons.person,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                            ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        currentProfile?.name ?? 'Usuário',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
-                        overflow: TextOverflow.ellipsis,
+            Builder(
+              builder: (context) {
+                debugPrint(
+                    '🔍 WorkspaceScreen - currentProfile: ${currentProfile?.name}');
+                debugPrint(
+                    '🔍 WorkspaceScreen - currentProfile avatarPath: ${currentProfile?.avatarPath}');
+                debugPrint(
+                    '🔍 WorkspaceScreen - currentProfile avatarUrl: ${currentProfile?.avatarUrl}');
+                debugPrint(
+                    '🔍 WorkspaceScreen - currentProfile hasCustomAvatar: ${currentProfile?.hasCustomAvatar}');
+
+                return Row(
+                  children: [
+                    // Avatar
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => context.pushNamed('profile'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: currentProfile != null
+                              ? ProfileAvatar(
+                                  profile: currentProfile,
+                                  size: 32,
+                                  showLoadingIndicator: false,
+                                )
+                              : CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: AppColors.primary,
+                                  child: const Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ),
+                        ),
                       ),
-                      if (currentProfile?.email != null)
-                        Text(
-                          currentProfile.email,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            currentProfile?.name ?? 'Usuário',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (currentProfile?.email != null)
+                            Text(
+                              currentProfile.email,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
                                     color: Colors.grey[600],
                                   ),
-                          overflow: TextOverflow.ellipsis,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                    // Menu de opções do usuário
+                    PopupMenuButton<String>(
+                      onSelected: (value) => _handleUserMenuAction(value),
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'profile',
+                          child: ListTile(
+                            leading: Icon(Icons.person),
+                            title: Text('Perfil'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
                         ),
-                    ],
-                  ),
-                ),
-                // Menu de opções do usuário
-                PopupMenuButton<String>(
-                  onSelected: (value) => _handleUserMenuAction(value),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'profile',
-                      child: ListTile(
-                        leading: Icon(Icons.person),
-                        title: Text('Perfil'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'settings',
-                      child: ListTile(
-                        leading: Icon(Icons.settings),
-                        title: Text('Configurações'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    const PopupMenuDivider(),
-                    const PopupMenuItem(
-                      value: 'logout',
-                      child: ListTile(
-                        leading: Icon(Icons.logout),
-                        title: Text('Sair'),
-                        contentPadding: EdgeInsets.zero,
+                        const PopupMenuItem(
+                          value: 'settings',
+                          child: ListTile(
+                            leading: Icon(Icons.settings),
+                            title: Text('Configurações'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        const PopupMenuDivider(),
+                        const PopupMenuItem(
+                          value: 'logout',
+                          child: ListTile(
+                            leading: Icon(Icons.logout),
+                            title: Text('Sair'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
+                      child: Icon(
+                        Icons.more_horiz,
+                        size: 20,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ],
-                  child: Icon(
-                    Icons.more_horiz,
-                    size: 20,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
+                );
+              },
             ),
           ] else ...[
             // Avatar compacto quando collapsed
@@ -1161,6 +1269,35 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     showModalBottomSheet(
       context: context,
       builder: (context) => const CloudSyncStatusModal(),
+    );
+  }
+
+  Widget _buildFloatingActionButton(bool isDarkMode) {
+    // Só mostrar FAB quando estiver na seção documentos
+    if (_selectedSection != Section.documentos) {
+      return const SizedBox.shrink();
+    }
+
+    return FloatingActionButton(
+      onPressed: () {
+        // Mostrar diálogo de adicionar documento baseado na aba atual
+        _showAddDocumentDialog();
+      },
+      backgroundColor: AppColors.primary,
+      foregroundColor: Colors.white,
+      child: Icon(PhosphorIcons.plus()),
+    );
+  }
+
+  void _showAddDocumentDialog() {
+    // Implementar lógica para mostrar o diálogo correto baseado na aba atual
+    // Por enquanto, mostrar um snackbar informativo
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+            'Use os botões + dentro de cada aba para adicionar documentos'),
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 }

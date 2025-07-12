@@ -201,12 +201,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         await bloquinhoStorage.createBloquinhoDirectory(name, workspaceName);
 
         // Criar página inicial para cada workspace
-        final initialPage = PageModel.create(
-          title: 'Nova Página',
-          content:
-              '# Bem-vindo ao Bloquinho!\n\nEsta é sua primeira página no workspace **$workspaceName**.\n\nComece a escrever para criar seu conteúdo...',
-        );
-        await bloquinhoStorage.savePage(initialPage, name, workspaceName);
+        // final initialPage = PageModel.create(
+        //   title: 'Nova Página',
+        //   content:
+        //       '# Bem-vindo ao Bloquinho!\n\nEsta é sua primeira página no workspace **$workspaceName**.\n\nComece a escrever para criar seu conteúdo...',
+        // );
+        // await bloquinhoStorage.savePage(initialPage, name, workspaceName);
       }
 
       // Mostrar estado de conclusão
@@ -336,112 +336,124 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget _buildLanguageSelectionPage(bool isDarkMode, AppStrings strings) {
     return Padding(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Ícone de idioma
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: isDarkMode ? AppColors.darkSurface : Colors.white,
-              borderRadius: BorderRadius.circular(60),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Ícone de idioma
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: isDarkMode ? AppColors.darkSurface : Colors.white,
+                borderRadius: BorderRadius.circular(60),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.language,
+                size: 60,
+                color: AppColors.primary,
+              ),
+            )
+                .animate()
+                .scale(begin: const Offset(0.5, 0.5), duration: 800.ms)
+                .fadeIn(duration: 600.ms),
+
+            const SizedBox(height: 48),
+
+            // Título
+            Text(
+              strings.chooseLanguage,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            )
+                .animate(delay: 400.ms)
+                .fadeIn(duration: 800.ms)
+                .slideY(begin: 0.3, end: 0),
+
+            const SizedBox(height: 16),
+
+            // Subtítulo
+            Text(
+              strings.languageDescription,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: isDarkMode
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                    height: 1.5,
+                  ),
+            )
+                .animate(delay: 600.ms)
+                .fadeIn(duration: 800.ms)
+                .slideY(begin: 0.3, end: 0),
+
+            const SizedBox(height: 48),
+
+            // Opções de idioma (apenas 3 idiomas)
+            Column(
+              children: [
+                AppLanguage.portuguese,
+                AppLanguage.english,
+                AppLanguage.french,
+              ].map((language) {
+                return _buildLanguageOption(
+                  language: language,
+                  isDarkMode: isDarkMode,
+                  delay: 800 +
+                      ([
+                            AppLanguage.portuguese,
+                            AppLanguage.english,
+                            AppLanguage.french
+                          ].indexOf(language) *
+                          200),
+                );
+              }).toList(),
             ),
-            child: Icon(
-              Icons.language,
-              size: 60,
-              color: AppColors.primary,
-            ),
-          )
-              .animate()
-              .scale(begin: const Offset(0.5, 0.5), duration: 800.ms)
-              .fadeIn(duration: 600.ms),
 
-          const SizedBox(height: 48),
+            const SizedBox(height: 64),
 
-          // Título
-          Text(
-            strings.chooseLanguage,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+            // Botão continuar
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () async {
+                  // Salvar idioma selecionado
+                  await ref
+                      .read(languageProvider.notifier)
+                      .setLanguage(_selectedLanguage);
+                  _nextPage();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-          )
-              .animate(delay: 400.ms)
-              .fadeIn(duration: 800.ms)
-              .slideY(begin: 0.3, end: 0),
-
-          const SizedBox(height: 16),
-
-          // Subtítulo
-          Text(
-            strings.languageDescription,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: isDarkMode
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
-                  height: 1.5,
-                ),
-          )
-              .animate(delay: 600.ms)
-              .fadeIn(duration: 800.ms)
-              .slideY(begin: 0.3, end: 0),
-
-          const SizedBox(height: 48),
-
-          // Opções de idioma
-          Column(
-            children: AppLanguage.values.map((language) {
-              return _buildLanguageOption(
-                language: language,
-                isDarkMode: isDarkMode,
-                delay: 800 + (AppLanguage.values.indexOf(language) * 200),
-              );
-            }).toList(),
-          ),
-
-          const SizedBox(height: 64),
-
-          // Botão continuar
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: () async {
-                // Salvar idioma selecionado
-                await ref
-                    .read(languageProvider.notifier)
-                    .setLanguage(_selectedLanguage);
-                _nextPage();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                child: Text(
+                  strings.continueButton,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              child: Text(
-                strings.continueButton,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          )
-              .animate(delay: 1400.ms)
-              .fadeIn(duration: 800.ms)
-              .slideY(begin: 0.5, end: 0),
-        ],
+            )
+                .animate(delay: 1400.ms)
+                .fadeIn(duration: 800.ms)
+                .slideY(begin: 0.5, end: 0),
+          ],
+        ),
       ),
     );
   }
@@ -814,6 +826,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
+              textInputAction: TextInputAction.next,
+              enableInteractiveSelection: true,
+              autocorrect: false,
+              enableSuggestions: true,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return strings.pleaseEnterName;
@@ -838,6 +854,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              enableInteractiveSelection: true,
+              autocorrect: false,
+              enableSuggestions: false,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return strings.pleaseEnterEmail;

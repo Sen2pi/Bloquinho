@@ -115,6 +115,9 @@ class PageModel {
   /// Verificar se é uma subpágina
   bool get isSubPage => parentId != null;
 
+  /// Verificar se é a página raiz do Bloquinho
+  bool get isBloquinhoRoot => title.toLowerCase() == 'bloquinho' && isRoot;
+
   /// Obter nível de profundidade (0 = raiz)
   int getDepth(List<PageModel> allPages) {
     if (isRoot) return 0;
@@ -327,22 +330,4 @@ class PageTreeNode {
   }
 }
 
-/// Extensões úteis
-extension PageModelExtension on PageModel {
-  /// Verificar se é a página raiz do Bloquinho
-  bool get isBloquinhoRoot => title.toLowerCase() == 'bloquinho' && isRoot;
 
-  /// Obter ícone baseado no tipo
-  String get icon {
-    if (isBloquinhoRoot) return '📝';
-    if (isRoot) return '📄';
-    return '📄';
-  }
-
-  /// Obter cor baseada no tipo
-  String get color {
-    if (isBloquinhoRoot) return '#3B82F6'; // Azul
-    if (isRoot) return '#10B981'; // Verde
-    return '#6B7280'; // Cinza
-  }
-}

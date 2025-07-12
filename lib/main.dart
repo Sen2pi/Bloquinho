@@ -11,6 +11,7 @@ import 'core/services/user_profile_service.dart';
 import 'core/services/local_storage_service.dart';
 import 'core/services/file_storage_service.dart';
 import 'core/services/oauth2_service.dart';
+import 'core/services/data_directory_service.dart';
 import 'shared/providers/theme_provider.dart';
 import 'shared/providers/language_provider.dart';
 import 'shared/providers/user_profile_provider.dart';
@@ -31,8 +32,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Inicializar Hive para armazenamento local
-    await Hive.initFlutter();
+    // Inicializar DataDirectoryService primeiro
+    final dataDirService = DataDirectoryService();
+    await dataDirService.initialize();
+
+    // Inicializar Hive para armazenamento local com diretório correto
+    final basePath = await dataDirService.getBasePath();
+    await Hive.initFlutter(basePath);
 
     // Inicializar serviços críticos
     await _initializeServices();

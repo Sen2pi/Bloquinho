@@ -159,6 +159,10 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
               fillColor:
                   isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
             ),
+            textInputAction: TextInputAction.search,
+            enableInteractiveSelection: true,
+            autocorrect: false,
+            enableSuggestions: true,
           ),
         ],
       ),

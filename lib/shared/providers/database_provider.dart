@@ -4,6 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:bloquinho/core/models/database_models.dart';
 import 'package:bloquinho/core/services/database_service.dart';
 import 'workspace_provider.dart';
+import 'user_profile_provider.dart';
+import '../../core/models/user_profile.dart';
+import '../../core/models/workspace.dart';
 
 /// Provider para integrar DatabaseService com Workspace
 final databaseServiceProvider = Provider<DatabaseService>((ref) {
@@ -63,6 +66,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<List<DatabaseTable>>> {
   final Ref ref;
   late final DatabaseService _databaseService;
   String? _lastWorkspaceId;
+  String? _lastProfileName;
   bool _isInitialized = false;
 
   DatabaseNotifier(this.ref) : super(const AsyncValue.loading()) {
@@ -84,46 +88,32 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<List<DatabaseTable>>> {
     _init();
   }
 
+  /// Inicializar o notifier
   Future<void> _init() async {
     try {
-      await _databaseService.initialize();
-      _isInitialized = true;
-
-      // Definir workspace inicial se disponível
-      final currentWorkspaceId = ref.read(currentWorkspaceIdProvider);
-      if (currentWorkspaceId != null) {
-        _lastWorkspaceId = currentWorkspaceId;
-        _databaseService.setCurrentWorkspace(currentWorkspaceId);
-      }
-
       await _loadTables();
+      _isInitialized = true;
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
+  /// Carregar tabelas do storage
   Future<void> _loadTables() async {
     try {
       state = const AsyncValue.loading();
-
-      // Garantir que o workspace está definido
-      if (_lastWorkspaceId != null) {
-        _databaseService.setCurrentWorkspace(_lastWorkspaceId!);
-      }
-
-      final tables = _databaseService.tables;
+      final tables = await _databaseService.tables;
       state = AsyncValue.data(tables);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
-  /// Forçar recarregamento para novo workspace
-  Future<void> reloadForWorkspace(String workspaceId) async {
-    if (_lastWorkspaceId == workspaceId && _isInitialized) return;
-
+  /// Definir contexto do workspace
+  Future<void> setContext(String profileName, String workspaceId) async {
+    await _databaseService.setContext(profileName, workspaceId);
+    _lastProfileName = profileName;
     _lastWorkspaceId = workspaceId;
-    _databaseService.setCurrentWorkspace(workspaceId);
     await _loadTables();
   }
 
@@ -177,7 +167,28 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<List<DatabaseTable>>> {
 final databaseNotifierProvider =
     StateNotifierProvider<DatabaseNotifier, AsyncValue<List<DatabaseTable>>>(
         (ref) {
-  return DatabaseNotifier(ref);
+  final notifier = DatabaseNotifier(ref);
+
+  // Observa mudanças de profile/workspace e atualiza contexto
+  ref.listen<UserProfile?>(currentProfileProvider, (prevProfile, currProfile) {
+    final workspace = ref.read(currentWorkspaceProvider);
+    if (currProfile != null && workspace != null) {
+      debugPrint(
+          '[DatabaseProvider] Mudou profile/workspace: ${currProfile.name}/${workspace.id}');
+      notifier.setContext(currProfile.name, workspace.id);
+    }
+  });
+  ref.listen<Workspace?>(currentWorkspaceProvider,
+      (prevWorkspace, currWorkspace) {
+    final profile = ref.read(currentProfileProvider);
+    if (profile != null && currWorkspace != null) {
+      debugPrint(
+          '[DatabaseProvider] Mudou workspace/profile: ${profile.name}/${currWorkspace.id}');
+      notifier.setContext(profile.name, currWorkspace.id);
+    }
+  });
+
+  return notifier;
 });
 
 /// Provider para obter apenas a lista de tabelas
@@ -196,4 +207,18 @@ final tablesCountProvider = Provider<int>((ref) {
 /// Provider para verificar se existem tabelas
 final hasTablesProvider = Provider<bool>((ref) {
   return ref.watch(tablesCountProvider) > 0;
+});
+
+// Provider para inicializar contexto do workspace
+final databaseContextProvider = Provider<void>((ref) {
+  final notifier = ref.read(databaseNotifierProvider.notifier);
+  final profile = ref.watch(currentProfileProvider);
+  final workspace = ref.watch(currentWorkspaceProvider);
+
+  if (profile != null && workspace != null) {
+    // Definir contexto de forma assíncrona
+    Future.microtask(() async {
+      await notifier.setContext(profile.name, workspace.id);
+    });
+  }
 });

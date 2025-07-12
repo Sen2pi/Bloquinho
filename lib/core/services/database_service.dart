@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+
 import 'package:bloquinho/core/models/database_models.dart';
 import 'package:bloquinho/core/services/local_storage_service.dart';
+import 'package:bloquinho/core/services/data_directory_service.dart';
 import 'package:bloquinho/core/services/workspace_storage_service.dart';
 
 /// Serviço para gerenciar operações do sistema de database
@@ -12,10 +13,10 @@ class DatabaseService {
   static const String _boxName = 'database_tables';
   static const String _tablesKey = 'all_tables';
 
-  Box<String>? _box;
   bool _initialized = false;
   List<DatabaseTable> _tables = [];
   String? _currentWorkspaceId;
+  String? _currentProfileName;
   final WorkspaceStorageService _workspaceStorage = WorkspaceStorageService();
 
   /// Instância singleton
@@ -29,7 +30,6 @@ class DatabaseService {
 
     try {
       await _workspaceStorage.initialize();
-      _box = await Hive.openBox<String>(_boxName);
       await _loadTables();
       _initialized = true;
       debugPrint(
@@ -40,14 +40,33 @@ class DatabaseService {
     }
   }
 
+  /// Definir contexto completo (perfil + workspace)
+  Future<void> setContext(String profileName, String workspaceId) async {
+    await _ensureInitialized();
+
+    _currentProfileName = profileName;
+    _currentWorkspaceId = workspaceId;
+
+    // Definir contexto no workspace storage
+    await _workspaceStorage.setContext(profileName, workspaceId);
+
+    // Recarregar tabelas com novo contexto
+    await _loadTables();
+  }
+
   /// Carrega todas as tabelas do storage
   Future<void> _loadTables() async {
     try {
-      final tablesJson = _box?.get(_tablesKey);
-      if (tablesJson != null) {
-        final List<dynamic> tablesList = json.decode(tablesJson);
+      final workspaceData =
+          await _workspaceStorage.loadWorkspaceData('database');
+      if (workspaceData != null) {
+        final List<dynamic> tablesList =
+            workspaceData['tables'] as List<dynamic>? ?? [];
         _tables =
             tablesList.map((data) => DatabaseTable.fromJson(data)).toList();
+      } else {
+        // Se não há dados, inicializar com lista vazia
+        _tables = [];
       }
     } catch (e) {
       debugPrint('❌ Erro ao carregar tabelas: $e');
@@ -58,8 +77,11 @@ class DatabaseService {
   /// Salva todas as tabelas no storage
   Future<void> _saveTables() async {
     try {
-      final tablesJson = json.encode(_tables.map((t) => t.toJson()).toList());
-      await _box?.put(_tablesKey, tablesJson);
+      final data = {
+        'tables': _tables.map((t) => t.toJson()).toList(),
+        'lastModified': DateTime.now().toIso8601String(),
+      };
+      await _workspaceStorage.saveWorkspaceData('database', data);
 
       // Também salvar em arquivos locais para backup
       await _saveToLocalFiles();
@@ -537,12 +559,5 @@ class DatabaseService {
     _tables.clear();
     await _loadTables();
     debugPrint('🔄 DatabaseService recarregado');
-  }
-
-  /// Fecha o serviço
-  Future<void> dispose() async {
-    await _box?.close();
-    _initialized = false;
-    debugPrint('🔒 DatabaseService finalizado');
   }
 }

@@ -9,6 +9,7 @@ import 'package:path/path.dart' as path;
 
 import '../models/user_profile.dart';
 import 'local_storage_service.dart';
+import 'data_directory_service.dart';
 
 /// Exceções específicas do serviço de perfil
 class UserProfileException implements Exception {
@@ -49,7 +50,9 @@ class UserProfileService {
       await _localStorageService.initialize();
 
       if (_box == null || !_box!.isOpen) {
-        _box = await Hive.openBox<String>(_boxName);
+        final dataDir = await DataDirectoryService().initialize();
+        final dbPath = await DataDirectoryService().getBasePath();
+        _box = await Hive.openBox<String>(_boxName, path: dbPath);
       }
 
       // Carregar perfil em cache
@@ -377,7 +380,9 @@ class UserProfileService {
 
       // 3. Limpar outros boxes relacionados se existirem
       try {
-        final settingsBox = await Hive.openBox('app_settings');
+        final dataDir = await DataDirectoryService().initialize();
+        final dbPath = await DataDirectoryService().getBasePath();
+        final settingsBox = await Hive.openBox('app_settings', path: dbPath);
         await settingsBox.clear();
         await settingsBox.close();
       } catch (e) {
@@ -385,8 +390,10 @@ class UserProfileService {
       }
 
       try {
+        final dataDir = await DataDirectoryService().initialize();
+        final dbPath = await DataDirectoryService().getBasePath();
         final storageSettingsBox =
-            await Hive.openBox<String>('storage_settings');
+            await Hive.openBox<String>('storage_settings', path: dbPath);
         await storageSettingsBox.clear();
         await storageSettingsBox.close();
       } catch (e) {
@@ -395,7 +402,9 @@ class UserProfileService {
       }
 
       try {
-        final changeLogBox = await Hive.openBox('change_log');
+        final dataDir = await DataDirectoryService().initialize();
+        final dbPath = await DataDirectoryService().getBasePath();
+        final changeLogBox = await Hive.openBox('change_log', path: dbPath);
         await changeLogBox.clear();
         await changeLogBox.close();
       } catch (e) {
@@ -403,7 +412,9 @@ class UserProfileService {
       }
 
       try {
-        final syncSettingsBox = await Hive.openBox('sync_settings');
+        final dataDir = await DataDirectoryService().initialize();
+        final dbPath = await DataDirectoryService().getBasePath();
+        final syncSettingsBox = await Hive.openBox('sync_settings', path: dbPath);
         await syncSettingsBox.clear();
         await syncSettingsBox.close();
       } catch (e) {

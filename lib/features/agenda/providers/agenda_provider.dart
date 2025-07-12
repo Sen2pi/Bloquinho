@@ -6,6 +6,10 @@ import '../services/agenda_service.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/models/database_models.dart';
 import 'package:flutter/foundation.dart';
+import '../../../core/models/user_profile.dart';
+import '../../../core/models/workspace.dart';
+import '../../../shared/providers/user_profile_provider.dart';
+import '../../../shared/providers/workspace_provider.dart';
 
 // Estado da agenda
 class AgendaState extends Equatable {
@@ -108,16 +112,18 @@ class AgendaState extends Equatable {
 class AgendaNotifier extends StateNotifier<AgendaState> {
   final AgendaService _agendaService;
   String? _currentWorkspaceId;
+  String? _currentProfileName;
   bool _isInitialized = false;
 
   AgendaNotifier(this._agendaService) : super(const AgendaState()) {
     _loadInitialData();
   }
 
-  /// Recarregar dados para novo workspace
-  Future<void> reloadForWorkspace(String workspaceId) async {
-    if (_currentWorkspaceId == workspaceId && _isInitialized) return;
-
+  /// Definir contexto do workspace
+  Future<void> setContext(
+      String profileName, String workspaceId) async {
+    await _agendaService.setContext(profileName, workspaceId);
+    _currentProfileName = profileName;
     _currentWorkspaceId = workspaceId;
     await _loadInitialData();
   }
@@ -125,6 +131,12 @@ class AgendaNotifier extends StateNotifier<AgendaState> {
   Future<void> _loadInitialData() async {
     try {
       state = state.copyWith(isLoading: true, error: null);
+
+      // Verificar se temos contexto definido
+      if (_currentProfileName != null && _currentWorkspaceId != null) {
+        await _agendaService.setContext(
+            _currentProfileName!, _currentWorkspaceId!);
+      }
 
       // Carregar itens da agenda
       final agendaItems = await _agendaService.getAllItems();
@@ -491,8 +503,29 @@ final agendaServiceProvider = Provider<AgendaService>((ref) {
 
 final agendaProvider =
     StateNotifierProvider<AgendaNotifier, AgendaState>((ref) {
-  final service = ref.watch(agendaServiceProvider);
-  return AgendaNotifier(service);
+  final agendaService = ref.watch(agendaServiceProvider);
+  final notifier = AgendaNotifier(agendaService);
+
+  // Observa mudanças de profile/workspace e atualiza contexto
+  ref.listen<UserProfile?>(currentProfileProvider, (prevProfile, currProfile) {
+    final workspace = ref.read(currentWorkspaceProvider);
+    if (currProfile != null && workspace != null) {
+      debugPrint(
+          '[AgendaProvider] Mudou profile/workspace: ${currProfile.name}/${workspace.id}');
+      notifier.setContext(currProfile.name, workspace.id);
+    }
+  });
+  ref.listen<Workspace?>(currentWorkspaceProvider,
+      (prevWorkspace, currWorkspace) {
+    final profile = ref.read(currentProfileProvider);
+    if (profile != null && currWorkspace != null) {
+      debugPrint(
+          '[AgendaProvider] Mudou workspace/profile: ${profile.name}/${currWorkspace.id}');
+      notifier.setContext(profile.name, currWorkspace.id);
+    }
+  });
+
+  return notifier;
 });
 
 // Providers derivados
@@ -544,4 +577,18 @@ final doneItemsProvider = Provider<List<AgendaItem>>((ref) {
 });
 final cancelledItemsProvider = Provider<List<AgendaItem>>((ref) {
   return ref.watch(agendaProvider.notifier).cancelledItems;
+});
+
+// Provider para inicializar contexto do workspace
+final agendaContextProvider = Provider<void>((ref) {
+  final notifier = ref.read(agendaProvider.notifier);
+  final profile = ref.watch(currentProfileProvider);
+  final workspace = ref.watch(currentWorkspaceProvider);
+
+  if (profile != null && workspace != null) {
+    // Definir contexto de forma assíncrona
+    Future.microtask(() async {
+      await notifier.setContext(profile.name, workspace.id);
+    });
+  }
 });

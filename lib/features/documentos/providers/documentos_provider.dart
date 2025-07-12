@@ -7,8 +7,18 @@ import 'package:flutter/foundation.dart';
 import '../models/cartao_credito.dart';
 import '../models/cartao_fidelizacao.dart';
 import '../models/documento_identificacao.dart';
-import '../../../core/services/local_storage_service.dart';
+import '../../../core/services/workspace_storage_service.dart';
 import '../../../shared/providers/local_storage_provider.dart';
+import '../../../shared/providers/user_profile_provider.dart';
+import '../../../shared/providers/workspace_provider.dart';
+import '../../../core/models/user_profile.dart';
+import '../../../core/models/workspace.dart';
+
+// Provider para WorkspaceStorageService
+final workspaceStorageServiceProvider =
+    Provider<WorkspaceStorageService>((ref) {
+  return WorkspaceStorageService();
+});
 
 // Estado dos documentos
 class DocumentosState {
@@ -97,21 +107,20 @@ class DocumentosState {
 
 // Notifier para gerenciar documentos
 class DocumentosNotifier extends StateNotifier<DocumentosState> {
-  final LocalStorageService _storageService;
-  static const String _cartoesCreditoKey = 'cartoes_credito';
-  static const String _cartoesFidelizacaoKey = 'cartoes_fidelizacao';
-  static const String _documentosIdentificacaoKey = 'documentos_identificacao';
+  final WorkspaceStorageService _storageService;
   String? _currentWorkspaceId;
+  String? _currentProfileName;
   bool _isInitialized = false;
 
   DocumentosNotifier(this._storageService) : super(const DocumentosState()) {
     _loadDocumentos();
   }
 
-  /// Recarregar dados para novo workspace
-  Future<void> reloadForWorkspace(String workspaceId) async {
-    if (_currentWorkspaceId == workspaceId && _isInitialized) return;
-
+  /// Definir contexto do workspace
+  Future<void> setContext(
+      String profileName, String workspaceId) async {
+    await _storageService.setContext(profileName, workspaceId);
+    _currentProfileName = profileName;
     _currentWorkspaceId = workspaceId;
     await _loadDocumentos();
   }
@@ -121,39 +130,44 @@ class DocumentosNotifier extends StateNotifier<DocumentosState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // Carregar cartões de crédito
-      final cartoesCreditoJson =
-          await _storageService.getData(_cartoesCreditoKey);
-      final cartoesCredito = cartoesCreditoJson != null
-          ? (jsonDecode(cartoesCreditoJson) as List)
-              .map((json) => CartaoCredito.fromJson(json))
-              .toList()
-          : <CartaoCredito>[];
+      // Verificar se temos contexto definido
+      if (!_storageService.hasContext) {
+        debugPrint('⚠️ Contexto não definido para documentos');
+        state = state.copyWith(isLoading: false);
+        return;
+      }
 
-      // Carregar cartões de fidelização
-      final cartoesFidelizacaoJson =
-          await _storageService.getData(_cartoesFidelizacaoKey);
-      final cartoesFidelizacao = cartoesFidelizacaoJson != null
-          ? (jsonDecode(cartoesFidelizacaoJson) as List)
-              .map((json) => CartaoFidelizacao.fromJson(json))
-              .toList()
-          : <CartaoFidelizacao>[];
+      final workspaceData =
+          await _storageService.loadWorkspaceData('documentos');
+      if (workspaceData != null) {
+        final cartoesCredito =
+            (workspaceData['cartoes_credito'] as List<dynamic>? ?? [])
+                .map((json) => CartaoCredito.fromJson(json))
+                .toList();
+        final cartoesFidelizacao =
+            (workspaceData['cartoes_fidelizacao'] as List<dynamic>? ?? [])
+                .map((json) => CartaoFidelizacao.fromJson(json))
+                .toList();
+        final documentosIdentificacao =
+            (workspaceData['documentos_identificacao'] as List<dynamic>? ?? [])
+                .map((json) => DocumentoIdentificacao.fromJson(json))
+                .toList();
 
-      // Carregar documentos de identificação
-      final documentosIdentificacaoJson =
-          await _storageService.getData(_documentosIdentificacaoKey);
-      final documentosIdentificacao = documentosIdentificacaoJson != null
-          ? (jsonDecode(documentosIdentificacaoJson) as List)
-              .map((json) => DocumentoIdentificacao.fromJson(json))
-              .toList()
-          : <DocumentoIdentificacao>[];
-
-      state = state.copyWith(
-        cartoesCredito: cartoesCredito,
-        cartoesFidelizacao: cartoesFidelizacao,
-        documentosIdentificacao: documentosIdentificacao,
-        isLoading: false,
-      );
+        state = state.copyWith(
+          cartoesCredito: cartoesCredito,
+          cartoesFidelizacao: cartoesFidelizacao,
+          documentosIdentificacao: documentosIdentificacao,
+          isLoading: false,
+        );
+      } else {
+        // Se não há dados, inicializar com listas vazias
+        state = state.copyWith(
+          cartoesCredito: [],
+          cartoesFidelizacao: [],
+          documentosIdentificacao: [],
+          isLoading: false,
+        );
+      }
 
       _isInitialized = true;
     } catch (e) {
@@ -167,25 +181,21 @@ class DocumentosNotifier extends StateNotifier<DocumentosState> {
   /// Salvar documentos no storage
   Future<void> _saveDocumentos() async {
     try {
-      // Salvar cartões de crédito
-      final cartoesCreditoJson = jsonEncode(
-        state.cartoesCredito.map((cartao) => cartao.toJson()).toList(),
-      );
-      await _storageService.saveData(_cartoesCreditoKey, cartoesCreditoJson);
+      // Verificar se temos contexto definido
+      if (!_storageService.hasContext) {
+        throw Exception('Contexto não definido para salvar documentos');
+      }
 
-      // Salvar cartões de fidelização
-      final cartoesFidelizacaoJson = jsonEncode(
-        state.cartoesFidelizacao.map((cartao) => cartao.toJson()).toList(),
-      );
-      await _storageService.saveData(
-          _cartoesFidelizacaoKey, cartoesFidelizacaoJson);
-
-      // Salvar documentos de identificação
-      final documentosIdentificacaoJson = jsonEncode(
-        state.documentosIdentificacao.map((doc) => doc.toJson()).toList(),
-      );
-      await _storageService.saveData(
-          _documentosIdentificacaoKey, documentosIdentificacaoJson);
+      final data = {
+        'cartoes_credito':
+            state.cartoesCredito.map((cartao) => cartao.toJson()).toList(),
+        'cartoes_fidelizacao':
+            state.cartoesFidelizacao.map((cartao) => cartao.toJson()).toList(),
+        'documentos_identificacao':
+            state.documentosIdentificacao.map((doc) => doc.toJson()).toList(),
+        'lastModified': DateTime.now().toIso8601String(),
+      };
+      await _storageService.saveWorkspaceData('documentos', data);
     } catch (e) {
       state = state.copyWith(error: 'Erro ao salvar documentos: $e');
     }
@@ -469,8 +479,29 @@ class DocumentosNotifier extends StateNotifier<DocumentosState> {
 // Providers
 final documentosProvider =
     StateNotifierProvider<DocumentosNotifier, DocumentosState>((ref) {
-  final storageService = ref.watch(localStorageServiceProvider);
-  return DocumentosNotifier(storageService);
+  final storageService = ref.watch(workspaceStorageServiceProvider);
+  final notifier = DocumentosNotifier(storageService);
+
+  // Observa mudanças de profile/workspace e atualiza contexto
+  ref.listen<UserProfile?>(currentProfileProvider, (prevProfile, currProfile) {
+    final workspace = ref.read(currentWorkspaceProvider);
+    if (currProfile != null && workspace != null) {
+      debugPrint(
+          '[DocumentosProvider] Mudou profile/workspace: ${currProfile.name}/${workspace.id}');
+      notifier.setContext(currProfile.name, workspace.id);
+    }
+  });
+  ref.listen<Workspace?>(currentWorkspaceProvider,
+      (prevWorkspace, currWorkspace) {
+    final profile = ref.read(currentProfileProvider);
+    if (profile != null && currWorkspace != null) {
+      debugPrint(
+          '[DocumentosProvider] Mudou workspace/profile: ${profile.name}/${currWorkspace.id}');
+      notifier.setContext(profile.name, currWorkspace.id);
+    }
+  });
+
+  return notifier;
 });
 
 // Provider para estatísticas
@@ -495,4 +526,18 @@ final documentosVencemEmBreveProvider = Provider<List<dynamic>>((ref) {
 final cartoesPontosExpiramProvider = Provider<List<CartaoFidelizacao>>((ref) {
   final state = ref.watch(documentosProvider);
   return state.cartoesPontosExpiram;
+});
+
+// Provider para inicializar contexto do workspace
+final documentosContextProvider = Provider<void>((ref) {
+  final notifier = ref.read(documentosProvider.notifier);
+  final profile = ref.watch(currentProfileProvider);
+  final workspace = ref.watch(currentWorkspaceProvider);
+
+  if (profile != null && workspace != null) {
+    // Definir contexto de forma assíncrona
+    Future.microtask(() async {
+      await notifier.setContext(profile.name, workspace.id);
+    });
+  }
 });

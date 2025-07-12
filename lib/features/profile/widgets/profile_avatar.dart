@@ -95,8 +95,15 @@ class ProfileAvatar extends ConsumerWidget {
   }
 
   Widget _buildAvatarWidget(BuildContext context, WidgetRef ref) {
+    debugPrint('🔍 ProfileAvatar - Verificando avatar para: ${profile.name}');
+    debugPrint('🔍 ProfileAvatar - avatarUrl: ${profile.avatarUrl}');
+    debugPrint('🔍 ProfileAvatar - avatarPath: ${profile.avatarPath}');
+    debugPrint(
+        '🔍 ProfileAvatar - hasCustomAvatar: ${profile.hasCustomAvatar}');
+
     // Se tem URL, usar imagem da rede (útil para web e OAuth2)
     if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
+      debugPrint('🔍 ProfileAvatar - Usando avatarUrl: ${profile.avatarUrl}');
       return Image.network(
         profile.avatarUrl!,
         fit: BoxFit.cover,
@@ -106,8 +113,10 @@ class ProfileAvatar extends ConsumerWidget {
           if (loadingProgress == null) return child;
           return _buildLoadingAvatar(context);
         },
-        errorBuilder: (context, error, stackTrace) =>
-            _buildFallbackAvatar(context),
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('⚠️ ProfileAvatar - Erro ao carregar avatarUrl: $error');
+          return _buildFallbackAvatar(context);
+        },
       );
     }
 
@@ -115,15 +124,26 @@ class ProfileAvatar extends ConsumerWidget {
     if (profile.avatarPath != null && !kIsWeb) {
       try {
         final file = File(profile.avatarPath!);
+        debugPrint(
+            '🔍 ProfileAvatar - Verificando arquivo local: ${file.path}');
+        debugPrint('🔍 ProfileAvatar - Arquivo existe: ${file.existsSync()}');
+
         if (file.existsSync()) {
+          debugPrint(
+              '🔍 ProfileAvatar - Usando avatarPath: ${profile.avatarPath}');
           return Image.file(
             file,
             fit: BoxFit.cover,
             width: size,
             height: size,
-            errorBuilder: (context, error, stackTrace) =>
-                _buildFallbackAvatar(context),
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint(
+                  '⚠️ ProfileAvatar - Erro ao carregar avatarPath: $error');
+              return _buildFallbackAvatar(context);
+            },
           );
+        } else {
+          debugPrint('⚠️ ProfileAvatar - Arquivo não existe: ${file.path}');
         }
       } catch (e) {
         debugPrint('⚠️ Erro ao carregar avatar local: $e');
@@ -131,6 +151,8 @@ class ProfileAvatar extends ConsumerWidget {
     }
 
     // Fallback para iniciais
+    debugPrint(
+        '🔍 ProfileAvatar - Usando fallback com iniciais: ${profile.initials}');
     return _buildFallbackAvatar(context);
   }
 

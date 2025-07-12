@@ -1016,6 +1016,10 @@ class _AddColumnDialogState extends State<AddColumnDialog> {
                   return null;
                 },
                 autofocus: true,
+                textInputAction: TextInputAction.next,
+                enableInteractiveSelection: true,
+                autocorrect: false,
+                enableSuggestions: true,
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<ColumnType>(

@@ -5,6 +5,7 @@ import 'package:bloquinho/core/services/google_drive_service.dart';
 import 'package:bloquinho/core/services/onedrive_service.dart';
 import 'package:bloquinho/core/services/oauth2_service.dart' as oauth2;
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:bloquinho/core/services/data_directory_service.dart';
 
 /// Provider singleton para as configurações de armazenamento
 final storageSettingsProvider =
@@ -36,7 +37,9 @@ class StorageSettingsNotifier extends StateNotifier<StorageSettings> {
   Future<void> _initializeSettings() async {
     try {
       // Hive já foi inicializado globalmente
-      _box = await Hive.openBox<String>(_boxName);
+      final dataDir = await DataDirectoryService().initialize();
+      final dbPath = await DataDirectoryService().getBasePath();
+      _box = await Hive.openBox<String>(_boxName, path: dbPath);
       await _loadSettings();
     } catch (e) {
       // Erro ao inicializar configurações de storage: $e

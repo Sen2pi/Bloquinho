@@ -4,6 +4,10 @@ import 'package:flutter/foundation.dart';
 
 import '../models/password_entry.dart';
 import '../services/password_service.dart';
+import '../../../shared/providers/user_profile_provider.dart';
+import '../../../shared/providers/workspace_provider.dart';
+import '../../../core/models/user_profile.dart';
+import '../../../core/models/workspace.dart';
 
 // Estado do password manager
 class PasswordState extends Equatable {
@@ -113,21 +117,10 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
     _loadInitialData();
   }
 
-  /// Recarregar dados para novo workspace
-  Future<void> reloadForWorkspace(String workspaceId) async {
-    if (_currentWorkspaceId == workspaceId && _isInitialized) return;
-
-    _currentWorkspaceId = workspaceId;
-    await _loadInitialData();
-  }
-
-  /// Recarregar dados para novo contexto (perfil + workspace)
-  Future<void> reloadForContext(String profileName, String workspaceId) async {
-    final newContext = '$profileName/$workspaceId';
-    final currentContext = '$_currentProfileName/$_currentWorkspaceId';
-
-    if (newContext == currentContext && _isInitialized) return;
-
+  /// Definir contexto do workspace
+  Future<void> setContext(
+      String profileName, String workspaceId) async {
+    await _passwordService.setContext(profileName, workspaceId);
     _currentProfileName = profileName;
     _currentWorkspaceId = workspaceId;
     await _loadInitialData();
@@ -352,8 +345,29 @@ final passwordServiceProvider = Provider<PasswordService>((ref) {
 
 final passwordProvider =
     StateNotifierProvider<PasswordNotifier, PasswordState>((ref) {
-  final service = ref.watch(passwordServiceProvider);
-  return PasswordNotifier(service);
+  final passwordService = ref.watch(passwordServiceProvider);
+  final notifier = PasswordNotifier(passwordService);
+
+  // Observa mudanças de profile/workspace e atualiza contexto
+  ref.listen<UserProfile?>(currentProfileProvider, (prevProfile, currProfile) {
+    final workspace = ref.read(currentWorkspaceProvider);
+    if (currProfile != null && workspace != null) {
+      debugPrint(
+          '[PasswordProvider] Mudou profile/workspace: ${currProfile.name}/${workspace.id}');
+      notifier.setContext(currProfile.name, workspace.id);
+    }
+  });
+  ref.listen<Workspace?>(currentWorkspaceProvider,
+      (prevWorkspace, currWorkspace) {
+    final profile = ref.read(currentProfileProvider);
+    if (profile != null && currWorkspace != null) {
+      debugPrint(
+          '[PasswordProvider] Mudou workspace/profile: ${profile.name}/${currWorkspace.id}');
+      notifier.setContext(profile.name, currWorkspace.id);
+    }
+  });
+
+  return notifier;
 });
 
 // Providers derivados
@@ -391,4 +405,18 @@ final isUpdatingProvider = Provider<bool>((ref) {
 
 final isDeletingProvider = Provider<bool>((ref) {
   return ref.watch(passwordProvider).isDeleting;
+});
+
+// Provider para inicializar contexto do workspace
+final passwordContextProvider = Provider<void>((ref) {
+  final notifier = ref.read(passwordProvider.notifier);
+  final profile = ref.watch(currentProfileProvider);
+  final workspace = ref.watch(currentWorkspaceProvider);
+
+  if (profile != null && workspace != null) {
+    // Definir contexto de forma assíncrona
+    Future.microtask(() async {
+      await notifier.setContext(profile.name, workspace.id);
+    });
+  }
 });

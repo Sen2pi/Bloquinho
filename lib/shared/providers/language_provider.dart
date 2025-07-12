@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../core/models/app_language.dart';
 import '../../core/l10n/app_strings.dart';
+import '../../core/services/data_directory_service.dart';
 
 class LanguageNotifier extends StateNotifier<AppLanguage> {
   static const String _languageKey = 'app_language';
@@ -16,7 +17,9 @@ class LanguageNotifier extends StateNotifier<AppLanguage> {
   Future<void> _initHive() async {
     try {
       // Hive já foi inicializado globalmente
-      _box = await Hive.openBox('app_settings');
+      final dataDir = await DataDirectoryService().initialize();
+      final dbPath = await DataDirectoryService().getBasePath();
+      _box = await Hive.openBox('app_settings', path: dbPath);
 
       // Carregar idioma salvo
       final savedLanguageCode = _box!.get(_languageKey, defaultValue: 'pt');
@@ -35,11 +38,15 @@ class LanguageNotifier extends StateNotifier<AppLanguage> {
   Future<void> _ensureBoxIsOpen() async {
     if (_box == null || !_box!.isOpen) {
       try {
-        _box = await Hive.openBox('app_settings');
+        final dataDir = await DataDirectoryService().initialize();
+        final dbPath = await DataDirectoryService().getBasePath();
+        _box = await Hive.openBox('app_settings', path: dbPath);
       } catch (e) {
         // Se não conseguir abrir o box, criar um novo
-        await Hive.deleteBoxFromDisk('app_settings');
-        _box = await Hive.openBox('app_settings');
+        final dataDir = await DataDirectoryService().initialize();
+        final dbPath = await DataDirectoryService().getBasePath();
+        await Hive.deleteBoxFromDisk('app_settings', path: dbPath);
+        _box = await Hive.openBox('app_settings', path: dbPath);
       }
     }
   }

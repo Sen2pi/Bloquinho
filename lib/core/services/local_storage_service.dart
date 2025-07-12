@@ -737,4 +737,111 @@ Boa escrita! ✨
     }
     return null;
   }
+
+  /// Garantir que arquivo de dados padrão existe para um tipo específico
+  Future<void> ensureDataFileExists(
+      String profileName, String workspaceName, String dataType) async {
+    await _ensureInitialized();
+
+    if (kIsWeb) return;
+
+    try {
+      // Garantir que workspace existe
+      await ensureWorkspaceExists(profileName, workspaceName);
+
+      // Obter caminho do workspace
+      final workspacePath = await getWorkspacePath(profileName, workspaceName);
+      if (workspacePath == null) {
+        throw Exception('Workspace não encontrado: $workspaceName');
+      }
+
+      // Determinar pasta e arquivo baseado no tipo de dados
+      String folderName;
+      String fileName;
+      String defaultContent;
+
+      switch (dataType) {
+        case 'documentos':
+          folderName = 'documents';
+          fileName = 'index.json';
+          defaultContent = '''
+{
+  "workspace": "$workspaceName",
+  "createdAt": "${DateTime.now().toIso8601String()}",
+  "documents": [],
+  "categories": ["pessoal", "trabalho", "estudos"],
+  "version": "1.0"
+}
+''';
+          break;
+
+        case 'agenda':
+          folderName = 'agenda';
+          fileName = 'config.json';
+          defaultContent = '''
+{
+  "workspace": "$workspaceName",
+  "createdAt": "${DateTime.now().toIso8601String()}",
+  "events": [],
+  "reminders": [],
+  "categories": ["pessoal", "trabalho", "saúde"],
+  "version": "1.0"
+}
+''';
+          break;
+
+        case 'passwords':
+          folderName = 'passwords';
+          fileName = 'index.json';
+          defaultContent = '''
+{
+  "workspace": "$workspaceName",
+  "createdAt": "${DateTime.now().toIso8601String()}",
+  "passwords": [],
+  "folders": [],
+  "categories": ["pessoal", "trabalho", "financeiro"],
+  "version": "1.0"
+}
+''';
+          break;
+
+        case 'database':
+          folderName = 'database';
+          fileName = 'config.json';
+          defaultContent = '''
+{
+  "workspace": "$workspaceName",
+  "createdAt": "${DateTime.now().toIso8601String()}",
+  "tables": [],
+  "version": "1.0"
+}
+''';
+          break;
+
+        default:
+          throw Exception('Tipo de dados não suportado: $dataType');
+      }
+
+      // Criar pasta se não existir
+      final folderPath = path.join(workspacePath, folderName);
+      final folderDir = Directory(folderPath);
+      if (!await folderDir.exists()) {
+        await folderDir.create(recursive: true);
+        debugPrint('✅ Pasta criada: $folderPath');
+      }
+
+      // Criar arquivo se não existir
+      final filePath = path.join(folderPath, fileName);
+      final dataFile = File(filePath);
+      if (!await dataFile.exists()) {
+        await dataFile.writeAsString(defaultContent);
+        debugPrint('✅ Arquivo de dados criado: $filePath');
+      } else {
+        debugPrint('✅ Arquivo de dados já existe: $filePath');
+      }
+    } catch (e) {
+      debugPrint('❌ Erro ao garantir arquivo de dados: $e');
+      throw Exception('Erro ao criar arquivo de dados: $e');
+    }
+  }
 }

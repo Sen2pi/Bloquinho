@@ -120,6 +120,10 @@ class _AddPasswordDialogState extends ConsumerState<AddPasswordDialog> {
                           hintText: 'Ex: Conta do Gmail',
                           prefixIcon: Icon(Icons.title),
                         ),
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: true,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Título é obrigatório';
@@ -137,6 +141,10 @@ class _AddPasswordDialogState extends ConsumerState<AddPasswordDialog> {
                           hintText: 'Ex: usuario@gmail.com',
                           prefixIcon: Icon(Icons.person),
                         ),
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Utilizador é obrigatório';
@@ -178,6 +186,10 @@ class _AddPasswordDialogState extends ConsumerState<AddPasswordDialog> {
                             ],
                           ),
                         ),
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Senha é obrigatória';
@@ -195,6 +207,10 @@ class _AddPasswordDialogState extends ConsumerState<AddPasswordDialog> {
                           hintText: 'Ex: https://gmail.com',
                           prefixIcon: Icon(Icons.link),
                         ),
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
                       ),
                       const SizedBox(height: 16),
 
@@ -243,6 +259,10 @@ class _AddPasswordDialogState extends ConsumerState<AddPasswordDialog> {
                           hintText: 'Ex: trabalho, importante, pessoal',
                           prefixIcon: Icon(Icons.tag),
                         ),
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: true,
                       ),
                       const SizedBox(height: 16),
 
@@ -256,6 +276,10 @@ class _AddPasswordDialogState extends ConsumerState<AddPasswordDialog> {
                           prefixIcon: Icon(Icons.note),
                           alignLabelWithHint: true,
                         ),
+                        textInputAction: TextInputAction.done,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: true,
                       ),
                     ],
                   ),

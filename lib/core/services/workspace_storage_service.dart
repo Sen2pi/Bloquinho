@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:bloquinho/core/services/local_storage_service.dart';
+import 'package:bloquinho/core/models/user_profile.dart';
 
 /// Serviço para gerenciar armazenamento isolado por workspace
 class WorkspaceStorageService {
@@ -45,6 +46,22 @@ class WorkspaceStorageService {
       await _localStorage.ensureWorkspaceExists(profileName, workspaceId);
     }
   }
+
+  /// Definir contexto a partir de UserProfile e workspace ID
+  Future<void> setContextFromProfile(
+      UserProfile profile, String workspaceId) async {
+    await setContext(profile.name, workspaceId);
+  }
+
+  /// Obter contexto atual
+  Map<String, String?> get currentContext => {
+        'profileName': _currentProfileName,
+        'workspaceId': _currentWorkspaceId,
+      };
+
+  /// Verificar se o contexto está definido
+  bool get hasContext =>
+      _currentProfileName != null && _currentWorkspaceId != null;
 
   /// Obter caminho do workspace atual
   Future<String?> getCurrentWorkspacePath() async {
@@ -104,7 +121,16 @@ class WorkspaceStorageService {
     final dataFile = File(path.join(workspacePath, '$dataType.json'));
     if (!await dataFile.exists()) {
       debugPrint('📄 Arquivo de dados não encontrado: $dataType');
-      return null;
+
+      // Garantir que o arquivo de dados padrão seja criado
+      try {
+        await _localStorage.ensureDataFileExists(
+            _currentProfileName!, _currentWorkspaceId!, dataType);
+        debugPrint('✅ Arquivo de dados criado automaticamente: $dataType');
+      } catch (e) {
+        debugPrint('❌ Erro ao criar arquivo de dados: $e');
+        return null;
+      }
     }
 
     try {
@@ -251,8 +277,10 @@ class WorkspaceStorageService {
     }
   }
 
-  /// Obter contexto atual
-  String? get currentProfileName => _currentProfileName;
-  String? get currentWorkspaceId => _currentWorkspaceId;
-  bool get isInitialized => _isInitialized;
+  /// Limpar contexto atual
+  void clearContext() {
+    _currentProfileName = null;
+    _currentWorkspaceId = null;
+    debugPrint('🔄 Contexto limpo');
+  }
 }

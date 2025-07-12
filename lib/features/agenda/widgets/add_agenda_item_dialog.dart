@@ -138,6 +138,10 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                           labelText: 'Título *',
                           hintText: 'Digite o título do item',
                         ),
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: true,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Título é obrigatório';
@@ -253,6 +257,10 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                           hintText: 'Digite uma descrição (opcional)',
                         ),
                         maxLines: 3,
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: true,
                       ),
                       const SizedBox(height: 16),
 
@@ -263,6 +271,10 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                           labelText: 'Localização',
                           hintText: 'Digite o local (opcional)',
                         ),
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: true,
                       ),
                       const SizedBox(height: 16),
 
@@ -330,6 +342,10 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                           hintText:
                               'Digite os participantes separados por vírgula',
                         ),
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: true,
                       ),
                       const SizedBox(height: 16),
 
@@ -340,6 +356,10 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                           labelText: 'Tags',
                           hintText: 'Digite as tags separadas por vírgula',
                         ),
+                        textInputAction: TextInputAction.done,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: true,
                       ),
                     ],
                   ),

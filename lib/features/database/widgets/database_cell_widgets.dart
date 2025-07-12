@@ -73,6 +73,10 @@ class TextCellWidget extends DatabaseCellWidget {
       onChanged: onChanged,
       onFieldSubmitted: (_) => onStopEdit?.call(),
       autofocus: true,
+      textInputAction: TextInputAction.done,
+      enableInteractiveSelection: true,
+      autocorrect: false,
+      enableSuggestions: true,
     );
   }
 
@@ -121,6 +125,10 @@ class NumberCellWidget extends DatabaseCellWidget {
       },
       onFieldSubmitted: (_) => onStopEdit?.call(),
       autofocus: true,
+      textInputAction: TextInputAction.done,
+      enableInteractiveSelection: true,
+      autocorrect: false,
+      enableSuggestions: false,
     );
   }
 
