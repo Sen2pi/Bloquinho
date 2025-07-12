@@ -165,6 +165,9 @@ class _AddCartaoFidelizacaoDialogState
                                 border: OutlineInputBorder(),
                                 prefixIcon: Icon(Icons.card_giftcard),
                               ),
+                              enableInteractiveSelection: true,
+                              autocorrect: false,
+                              enableSuggestions: false,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Nome é obrigatório';
@@ -182,6 +185,9 @@ class _AddCartaoFidelizacaoDialogState
                                 border: OutlineInputBorder(),
                                 prefixIcon: Icon(Icons.business),
                               ),
+                              enableInteractiveSelection: true,
+                              autocorrect: false,
+                              enableSuggestions: false,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Empresa é obrigatória';
@@ -206,6 +212,9 @@ class _AddCartaoFidelizacaoDialogState
                                 border: OutlineInputBorder(),
                                 prefixIcon: Icon(Icons.credit_card),
                               ),
+                              enableInteractiveSelection: true,
+                              autocorrect: false,
+                              enableSuggestions: false,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Número é obrigatório';
@@ -223,6 +232,10 @@ class _AddCartaoFidelizacaoDialogState
                                 border: OutlineInputBorder(),
                                 prefixIcon: Icon(Icons.person),
                               ),
+                              textCapitalization: TextCapitalization.words,
+                              enableInteractiveSelection: true,
+                              autocorrect: false,
+                              enableSuggestions: false,
                             ),
                           ),
                         ],
@@ -238,6 +251,9 @@ class _AddCartaoFidelizacaoDialogState
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.calendar_today),
                         ),
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
                       ),
 
                       const SizedBox(height: 16),
@@ -251,9 +267,12 @@ class _AddCartaoFidelizacaoDialogState
                               decoration: const InputDecoration(
                                 labelText: 'Pontos Atuais',
                                 border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.stars),
+                                prefixIcon: Icon(Icons.star),
                               ),
                               keyboardType: TextInputType.number,
+                              enableInteractiveSelection: true,
+                              autocorrect: false,
+                              enableSuggestions: false,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -261,10 +280,14 @@ class _AddCartaoFidelizacaoDialogState
                             child: TextFormField(
                               controller: _pontosExpiracaoController,
                               decoration: const InputDecoration(
-                                labelText: 'Data Expiração Pontos',
+                                labelText: 'Pontos Expiração',
                                 border: OutlineInputBorder(),
                                 prefixIcon: Icon(Icons.schedule),
                               ),
+                              keyboardType: TextInputType.number,
+                              enableInteractiveSelection: true,
+                              autocorrect: false,
+                              enableSuggestions: false,
                             ),
                           ),
                         ],
@@ -280,7 +303,10 @@ class _AddCartaoFidelizacaoDialogState
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.card_giftcard),
                         ),
-                        maxLines: 2,
+                        maxLines: 3,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
                       ),
 
                       const SizedBox(height: 16),
@@ -294,8 +320,12 @@ class _AddCartaoFidelizacaoDialogState
                               decoration: const InputDecoration(
                                 labelText: 'Website',
                                 border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.language),
+                                prefixIcon: Icon(Icons.web),
                               ),
+                              keyboardType: TextInputType.url,
+                              enableInteractiveSelection: true,
+                              autocorrect: false,
+                              enableSuggestions: false,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -308,6 +338,9 @@ class _AddCartaoFidelizacaoDialogState
                                 prefixIcon: Icon(Icons.phone),
                               ),
                               keyboardType: TextInputType.phone,
+                              enableInteractiveSelection: true,
+                              autocorrect: false,
+                              enableSuggestions: false,
                             ),
                           ),
                         ],
@@ -324,6 +357,9 @@ class _AddCartaoFidelizacaoDialogState
                           prefixIcon: Icon(Icons.email),
                         ),
                         keyboardType: TextInputType.emailAddress,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
                       ),
 
                       const SizedBox(height: 16),
@@ -337,6 +373,9 @@ class _AddCartaoFidelizacaoDialogState
                           prefixIcon: Icon(Icons.note),
                         ),
                         maxLines: 3,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
                       ),
 
                       const SizedBox(height: 16),

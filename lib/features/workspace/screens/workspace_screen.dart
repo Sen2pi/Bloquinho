@@ -69,6 +69,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     final currentWorkspace = ref.watch(currentWorkspaceProvider);
     final workspaceSections = ref.watch(currentWorkspaceSectionsProvider);
 
+    // DEBUG: Log do estado atual
+    debugPrint('🔍 WorkspaceScreen - currentProfile: ${currentProfile?.name}');
+    debugPrint(
+        '🔍 WorkspaceScreen - currentWorkspace: ${currentWorkspace?.name} (${currentWorkspace?.id})');
+    debugPrint(
+        '🔍 WorkspaceScreen - workspaceSections: ${workspaceSections.length} seções');
+
     // Carregar páginas automaticamente quando o contexto muda
     ref.watch(pagesLoaderProvider);
 

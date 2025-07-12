@@ -189,10 +189,9 @@ class _AddCartaoCreditoDialogState extends State<AddCartaoCreditoDialog> {
                           prefixIcon: Icon(Icons.credit_card),
                         ),
                         keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(16),
-                        ],
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Número é obrigatório';
@@ -215,6 +214,9 @@ class _AddCartaoCreditoDialogState extends State<AddCartaoCreditoDialog> {
                           prefixIcon: Icon(Icons.person),
                         ),
                         textCapitalization: TextCapitalization.words,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Nome é obrigatório';
@@ -237,11 +239,9 @@ class _AddCartaoCreditoDialogState extends State<AddCartaoCreditoDialog> {
                                 prefixIcon: Icon(Icons.calendar_today),
                               ),
                               keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                                LengthLimitingTextInputFormatter(4),
-                                _ValidadeInputFormatter(),
-                              ],
+                              enableInteractiveSelection: true,
+                              autocorrect: false,
+                              enableSuggestions: false,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Validade é obrigatória';
@@ -263,10 +263,9 @@ class _AddCartaoCreditoDialogState extends State<AddCartaoCreditoDialog> {
                                 prefixIcon: Icon(Icons.security),
                               ),
                               keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                                LengthLimitingTextInputFormatter(4),
-                              ],
+                              enableInteractiveSelection: true,
+                              autocorrect: false,
+                              enableSuggestions: false,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'CVV é obrigatório';
@@ -291,6 +290,9 @@ class _AddCartaoCreditoDialogState extends State<AddCartaoCreditoDialog> {
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.account_balance),
                         ),
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Emissor é obrigatório';
@@ -315,6 +317,9 @@ class _AddCartaoCreditoDialogState extends State<AddCartaoCreditoDialog> {
                                       Icon(Icons.account_balance_wallet),
                                 ),
                                 keyboardType: TextInputType.number,
+                                enableInteractiveSelection: true,
+                                autocorrect: false,
+                                enableSuggestions: false,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -327,6 +332,9 @@ class _AddCartaoCreditoDialogState extends State<AddCartaoCreditoDialog> {
                                   prefixIcon: Icon(Icons.receipt),
                                 ),
                                 keyboardType: TextInputType.number,
+                                enableInteractiveSelection: true,
+                                autocorrect: false,
+                                enableSuggestions: false,
                               ),
                             ),
                           ],
@@ -339,6 +347,9 @@ class _AddCartaoCreditoDialogState extends State<AddCartaoCreditoDialog> {
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.schedule),
                           ),
+                          enableInteractiveSelection: true,
+                          autocorrect: false,
+                          enableSuggestions: false,
                         ),
                         const SizedBox(height: 16),
                       ],
@@ -352,6 +363,9 @@ class _AddCartaoCreditoDialogState extends State<AddCartaoCreditoDialog> {
                           prefixIcon: Icon(Icons.note),
                         ),
                         maxLines: 3,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
                       ),
 
                       const SizedBox(height: 16),
@@ -481,46 +495,5 @@ class _AddCartaoCreditoDialogState extends State<AddCartaoCreditoDialog> {
       case BandeiraCartao.outros:
         return Colors.grey;
     }
-  }
-}
-
-class _ValidadeInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    if (newValue.text.isEmpty) {
-      return newValue;
-    }
-
-    final text = newValue.text.replaceAll('/', '');
-    if (text.length > 4) {
-      return oldValue;
-    }
-
-    if (text.length >= 2) {
-      final month = int.tryParse(text.substring(0, 2));
-      if (month == null || month < 1 || month > 12) {
-        return oldValue;
-      }
-    }
-
-    if (text.length >= 4) {
-      final year = int.tryParse(text.substring(2, 4));
-      if (year == null || year < 0 || year > 99) {
-        return oldValue;
-      }
-    }
-
-    String formatted = text;
-    if (text.length >= 2) {
-      formatted = '${text.substring(0, 2)}/${text.substring(2)}';
-    }
-
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
   }
 }

@@ -118,8 +118,7 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
   }
 
   /// Definir contexto do workspace
-  Future<void> setContext(
-      String profileName, String workspaceId) async {
+  Future<void> setContext(String profileName, String workspaceId) async {
     await _passwordService.setContext(profileName, workspaceId);
     _currentProfileName = profileName;
     _currentWorkspaceId = workspaceId;
@@ -348,22 +347,54 @@ final passwordProvider =
   final passwordService = ref.watch(passwordServiceProvider);
   final notifier = PasswordNotifier(passwordService);
 
+  // Inicializa contexto na primeira criação do provider
+  final profile = ref.read(currentProfileProvider);
+  final workspace = ref.read(currentWorkspaceProvider);
+  final defaultWorkspaceId = ref.read(passwordsWorkspaceProvider);
+  if (profile != null) {
+    final workspaceId = workspace?.id ?? defaultWorkspaceId;
+    notifier.setContext(profile.name, workspaceId);
+  }
+
   // Observa mudanças de profile/workspace e atualiza contexto
   ref.listen<UserProfile?>(currentProfileProvider, (prevProfile, currProfile) {
     final workspace = ref.read(currentWorkspaceProvider);
-    if (currProfile != null && workspace != null) {
+    final defaultWorkspaceId = ref.read(passwordsWorkspaceProvider);
+
+    debugPrint(
+        '🔍 [PasswordProvider] Profile mudou: ${prevProfile?.name} → ${currProfile?.name}');
+    debugPrint(
+        '🔍 [PasswordProvider] Workspace atual: ${workspace?.name} (${workspace?.id})');
+    debugPrint('🔍 [PasswordProvider] Workspace default: $defaultWorkspaceId');
+
+    if (currProfile != null) {
+      final workspaceId = workspace?.id ?? defaultWorkspaceId;
       debugPrint(
-          '[PasswordProvider] Mudou profile/workspace: ${currProfile.name}/${workspace.id}');
-      notifier.setContext(currProfile.name, workspace.id);
+          '[PasswordProvider] Mudou workspace/profile: ${currProfile.name}/$workspaceId');
+      notifier.setContext(currProfile.name, workspaceId);
+    } else {
+      debugPrint('[PasswordProvider] Profile é null, não definindo contexto');
     }
   });
+
+  // Observa mudanças de workspace
   ref.listen<Workspace?>(currentWorkspaceProvider,
       (prevWorkspace, currWorkspace) {
     final profile = ref.read(currentProfileProvider);
-    if (profile != null && currWorkspace != null) {
+    final defaultWorkspaceId = ref.read(passwordsWorkspaceProvider);
+
+    debugPrint(
+        '🔍 [PasswordProvider] Workspace mudou: ${prevWorkspace?.name} → ${currWorkspace?.name}');
+    debugPrint('🔍 [PasswordProvider] Profile atual: ${profile?.name}');
+    debugPrint('🔍 [PasswordProvider] Workspace default: $defaultWorkspaceId');
+
+    if (profile != null) {
+      final workspaceId = currWorkspace?.id ?? defaultWorkspaceId;
       debugPrint(
-          '[PasswordProvider] Mudou workspace/profile: ${profile.name}/${currWorkspace.id}');
-      notifier.setContext(profile.name, currWorkspace.id);
+          '[PasswordProvider] Mudou workspace/profile: ${profile.name}/$workspaceId');
+      notifier.setContext(profile.name, workspaceId);
+    } else {
+      debugPrint('[PasswordProvider] Profile é null, não definindo contexto');
     }
   });
 
@@ -412,11 +443,13 @@ final passwordContextProvider = Provider<void>((ref) {
   final notifier = ref.read(passwordProvider.notifier);
   final profile = ref.watch(currentProfileProvider);
   final workspace = ref.watch(currentWorkspaceProvider);
+  final defaultWorkspaceId = ref.read(passwordsWorkspaceProvider);
 
-  if (profile != null && workspace != null) {
+  if (profile != null) {
+    final workspaceId = workspace?.id ?? defaultWorkspaceId;
     // Definir contexto de forma assíncrona
     Future.microtask(() async {
-      await notifier.setContext(profile.name, workspace.id);
+      await notifier.setContext(profile.name, workspaceId);
     });
   }
 });

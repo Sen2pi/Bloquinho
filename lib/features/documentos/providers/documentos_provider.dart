@@ -117,8 +117,7 @@ class DocumentosNotifier extends StateNotifier<DocumentosState> {
   }
 
   /// Definir contexto do workspace
-  Future<void> setContext(
-      String profileName, String workspaceId) async {
+  Future<void> setContext(String profileName, String workspaceId) async {
     await _storageService.setContext(profileName, workspaceId);
     _currentProfileName = profileName;
     _currentWorkspaceId = workspaceId;
@@ -482,22 +481,56 @@ final documentosProvider =
   final storageService = ref.watch(workspaceStorageServiceProvider);
   final notifier = DocumentosNotifier(storageService);
 
+  // Inicializa contexto na primeira criação do provider
+  final profile = ref.read(currentProfileProvider);
+  final workspace = ref.read(currentWorkspaceProvider);
+  final defaultWorkspaceId = ref.read(documentosWorkspaceProvider);
+  if (profile != null) {
+    final workspaceId = workspace?.id ?? defaultWorkspaceId;
+    notifier.setContext(profile.name, workspaceId);
+  }
+
   // Observa mudanças de profile/workspace e atualiza contexto
   ref.listen<UserProfile?>(currentProfileProvider, (prevProfile, currProfile) {
     final workspace = ref.read(currentWorkspaceProvider);
-    if (currProfile != null && workspace != null) {
+    final defaultWorkspaceId = ref.read(documentosWorkspaceProvider);
+
+    debugPrint(
+        '🔍 [DocumentosProvider] Profile mudou: ${prevProfile?.name} → ${currProfile?.name}');
+    debugPrint(
+        '🔍 [DocumentosProvider] Workspace atual: ${workspace?.name} (${workspace?.id})');
+    debugPrint(
+        '🔍 [DocumentosProvider] Workspace default: $defaultWorkspaceId');
+
+    if (currProfile != null) {
+      final workspaceId = workspace?.id ?? defaultWorkspaceId;
       debugPrint(
-          '[DocumentosProvider] Mudou profile/workspace: ${currProfile.name}/${workspace.id}');
-      notifier.setContext(currProfile.name, workspace.id);
+          '[DocumentosProvider] Mudou workspace/profile: ${currProfile.name}/$workspaceId');
+      notifier.setContext(currProfile.name, workspaceId);
+    } else {
+      debugPrint('[DocumentosProvider] Profile é null, não definindo contexto');
     }
   });
+
+  // Observa mudanças de workspace
   ref.listen<Workspace?>(currentWorkspaceProvider,
       (prevWorkspace, currWorkspace) {
     final profile = ref.read(currentProfileProvider);
-    if (profile != null && currWorkspace != null) {
+    final defaultWorkspaceId = ref.read(documentosWorkspaceProvider);
+
+    debugPrint(
+        '🔍 [DocumentosProvider] Workspace mudou: ${prevWorkspace?.name} → ${currWorkspace?.name}');
+    debugPrint('🔍 [DocumentosProvider] Profile atual: ${profile?.name}');
+    debugPrint(
+        '🔍 [DocumentosProvider] Workspace default: $defaultWorkspaceId');
+
+    if (profile != null) {
+      final workspaceId = currWorkspace?.id ?? defaultWorkspaceId;
       debugPrint(
-          '[DocumentosProvider] Mudou workspace/profile: ${profile.name}/${currWorkspace.id}');
-      notifier.setContext(profile.name, currWorkspace.id);
+          '[DocumentosProvider] Mudou workspace/profile: ${profile.name}/$workspaceId');
+      notifier.setContext(profile.name, workspaceId);
+    } else {
+      debugPrint('[DocumentosProvider] Profile é null, não definindo contexto');
     }
   });
 
@@ -533,11 +566,13 @@ final documentosContextProvider = Provider<void>((ref) {
   final notifier = ref.read(documentosProvider.notifier);
   final profile = ref.watch(currentProfileProvider);
   final workspace = ref.watch(currentWorkspaceProvider);
+  final defaultWorkspaceId = ref.read(documentosWorkspaceProvider);
 
-  if (profile != null && workspace != null) {
+  if (profile != null) {
+    final workspaceId = workspace?.id ?? defaultWorkspaceId;
     // Definir contexto de forma assíncrona
     Future.microtask(() async {
-      await notifier.setContext(profile.name, workspace.id);
+      await notifier.setContext(profile.name, workspaceId);
     });
   }
 });

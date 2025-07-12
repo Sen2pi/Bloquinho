@@ -169,22 +169,54 @@ final databaseNotifierProvider =
         (ref) {
   final notifier = DatabaseNotifier(ref);
 
+  // Inicializa contexto na primeira criação do provider
+  final profile = ref.read(currentProfileProvider);
+  final workspace = ref.read(currentWorkspaceProvider);
+  final defaultWorkspaceId = ref.read(databaseWorkspaceProvider);
+  if (profile != null) {
+    final workspaceId = workspace?.id ?? defaultWorkspaceId;
+    notifier.setContext(profile.name, workspaceId);
+  }
+
   // Observa mudanças de profile/workspace e atualiza contexto
   ref.listen<UserProfile?>(currentProfileProvider, (prevProfile, currProfile) {
     final workspace = ref.read(currentWorkspaceProvider);
-    if (currProfile != null && workspace != null) {
+    final defaultWorkspaceId = ref.read(databaseWorkspaceProvider);
+
+    debugPrint(
+        '🔍 [DatabaseProvider] Profile mudou: ${prevProfile?.name} → ${currProfile?.name}');
+    debugPrint(
+        '🔍 [DatabaseProvider] Workspace atual: ${workspace?.name} (${workspace?.id})');
+    debugPrint('🔍 [DatabaseProvider] Workspace default: $defaultWorkspaceId');
+
+    if (currProfile != null) {
+      final workspaceId = workspace?.id ?? defaultWorkspaceId;
       debugPrint(
-          '[DatabaseProvider] Mudou profile/workspace: ${currProfile.name}/${workspace.id}');
-      notifier.setContext(currProfile.name, workspace.id);
+          '[DatabaseProvider] Mudou workspace/profile: ${currProfile.name}/$workspaceId');
+      notifier.setContext(currProfile.name, workspaceId);
+    } else {
+      debugPrint('[DatabaseProvider] Profile é null, não definindo contexto');
     }
   });
+
+  // Observa mudanças de workspace
   ref.listen<Workspace?>(currentWorkspaceProvider,
       (prevWorkspace, currWorkspace) {
     final profile = ref.read(currentProfileProvider);
-    if (profile != null && currWorkspace != null) {
+    final defaultWorkspaceId = ref.read(databaseWorkspaceProvider);
+
+    debugPrint(
+        '🔍 [DatabaseProvider] Workspace mudou: ${prevWorkspace?.name} → ${currWorkspace?.name}');
+    debugPrint('🔍 [DatabaseProvider] Profile atual: ${profile?.name}');
+    debugPrint('🔍 [DatabaseProvider] Workspace default: $defaultWorkspaceId');
+
+    if (profile != null) {
+      final workspaceId = currWorkspace?.id ?? defaultWorkspaceId;
       debugPrint(
-          '[DatabaseProvider] Mudou workspace/profile: ${profile.name}/${currWorkspace.id}');
-      notifier.setContext(profile.name, currWorkspace.id);
+          '[DatabaseProvider] Mudou workspace/profile: ${profile.name}/$workspaceId');
+      notifier.setContext(profile.name, workspaceId);
+    } else {
+      debugPrint('[DatabaseProvider] Profile é null, não definindo contexto');
     }
   });
 
