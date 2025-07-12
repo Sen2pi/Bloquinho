@@ -23,6 +23,8 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
   Set<String> _expandedPageIds = {}; // Múltiplas páginas expandidas
   String? _searchQuery;
   bool _showArchived = false;
+  List<String> _detectedCycles = []; // Cache de ciclos detectados
+  List<String> _cleanedPages = []; // Cache de páginas limpas
 
   @override
   void initState() {
@@ -62,16 +64,35 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
     String? currentPageId;
     final isDarkMode = ref.watch(isDarkModeProvider);
 
-    // Verificar se há ciclos na estrutura de páginas
-    final pagesWithCycles = _detectCycles(pages);
-    if (pagesWithCycles.isNotEmpty) {
+    // DEBUG: Listar todas as páginas carregadas
+    debugPrint('==== DEBUG: Todas as páginas carregadas ====');
+    for (final p in pages) {
       debugPrint(
-          '⚠️ Ciclos detectados nas páginas: ${pagesWithCycles.join(', ')}');
-      // Filtrar páginas com ciclos para evitar recursão infinita
-      final safePages =
-          pages.where((p) => !pagesWithCycles.contains(p.id)).toList();
-      if (safePages.isNotEmpty) {
-        pages = safePages;
+          '  - id: \'${p.id}\', title: \'${p.title}\', parentId: \'${p.parentId}\'');
+    }
+
+    // Verificar se há ciclos na estrutura de páginas (apenas uma vez por build)
+    if (pages.isNotEmpty) {
+      final pagesWithCycles = _detectCycles(pages);
+      if (pagesWithCycles.isNotEmpty && pagesWithCycles != _detectedCycles) {
+        debugPrint(
+            '⚠️ Ciclos detectados nas páginas: ${pagesWithCycles.join(', ')}');
+        _detectedCycles = pagesWithCycles;
+        // Filtrar páginas com ciclos para evitar recursão infinita
+        final safePages =
+            pages.where((p) => !pagesWithCycles.contains(p.id)).toList();
+        if (safePages.isNotEmpty) {
+          pages = safePages;
+        }
+      }
+
+      // Limpar dados corrompidos - páginas que apontam para si mesmas (apenas uma vez)
+      final cleanPages = pages.where((p) => p.parentId != p.id).toList();
+      if (cleanPages.length != pages.length && cleanPages != _cleanedPages) {
+        debugPrint(
+            '🧹 Limpando ${pages.length - cleanPages.length} páginas com auto-referência');
+        _cleanedPages = cleanPages.map((p) => p.id).toList();
+        pages = cleanPages;
       }
     }
 
@@ -90,36 +111,54 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
       );
     }
 
-    // Encontrar a página root (Bloquinho) com verificações de segurança
-    PageModel? rootPage;
-    try {
-      if (widget.pageRootId != null) {
-        rootPage = pages.firstWhere(
-          (p) => p.id == widget.pageRootId,
-          orElse: () => pages.firstWhere(
-            (p) => p.isRoot,
-            orElse: () => pages.first,
-          ),
-        );
-      } else {
-        rootPage = pages.firstWhere(
-          (p) => p.isRoot,
-          orElse: () => pages.first,
-        );
+    // Encontrar todas as páginas raiz (parentId == null ou isRoot)
+    final rootPages =
+        pages.where((p) => p.isRoot || p.parentId == null).toList();
+    debugPrint('==== DEBUG: Páginas raiz detectadas ====');
+    for (final r in rootPages) {
+      debugPrint(
+          '  - id: \'${r.id}\', title: \'${r.title}\', parentId: \'${r.parentId}\'');
+    }
+    if (rootPages.isEmpty) {
+      // Se não há páginas raiz, usar a primeira página como raiz
+      rootPages.add(pages.first);
+      debugPrint(
+          '⚠️ Nenhuma raiz detectada, usando a primeira página como raiz: ${pages.first.id}');
+    }
+
+    // DEBUG: Montar árvore recursivamente e logar filhos de cada página
+    void logTree(PageModel page, List<PageModel> allPages, int depth) {
+      final children = allPages
+          .where((p) => p.parentId == page.id && p.id != page.id)
+          .toList();
+      debugPrint(
+          '${'  ' * depth}- ${page.title} (id: ${page.id}) filhos: [${children.map((c) => c.id).join(', ')}]');
+      for (final child in children) {
+        logTree(child, allPages, depth + 1);
       }
-    } catch (e) {
-      // Fallback: usar a primeira página disponível
-      rootPage = pages.first;
+    }
+
+    debugPrint('==== DEBUG: Estrutura da árvore ====');
+    for (final root in rootPages) {
+      logTree(root, pages, 0);
     }
 
     return Container(
       color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-      child: _buildPageItem(
-        page: rootPage,
-        allPages: pages,
-        currentPageId: currentPageId,
-        isDarkMode: isDarkMode,
-        depth: 0,
+      child: ListView.builder(
+        shrinkWrap: true,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemCount: rootPages.length,
+        itemBuilder: (context, index) {
+          final rootPage = rootPages[index];
+          return _buildPageItem(
+            page: rootPage,
+            allPages: pages,
+            currentPageId: currentPageId,
+            isDarkMode: isDarkMode,
+            depth: 0,
+          );
+        },
       ),
     );
   }
@@ -221,6 +260,12 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
     // Proteção contra recursão infinita
     if (depth > 50) {
       debugPrint('⚠️ Profundidade máxima atingida para página: ${page.title}');
+      return const SizedBox.shrink();
+    }
+
+    // Proteção contra auto-referência
+    if (page.parentId == page.id) {
+      debugPrint('⚠️ Página com auto-referência detectada: ${page.title}');
       return const SizedBox.shrink();
     }
 

@@ -238,8 +238,12 @@ class BloquinhoStorageService {
         final title = _desanitizeFileName(pageId);
         final content = await pageFile.readAsString();
         PageModel? metadata = await _loadPageMetadata(pageId, dir.path);
+
+        // Determinar se esta é uma página raiz (está no diretório raiz do bloquinho)
+        final isRootPage = dir.path.endsWith('bloquinho');
+
         if (metadata != null) {
-          // Usar o ícone salvo nos metadados, ou ícone padrão se não existir
+          // PRESERVAR o ícone dos metadados se existir, senão usar padrão
           final icon = metadata.icon ?? _getDefaultIcon(title);
           debugPrint('🔍 DEBUG: Página com metadados encontrada:');
           debugPrint('  - Ícone dos metadados: "${metadata.icon}"');
@@ -247,10 +251,13 @@ class BloquinhoStorageService {
               '  - Ícone padrão para título "$title": "${_getDefaultIcon(title)}"');
           debugPrint('  - Ícone final escolhido: "$icon"');
 
+          // CORREÇÃO: Garantir que página raiz tenha parentId null
+          final correctedParentId = isRootPage ? null : parentId;
+
           thisPage = metadata.copyWith(
             content: content,
-            parentId: parentId,
-            icon: icon,
+            parentId: correctedParentId,
+            icon: icon, // PRESERVAR o ícone dos metadados
           );
         } else {
           final defaultIcon = _getDefaultIcon(title);
@@ -260,7 +267,8 @@ class BloquinhoStorageService {
 
           thisPage = PageModel.create(
             title: title,
-            parentId: parentId,
+            parentId:
+                isRootPage ? null : parentId, // CORREÇÃO: Raiz sempre null
             content: content,
             icon: defaultIcon,
             customId: pageId,
@@ -272,55 +280,56 @@ class BloquinhoStorageService {
             .id; // O parentId para subpastas passa a ser o id desta página
       }
 
-      // 2. Processar subdiretórios
+      // 2. Processar TODOS os arquivos .md do diretório (incluindo subpáginas)
+      for (final entity in entities) {
+        if (entity is File && entity.path.endsWith(_pageExtension)) {
+          final fileName = path.basenameWithoutExtension(entity.path);
+          // Pular o arquivo principal se já foi processado
+          if (fileName == dirName && pageFile != null) continue;
+
+          final title = _desanitizeFileName(fileName);
+          final content = await entity.readAsString();
+          PageModel? metadata = await _loadPageMetadata(fileName, dir.path);
+          PageModel page;
+          if (metadata != null) {
+            // PRESERVAR o ícone dos metadados se existir, senão usar padrão
+            final icon = metadata.icon ?? _getDefaultIcon(title);
+            debugPrint('🔍 DEBUG: Subpágina com metadados encontrada:');
+            debugPrint('  - Ícone dos metadados: "${metadata.icon}"');
+            debugPrint(
+                '  - Ícone padrão para título "$title": "${_getDefaultIcon(title)}"');
+            debugPrint('  - Ícone final escolhido: "$icon"');
+
+            page = metadata.copyWith(
+              content: content,
+              parentId: parentId,
+              icon: icon, // PRESERVAR o ícone dos metadados
+            );
+          } else {
+            final defaultIcon = _getDefaultIcon(title);
+            debugPrint('🔍 DEBUG: Subpágina sem metadados, criando nova:');
+            debugPrint('  - Título: "$title"');
+            debugPrint('  - Ícone padrão: "$defaultIcon"');
+
+            page = PageModel.create(
+              title: title,
+              parentId: parentId,
+              content: content,
+              icon: defaultIcon,
+              customId: fileName,
+            );
+            await _savePageMetadata(page, dir.path);
+          }
+          pages.add(page);
+        }
+      }
+
+      // 3. Processar subdiretórios DEPOIS de processar todos os arquivos
       final directories = entities.whereType<Directory>().toList();
       for (final directory in directories) {
         final subDirName = path.basename(directory.path);
         if (subDirName.startsWith('.') || subDirName == '_metadata') continue;
         await _loadHierarchicalStructureTree(directory, pages, parentId);
-      }
-
-      // 3. Processar outros arquivos .md que não sejam o principal
-      for (final entity in entities) {
-        if (entity is File && entity.path.endsWith(_pageExtension)) {
-          final fileName = path.basenameWithoutExtension(entity.path);
-          if (fileName != dirName) {
-            final title = _desanitizeFileName(fileName);
-            final content = await entity.readAsString();
-            PageModel? metadata = await _loadPageMetadata(fileName, dir.path);
-            PageModel page;
-            if (metadata != null) {
-              // Usar o ícone salvo nos metadados, ou ícone padrão se não existir
-              final icon = metadata.icon ?? _getDefaultIcon(title);
-              debugPrint('🔍 DEBUG: Subpágina com metadados encontrada:');
-              debugPrint('  - Ícone dos metadados: "${metadata.icon}"');
-              debugPrint(
-                  '  - Ícone padrão para título "$title": "${_getDefaultIcon(title)}"');
-              debugPrint('  - Ícone final escolhido: "$icon"');
-
-              page = metadata.copyWith(
-                content: content,
-                parentId: parentId,
-                icon: icon,
-              );
-            } else {
-              final defaultIcon = _getDefaultIcon(title);
-              debugPrint('🔍 DEBUG: Subpágina sem metadados, criando nova:');
-              debugPrint('  - Título: "$title"');
-              debugPrint('  - Ícone padrão: "$defaultIcon"');
-
-              page = PageModel.create(
-                title: title,
-                parentId: parentId,
-                content: content,
-                icon: defaultIcon,
-                customId: fileName,
-              );
-              await _savePageMetadata(page, dir.path);
-            }
-            pages.add(page);
-          }
-        }
       }
     } catch (e) {
       debugPrint('❌ Erro ao carregar estrutura hierárquica: $e');
@@ -412,10 +421,58 @@ class BloquinhoStorageService {
     }
   }
 
+  /// Limpa páginas corrompidas (auto-referência) dos metadados e remove arquivo/pasta se necessário
+  Future<void> cleanCorruptedPagesAndMetadata(
+      String profileName, String workspaceName) async {
+    try {
+      final bloquinhoDir =
+          await getBloquinhoDirectory(profileName, workspaceName);
+      if (bloquinhoDir == null) return;
+      final metadataFile = File(path.join(bloquinhoDir.path, _metadataFile));
+      if (!await metadataFile.exists()) return;
+
+      final content = await metadataFile.readAsString();
+      final metadata = Map<String, dynamic>.from(json.decode(content));
+      final idsToRemove = <String>[];
+      metadata.forEach((id, data) {
+        if (data is Map && data['parentId'] == id) {
+          idsToRemove.add(id);
+        }
+      });
+      for (final id in idsToRemove) {
+        metadata.remove(id);
+      }
+      if (metadata.isEmpty) {
+        await metadataFile.delete();
+        // Se não há mais páginas, tentar remover a pasta do bloquinho
+        try {
+          final files = await bloquinhoDir.list().toList();
+          if (files.isEmpty) {
+            await bloquinhoDir.delete(recursive: true);
+            debugPrint('  ✅ Pasta do Bloquinho removida (vazia)');
+          }
+        } catch (e) {
+          debugPrint(
+              '  ⚠️ Não foi possível remover pasta do Bloquinho (pode estar em uso): $e');
+        }
+      } else {
+        await metadataFile.writeAsString(json.encode(metadata));
+      }
+      if (idsToRemove.isNotEmpty) {
+        debugPrint(
+            '🧹 Metadados limpos: páginas corrompidas removidas: ${idsToRemove.join(', ')}');
+      }
+    } catch (e) {
+      debugPrint('❌ Erro ao limpar metadados corrompidos: $e');
+    }
+  }
+
   /// Deletar página e todas as suas subpáginas
   Future<void> deletePage(
       String pageId, String profileName, String workspaceName) async {
     try {
+      debugPrint('🗑️ Iniciando deleção da página: $pageId');
+
       // Tentar obter diretório existente
       Directory? bloquinhoDir =
           await getBloquinhoDirectory(profileName, workspaceName);
@@ -430,28 +487,124 @@ class BloquinhoStorageService {
       // Carregar página para obter informações
       final page = await loadPage(pageId, profileName, workspaceName);
       if (page == null) {
-        throw Exception('Página não encontrada');
+        debugPrint('⚠️ Página não encontrada para deleção: $pageId');
+        return;
       }
 
-      // Obter caminho da página
-      final pagePath = _getPageFilePath(page, bloquinhoDir.path);
-      final pageDir = Directory(pagePath.replaceAll(_pageExtension, ''));
+      debugPrint('🗑️ Deletando página: ${page.title}');
+
+      // Primeiro, deletar todas as subpáginas recursivamente
+      for (final childId in page.childrenIds) {
+        debugPrint('  🗑️ Deletando subpágina: $childId');
+        await deletePage(childId, profileName, workspaceName);
+      }
+
+      // Determinar caminho do arquivo baseado na hierarquia (mesma lógica do savePage)
+      String filePath;
+      if (page.parentId == null) {
+        // Página raiz: arquivo direto na raiz do bloquinho
+        filePath = path.join(
+            bloquinhoDir.path, _sanitizeFileName(page.title) + _pageExtension);
+      } else {
+        // Subpágina: arquivo dentro do diretório do pai
+        final parentPage =
+            await _findPageById(page.parentId!, bloquinhoDir.path);
+        if (parentPage != null) {
+          // Encontrar o diretório do pai
+          String parentDirPath;
+          if (parentPage.parentId == null) {
+            // Pai é página raiz, pasta dentro do bloquinho
+            parentDirPath = path.join(
+                bloquinhoDir.path, _sanitizeFileName(parentPage.title));
+          } else {
+            // Pai é subpágina, navegar recursivamente
+            parentDirPath =
+                await _getPageDirectoryPath(parentPage, bloquinhoDir.path);
+          }
+
+          // Caminho do arquivo da subpágina
+          filePath = path.join(
+              parentDirPath, _sanitizeFileName(page.title) + _pageExtension);
+        } else {
+          // Fallback: arquivo na raiz se não encontrar pai
+          filePath = path.join(bloquinhoDir.path,
+              _sanitizeFileName(page.title) + _pageExtension);
+        }
+      }
+
+      // Determinar caminho da pasta da página
+      String pageDirPath;
+      if (page.parentId == null) {
+        // Página raiz: pasta com nome da página na raiz
+        pageDirPath =
+            path.join(bloquinhoDir.path, _sanitizeFileName(page.title));
+      } else {
+        // Subpágina: pasta dentro do diretório do pai
+        final parentPage =
+            await _findPageById(page.parentId!, bloquinhoDir.path);
+        if (parentPage != null) {
+          String parentDirPath;
+          if (parentPage.parentId == null) {
+            parentDirPath = path.join(
+                bloquinhoDir.path, _sanitizeFileName(parentPage.title));
+          } else {
+            parentDirPath =
+                await _getPageDirectoryPath(parentPage, bloquinhoDir.path);
+          }
+          pageDirPath = path.join(parentDirPath, _sanitizeFileName(page.title));
+        } else {
+          // Fallback
+          pageDirPath =
+              path.join(bloquinhoDir.path, _sanitizeFileName(page.title));
+        }
+      }
+
+      debugPrint('  🗑️ Caminho do arquivo: $filePath');
+      debugPrint('  🗑️ Caminho da pasta: $pageDirPath');
 
       // Deletar arquivo da página
-      final pageFile = File(pagePath);
+      final pageFile = File(filePath);
       if (await pageFile.exists()) {
         await pageFile.delete();
+        debugPrint('  ✅ Arquivo deletado: $filePath');
+      } else {
+        debugPrint('  ⚠️ Arquivo não encontrado: $filePath');
       }
 
       // Deletar pasta da página (e todas as subpáginas)
+      final pageDir = Directory(pageDirPath);
       if (await pageDir.exists()) {
-        await pageDir.delete(recursive: true);
+        try {
+          await pageDir.delete(recursive: true);
+          debugPrint('  ✅ Pasta deletada: $pageDirPath');
+        } catch (e) {
+          debugPrint('  ⚠️ Erro ao deletar pasta (pode estar em uso): $e');
+          // Tentar deletar arquivos individualmente se a pasta não puder ser removida
+          try {
+            final files = await pageDir.list().toList();
+            for (final file in files) {
+              if (file is File) {
+                await file.delete();
+                debugPrint('  ✅ Arquivo deletado: ${file.path}');
+              }
+            }
+            debugPrint(
+                '  ⚠️ Pasta não pôde ser removida, mas arquivos foram deletados');
+          } catch (e2) {
+            debugPrint('  ⚠️ Erro ao deletar arquivos individuais: $e2');
+          }
+        }
+      } else {
+        debugPrint('  ⚠️ Pasta não encontrada: $pageDirPath');
       }
 
       // Deletar metadados
       await _deletePageMetadata(pageId, bloquinhoDir.path);
+      debugPrint('  ✅ Metadados deletados');
 
-      debugPrint('✅ Página deletada: $pagePath');
+      debugPrint('✅ Página deletada completamente: ${page.title}');
+      // Limpeza extra após deleção
+      await cleanCorruptedPagesAndMetadata(profileName, workspaceName);
     } catch (e) {
       debugPrint('❌ Erro ao deletar página: $e');
       throw Exception('Erro ao deletar página: $e');

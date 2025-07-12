@@ -77,11 +77,15 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
 
       final pages =
           await _storageService.loadAllPages(profileName, workspaceName);
-      state = pages;
+
+      // CORREÇÃO: Corrigir metadados corrompidos automaticamente
+      final correctedPages = _fixCorruptedPages(pages);
+
+      state = correctedPages;
 
       if (kDebugMode) {
         print(
-            '✅ Páginas carregadas: ${pages.length} páginas para $profileName/$workspaceName');
+            '✅ Páginas carregadas: ${correctedPages.length} páginas para $profileName/$workspaceName');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -89,6 +93,34 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       }
       state = [];
     }
+  }
+
+  /// Corrigir páginas com metadados corrompidos
+  List<PageModel> _fixCorruptedPages(List<PageModel> pages) {
+    final correctedPages = <PageModel>[];
+    final seenIds = <String>{};
+
+    for (final page in pages) {
+      // Verificar se é uma página duplicada
+      if (seenIds.contains(page.id)) {
+        debugPrint('⚠️ Página duplicada removida: ${page.title}');
+        continue;
+      }
+      seenIds.add(page.id);
+
+      // Verificar se tem auto-referência
+      if (page.parentId == page.id) {
+        debugPrint('⚠️ Página com auto-referência corrigida: ${page.title}');
+        // Corrigir: se é a página raiz (Main), parentId = null, senão usar um parent válido
+        final correctedPage = page.copyWith(
+            parentId: page.title.toLowerCase() == 'main' ? null : 'Main');
+        correctedPages.add(correctedPage);
+      } else {
+        correctedPages.add(page);
+      }
+    }
+
+    return correctedPages;
   }
 
   /// Recarregar páginas quando o workspace muda
@@ -113,6 +145,12 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
   List<PageModel> getChildren(String parentId) =>
       state.where((p) => p.parentId == parentId).toList();
 
+  /// Gerar ID único para página baseado no título
+  String _generatePageId(String title) {
+    // Usar o título como ID, mas sanitizado
+    return title.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+  }
+
   /// Criar nova página e salvar no armazenamento
   Future<void> createPage({
     required String title,
@@ -126,6 +164,18 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       // Verificar se temos contexto válido
       if (_currentProfileName == null || _currentWorkspaceName == null) {
         throw Exception('Perfil ou workspace não disponível');
+      }
+
+      // PROTEÇÃO: Garantir que parentId não seja igual ao id da página
+      final pageId = _generatePageId(title);
+      if (parentId == pageId) {
+        debugPrint(
+            '⚠️ Tentativa de criar página com auto-referência detectada');
+        debugPrint('  - Título: "$title"');
+        debugPrint('  - ParentId: "$parentId"');
+        debugPrint('  - PageId: "$pageId"');
+        debugPrint('  - Corrigindo parentId para null');
+        parentId = null; // Corrigir para null se for auto-referência
       }
 
       final page = PageModel.create(
@@ -147,7 +197,7 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       await _savePageToStorage(page);
 
       if (kDebugMode) {
-        print('✅ Página criada: ${page.title}');
+        print('✅ Página criada: ${page.title} (parentId: ${page.parentId})');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -293,10 +343,24 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       await initialize();
 
       final page = getById(id);
-      if (page == null) return;
+      if (page == null) {
+        if (kDebugMode) {
+          print('⚠️ Página não encontrada para remoção: $id');
+        }
+        return;
+      }
 
-      // Remover filhos recursivamente
-      for (final childId in page.childrenIds) {
+      if (kDebugMode) {
+        print('🗑️ Iniciando remoção da página: ${page.title} (ID: $id)');
+        print('  - Subpáginas: ${page.childrenIds.length}');
+      }
+
+      // Remover filhos recursivamente primeiro
+      final childrenToRemove = List<String>.from(page.childrenIds);
+      for (final childId in childrenToRemove) {
+        if (kDebugMode) {
+          print('  🗑️ Removendo subpágina: $childId');
+        }
         await removePage(childId);
       }
 
@@ -308,14 +372,17 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
         _removeChild(page.parentId!, id);
       }
 
-      // Deletar do armazenamento
+      // Deletar do armazenamento (arquivo e pasta)
       if (_currentProfileName != null && _currentWorkspaceName != null) {
+        if (kDebugMode) {
+          print('  🗑️ Deletando arquivos da página: ${page.title}');
+        }
         await _storageService.deletePage(
             id, _currentProfileName!, _currentWorkspaceName!);
       }
 
       if (kDebugMode) {
-        print('✅ Página removida: ${page.title}');
+        print('✅ Página removida completamente: ${page.title}');
       }
     } catch (e) {
       if (kDebugMode) {
