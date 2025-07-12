@@ -965,9 +965,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   /// Deletar perfil em background sem bloquear a navegação
   Future<void> _deleteProfileInBackground() async {
     try {
+      debugPrint('🗑️ Iniciando deleção de perfil em background...');
+
       // Deletar perfil usando o UserProfileService
       await ref.read(userProfileProvider.notifier).deleteProfile();
+
+      debugPrint('✅ Perfil deletado com sucesso em background');
     } catch (e) {
+      debugPrint('❌ Erro ao deletar perfil em background: $e');
       // Não mostrar erro ao usuário pois já está no onboarding
     }
   }
@@ -1146,15 +1151,18 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   void _searchInBloquinho(String query) {
     // Pesquisar em páginas do Bloquinho
     // TODO: Implementar pesquisa nas páginas do Bloquinho
+    debugPrint('🔍 Pesquisando no Bloquinho: $query');
   }
 
   void _searchInDatabase(String query) {
     // Pesquisar na Base de Dados
     // TODO: Implementar pesquisa na Base de Dados
+    debugPrint('🔍 Pesquisando na Base de Dados: $query');
   }
 
   void _clearSearch() {
     // Limpar resultados de pesquisa
+    debugPrint('🧹 Limpando pesquisa');
   }
 
   void _showCloudSyncDetails(BuildContext context) {

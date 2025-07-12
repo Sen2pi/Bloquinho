@@ -71,6 +71,7 @@ final languageProvider =
     StateNotifierProvider<LanguageNotifier, AppLanguage>((ref) {
   return LanguageNotifier();
 });
+
 // Provider derivado: locale atual
 final currentLocaleProvider = Provider<Locale>((ref) {
   return ref.watch(languageProvider).locale;

@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/user_profile.dart';
 import '../../../shared/providers/user_profile_provider.dart';
-import 'package:bloquinho/core/theme/app_colors.dart';
 
 /// Widget para exibir avatar do usuário
 class ProfileAvatar extends ConsumerWidget {
@@ -127,7 +126,7 @@ class ProfileAvatar extends ConsumerWidget {
           );
         }
       } catch (e) {
-        // debugPrint('⚠️ Erro ao carregar avatar local: $e');
+        debugPrint('⚠️ Erro ao carregar avatar local: $e');
       }
     }
 

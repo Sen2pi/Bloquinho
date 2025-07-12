@@ -37,9 +37,9 @@ void main() async {
     // Inicializar serviços críticos
     await _initializeServices();
 
-    // Serviços inicializados com sucesso
+    debugPrint('✅ Serviços inicializados com sucesso');
   } catch (e) {
-    // Erro silencioso na inicialização
+    debugPrint('❌ Erro ao inicializar serviços: $e');
   }
 
   // Configurar orientação da tela
@@ -65,13 +65,16 @@ Future<void> _initializeServices() async {
     // Inicializar LocalStorageService (sistema antigo para compatibilidade)
     final localStorageService = LocalStorageService();
     await localStorageService.initialize();
+    debugPrint('✅ LocalStorageService inicializado');
 
     // Inicializar FileStorageService (novo sistema)
     final fileStorageService = FileStorageService();
     await fileStorageService.initialize();
+    debugPrint('✅ FileStorageService inicializado');
 
     // Inicializar OAuth2Service
     await OAuth2Service.initialize();
+    debugPrint('✅ OAuth2Service inicializado');
 
     // Restaurar sessões OAuth2 existentes (conexões persistentes)
     // Delay para permitir inicialização completa do app
@@ -79,8 +82,9 @@ Future<void> _initializeServices() async {
     await OAuth2Service.restoreExistingSessions();
 
     // UserProfileService será inicializado no provider conforme necessário
+    debugPrint('✅ Serviços básicos inicializados');
   } catch (e) {
-    // Erro silencioso na inicialização de serviços
+    debugPrint('⚠️ Erro ao inicializar serviços: $e');
   }
 }
 

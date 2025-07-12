@@ -64,10 +64,19 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
     String? currentPageId;
     final isDarkMode = ref.watch(isDarkModeProvider);
 
+    // DEBUG: Listar todas as páginas carregadas
+    debugPrint('==== DEBUG: Todas as páginas carregadas ====');
+    for (final p in pages) {
+      debugPrint(
+          '  - id: \'${p.id}\', title: \'${p.title}\', parentId: \'${p.parentId}\'');
+    }
+
     // Verificar se há ciclos na estrutura de páginas (apenas uma vez por build)
     if (pages.isNotEmpty) {
       final pagesWithCycles = _detectCycles(pages);
       if (pagesWithCycles.isNotEmpty && pagesWithCycles != _detectedCycles) {
+        debugPrint(
+            '⚠️ Ciclos detectados nas páginas: ${pagesWithCycles.join(', ')}');
         _detectedCycles = pagesWithCycles;
         // Filtrar páginas com ciclos para evitar recursão infinita
         final safePages =
@@ -80,6 +89,8 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
       // Limpar dados corrompidos - páginas que apontam para si mesmas (apenas uma vez)
       final cleanPages = pages.where((p) => p.parentId != p.id).toList();
       if (cleanPages.length != pages.length && cleanPages != _cleanedPages) {
+        debugPrint(
+            '🧹 Limpando ${pages.length - cleanPages.length} páginas com auto-referência');
         _cleanedPages = cleanPages.map((p) => p.id).toList();
         pages = cleanPages;
       }
@@ -103,9 +114,33 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
     // Encontrar todas as páginas raiz (parentId == null ou isRoot)
     final rootPages =
         pages.where((p) => p.isRoot || p.parentId == null).toList();
+    debugPrint('==== DEBUG: Páginas raiz detectadas ====');
+    for (final r in rootPages) {
+      debugPrint(
+          '  - id: \'${r.id}\', title: \'${r.title}\', parentId: \'${r.parentId}\'');
+    }
     if (rootPages.isEmpty) {
       // Se não há páginas raiz, usar a primeira página como raiz
       rootPages.add(pages.first);
+      debugPrint(
+          '⚠️ Nenhuma raiz detectada, usando a primeira página como raiz: ${pages.first.id}');
+    }
+
+    // DEBUG: Montar árvore recursivamente e logar filhos de cada página
+    void logTree(PageModel page, List<PageModel> allPages, int depth) {
+      final children = allPages
+          .where((p) => p.parentId == page.id && p.id != page.id)
+          .toList();
+      debugPrint(
+          '${'  ' * depth}- ${page.title} (id: ${page.id}) filhos: [${children.map((c) => c.id).join(', ')}]');
+      for (final child in children) {
+        logTree(child, allPages, depth + 1);
+      }
+    }
+
+    debugPrint('==== DEBUG: Estrutura da árvore ====');
+    for (final root in rootPages) {
+      logTree(root, pages, 0);
     }
 
     return Container(
@@ -224,11 +259,13 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
   }) {
     // Proteção contra recursão infinita
     if (depth > 50) {
+      debugPrint('⚠️ Profundidade máxima atingida para página: ${page.title}');
       return const SizedBox.shrink();
     }
 
     // Proteção contra auto-referência
     if (page.parentId == page.id) {
+      debugPrint('⚠️ Página com auto-referência detectada: ${page.title}');
       return const SizedBox.shrink();
     }
 

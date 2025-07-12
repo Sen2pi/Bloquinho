@@ -5,7 +5,6 @@ import 'package:bloquinho/core/services/google_drive_service.dart';
 import 'package:bloquinho/core/services/onedrive_service.dart';
 import 'package:bloquinho/core/services/oauth2_service.dart' as oauth2;
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:bloquinho/core/services/file_storage_service.dart';
 
 /// Provider singleton para as configurações de armazenamento
 final storageSettingsProvider =
@@ -40,7 +39,8 @@ class StorageSettingsNotifier extends StateNotifier<StorageSettings> {
       _box = await Hive.openBox<String>(_boxName);
       await _loadSettings();
     } catch (e) {
-      // Erro silencioso na inicialização
+      print('Erro ao inicializar configurações de storage: $e');
+      // Se falhar a inicialização, manter configurações padrão
     }
   }
 
@@ -54,7 +54,7 @@ class StorageSettingsNotifier extends StateNotifier<StorageSettings> {
         _initializeService(settings.provider);
       }
     } catch (e) {
-      // Erro silencioso ao carregar configurações
+      print('Erro ao carregar configurações: $e');
     }
   }
 
@@ -63,7 +63,7 @@ class StorageSettingsNotifier extends StateNotifier<StorageSettings> {
     try {
       await _box?.put(_settingsKey, state.toJsonString());
     } catch (e) {
-      // Erro silencioso ao salvar configurações
+      print('Erro ao salvar configurações: $e');
     }
   }
 

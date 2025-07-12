@@ -90,6 +90,7 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
 final themeProvider = StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) {
   return ThemeNotifier();
 });
+
 // Provider para verificar se está no modo escuro
 final isDarkModeProvider = Provider<bool>((ref) {
   final themeMode = ref.watch(themeProvider);
