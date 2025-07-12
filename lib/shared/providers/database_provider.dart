@@ -14,10 +14,7 @@ final databaseServiceProvider = Provider<DatabaseService>((ref) {
     currentWorkspaceIdProvider,
     (previous, current) async {
       if (current != null && current != previous) {
-        debugPrint(
-            '🔄 Provider detectou mudança de workspace: $previous → $current');
         await databaseService.setCurrentWorkspace(current);
-        debugPrint('✅ Workspace definido no DatabaseService');
       }
     },
   );
@@ -74,8 +71,6 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<List<DatabaseTable>>> {
     // Observar mudanças de workspace
     ref.listen<String?>(currentWorkspaceIdProvider, (previous, current) {
       if (current != previous && current != null) {
-        debugPrint(
-            '🔄 DatabaseNotifier detectou mudança: $previous → $current');
         _lastWorkspaceId = current;
         _databaseService.setCurrentWorkspace(current);
 
@@ -117,8 +112,6 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<List<DatabaseTable>>> {
       }
 
       final tables = _databaseService.tables;
-      debugPrint(
-          '🔄 DatabaseNotifier carregou ${tables.length} tabelas para workspace "$_lastWorkspaceId"');
       state = AsyncValue.data(tables);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
@@ -131,7 +124,6 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<List<DatabaseTable>>> {
 
     _lastWorkspaceId = workspaceId;
     _databaseService.setCurrentWorkspace(workspaceId);
-    debugPrint('🔄 DatabaseNotifier: Recarregando para workspace $workspaceId');
     await _loadTables();
   }
 

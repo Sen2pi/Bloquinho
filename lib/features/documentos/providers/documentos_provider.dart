@@ -113,8 +113,6 @@ class DocumentosNotifier extends StateNotifier<DocumentosState> {
     if (_currentWorkspaceId == workspaceId && _isInitialized) return;
 
     _currentWorkspaceId = workspaceId;
-    debugPrint(
-        '🔄 DocumentosNotifier: Recarregando para workspace $workspaceId');
     await _loadDocumentos();
   }
 

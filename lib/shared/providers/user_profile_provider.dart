@@ -74,8 +74,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         try {
           stats = await _profileService.getProfileStats();
         } catch (e) {
-          debugPrint('⚠️ Erro ao carregar stats: $e');
-          // Não falhamos o loading por causa das stats
+          // Erro silencioso ao carregar stats
         }
       }
 
@@ -85,7 +84,6 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         isLoading: false,
       );
     } catch (e) {
-      debugPrint('❌ Erro ao carregar perfil: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -112,7 +110,6 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         isLoading: false,
         error: e.toString(),
       );
-      debugPrint('⚠️ Erro ao carregar perfil: $e');
     }
   }
 

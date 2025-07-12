@@ -47,7 +47,6 @@ class PasswordService {
     await _ensureInitialized();
 
     if (_currentWorkspaceId != workspaceId) {
-      debugPrint('🔄 PasswordService: Workspace mudou para $workspaceId');
       _currentWorkspaceId = workspaceId;
 
       // Definir contexto no WorkspaceStorageService se temos perfil
@@ -62,7 +61,6 @@ class PasswordService {
     await _ensureInitialized();
 
     if (_currentProfileName != profileName) {
-      debugPrint('🔄 PasswordService: Perfil mudou para $profileName');
       _currentProfileName = profileName;
 
       // Definir contexto no WorkspaceStorageService se temos workspace
@@ -80,7 +78,6 @@ class PasswordService {
     final newContext = '$profileName/$workspaceId';
 
     if (previousContext != newContext) {
-      debugPrint('🔄 PasswordService: Contexto mudou para $newContext');
       _currentProfileName = profileName;
       _currentWorkspaceId = workspaceId;
 
@@ -183,7 +180,6 @@ class PasswordService {
     await _ensureInitialized();
 
     if (_currentWorkspaceId == null) {
-      debugPrint('⚠️ Nenhum workspace selecionado para passwords');
       return [];
     }
 
@@ -199,7 +195,6 @@ class PasswordService {
           final entry = PasswordEntry.fromJson(Map<String, dynamic>.from(data));
           passwords.add(entry);
         } catch (e) {
-          debugPrint('⚠️ Erro ao carregar password do workspace: $e');
           continue;
         }
       }
@@ -259,8 +254,6 @@ class PasswordService {
     // Manter compatibilidade com Hive
     await _passwordsBox.put(newEntry.id, newEntry.toJson());
 
-    debugPrint(
-        '✅ Password criado no workspace $_currentWorkspaceId: ${newEntry.title}');
     return newEntry.id;
   }
 
@@ -287,9 +280,6 @@ class PasswordService {
 
     // Manter compatibilidade com Hive
     await _passwordsBox.put(updatedEntry.id, updatedEntry.toJson());
-
-    debugPrint(
-        '✅ Password atualizado no workspace $_currentWorkspaceId: ${updatedEntry.title}');
   }
 
   Future<void> deletePassword(String id) async {
@@ -302,8 +292,6 @@ class PasswordService {
 
     // Manter compatibilidade com Hive
     await _passwordsBox.delete(id);
-
-    debugPrint('🗑️ Password deletado do workspace $_currentWorkspaceId: $id');
   }
 
   Future<void> deleteMultiplePasswords(List<String> ids) async {
@@ -318,9 +306,6 @@ class PasswordService {
     for (final id in ids) {
       await _passwordsBox.delete(id);
     }
-
-    debugPrint(
-        '🗑️ ${ids.length} passwords deletados do workspace $_currentWorkspaceId');
   }
 
   /// Salvar passwords no workspace storage
