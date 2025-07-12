@@ -206,78 +206,83 @@ class BloquinhoStorageService {
     }
   }
 
-  /// Carregar estrutura hierárquica usando algoritmo tree-like
-  /// Funciona como o comando tree: todas as pastas no mesmo nível são filhas do pai
+  /// Carregar estrutura hierárquica baseada em diretórios e arquivos .md
   Future<void> _loadHierarchicalStructureTree(
       Directory dir, List<PageModel> pages, String? parentId) async {
     try {
       final entities = await dir.list().toList();
+      final dirName = path.basename(dir.path);
 
-      // 1. Primeiro, processar todos os arquivos .md no nível atual
-      final mdFiles = entities
-          .where((e) => e is File && e.path.endsWith(_pageExtension))
-          .cast<File>()
-          .toList();
+      // 1. Se existe um arquivo .md com o mesmo nome do diretório, ele é a página deste nível
+      File? pageFile;
+      final potentialPageFile =
+          File(path.join(dir.path, dirName + _pageExtension));
+      if (await potentialPageFile.exists()) {
+        pageFile = potentialPageFile;
+      } else {
+        // Se não existe, buscar o primeiro arquivo .md do diretório
+        final mdFiles = entities
+            .where((e) => e is File && e.path.endsWith(_pageExtension))
+            .cast<File>()
+            .toList();
+        if (mdFiles.isNotEmpty) {
+          pageFile = mdFiles.first;
+        }
+      }
 
-      for (final file in mdFiles) {
-        final pageId = path.basenameWithoutExtension(file.path);
+      PageModel? thisPage;
+      if (pageFile != null) {
+        final pageId = path.basenameWithoutExtension(pageFile.path);
         final title = _desanitizeFileName(pageId);
-        final content = await file.readAsString();
-
-        // Tentar carregar metadados existentes
+        final content = await pageFile.readAsString();
         PageModel? metadata = await _loadPageMetadata(pageId, dir.path);
-
-        PageModel page;
         if (metadata != null) {
-          page = metadata.copyWith(content: content, parentId: parentId);
+          thisPage = metadata.copyWith(content: content, parentId: parentId);
         } else {
-          page = PageModel.create(
+          thisPage = PageModel.create(
             title: title,
             parentId: parentId,
             content: content,
-            icon: _getDefaultIcon(title), // Ícone baseado no título
+            icon: metadata?.icon ?? _getDefaultIcon(title),
           );
-          await _savePageMetadata(page, dir.path);
+          await _savePageMetadata(thisPage, dir.path);
         }
-
-        pages.add(page);
-        debugPrint(
-            '📄 Página carregada: ${page.title} (ID: ${page.id}, Pai: ${parentId ?? 'raiz'}, Ícone: ${page.icon})');
+        pages.add(thisPage);
+        parentId = thisPage
+            .id; // O parentId para subpastas passa a ser o id desta página
       }
 
-      // 2. Depois, processar todos os diretórios no nível atual
+      // 2. Processar subdiretórios
       final directories = entities.whereType<Directory>().toList();
-
       for (final directory in directories) {
-        final dirName = path.basename(directory.path);
+        final subDirName = path.basename(directory.path);
+        if (subDirName.startsWith('.') || subDirName == '_metadata') continue;
+        await _loadHierarchicalStructureTree(directory, pages, parentId);
+      }
 
-        // Ignorar diretórios de sistema
-        if (dirName.startsWith('.') || dirName == '_metadata') {
-          continue;
-        }
-
-        // Verificar se existe um arquivo .md correspondente no diretório pai
-        // que seja o "pai" desta pasta
-        String? actualParentId = parentId;
-
-        // Se estamos na raiz do bloquinho, procurar por arquivo .md com mesmo nome da pasta
-        if (parentId == null) {
-          final potentialParentFile =
-              File(path.join(dir.path, dirName + _pageExtension));
-          if (await potentialParentFile.exists()) {
-            // Encontrar o ID da página pai
-            final parentPage = pages.firstWhere(
-              (p) => p.title == _desanitizeFileName(dirName),
-              orElse: () => PageModel.create(title: ''),
-            );
-            if (parentPage.title.isNotEmpty) {
-              actualParentId = parentPage.id;
+      // 3. Processar outros arquivos .md que não sejam o principal
+      for (final entity in entities) {
+        if (entity is File && entity.path.endsWith(_pageExtension)) {
+          final fileName = path.basenameWithoutExtension(entity.path);
+          if (fileName != dirName) {
+            final title = _desanitizeFileName(fileName);
+            final content = await entity.readAsString();
+            PageModel? metadata = await _loadPageMetadata(fileName, dir.path);
+            PageModel page;
+            if (metadata != null) {
+              page = metadata.copyWith(content: content, parentId: parentId);
+            } else {
+              page = PageModel.create(
+                title: title,
+                parentId: parentId,
+                content: content,
+                icon: metadata?.icon ?? _getDefaultIcon(title),
+              );
+              await _savePageMetadata(page, dir.path);
             }
+            pages.add(page);
           }
         }
-
-        // Processar recursivamente o diretório
-        await _loadHierarchicalStructureTree(directory, pages, actualParentId);
       }
     } catch (e) {
       debugPrint('❌ Erro ao carregar estrutura hierárquica: $e');

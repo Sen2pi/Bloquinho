@@ -652,13 +652,13 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
             onCreateSubPage: _createSubPage,
           ),
 
-        // Lista de filhos no topo (mantém para navegação vertical)
-        if (currentPage != null)
-          PageChildrenList(
-            currentPageId: currentPage.id,
-            onNavigateToPage: _navigateToPage,
-            onCreateSubPage: _createSubPage,
-          ),
+        // REMOVIDO: Card de subpáginas vertical (PageChildrenList)
+        // if (currentPage != null)
+        //   PageChildrenList(
+        //     currentPageId: currentPage.id,
+        //     onNavigateToPage: _navigateToPage,
+        //     onCreateSubPage: _createSubPage,
+        //   ),
 
         // Editor de conteúdo com auto-save
         Expanded(

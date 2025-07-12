@@ -147,7 +147,8 @@ class PageChildrenList extends ConsumerWidget {
 
   void _showCreateSubPageDialog(BuildContext context, WidgetRef ref) {
     final titleController = TextEditingController();
-    String? selectedIcon;
+    // Corrigir: usar ValueNotifier para garantir atualização do ícone
+    final selectedIcon = ValueNotifier<String?>(null);
 
     showDialog(
       context: context,
@@ -165,8 +166,14 @@ class PageChildrenList extends ConsumerWidget {
               autofocus: true,
             ),
             const SizedBox(height: 16),
-            _buildIconSelector(
-                context, selectedIcon, (icon) => selectedIcon = icon),
+            ValueListenableBuilder<String?>(
+              valueListenable: selectedIcon,
+              builder: (context, value, _) => _buildIconSelector(
+                context,
+                value,
+                (icon) => selectedIcon.value = icon,
+              ),
+            ),
           ],
         ),
         actions: [
@@ -177,7 +184,6 @@ class PageChildrenList extends ConsumerWidget {
           ElevatedButton(
             onPressed: () {
               if (titleController.text.trim().isNotEmpty) {
-                // Usar o provider para criar página
                 final currentProfile = ref.read(currentProfileProvider);
                 final currentWorkspace = ref.read(currentWorkspaceProvider);
 
@@ -186,14 +192,11 @@ class PageChildrenList extends ConsumerWidget {
                     profileName: currentProfile.name,
                     workspaceName: currentWorkspace.name
                   )));
-                  pagesNotifier.state = [
-                    ...pagesNotifier.state,
-                    PageModel.create(
-                      title: titleController.text.trim(),
-                      icon: selectedIcon,
-                      parentId: currentPageId,
-                    ),
-                  ];
+                  pagesNotifier.createPage(
+                    title: titleController.text.trim(),
+                    icon: selectedIcon.value,
+                    parentId: currentPageId,
+                  );
                 }
                 Navigator.of(context).pop();
               }
