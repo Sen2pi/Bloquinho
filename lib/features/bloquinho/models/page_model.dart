@@ -34,10 +34,11 @@ class PageModel {
     String? icon,
     String? parentId,
     String content = '',
+    String? customId,
   }) {
     final now = DateTime.now();
     return PageModel(
-      id: const Uuid().v4(),
+      id: customId ?? const Uuid().v4(),
       title: title,
       icon: icon ?? PageIcons.defaultIcon,
       parentId: parentId,
@@ -74,6 +75,9 @@ class PageModel {
 
   /// Converter para Map
   Map<String, dynamic> toMap() {
+    debugPrint('🔍 DEBUG: PageModel.toMap:');
+    debugPrint('  - Ícone sendo serializado: "$icon"');
+
     return {
       'id': id,
       'title': title,
@@ -89,10 +93,17 @@ class PageModel {
 
   /// Criar a partir de Map
   factory PageModel.fromMap(Map<String, dynamic> map) {
+    final rawIcon = map['icon'];
+    final validIcon = PageIcons.getValidIcon(rawIcon);
+
+    debugPrint('🔍 DEBUG: PageModel.fromMap:');
+    debugPrint('  - Ícone bruto do map: "$rawIcon"');
+    debugPrint('  - Ícone após validação: "$validIcon"');
+
     return PageModel(
       id: map['id'] ?? '',
       title: map['title'] ?? '',
-      icon: PageIcons.getValidIcon(map['icon']),
+      icon: validIcon,
       parentId: map['parentId'],
       childrenIds: List<String>.from(map['childrenIds'] ?? []),
       blocks: map['blocks'] ?? [],

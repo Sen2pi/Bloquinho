@@ -489,6 +489,11 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
               return GestureDetector(
                 onTap: () {
+                  debugPrint('🔍 DEBUG: Usuário selecionou ícone no selector:');
+                  debugPrint('  - Ícone selecionado: "$icon"');
+                  debugPrint('  - Página ID: "${page.id}"');
+                  debugPrint('  - Página título: "${page.title}"');
+
                   final currentProfile = ref.read(currentProfileProvider);
                   final currentWorkspace = ref.read(currentWorkspaceProvider);
 

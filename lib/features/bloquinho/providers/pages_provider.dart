@@ -171,7 +171,10 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       // Validar ícone se fornecido
       String? validIcon;
       if (icon != null) {
+        debugPrint('🔍 DEBUG: Atualizando ícone da página $id:');
+        debugPrint('  - Ícone fornecido: "$icon"');
         validIcon = PageIcons.getValidIcon(icon);
+        debugPrint('  - Ícone após validação: "$validIcon"');
         if (validIcon != icon) {
           if (kDebugMode) {
             print('⚠️ Ícone inválido "$icon" substituído por "$validIcon"');
@@ -205,6 +208,9 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
         final updatedPage = getById(id);
         print(
             '✅ Página atualizada: $id (ícone: ${updatedPage?.icon ?? 'não definido'})');
+        debugPrint('🔍 DEBUG: Estado final da página após atualização:');
+        debugPrint('  - Ícone: "${updatedPage?.icon}"');
+        debugPrint('  - Título: "${updatedPage?.title}"');
       }
     } catch (e) {
       if (kDebugMode) {

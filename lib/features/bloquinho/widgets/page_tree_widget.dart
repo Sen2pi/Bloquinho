@@ -58,9 +58,22 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
   Widget build(BuildContext context) {
     final currentProfile = ref.watch(currentProfileProvider);
     final currentWorkspace = ref.watch(currentWorkspaceProvider);
-    final pages = ref.watch(currentPagesProvider);
+    var pages = ref.watch(currentPagesProvider);
     String? currentPageId;
     final isDarkMode = ref.watch(isDarkModeProvider);
+
+    // Verificar se há ciclos na estrutura de páginas
+    final pagesWithCycles = _detectCycles(pages);
+    if (pagesWithCycles.isNotEmpty) {
+      debugPrint(
+          '⚠️ Ciclos detectados nas páginas: ${pagesWithCycles.join(', ')}');
+      // Filtrar páginas com ciclos para evitar recursão infinita
+      final safePages =
+          pages.where((p) => !pagesWithCycles.contains(p.id)).toList();
+      if (safePages.isNotEmpty) {
+        pages = safePages;
+      }
+    }
 
     // Verificar se há páginas antes de tentar encontrar a root
     if (pages.isEmpty) {
@@ -205,9 +218,17 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
     required bool isDarkMode,
     required int depth,
   }) {
+    // Proteção contra recursão infinita
+    if (depth > 50) {
+      debugPrint('⚠️ Profundidade máxima atingida para página: ${page.title}');
+      return const SizedBox.shrink();
+    }
+
     final isSelected = currentPageId == page.id;
     final isExpanded = _expandedPageIds.contains(page.id);
-    final children = allPages.where((p) => p.parentId == page.id).toList();
+    final children = allPages
+        .where((p) => p.parentId == page.id && p.id != page.id)
+        .toList();
     final hasChildren = children.isNotEmpty;
 
     return Column(
@@ -576,6 +597,46 @@ class _PageTreeWidgetState extends ConsumerState<PageTreeWidget> {
         ],
       ),
     );
+  }
+
+  /// Detecta ciclos na estrutura de páginas
+  List<String> _detectCycles(List<PageModel> pages) {
+    final visited = <String>{};
+    final recursionStack = <String>{};
+    final cycles = <String>[];
+
+    for (final page in pages) {
+      if (!visited.contains(page.id)) {
+        if (_hasCycle(page.id, pages, visited, recursionStack, cycles)) {
+          cycles.add(page.id);
+        }
+      }
+    }
+
+    return cycles;
+  }
+
+  bool _hasCycle(String pageId, List<PageModel> pages, Set<String> visited,
+      Set<String> recursionStack, List<String> cycles) {
+    visited.add(pageId);
+    recursionStack.add(pageId);
+
+    final page = pages.firstWhere((p) => p.id == pageId);
+    final children = pages.where((p) => p.parentId == pageId && p.id != pageId);
+
+    for (final child in children) {
+      if (!visited.contains(child.id)) {
+        if (_hasCycle(child.id, pages, visited, recursionStack, cycles)) {
+          return true;
+        }
+      } else if (recursionStack.contains(child.id)) {
+        cycles.add(child.id);
+        return true;
+      }
+    }
+
+    recursionStack.remove(pageId);
+    return false;
   }
 }
 

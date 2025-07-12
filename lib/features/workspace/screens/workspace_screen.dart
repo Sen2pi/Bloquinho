@@ -24,6 +24,7 @@ import '../../agenda/providers/agenda_provider.dart';
 import '../../documentos/screens/documentos_screen.dart';
 import '../../documentos/providers/documentos_provider.dart';
 import '../../bloquinho/screens/bloco_editor_screen.dart';
+import '../../bloquinho/screens/bloquinho_dashboard_screen.dart';
 import '../../bloquinho/widgets/page_tree_widget.dart';
 import '../../bloquinho/providers/pages_provider.dart';
 import '../../../core/l10n/app_strings.dart';
@@ -183,8 +184,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                                   setState(() {
                                     _selectedSection = Section.bloquinho;
                                   });
-                                  // Navega para a página correta no editor
-                                  _editorKey.currentState?.setPage(pageId);
+                                  // Navega para a página correta no editor, sempre dentro do layout
+                                  context.go(
+                                      '/workspace/bloquinho/editor/$pageId');
                                 },
                               ),
                             ),
@@ -1044,16 +1046,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       case Section.database:
         return const DatabaseListScreen();
       case Section.bloquinho:
-        return Column(
-          children: [
-            // REMOVIDO: Barra de pesquisa do header global
-            // _buildSearchBar(isDarkMode),
-            // Editor do Bloquinho
-            Expanded(
-              child: BlocoEditorScreen(key: _editorKey),
-            ),
-          ],
-        );
+        return const BloquinhoDashboardScreen();
       default:
         return Center(
           child: Column(

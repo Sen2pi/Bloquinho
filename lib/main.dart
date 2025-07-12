@@ -24,6 +24,8 @@ import 'features/profile/screens/storage_settings_screen.dart';
 import 'features/agenda/screens/agenda_screen.dart';
 import 'features/passwords/screens/password_manager_screen.dart';
 import 'features/documentos/screens/documentos_screen.dart';
+import 'features/bloquinho/screens/bloquinho_dashboard_screen.dart';
+import 'features/bloquinho/screens/bloco_editor_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -176,6 +178,33 @@ final GoRouter _router = GoRouter(
           path: 'documentos',
           name: 'documentos',
           builder: (context, state) => const DocumentosScreen(),
+        ),
+        GoRoute(
+          path: 'bloquinho',
+          name: 'bloquinho_dashboard',
+          builder: (context, state) => const BloquinhoDashboardScreen(),
+          routes: [
+            GoRoute(
+              path: 'editor',
+              name: 'bloquinho_editor_new',
+              builder: (context, state) {
+                return const BlocoEditorScreen(
+                  documentTitle: 'Nova Página',
+                );
+              },
+            ),
+            GoRoute(
+              path: 'editor/:pageId',
+              name: 'bloquinho_editor',
+              builder: (context, state) {
+                final pageId = state.pathParameters['pageId'];
+                return BlocoEditorScreen(
+                  documentId: pageId,
+                  documentTitle: 'Página',
+                );
+              },
+            ),
+          ],
         ),
       ],
     ),

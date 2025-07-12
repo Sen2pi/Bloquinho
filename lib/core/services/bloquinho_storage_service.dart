@@ -155,6 +155,7 @@ class BloquinhoStorageService {
 
       debugPrint(
           '✅ Página salva: $filePath (ícone: ${page.icon ?? 'sem ícone'})');
+      debugPrint('🔍 DEBUG: Ícone sendo salvo nos metadados: "${page.icon}"');
     } catch (e) {
       debugPrint('❌ Erro ao salvar página: $e');
       throw Exception('Erro ao salvar página: $e');
@@ -240,17 +241,29 @@ class BloquinhoStorageService {
         if (metadata != null) {
           // Usar o ícone salvo nos metadados, ou ícone padrão se não existir
           final icon = metadata.icon ?? _getDefaultIcon(title);
+          debugPrint('🔍 DEBUG: Página com metadados encontrada:');
+          debugPrint('  - Ícone dos metadados: "${metadata.icon}"');
+          debugPrint(
+              '  - Ícone padrão para título "$title": "${_getDefaultIcon(title)}"');
+          debugPrint('  - Ícone final escolhido: "$icon"');
+
           thisPage = metadata.copyWith(
             content: content,
             parentId: parentId,
             icon: icon,
           );
         } else {
+          final defaultIcon = _getDefaultIcon(title);
+          debugPrint('🔍 DEBUG: Página sem metadados, criando nova:');
+          debugPrint('  - Título: "$title"');
+          debugPrint('  - Ícone padrão: "$defaultIcon"');
+
           thisPage = PageModel.create(
             title: title,
             parentId: parentId,
             content: content,
-            icon: _getDefaultIcon(title),
+            icon: defaultIcon,
+            customId: pageId,
           );
           await _savePageMetadata(thisPage, dir.path);
         }
@@ -279,17 +292,29 @@ class BloquinhoStorageService {
             if (metadata != null) {
               // Usar o ícone salvo nos metadados, ou ícone padrão se não existir
               final icon = metadata.icon ?? _getDefaultIcon(title);
+              debugPrint('🔍 DEBUG: Subpágina com metadados encontrada:');
+              debugPrint('  - Ícone dos metadados: "${metadata.icon}"');
+              debugPrint(
+                  '  - Ícone padrão para título "$title": "${_getDefaultIcon(title)}"');
+              debugPrint('  - Ícone final escolhido: "$icon"');
+
               page = metadata.copyWith(
                 content: content,
                 parentId: parentId,
                 icon: icon,
               );
             } else {
+              final defaultIcon = _getDefaultIcon(title);
+              debugPrint('🔍 DEBUG: Subpágina sem metadados, criando nova:');
+              debugPrint('  - Título: "$title"');
+              debugPrint('  - Ícone padrão: "$defaultIcon"');
+
               page = PageModel.create(
                 title: title,
                 parentId: parentId,
                 content: content,
-                icon: _getDefaultIcon(title),
+                icon: defaultIcon,
+                customId: fileName,
               );
               await _savePageMetadata(page, dir.path);
             }
@@ -518,6 +543,11 @@ class BloquinhoStorageService {
 
       metadata[page.id] = page.toMap();
       await metadataFile.writeAsString(json.encode(metadata));
+
+      debugPrint('🔍 DEBUG: Metadados salvos para página ${page.id}:');
+      debugPrint('  - Ícone: "${page.icon}"');
+      debugPrint('  - Título: "${page.title}"');
+      debugPrint('  - ParentId: "${page.parentId}"');
     } catch (e) {
       debugPrint('❌ Erro ao salvar metadados: $e');
     }
@@ -536,7 +566,18 @@ class BloquinhoStorageService {
       final pageData = metadata[pageId];
       if (pageData == null) return null;
 
-      return PageModel.fromMap(Map<String, dynamic>.from(pageData));
+      debugPrint('🔍 DEBUG: Carregando metadados para página $pageId:');
+      debugPrint('  - Dados brutos: $pageData');
+      debugPrint('  - Ícone nos dados: "${pageData['icon']}"');
+
+      final page = PageModel.fromMap(Map<String, dynamic>.from(pageData));
+
+      debugPrint('🔍 DEBUG: Página carregada dos metadados:');
+      debugPrint('  - Ícone final: "${page.icon}"');
+      debugPrint('  - Título: "${page.title}"');
+      debugPrint('  - ParentId: "${page.parentId}"');
+
+      return page;
     } catch (e) {
       debugPrint('❌ Erro ao carregar metadados: $e');
       return null;
