@@ -11,6 +11,7 @@ import '../../shared/providers/database_provider.dart';
 import '../../shared/providers/user_profile_provider.dart';
 import '../../shared/providers/workspace_provider.dart';
 import '../../core/models/database_models.dart';
+import 'package:flutter/foundation.dart';
 
 /// Resultado de pesquisa global
 class SearchResult extends Equatable {
@@ -164,6 +165,24 @@ class GlobalSearchNotifier extends StateNotifier<GlobalSearchState> {
     try {
       final results = <SearchResult>[];
 
+      // Verificar se temos contexto válido antes de pesquisar
+      final currentProfile = _ref.read(currentProfileProvider);
+      final currentWorkspace = _ref.read(currentWorkspaceProvider);
+
+      if (currentProfile == null || currentWorkspace == null) {
+        debugPrint('🔍 GlobalSearch: Profile ou Workspace não disponível');
+        state = state.copyWith(
+          results: [],
+          isSearching: false,
+          showLoadingIndicator: false,
+        );
+        return;
+      }
+
+      debugPrint('🔍 GlobalSearch: Pesquisando em $query');
+      debugPrint(
+          '🔍 GlobalSearch: Contexto - ${currentProfile.name} / ${currentWorkspace.name}');
+
       // Pesquisar em passwords
       final passwordResults = await _searchInPasswords(query);
       results.addAll(passwordResults);
@@ -180,12 +199,15 @@ class GlobalSearchNotifier extends StateNotifier<GlobalSearchState> {
       final pageResults = await _searchInPages(query);
       results.addAll(pageResults);
 
+      debugPrint('🔍 GlobalSearch: ${results.length} resultados encontrados');
+
       state = state.copyWith(
         results: results,
         isSearching: false,
         showLoadingIndicator: false,
       );
     } catch (e) {
+      debugPrint('🔍 GlobalSearch: Erro na pesquisa: $e');
       state = state.copyWith(
         error: 'Erro na pesquisa: $e',
         isSearching: false,
@@ -201,11 +223,15 @@ class GlobalSearchNotifier extends StateNotifier<GlobalSearchState> {
       final currentWorkspace = _ref.read(currentWorkspaceProvider);
 
       if (currentProfile == null || currentWorkspace == null) {
+        debugPrint('🔍 GlobalSearch: Contexto não disponível para passwords');
         return [];
       }
 
       final passwordState = _ref.read(passwordProvider);
       final passwords = passwordState.filteredPasswords;
+
+      debugPrint(
+          '🔍 GlobalSearch: Pesquisando em ${passwords.length} passwords');
 
       final results = <SearchResult>[];
       final lowerQuery = query.toLowerCase();
@@ -228,8 +254,10 @@ class GlobalSearchNotifier extends StateNotifier<GlobalSearchState> {
         }
       }
 
+      debugPrint('🔍 GlobalSearch: ${results.length} passwords encontradas');
       return results;
     } catch (e) {
+      debugPrint('🔍 GlobalSearch: Erro ao pesquisar passwords: $e');
       return [];
     }
   }
@@ -250,11 +278,14 @@ class GlobalSearchNotifier extends StateNotifier<GlobalSearchState> {
       final currentWorkspace = _ref.read(currentWorkspaceProvider);
 
       if (currentProfile == null || currentWorkspace == null) {
+        debugPrint('🔍 GlobalSearch: Contexto não disponível para database');
         return [];
       }
 
       final databaseState = _ref.read(databaseNotifierProvider);
       final tables = databaseState.value ?? [];
+
+      debugPrint('🔍 GlobalSearch: Pesquisando em ${tables.length} tabelas');
 
       final results = <SearchResult>[];
       final lowerQuery = query.toLowerCase();
@@ -299,8 +330,11 @@ class GlobalSearchNotifier extends StateNotifier<GlobalSearchState> {
         }
       }
 
+      debugPrint(
+          '🔍 GlobalSearch: ${results.length} resultados de database encontrados');
       return results;
     } catch (e) {
+      debugPrint('🔍 GlobalSearch: Erro ao pesquisar database: $e');
       return [];
     }
   }
@@ -324,11 +358,15 @@ class GlobalSearchNotifier extends StateNotifier<GlobalSearchState> {
       final currentWorkspace = _ref.read(currentWorkspaceProvider);
 
       if (currentProfile == null || currentWorkspace == null) {
+        debugPrint('🔍 GlobalSearch: Contexto não disponível para agenda');
         return [];
       }
 
       final agendaState = _ref.read(agendaProvider);
       final items = agendaState.items;
+
+      debugPrint(
+          '🔍 GlobalSearch: Pesquisando em ${items.length} itens da agenda');
 
       final results = <SearchResult>[];
       final lowerQuery = query.toLowerCase();
@@ -353,8 +391,11 @@ class GlobalSearchNotifier extends StateNotifier<GlobalSearchState> {
         }
       }
 
+      debugPrint(
+          '🔍 GlobalSearch: ${results.length} itens da agenda encontrados');
       return results;
     } catch (e) {
+      debugPrint('🔍 GlobalSearch: Erro ao pesquisar agenda: $e');
       return [];
     }
   }
@@ -415,6 +456,7 @@ class GlobalSearchNotifier extends StateNotifier<GlobalSearchState> {
       final currentWorkspace = _ref.read(currentWorkspaceProvider);
 
       if (currentProfile == null || currentWorkspace == null) {
+        debugPrint('🔍 GlobalSearch: Contexto não disponível para páginas');
         return [];
       }
 
@@ -422,6 +464,8 @@ class GlobalSearchNotifier extends StateNotifier<GlobalSearchState> {
         profileName: currentProfile.name,
         workspaceName: currentWorkspace.name
       )));
+
+      debugPrint('🔍 GlobalSearch: Pesquisando em ${pages.length} páginas');
 
       final results = <SearchResult>[];
       final lowerQuery = query.toLowerCase();
@@ -445,8 +489,10 @@ class GlobalSearchNotifier extends StateNotifier<GlobalSearchState> {
         }
       }
 
+      debugPrint('🔍 GlobalSearch: ${results.length} páginas encontradas');
       return results;
     } catch (e) {
+      debugPrint('🔍 GlobalSearch: Erro ao pesquisar páginas: $e');
       return [];
     }
   }

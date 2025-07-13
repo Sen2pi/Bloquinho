@@ -14,6 +14,7 @@ import '../../../shared/providers/user_profile_provider.dart';
 import '../../../shared/providers/workspace_provider.dart';
 import 'bloquinho_slash_menu.dart';
 import 'bloquinho_format_menu.dart';
+import 'ai_generation_dialog.dart';
 import 'enhanced_markdown_preview_widget.dart';
 
 class PageContentWidget extends ConsumerStatefulWidget {
@@ -47,7 +48,7 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
   void initState() {
     super.initState();
     _textController = TextEditingController();
-    _editing = widget.isEditing;
+    _editing = false; // Sempre em modo visualização por padrão
     _loadContentFromFile();
     _editorFocusNode.addListener(_onFocusChange);
 
@@ -206,6 +207,12 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
   }
 
   void _insertSlashCommand(BloquinhoSlashCommand command) {
+    // Tratamento especial para comando de IA
+    if (command.trigger == 'ia') {
+      _showAIGenerationDialog();
+      return;
+    }
+
     final text = _textController.text;
     final cursor = _textController.selection.baseOffset;
     final slashPos = _slashPosition >= 0 ? _slashPosition : cursor - 1;
@@ -222,6 +229,45 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
         _editorFocusNode.requestFocus();
       }
     });
+  }
+
+  void _showAIGenerationDialog() {
+    _removeSlashMenu(force: true);
+
+    // Remover foco do editor antes de abrir o diálogo
+    _editorFocusNode.unfocus();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      useSafeArea: true,
+      builder: (context) => AIGenerationDialog(
+        onContentGenerated: (String generatedContent) {
+          // Remove o comando /ia do texto
+          final text = _textController.text;
+          final cursor = _textController.selection.baseOffset;
+          final slashPos = _slashPosition >= 0 ? _slashPosition : cursor - 1;
+          final before = text.substring(0, slashPos);
+          final after = text.substring(cursor);
+
+          // Insere o conteúdo gerado pela IA
+          final newText = before + generatedContent + after;
+          _textController.text = newText;
+
+          // Posiciona o cursor após o conteúdo gerado
+          final newCursorPosition = slashPos + generatedContent.length;
+          _textController.selection =
+              TextSelection.collapsed(offset: newCursorPosition);
+
+          // Foca no editor após fechar o diálogo
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_editorFocusNode.canRequestFocus) {
+              _editorFocusNode.requestFocus();
+            }
+          });
+        },
+      ),
+    );
   }
 
   void _showFormatMenu() {

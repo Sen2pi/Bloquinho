@@ -42,9 +42,24 @@
         margin: 60px 0;
       }
 
+      .features {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+        margin: 60px 0;
+        align-items: center;
+      }
+
       @media (max-width: 900px) {
         .features-grid {
           grid-template-columns: 1fr;
+          gap: 30px;
+          justify-items: center;
+        }
+        
+        .features {
+          gap: 30px;
+          align-items: center;
         }
       }
 
@@ -143,6 +158,25 @@
         }
       }
 
+      @media (max-width: 768px) {
+        .mermaid {
+          min-width: 400px;
+          font-size: 0.9rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .mermaid {
+          min-width: 300px;
+          font-size: 0.8rem;
+          padding: 15px 5px;
+        }
+        
+        .diagram-container {
+          padding: 20px 5px;
+        }
+      }
+
       .micro-features {
         background: #fff;
         border-radius: 16px;
@@ -162,6 +196,13 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 24px;
+      }
+
+      @media (max-width: 768px) {
+        .micro-features-grid {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
       }
 
       .micro-feature-item {
@@ -223,6 +264,13 @@
         margin-top: 30px;
       }
 
+      @media (max-width: 768px) {
+        .integration-grid {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+      }
+
       .integration-item {
         background: white;
         border-radius: 12px;
@@ -268,7 +316,28 @@
         .integration-grid {
           grid-template-columns: 1fr;
         }
+
+        .features-hero {
+          padding: 60px 0;
+        }
+
+        .feature-card {
+          padding: 30px 20px;
+        }
+
+        .micro-features {
+          padding: 30px 20px;
+        }
+
+        .integration-section {
+          padding: 30px 20px;
+        }
+
+        .diagram-container {
+          padding: 30px 10px;
+        }
       }
+
       .overview-card {
         display: flex;
         flex-direction: row;
@@ -284,6 +353,7 @@
         min-height: 260px;
         gap: 48px;
       }
+
       .overview-card h3 {
         font-size: 2.2rem;
         color: #8B4513;
@@ -293,20 +363,24 @@
         align-items: center;
         gap: 16px;
       }
+
       .overview-card h3::before {
         content: "🎯";
         font-size: 2.2rem;
         margin-right: 10px;
       }
+
       .overview-card .overview-content {
         flex: 1;
         min-width: 0;
       }
+
       .overview-card ul {
         list-style: none;
         padding: 0;
         margin: 0;
       }
+
       .overview-card li {
         padding: 8px 0 8px 0;
         color: #6b4423;
@@ -314,6 +388,7 @@
         padding-left: 28px;
         font-size: 1.08rem;
       }
+
       .overview-card li::before {
         content: "✓";
         position: absolute;
@@ -322,19 +397,53 @@
         font-weight: bold;
         font-size: 1.1rem;
       }
+
       .overview-card p {
         color: #6b4423;
         font-size: 1.08rem;
         margin-bottom: 18px;
         line-height: 1.7;
       }
+
       @media (max-width: 900px) {
         .overview-card {
           flex-direction: column;
           gap: 24px;
-          padding: 32px 12px;
+          padding: 32px 20px;
+          text-align: center;
+          margin: 0 auto 40px auto;
         }
+
         .overview-card h3 {
+          font-size: 1.8rem;
+          justify-content: center;
+        }
+
+        .overview-card h3::before {
+          font-size: 1.8rem;
+        }
+
+        .overview-card li {
+          font-size: 1rem;
+          text-align: left;
+        }
+
+        .overview-card p {
+          font-size: 1rem;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .overview-card {
+          padding: 24px 16px;
+          margin: 0 auto 30px auto;
+        }
+
+        .overview-card h3 {
+          font-size: 1.5rem;
+        }
+
+        .overview-card h3::before {
           font-size: 1.5rem;
         }
       }
@@ -391,11 +500,9 @@
         </div>
       </div>
 
-      <!-- Main Diagram -->
-
       <!-- Main Feature Cards -->
-      <div class="features-grid">
-        <div class="feature-card">
+      <div class="features">
+        <div class="overview-card">
           <h3>📝 Notion-like Editor</h3>
           <p>Complete rich block editing system inspired by Notion, with advanced formatting and organization features.</p>
           <ul>
@@ -407,7 +514,7 @@
             <li><strong>Internal links:</strong> System of links between pages</li>
           </ul>
         </div>
-        <div class="feature-card">
+        <div class="overview-card">
           <h3>🗂️ Workspace System</h3>
           <p>Intelligent organization with multiple isolated contexts, allowing separation of different life areas.</p>
           <ul>
@@ -419,7 +526,7 @@
             <li><strong>Isolated synchronization:</strong> Each workspace syncs independently</li>
           </ul>
         </div>
-        <div class="feature-card">
+        <div class="overview-card">
           <h3>📅 Agenda & Tasks</h3>
           <p>Complete time management system with multiple views and advanced features.</p>
           <ul>
@@ -431,7 +538,7 @@
             <li><strong>Synchronization:</strong> Integration with external calendars</li>
           </ul>
         </div>
-        <div class="feature-card">
+        <div class="overview-card">
           <h3>🗃️ Database</h3>
           <p>Flexible table system with advanced data types and mathematical operations.</p>
           <ul>
@@ -443,7 +550,7 @@
             <li><strong>Export:</strong> CSV, JSON, PDF</li>
           </ul>
         </div>
-        <div class="feature-card">
+        <div class="overview-card">
           <h3>🔐 Password Manager</h3>
           <p>Secure credential management with advanced features and integration.</p>
           <ul>
@@ -455,7 +562,7 @@
             <li><strong>Export/Import:</strong> Backup and restore functionality</li>
           </ul>
         </div>
-        <div class="feature-card">
+        <div class="overview-card">
           <h3>📋 Documents</h3>
           <p>Organize and store important documents, cards, and IDs securely and accessibly.</p>
           <ul>
@@ -678,30 +785,53 @@ flowchart TD
       <div class="diagram-container">
         <h3>🔗 Component Relationships</h3>
         <div class="mermaid">
-          flowchart LR subgraph UI["🎨 Interface"] Sidebar["🧭 Sidebar"]
-          Editor["📝 Editor"] Search["🔍 Search"] Profile["👤 Profile"] end
-          subgraph Core["⚙️ Core Services"] ProfileService["👤
-          UserProfileService"] WorkspaceService["🗂️ WorkspaceService"]
-          EditorService["📝 EditorService"] SearchService["🔍 SearchService"]
-          end subgraph Storage["💾 Storage"] LocalStorage["💻 LocalStorage"]
-          CloudStorage["☁️ CloudStorage"] CacheStorage["🖼️ AvatarCache"] end
-          subgraph Providers["🔄 Providers"] ProfileProvider["👤
-          UserProfileProvider"] WorkspaceProvider["🗂️ WorkspaceProvider"]
-          ThemeProvider["🎨 ThemeProvider"] SyncProvider["☁️ CloudSyncProvider"]
-          end subgraph Features["📦 Features"] Notes["📄 Notes"] Agenda["📅
-          Agenda"] Database["🗃️ Database"] Passwords["🔐 Passwords"]
-          Documents["📋 Documents"] end UI --> Core Core --> Storage Core -->
-          Providers Providers --> Features Features --> Storage Storage -->
-          Providers classDef ui fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
-          classDef core fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px; classDef
-          storage fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px; classDef
-          providers fill:#fff3e0,stroke:#ef6c00,stroke-width:2px; classDef
-          features fill:#fce4ec,stroke:#c2185b,stroke-width:2px; class
-          Sidebar,Editor,Search,Profile ui; class
-          ProfileService,WorkspaceService,EditorService,SearchService core;
-          class LocalStorage,CloudStorage,CacheStorage storage; class
-          ProfileProvider,WorkspaceProvider,ThemeProvider,SyncProvider
-          providers; class Notes,Agenda,Database,Passwords,Documents features;
+flowchart LR
+  subgraph UI["🎨 Interface"]
+    Sidebar["🧭 Sidebar"]
+    Editor["📝 Editor"]
+    Search["🔍 Search"]
+    Profile["👤 Profile"]
+  end
+  subgraph Core["⚙️ Core Services"]
+    ProfileService["👤 UserProfileService"]
+    WorkspaceService["🗂️ WorkspaceService"]
+    EditorService["📝 EditorService"]
+    SearchService["🔍 SearchService"]
+  end
+  subgraph Storage["💾 Storage"]
+    LocalStorage["💻 LocalStorage"]
+    CloudStorage["☁️ CloudStorage"]
+    CacheStorage["🖼️ AvatarCache"]
+  end
+  subgraph Providers["🔄 Providers"]
+    ProfileProvider["👤 UserProfileProvider"]
+    WorkspaceProvider["🗂️ WorkspaceProvider"]
+    ThemeProvider["🎨 ThemeProvider"]
+    SyncProvider["☁️ CloudSyncProvider"]
+  end
+  subgraph Features["📦 Features"]
+    Notes["📄 Notes"]
+    Agenda["📅 Agenda"]
+    Database["🗃️ Database"]
+    Passwords["🔐 Passwords"]
+    Documents["📋 Documents"]
+  end
+  UI --> Core
+  Core --> Storage
+  Core --> Providers
+  Providers --> Features
+  Features --> Storage
+  Storage --> Providers
+  classDef ui fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+  classDef core fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+  classDef storage fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+  classDef providers fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+  classDef features fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+  class Sidebar,Editor,Search,Profile ui
+  class ProfileService,WorkspaceService,EditorService,SearchService core
+  class LocalStorage,CloudStorage,CacheStorage storage
+  class ProfileProvider,WorkspaceProvider,ThemeProvider,SyncProvider providers
+  class Notes,Agenda,Database,Passwords,Documents features
         </div>
       </div>
 
@@ -778,6 +908,7 @@ flowchart TD
       </div>
     </footer>
 
+    <script src="js/navbar.js"></script>
     <script>
       // Initialize Mermaid
       mermaid.initialize({

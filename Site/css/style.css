@@ -93,6 +93,12 @@ body.dark-theme {
   border: none;
   cursor: pointer;
   margin-left: 16px;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.nav-toggle:hover {
+  background: #e9dcc7;
 }
 .nav-toggle span {
   display: block;
@@ -100,6 +106,16 @@ body.dark-theme {
   height: 3px;
   background: #7c5a2a;
   border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.nav-toggle.active span:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+.nav-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+.nav-toggle.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
 }
 
 /* Hero */
@@ -573,6 +589,7 @@ body.dark-theme {
     flex-wrap: wrap;
     padding: 0 8px;
     height: auto;
+    position: relative;
   }
   .nav-title {
     font-size: 1.1rem;
@@ -583,11 +600,24 @@ body.dark-theme {
     gap: 0;
     background: #f3e7d8;
     position: absolute;
-    top: 64px;
+    top: 100%;
     left: 0;
     width: 100%;
     z-index: 200;
-    box-shadow: 0 2px 8px #e2d2b6a0;
+    box-shadow: 0 4px 16px rgba(139, 69, 19, 0.15);
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+    animation: slideDown 0.3s ease-out;
+  }
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   .nav-links.open {
     display: flex;
@@ -598,6 +628,15 @@ body.dark-theme {
   }
   .nav-links li:last-child {
     border-bottom: none;
+  }
+  .nav-links li a {
+    padding: 16px 20px;
+    font-size: 1.1rem;
+    display: block;
+    text-align: left;
+  }
+  .nav-links li a:hover {
+    background: #e9dcc7;
   }
   .nav-lang {
     margin-left: 0;
@@ -628,5 +667,29 @@ body.dark-theme {
     width: 98vw;
     max-width: 340px;
     height: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0 12px;
+  }
+  .nav-title {
+    font-size: 1rem;
+  }
+  .nav-logo {
+    height: 32px;
+    margin-right: 8px;
+  }
+  .nav-links li a {
+    padding: 14px 16px;
+    font-size: 1rem;
+  }
+  .nav-toggle {
+    margin-left: 12px;
+  }
+  .nav-toggle span {
+    width: 20px;
+    height: 2px;
   }
 } 

@@ -27,6 +27,8 @@ import 'features/passwords/screens/password_manager_screen.dart';
 import 'features/documentos/screens/documentos_screen.dart';
 import 'features/bloquinho/screens/bloquinho_dashboard_screen.dart';
 import 'features/bloquinho/screens/bloco_editor_screen.dart';
+import 'features/settings/screens/ai_settings_screen.dart';
+import 'features/settings/screens/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -213,6 +215,16 @@ final GoRouter _router = GoRouter(
       path: '/onboarding',
       name: 'onboarding',
       builder: (context, state) => const OnboardingScreen(),
+    ),
+    GoRoute(
+      path: '/settings',
+      name: 'settings',
+      builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/ai_settings',
+      name: 'ai_settings',
+      builder: (context, state) => const AISettingsScreen(),
     ),
   ],
   errorBuilder: (context, state) => const NotFoundScreen(),

@@ -506,20 +506,17 @@
         </div>
     </footer>
 
+        <script src="js/navbar.js"></script>
     <script>
-        function toggleMenu() {
-            document.querySelector('.nav-links').classList.toggle('open');
-        }
-        
         // Adicionar interatividade aos itens FAQ
         document.querySelectorAll('.faq-item').forEach(item => {
-            item.addEventListener('click', function() {
-                this.style.transform = 'scale(1.02)';
-                setTimeout(() => {
-                    this.style.transform = '';
-                }, 200);
-            });
+          item.addEventListener('click', function() {
+            this.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+              this.style.transform = '';
+            }, 200);
+          });
         });
-    </script>
+      </script>
 </body>
 </html> 

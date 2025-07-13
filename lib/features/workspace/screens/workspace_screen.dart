@@ -55,7 +55,76 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     // Configurar referência para atualizações de status de sincronização
     WidgetsBinding.instance.addPostFrameCallback((_) {
       OAuth2Service.setSyncRef(ref);
+      // Inicializar providers de contexto automaticamente
+      _initializeProvidersContext();
     });
+  }
+
+  /// Inicializar contexto dos providers para garantir que a pesquisa funcione
+  Future<void> _initializeProvidersContext() async {
+    try {
+      final currentProfile = ref.read(currentProfileProvider);
+      final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+      if (currentProfile != null && currentWorkspace != null) {
+        debugPrint('🔍 Inicializando contexto dos providers...');
+        debugPrint('🔍 Profile: ${currentProfile.name}');
+        debugPrint(
+            '🔍 Workspace: ${currentWorkspace.name} (${currentWorkspace.id})');
+
+        // Inicializar todos os providers com o contexto correto
+        await ref
+            .read(passwordProvider.notifier)
+            .setContext(currentProfile.name, currentWorkspace.id);
+
+        await ref
+            .read(agendaProvider.notifier)
+            .setContext(currentProfile.name, currentWorkspace.id);
+
+        await ref
+            .read(documentosProvider.notifier)
+            .setContext(currentProfile.name, currentWorkspace.id);
+
+        await ref
+            .read(databaseNotifierProvider.notifier)
+            .setContext(currentProfile.name, currentWorkspace.id);
+
+        debugPrint('🔍 Contexto dos providers inicializado com sucesso!');
+      } else {
+        debugPrint('🔍 Profile ou Workspace não disponível para inicialização');
+      }
+    } catch (e) {
+      debugPrint('🔍 Erro ao inicializar contexto dos providers: $e');
+    }
+  }
+
+  /// Atualizar contexto dos providers quando o workspace muda
+  Future<void> _updateProvidersContext(
+      String profileName, String workspaceId) async {
+    try {
+      debugPrint('🔍 Atualizando contexto: $profileName / $workspaceId');
+
+      // Atualizar todos os providers com o novo contexto
+      await ref
+          .read(passwordProvider.notifier)
+          .setContext(profileName, workspaceId);
+
+      await ref
+          .read(agendaProvider.notifier)
+          .setContext(profileName, workspaceId);
+
+      await ref
+          .read(documentosProvider.notifier)
+          .setContext(profileName, workspaceId);
+
+      await ref
+          .read(databaseNotifierProvider.notifier)
+          .setContext(profileName, workspaceId);
+
+      debugPrint('🔍 Contexto dos providers atualizado com sucesso!');
+    } catch (e) {
+      debugPrint('🔍 Erro ao atualizar contexto dos providers: $e');
+    }
   }
 
   @override
@@ -80,6 +149,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
     // Carregar páginas automaticamente quando o contexto muda
     ref.watch(pagesLoaderProvider);
+
+    // Listener para garantir que os providers tenham o contexto correto
+    ref.listen<Workspace?>(currentWorkspaceProvider, (previous, next) {
+      if (next != null && currentProfile != null) {
+        debugPrint('🔍 Workspace mudou, atualizando contexto dos providers...');
+        _updateProvidersContext(currentProfile.name, next.id);
+      }
+    });
 
     return Scaffold(
       backgroundColor:
@@ -236,17 +313,22 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                             ),
                           ),
                           if (_isBloquinhoExpanded && _isSidebarExpanded)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 16.0),
-                              child: PageTreeWidget(
-                                onPageSelected: (pageId) {
-                                  setState(() {
-                                    _selectedSection = Section.bloquinho;
-                                  });
-                                  // Navega para a página correta no editor, sempre dentro do layout
-                                  context.go(
-                                      '/workspace/bloquinho/editor/$pageId');
-                                },
+                            Container(
+                              constraints: const BoxConstraints(maxHeight: 300),
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 16.0),
+                                child: SingleChildScrollView(
+                                  child: PageTreeWidget(
+                                    onPageSelected: (pageId) {
+                                      setState(() {
+                                        _selectedSection = Section.bloquinho;
+                                      });
+                                      // Navega para a página correta no editor, sempre dentro do layout
+                                      context.go(
+                                          '/workspace/bloquinho/editor/$pageId');
+                                    },
+                                  ),
+                                ),
                               ),
                             ),
                         ],
@@ -375,6 +457,15 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
   // Barra de pesquisa para a sidebar
   Widget _buildSidebarSearchBar(bool isDarkMode) {
+    final searchState = ref.watch(globalSearchProvider);
+
+    // DEBUG: Log do estado da pesquisa
+    debugPrint('🔍 SidebarSearch: query="${_searchController.text}"');
+    debugPrint('🔍 SidebarSearch: results=${searchState.results.length}');
+    debugPrint('🔍 SidebarSearch: isSearching=${searchState.isSearching}');
+    debugPrint(
+        '🔍 SidebarSearch: showLoadingIndicator=${searchState.showLoadingIndicator}');
+
     return Column(
       children: [
         Container(
@@ -410,9 +501,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     color: isDarkMode ? Colors.white : Colors.black87,
                   ),
                   onChanged: (value) {
+                    debugPrint('🔍 SidebarSearch: onChanged="$value"');
                     _performGlobalSearch(value);
                   },
                   onSubmitted: (value) {
+                    debugPrint('🔍 SidebarSearch: onSubmitted="$value"');
                     _performGlobalSearch(value);
                   },
                 ),
@@ -420,6 +513,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               if (_searchController.text.isNotEmpty)
                 IconButton(
                   onPressed: () {
+                    debugPrint('🔍 SidebarSearch: clearing search');
                     _searchController.clear();
                     _clearGlobalSearch();
                   },
@@ -439,9 +533,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         ),
 
         // Resultados da pesquisa global
-        if (_searchController.text.isNotEmpty)
+        if (searchState.query.isNotEmpty)
           Container(
             margin: const EdgeInsets.only(top: 8),
+            constraints: const BoxConstraints(maxHeight: 300), // Limitar altura
             decoration: BoxDecoration(
               color:
                   isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
@@ -454,6 +549,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             ),
             child: GlobalSearchResults(
               onResultSelected: () {
+                debugPrint('🔍 SidebarSearch: result selected, clearing');
                 _searchController.clear();
                 _clearGlobalSearch();
               },
@@ -1068,7 +1164,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         context.pushNamed('profile');
         break;
       case 'settings':
-        // Implementar navegação para configurações
+        context.pushNamed('settings');
         break;
       case 'logout':
         final confirmed = await showDialog<bool>(

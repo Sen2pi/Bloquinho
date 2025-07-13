@@ -6,6 +6,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../core/models/app_language.dart';
 import '../../../shared/providers/language_provider.dart';
 import '../../../shared/providers/theme_provider.dart';
+import '../../../shared/providers/huggingface_token_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -80,6 +81,15 @@ class SettingsScreen extends ConsumerWidget {
             description: strings.settingsProfileDescription,
             icon: Icons.person,
             onTap: () => context.pushNamed('profile'),
+          ),
+
+          // Seção de IA
+          _buildSection(
+            context,
+            title: 'Configurações de IA',
+            description: 'Token Hugging Face e integração de IA',
+            icon: Icons.smart_toy,
+            onTap: () => context.pushNamed('ai_settings'),
           ),
         ],
       ),

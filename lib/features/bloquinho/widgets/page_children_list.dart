@@ -262,45 +262,50 @@ class PageChildrenList extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         Container(
-          height: 120,
+          height: 200, // Aumentar altura para acomodar mais ícones
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: GridView.builder(
-            padding: const EdgeInsets.all(8),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 8,
-              crossAxisSpacing: 4,
-              mainAxisSpacing: 4,
-            ),
-            itemCount: icons.length,
-            itemBuilder: (context, index) {
-              final icon = icons[index];
-              final isSelected = selectedIcon == icon;
+          child: SingleChildScrollView(
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(8),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 8,
+                crossAxisSpacing: 4,
+                mainAxisSpacing: 4,
+              ),
+              itemCount: icons.length,
+              itemBuilder: (context, index) {
+                final icon = icons[index];
+                final isSelected = selectedIcon == icon;
 
-              return GestureDetector(
-                onTap: () => onIconChanged(isSelected ? null : icon),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: isSelected ? AppColors.primary : Colors.grey,
+                return GestureDetector(
+                  onTap: () => onIconChanged(isSelected ? null : icon),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color:
+                          isSelected ? AppColors.primary : Colors.transparent,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: isSelected ? AppColors.primary : Colors.grey,
+                      ),
                     ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      icon,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: isSelected ? Colors.white : null,
+                    child: Center(
+                      child: Text(
+                        icon,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: isSelected ? Colors.white : null,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ],

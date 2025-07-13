@@ -209,54 +209,6 @@
 
   <script src="js/i18n.js"></script>
   <script src="js/animations.js"></script>
-  <script>
-    function toggleMenu() {
-      document.querySelector('.nav-links').classList.toggle('open');
-    }
-    
-    // Create additional floating letters dynamically
-    function createFloatingLetters() {
-      const container = document.querySelector('.animated-letters');
-      const letters = 'BLOQUINHO FREE OPEN SOURCE PRIVACY FIRST!';
-      const colors = ['#8B4513', '#D2691E', '#CD853F', '#A0522D'];
-      
-      for (let i = 0; i < 20; i++) {
-        const letter = document.createElement('div');
-        letter.className = 'floating-letter';
-        letter.textContent = letters[Math.floor(Math.random() * letters.length)];
-        letter.style.left = Math.random() * 100 + '%';
-        letter.style.color = colors[Math.floor(Math.random() * colors.length)];
-        letter.style.animationDelay = Math.random() * 30 + 's';
-        letter.style.animationDuration = (15 + Math.random() * 10) + 's';
-        container.appendChild(letter);
-      }
-    }
-    
-    // Initialize floating letters
-    createFloatingLetters();
-    
-    // Add more letters periodically
-    setInterval(() => {
-      const container = document.querySelector('.animated-letters');
-      const letters = 'BLOQUINHO FREE OPEN SOURCE PRIVACY FIRST!';
-      const colors = ['#8B4513', '#D2691E', '#CD853F', '#A0522D'];
-      
-      const letter = document.createElement('div');
-      letter.className = 'floating-letter';
-      letter.textContent = letters[Math.floor(Math.random() * letters.length)];
-      letter.style.left = Math.random() * 100 + '%';
-      letter.style.color = colors[Math.floor(Math.random() * colors.length)];
-      letter.style.animationDelay = '0s';
-      letter.style.animationDuration = (15 + Math.random() * 10) + 's';
-      container.appendChild(letter);
-      
-      // Remove letter after animation
-      setTimeout(() => {
-        if (letter.parentNode) {
-          letter.parentNode.removeChild(letter);
-        }
-      }, 25000);
-    }, 3000);
-  </script>
+  <script src="js/navbar.js"></script>
 </body>
 </html> 

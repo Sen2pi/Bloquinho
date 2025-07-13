@@ -477,55 +477,60 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         title: const Text('Escolher Ícone'),
         content: Container(
           width: 300,
-          height: 200,
-          child: GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 8,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-            ),
-            itemCount: icons.length,
-            itemBuilder: (context, index) {
-              final icon = icons[index];
-              final isSelected = page.icon == icon;
+          height: 400, // Aumentar altura para acomodar mais ícones
+          child: SingleChildScrollView(
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 8,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: icons.length,
+              itemBuilder: (context, index) {
+                final icon = icons[index];
+                final isSelected = page.icon == icon;
 
-              return GestureDetector(
-                onTap: () {
-                  final currentProfile = ref.read(currentProfileProvider);
-                  final currentWorkspace = ref.read(currentWorkspaceProvider);
+                return GestureDetector(
+                  onTap: () {
+                    final currentProfile = ref.read(currentProfileProvider);
+                    final currentWorkspace = ref.read(currentWorkspaceProvider);
 
-                  if (currentProfile != null && currentWorkspace != null) {
-                    final pagesNotifier = ref.read(pagesNotifierProvider((
-                      profileName: currentProfile.name,
-                      workspaceName: currentWorkspace.name
-                    )));
-                    pagesNotifier.updatePage(
-                      page.id,
-                      icon: icon,
-                    );
-                  }
-                  Navigator.of(context).pop();
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isSelected ? AppColors.primary : Colors.grey,
+                    if (currentProfile != null && currentWorkspace != null) {
+                      final pagesNotifier = ref.read(pagesNotifierProvider((
+                        profileName: currentProfile.name,
+                        workspaceName: currentWorkspace.name
+                      )));
+                      pagesNotifier.updatePage(
+                        page.id,
+                        icon: icon,
+                      );
+                    }
+                    Navigator.of(context).pop();
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color:
+                          isSelected ? AppColors.primary : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSelected ? AppColors.primary : Colors.grey,
+                      ),
                     ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      icon,
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: isSelected ? Colors.white : null,
+                    child: Center(
+                      child: Text(
+                        icon,
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: isSelected ? Colors.white : null,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
         actions: [
@@ -626,7 +631,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         Expanded(
           child: PageContentWidget(
             pageId: currentPage?.id ?? '',
-            isEditing: !widget.isReadOnly,
+            isEditing: false, // Sempre em modo visualização por padrão
           ),
         ),
       ],
@@ -1284,15 +1289,25 @@ class _SubPagesBar extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
-          ...subPages.map((page) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ActionChip(
-                  avatar: Text(page.icon ?? '📄',
-                      style: const TextStyle(fontSize: 16)),
-                  label: Text(page.title, overflow: TextOverflow.ellipsis),
-                  onPressed: () => onNavigateToPage(page.id),
-                ),
-              )),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ...subPages.map((page) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ActionChip(
+                          avatar: Text(page.icon ?? '📄',
+                              style: const TextStyle(fontSize: 16)),
+                          label:
+                              Text(page.title, overflow: TextOverflow.ellipsis),
+                          onPressed: () => onNavigateToPage(page.id),
+                        ),
+                      )),
+                ],
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Nova subpágina',

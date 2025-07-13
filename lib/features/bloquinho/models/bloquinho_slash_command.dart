@@ -309,8 +309,7 @@ class BloquinhoSlashCommand {
           title: 'Matriz',
           description: 'Matriz LaTeX',
           icon: PhosphorIcons.table(),
-          markdownTemplate:
-              r'$$\begin{pmatrix} a & b \\ c & d \end{pmatrix}$$',
+          markdownTemplate: r'$$\begin{pmatrix} a & b \\ c & d \end{pmatrix}$$',
           category: 'matematica',
           categoryColor: Colors.red,
         ),
@@ -689,6 +688,18 @@ class BloquinhoSlashCommand {
           category: 'avancado',
           categoryColor: Colors.deepPurple,
         ),
+
+        // ===== IA =====
+        BloquinhoSlashCommand(
+          trigger: 'ia',
+          title: 'Nota via IA',
+          description: 'Gerar conteúdo com inteligência artificial',
+          icon: PhosphorIcons.robot(),
+          markdownTemplate: '🤖 **Nota Gerada por IA**\n\n',
+          isPopular: true,
+          category: 'ia',
+          categoryColor: Colors.purple,
+        ),
       ];
 
   /// Filtrar comandos por categoria
@@ -759,6 +770,8 @@ class BloquinhoSlashCommand {
         return 'Layout';
       case 'avancado':
         return 'Avançado';
+      case 'ia':
+        return 'Inteligência Artificial';
       default:
         return 'Outros';
     }
@@ -791,6 +804,8 @@ class BloquinhoSlashCommand {
         return PhosphorIcons.layout();
       case 'avancado':
         return PhosphorIcons.gear();
+      case 'ia':
+        return PhosphorIcons.robot();
       default:
         return PhosphorIcons.circle();
     }

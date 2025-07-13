@@ -327,9 +327,7 @@ class MarkdownParserService {
       }
 
       // Equação matemática (bloco)
-      if (trimmedLine.startsWith('$$') &&
-          trimmedLine.endsWith('$$') &&
-          trimmedLine.length > 4) {
+      if (trimmedLine.length > 4) {
         _addCurrentParagraph(elements, currentParagraph);
         currentParagraph = '';
 
@@ -400,7 +398,8 @@ class MarkdownParserService {
     }
 
     // Imagens
-    final imageMatches = RegExp(r'!\u005B([^\]]*)\u005D\(([^)]+)\)').allMatches(text);
+    final imageMatches =
+        RegExp(r'!\u005B([^\]]*)\u005D\(([^)]+)\)').allMatches(text);
     for (final match in imageMatches) {
       inlineElements.add({
         'type': 'image',
