@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Segurança - Bloquinho</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        .security-hero {
+            background: linear-gradient(135deg, #f8f4f0 0%, #e8dcc8 100%);
+            padding: 80px 0;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .security-hero h1 {
+            font-size: 3.5rem;
+            color: #8B4513;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .security-hero p {
+            font-size: 1.3rem;
+            color: #6B4423;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .security-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .security-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 60px 0;
+        }
+        
+        .security-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(139, 69, 19, 0.1);
+            border: 1px solid #e8dcc8;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .security-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 48px rgba(139, 69, 19, 0.15);
+        }
+        
+        .security-card h3 {
+            font-size: 1.8rem;
+            color: #8B4513;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .security-card h3::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #D2691E, #CD853F);
+            border-radius: 2px;
+        }
+        
+        .security-card p {
+            color: #6B4423;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+        
+        .security-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .security-card li {
+            padding: 8px 0;
+            color: #6B4423;
+            position: relative;
+            padding-left: 24px;
+        }
+        
+        .security-card li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #D2691E;
+            font-weight: bold;
+        }
+        
+        .diagram-container {
+            background: #fff8f3;
+            border-radius: 16px;
+            padding: 40px;
+            margin: 40px 0;
+            box-shadow: 0 4px 24px rgba(139, 69, 19, 0.08);
+            border: 1px solid #e8dcc8;
+        }
+        
+        .diagram-container h3 {
+            text-align: center;
+            color: #8B4513;
+            margin-bottom: 30px;
+            font-size: 1.6rem;
+        }
+        
+        .mermaid {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        
+        .security-feature {
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            border-left: 6px solid #D2691E;
+        }
+        
+        .security-feature h4 {
+            color: #8B4513;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+        
+        .security-feature p {
+            color: #6B4423;
+            line-height: 1.6;
+        }
+        
+        .privacy-highlight {
+            background: linear-gradient(135deg, #D2691E, #CD853F);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            margin: 40px 0;
+            text-align: center;
+        }
+        
+        .privacy-highlight h3 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        
+        .privacy-highlight p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .oauth-section {
+            background: #f8f4f0;
+            border-radius: 16px;
+            padding: 40px;
+            margin: 40px 0;
+            border-left: 6px solid #D2691E;
+        }
+        
+        .oauth-section h3 {
+            color: #8B4513;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        
+        .flow-section {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            margin: 40px 0;
+            box-shadow: 0 4px 24px rgba(139, 69, 19, 0.1);
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f4f0;
+            border-radius: 12px;
+        }
+        
+        .flow-step .number {
+            background: #D2691E;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        
+        .flow-step .content {
+            flex: 1;
+        }
+        
+        .flow-step h4 {
+            color: #8B4513;
+            margin-bottom: 8px;
+        }
+        
+        .flow-step p {
+            color: #6B4423;
+            margin: 0;
+        }
+        
+        .security-badge {
+            display: inline-block;
+            background: #D2691E;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin: 5px;
+        }
+        
+        .security-badge.success {
+            background: #28a745;
+        }
+        
+        .security-badge.warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        @media (max-width: 768px) {
+            .security-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .security-hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .security-hero p {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-left">
+          <img src="public/logo.png" alt="Bloquinho Logo" class="nav-logo">
+          <span class="nav-title">Bloquinho</span>
+        </div>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="features.html">Features</a></li>
+          <li><a href="wiki.html">Wiki</a></li>
+          <li><a href="security.html" class="active">Security</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="downloads.html">Downloads</a></li>
+          <li><a href="donate.html">Donate</a></li>
+        </ul>
+        <button class="nav-toggle" aria-label="Menu" onclick="toggleMenu()">
+          <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="security-hero">
+        <div class="security-section">
+            <h1>🛡️ Segurança e Privacidade</h1>
+            <p>O Bloquinho foi projetado com segurança em primeiro lugar. Sua privacidade é nossa prioridade máxima, com armazenamento local, criptografia de dados sensíveis e controle total sobre suas informações.</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="security-section">
+        
+        <!-- Visão Geral de Segurança -->
+        <div class="security-card">
+            <h3>🔒 Princípios de Segurança</h3>
+            <p>O Bloquinho segue os mais altos padrões de segurança para proteger seus dados:</p>
+            <ul>
+                <li><strong>Local First:</strong> Todos os dados são salvos localmente no seu dispositivo</li>
+                <li><strong>Criptografia:</strong> Dados sensíveis são criptografados com algoritmos seguros</li>
+                <li><strong>Controle Total:</strong> Você tem controle completo sobre seus dados</li>
+                <li><strong>Open Source:</strong> Código aberto e auditável por qualquer pessoa</li>
+                <li><strong>Sem Telemetria:</strong> Nenhum dado é enviado para terceiros</li>
+            </ul>
+        </div>
+
+        <!-- Diagrama de Segurança -->
+        <div class="diagram-container">
+            <h3>📊 Arquitetura de Segurança</h3>
+            <div class="mermaid">
+flowchart TD
+    subgraph Usuário
+        U["👤 Usuário"]
+    end
+    subgraph App["📱 Bloquinho App"]
+        direction TB
+        UI["🎨 Interface Segura"]
+        Auth["🔐 Autenticação Local"]
+        Crypto["🔒 Criptografia"]
+        Storage["💾 Armazenamento Local"]
+        OAuth2["☁️ OAuth2 Seguro"]
+    end
+    subgraph Dados
+        Local["📁 Dados Locais\n(Criptografados)"]
+        Cloud["☁️ Nuvem (Opcional)\n(Tokens Seguros)"]
+        Cache["🖼️ Cache de Avatares\n(Metadata Seguro)"]
+    end
+    subgraph Proteção
+        Secure["🛡️ FlutterSecureStorage"]
+        Hive["📦 Hive (Local)"]
+        Tokens["🔑 Tokens OAuth2\n(Armazenamento Seguro)"]
+    end
+    U --> UI
+    UI --> Auth
+    UI --> Crypto
+    UI --> Storage
+    UI --> OAuth2
+    Auth --> Local
+    Crypto --> Secure
+    Storage --> Hive
+    OAuth2 --> Tokens
+    Tokens --> Cloud
+    Local --> Cache
+    Secure --> Local
+    Hive --> Local
+    classDef secure fill:#d4edda,stroke:#28a745,stroke-width:2px;
+    class Auth,Crypto,Secure,Tokens secure;
+            </div>
+        </div>
+
+        <!-- Armazenamento Local -->
+        <div class="security-grid">
+            <div class="security-card">
+                <h3>💾 Armazenamento Local Seguro</h3>
+                <p>Seus dados ficam sempre no seu dispositivo:</p>
+                <ul>
+                    <li><strong>FlutterSecureStorage:</strong> Dados sensíveis criptografados</li>
+                    <li><strong>Hive Database:</strong> Armazenamento local rápido e confiável</li>
+                    <li><strong>Pasta Local:</strong> Estrutura organizada no seu dispositivo</li>
+                    <li><strong>Backup Manual:</strong> Controle total sobre backups</li>
+                    <li><strong>Sem Internet:</strong> Funciona completamente offline</li>
+                </ul>
+            </div>
+            
+            <div class="security-card">
+                <h3>🔐 Criptografia de Dados</h3>
+                <p>Proteção avançada para informações sensíveis:</p>
+                <ul>
+                    <li><strong>Tokens OAuth2:</strong> Armazenados com criptografia AES</li>
+                    <li><strong>Senhas:</strong> Criptografadas antes do armazenamento</li>
+                    <li><strong>Metadata:</strong> Informações de cache protegidas</li>
+                    <li><strong>Perfil:</strong> Dados pessoais criptografados</li>
+                    <li><strong>Chaves Seguras:</strong> Gerenciamento automático de chaves</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- OAuth2 Seguro -->
+        <div class="oauth-section">
+            <h3>☁️ OAuth2 Seguro e Persistente</h3>
+            <p>O sistema OAuth2 do Bloquinho foi projetado para máxima segurança e conveniência:</p>
+            
+            <div class="security-feature">
+                <h4>🔑 Tokens Seguros</h4>
+                <p>Tokens de acesso são armazenados usando <strong>FlutterSecureStorage</strong>, que utiliza a Keychain no iOS/macOS e Keystore no Android. Os tokens são criptografados e nunca expostos em texto plano.</p>
+                <div style="margin-top: 15px;">
+                    <span class="security-badge success">✅ Criptografado</span>
+                    <span class="security-badge success">✅ Renovação Automática</span>
+                    <span class="security-badge success">✅ Login Único</span>
+                </div>
+            </div>
+            
+            <div class="security-feature">
+                <h4>🔄 Persistência Inteligente</h4>
+                <p>O sistema restaura automaticamente sessões válidas na inicialização, testando a validade dos tokens e removendo automaticamente tokens expirados. Você faz login uma única vez e permanece conectado.</p>
+                <div style="margin-top: 15px;">
+                    <span class="security-badge success">✅ Restauração Automática</span>
+                    <span class="security-badge success">✅ Validação de Tokens</span>
+                    <span class="security-badge success">✅ Limpeza Automática</span>
+                </div>
+            </div>
+            
+            <div class="security-feature">
+                <h4>🛡️ Debug e Monitoramento</h4>
+                <p>Sistema completo de logs para rastrear operações OAuth2, permitindo diagnóstico de problemas e garantindo transparência total sobre o que acontece com suas credenciais.</p>
+                <div style="margin-top: 15px;">
+                    <span class="security-badge success">✅ Logs Detalhados</span>
+                    <span class="security-badge success">✅ Transparência</span>
+                    <span class="security-badge success">✅ Diagnóstico</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cache de Avatares Seguro -->
+        <div class="security-card">
+            <h3>🖼️ Cache de Avatares Seguro</h3>
+            <p>O sistema de cache de avatares garante que suas fotos de perfil sejam baixadas e armazenadas de forma segura:</p>
+            <ul>
+                <li><strong>Pasta Dedicada:</strong> Avatares salvos em pasta isolada</li>
+                <li><strong>Nomes Únicos:</strong> Hash MD5 para evitar conflitos</li>
+                <li><strong>Metadata Seguro:</strong> Informações de cache criptografadas</li>
+                <li><strong>Limpeza Automática:</strong> Arquivos antigos removidos após 7 dias</li>
+                <li><strong>Fallback Robusto:</strong> Iniciais quando não há foto disponível</li>
+            </ul>
+        </div>
+
+        <!-- Fluxo de Segurança -->
+        <div class="flow-section">
+            <h3>🚀 Fluxo de Segurança</h3>
+            <div class="flow-step">
+                <div class="number">1</div>
+                <div class="content">
+                    <h4>Inicialização Segura</h4>
+                    <p>App inicia com verificação de tokens salvos e validação de integridade</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="number">2</div>
+                <div class="content">
+                    <h4>Restauração de Sessão</h4>
+                    <p>Tokens OAuth2 são restaurados e testados automaticamente</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="number">3</div>
+                <div class="content">
+                    <h4>Validação de Dados</h4>
+                    <p>Sistema verifica integridade dos dados locais e criptografia</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="number">4</div>
+                <div class="content">
+                    <h4>Cache Inteligente</h4>
+                    <p>Avatares são baixados e armazenados com metadata seguro</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="number">5</div>
+                <div class="content">
+                    <h4>Interface Segura</h4>
+                    <p>Usuário acessa dados com total privacidade e controle</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Privacidade -->
+        <div class="privacy-highlight">
+            <h3>🔒 Sua Privacidade é Nossa Prioridade</h3>
+            <p>O Bloquinho foi criado para dar a você controle total sobre seus dados. Nenhuma informação é enviada para servidores externos sem sua permissão explícita. Seus dados ficam no seu dispositivo, sob seu controle.</p>
+        </div>
+
+        <!-- Recursos de Segurança -->
+        <div class="security-grid">
+            <div class="security-card">
+                <h3>🛡️ Recursos de Segurança</h3>
+                <ul>
+                    <li><strong>Proteção Matemática:</strong> Validação contra divisão por zero e valores inválidos</li>
+                    <li><strong>Error Handling:</strong> Recuperação automática de estados inválidos</li>
+                    <li><strong>Debug System:</strong> Logs detalhados para diagnóstico</li>
+                    <li><strong>Lifecycle Management:</strong> Controle completo do ciclo de vida dos dados</li>
+                    <li><strong>User Feedback:</strong> Feedback visual para operações de segurança</li>
+                </ul>
+            </div>
+            
+            <div class="security-card">
+                <h3>🔍 Transparência Total</h3>
+                <ul>
+                    <li><strong>Código Aberto:</strong> Todo o código é auditável</li>
+                    <li><strong>Logs Detalhados:</strong> Rastreamento completo de operações</li>
+                    <li><strong>Sem Telemetria:</strong> Nenhum dado enviado sem permissão</li>
+                    <li><strong>Controle de Dados:</strong> Exportar, importar, deletar quando quiser</li>
+                    <li><strong>Documentação:</strong> Guias completos de segurança</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Conclusão -->
+        <div class="security-section">
+            <h3>🌟 Compromisso com a Segurança</h3>
+            <p>O Bloquinho representa um novo padrão em aplicações de produtividade, onde a privacidade e segurança não são opcionais, mas fundamentais. Cada linha de código foi escrita pensando na proteção dos seus dados e no seu controle total sobre as informações.</p>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <span class="security-badge success">🔒 100% Local</span>
+                <span class="security-badge success">🔐 Criptografado</span>
+                <span class="security-badge success">📱 Offline</span>
+                <span class="security-badge success">🌐 Open Source</span>
+                <span class="security-badge success">🛡️ Seguro</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="mailto:dr.karim.patatas@gmail.com">Email</a>
+            <a href="https://www.linkedin.com/in/k-patatas/" target="_blank">LinkedIn</a>
+            <a href="https://github.com/Sen2pi" target="_blank">GitHub</a>
+            <a href="https://bloquinho.kpsolucoes.pt/" target="_blank">Site</a>
+            <a href="tel:+351925542328">+351 925 542 328</a>
+            <a href="https://portfoliokarimsantos.vercel.app/" target="_blank">Portfolio</a>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html> 

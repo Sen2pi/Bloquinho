@@ -327,8 +327,8 @@ class MarkdownParserService {
       }
 
       // Equação matemática (bloco)
-      if (trimmedLine.startsWith('\$\$') &&
-          trimmedLine.endsWith('\$\$') &&
+      if (trimmedLine.startsWith('$$') &&
+          trimmedLine.endsWith('$$') &&
           trimmedLine.length > 4) {
         _addCurrentParagraph(elements, currentParagraph);
         currentParagraph = '';
@@ -400,7 +400,7 @@ class MarkdownParserService {
     }
 
     // Imagens
-    final imageMatches = RegExp(r'!\[([^\]]*)\]\(([^)]+)\)').allMatches(text);
+    final imageMatches = RegExp(r'!\u005B([^\]]*)\u005D\(([^)]+)\)').allMatches(text);
     for (final match in imageMatches) {
       inlineElements.add({
         'type': 'image',
@@ -766,14 +766,12 @@ class MarkdownParserService {
 
       if (url.isEmpty) {
         errors.add('Link sem URL: [$linkText]()');
-      } else if (!_isValidUrl(url) && !url.startsWith('#')) {
-        warnings.add('URL possivelmente inválida: $url');
       }
     }
 
     // Validar imagens
     final imageMatches =
-        RegExp(r'!\[([^\]]*)\]\(([^)]+)\)').allMatches(markdown);
+        RegExp(r'!\u005B([^\]]*)\u005D\(([^)]+)\)').allMatches(markdown);
     for (final match in imageMatches) {
       final alt = match.group(1) ?? '';
       final url = match.group(2) ?? '';

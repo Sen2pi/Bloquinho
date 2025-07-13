@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features - Bloquinho</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        .features-hero {
+            background: linear-gradient(135deg, #f8f4f0 0%, #e8dcc8 100%);
+            padding: 80px 0;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .features-hero h1 {
+            font-size: 3.5rem;
+            color: #8B4513;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .features-hero p {
+            font-size: 1.3rem;
+            color: #6B4423;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .features-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 60px 0;
+        }
+        
+        .feature-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(139, 69, 19, 0.1);
+            border: 1px solid #e8dcc8;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 48px rgba(139, 69, 19, 0.15);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.8rem;
+            color: #8B4513;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .feature-card h3::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #D2691E, #CD853F);
+            border-radius: 2px;
+        }
+        
+        .feature-card p {
+            color: #6B4423;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+        
+        .feature-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-card li {
+            padding: 8px 0;
+            color: #6B4423;
+            position: relative;
+            padding-left: 24px;
+        }
+        
+        .feature-card li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #D2691E;
+            font-weight: bold;
+        }
+        
+        .diagram-container {
+            background: #fff8f3;
+            border-radius: 16px;
+            padding: 40px;
+            margin: 40px 0;
+            box-shadow: 0 4px 24px rgba(139, 69, 19, 0.08);
+            border: 1px solid #e8dcc8;
+        }
+        
+        .diagram-container h3 {
+            text-align: center;
+            color: #8B4513;
+            margin-bottom: 30px;
+            font-size: 1.6rem;
+        }
+        
+        .mermaid {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        
+        .micro-features {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            margin: 40px 0;
+            box-shadow: 0 4px 24px rgba(139, 69, 19, 0.1);
+        }
+        
+        .micro-features h3 {
+            color: #8B4513;
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+        
+        .micro-features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        
+        .micro-feature-item {
+            background: #f8f4f0;
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid #D2691E;
+        }
+        
+        .micro-feature-item h4 {
+            color: #8B4513;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+        }
+        
+        .micro-feature-item p {
+            color: #6B4423;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .feature-highlight {
+            background: linear-gradient(135deg, #D2691E, #CD853F);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            margin: 40px 0;
+            text-align: center;
+        }
+        
+        .feature-highlight h3 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        
+        .feature-highlight p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .integration-section {
+            background: #f8f4f0;
+            border-radius: 16px;
+            padding: 40px;
+            margin: 40px 0;
+            border-left: 6px solid #D2691E;
+        }
+        
+        .integration-section h3 {
+            color: #8B4513;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        
+        .integration-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .integration-item {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .integration-item h4 {
+            color: #8B4513;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .integration-item p {
+            color: #6B4423;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 768px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .features-hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .features-hero p {
+                font-size: 1.1rem;
+            }
+            
+            .integration-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-left">
+          <img src="public/logo.png" alt="Bloquinho Logo" class="nav-logo">
+          <span class="nav-title">Bloquinho</span>
+        </div>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="features.html" class="active">Features</a></li>
+          <li><a href="wiki.html">Wiki</a></li>
+          <li><a href="security.html">Security</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="downloads.html">Downloads</a></li>
+          <li><a href="donate.html">Donate</a></li>
+        </ul>
+        <button class="nav-toggle" aria-label="Menu" onclick="toggleMenu()">
+          <span></span><span></span><span></span>
+        </button>
+      </nav>
+
+    <!-- Hero Section -->
+    <section class="features-hero">
+        <div class="features-section">
+            <h1>🚀 Bloquinho Features</h1>
+            <p>A complete productivity platform that combines local organization, cloud synchronization, and modern interface to offer total control over your information.</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="features-section">
+        
+        <!-- Visão Geral -->
+        <div class="feature-card">
+            <h3>🎯 Visão Geral das Funcionalidades</h3>
+            <p>O Bloquinho oferece um ecossistema completo de ferramentas de produtividade, desde organização básica até funcionalidades avançadas de colaboração e sincronização. Cada módulo foi projetado para ser independente mas integrado ao todo.</p>
+            <ul>
+                <li><strong>Editor Notion-like:</strong> Blocos ricos, comandos slash, hierarquia de páginas</li>
+                <li><strong>Sistema de Workspaces:</strong> Múltiplos contextos isolados (Pessoal, Trabalho, Estudos)</li>
+                <li><strong>Armazenamento Híbrido:</strong> Local + Google Drive/OneDrive com sincronização</li>
+                <li><strong>Interface Responsiva:</strong> Web, Windows, macOS, Linux, Mobile</li>
+                <li><strong>Segurança Avançada:</strong> OAuth2, criptografia local, backup automático</li>
+            </ul>
+        </div>
+
+        <!-- Diagrama Principal -->
+        <div class="diagram-container">
+            <h3>📊 Arquitetura de Funcionalidades</h3>
+            <div class="mermaid">
+flowchart TD
+    subgraph Usuário
+        U["👤 Usuário"]
+    end
+    subgraph Core["🏗️ Core Features"]
+        Editor["📝 Editor Notion-like\n(37 tipos de blocos)"]
+        Workspace["🗂️ Sistema de Workspaces\n(3 contextos padrão)"]
+        Profile["👤 Perfil de Usuário\n(Avatar, configurações)"]
+        Theme["🎨 Sistema de Temas\n(Dark/Light mode)"]
+        Search["🔍 Pesquisa Global\n(Todos os módulos)"]
+    end
+    subgraph Modules["📦 Módulos Especializados"]
+        Notes["📄 Notas & Rich Text\n(Markdown, blocos)"]
+        Agenda["📅 Agenda & Tasks\n(Calendar, Kanban)"]
+        Database["🗃️ Base de Dados\n(17 tipos de dados)"]
+        Passwords["🔐 Password Manager\n(Gerador, análise)"]
+        Documents["📋 Documentos\n(Cartões, IDs)"]
+        Backup["💾 Sistema de Backup\n(JSON, sincronização)"]
+    end
+    subgraph Micro["⚡ Micro-Features"]
+        OAuth2["🔑 OAuth2 Real\n(Google, Microsoft)"]
+        Cache["🖼️ Cache de Avatares\n(Download automático)"]
+        Sync["☁️ Sincronização\n(Indicador visual)"]
+        Generator["🎲 Gerador de Senhas\n(Algoritmos seguros)"]
+        Kanban["📋 Kanban Board\n(Drag & drop)"]
+        Export["📤 Export/Import\n(Múltiplos formatos)"]
+    end
+    subgraph Storage["💾 Armazenamento"]
+        Local["💻 Local\n(Hive + JSON)"]
+        Cloud["☁️ Cloud\n(Google Drive, OneDrive)"]
+        Backup["💾 Backup\n(Automático + manual)"]
+    end
+    U --> Core
+    Core --> Modules
+    Modules --> Micro
+    Micro --> Storage
+    Storage --> Core
+    classDef core fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef module fill:#f3e5f5,stroke:#4a148c,stroke-width:2px;
+    classDef micro fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef storage fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px;
+    class Core,Editor,Workspace,Profile,Theme,Search core;
+    class Notes,Agenda,Database,Passwords,Documents,Backup module;
+    class OAuth2,Cache,Sync,Generator,Kanban,Export micro;
+    class Local,Cloud,Backup storage;
+            </div>
+        </div>
+
+        <!-- Módulos Principais -->
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>📝 Editor Notion-like</h3>
+                <p>Sistema completo de edição de blocos ricos inspirado no Notion, com funcionalidades avançadas de formatação e organização.</p>
+                <ul>
+                    <li><strong>37 tipos de blocos:</strong> Texto, cabeçalhos, listas, código, tabelas, imagens</li>
+                    <li><strong>Comandos slash:</strong> 20+ comandos com busca em tempo real</li>
+                    <li><strong>Hierarquia de páginas:</strong> Subpáginas e navegação breadcrumb</li>
+                    <li><strong>Auto-save inteligente:</strong> Salvamento automático com debounce</li>
+                    <li><strong>Conversão markdown:</strong> Bidirecional texto ↔ blocos</li>
+                    <li><strong>Links internos:</strong> Sistema de links entre páginas</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🗂️ Sistema de Workspaces</h3>
+                <p>Organização inteligente com múltiplos contextos isolados, permitindo separar diferentes áreas da vida.</p>
+                <ul>
+                    <li><strong>3 workspaces padrão:</strong> Pessoal, Trabalho, Estudos</li>
+                    <li><strong>Isolamento completo:</strong> Cada workspace tem dados independentes</li>
+                    <li><strong>Seções organizadas:</strong> Notas, Documentos, Passwords, Agenda, BD</li>
+                    <li><strong>Navegação intuitiva:</strong> Sidebar com breadcrumb e breadcrumb</li>
+                    <li><strong>Personalização:</strong> Cores, ícones e configurações por workspace</li>
+                    <li><strong>Sincronização isolada:</strong> Cada workspace sincroniza independentemente</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Módulos Especializados -->
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>📅 Agenda & Tasks</h3>
+                <p>Sistema completo de gerenciamento de tempo com múltiplas visualizações e funcionalidades avançadas.</p>
+                <ul>
+                    <li><strong>Visualizações múltiplas:</strong> Lista, calendário, kanban, dashboard</li>
+                    <li><strong>Tipos de eventos:</strong> Reuniões, lembretes, tarefas, eventos</li>
+                    <li><strong>Kanban board:</strong> Drag & drop com colunas personalizáveis</li>
+                    <li><strong>Lembretes:</strong> Notificações push e email</li>
+                    <li><strong>Estatísticas:</strong> Dashboard com métricas de produtividade</li>
+                    <li><strong>Sincronização:</strong> Integração com calendários externos</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🗃️ Base de Dados</h3>
+                <p>Sistema flexível de tabelas com tipos de dados avançados e operações matemáticas.</p>
+                <ul>
+                    <li><strong>17 tipos de dados:</strong> Texto, número, data, status, deadline, arquivo</li>
+                    <li><strong>9 operações matemáticas:</strong> Soma, média, contagem, fórmulas</li>
+                    <li><strong>Edição inline:</strong> Interface tipo planilha</li>
+                    <li><strong>Filtros avançados:</strong> Múltiplos critérios de busca</li>
+                    <li><strong>File picker:</strong> Upload e gerenciamento de arquivos</li>
+                    <li><strong>Exportação:</strong> CSV, JSON, PDF</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Micro-Features -->
+        <div class="micro-features">
+            <h3>⚡ Micro-Funcionalidades Avançadas</h3>
+            <div class="micro-features-grid">
+                <div class="micro-feature-item">
+                    <h4>🔍 Pesquisa Global</h4>
+                    <p>Busca instantânea em todos os módulos (notas, documentos, senhas, agenda) com resultados em tempo real e navegação direta.</p>
+                </div>
+                
+                <div class="micro-feature-item">
+                    <h4>🎲 Gerador de Senhas</h4>
+                    <p>Algoritmos seguros para gerar senhas complexas com opções de comprimento, caracteres especiais e análise de força.</p>
+                </div>
+                
+                <div class="micro-feature-item">
+                    <h4>📋 Kanban Board</h4>
+                    <p>Interface drag & drop para gerenciamento visual de tarefas com colunas personalizáveis e indicadores de progresso.</p>
+                </div>
+                
+                <div class="micro-feature-item">
+                    <h4>🌙 Modo Noite/Dia</h4>
+                    <p>Sistema de temas automático com transições suaves, persistência de preferência e interface adaptativa.</p>
+                </div>
+                
+                <div class="micro-feature-item">
+                    <h4>🖼️ Cache de Avatares</h4>
+                    <p>Download automático de fotos de perfil via OAuth2 com armazenamento local, metadata e limpeza automática.</p>
+                </div>
+                
+                <div class="micro-feature-item">
+                    <h4>☁️ Sincronização Visual</h4>
+                    <p>Indicadores em tempo real do status de sincronização com Google Drive e OneDrive, incluindo progresso e erros.</p>
+                </div>
+                
+                <div class="micro-feature-item">
+                    <h4>🔑 OAuth2 Real</h4>
+                    <p>Autenticação segura com Google e Microsoft usando portas dinâmicas, servidor HTTP local e refresh automático de tokens.</p>
+                </div>
+                
+                <div class="micro-feature-item">
+                    <h4>📤 Export/Import</h4>
+                    <p>Sistema completo de backup e restauração com múltiplos formatos (JSON, CSV, PDF) e validação de integridade.</p>
+                </div>
+                
+                <div class="micro-feature-item">
+                    <h4>🌐 Multilíngue</h4>
+                    <p>Suporte completo para Português, Inglês e Francês com persistência de preferência e interface reativa.</p>
+                </div>
+                
+                <div class="micro-feature-item">
+                    <h4>📱 Responsivo</h4>
+                    <p>Interface adaptativa para web, desktop e mobile com layouts otimizados e navegação touch-friendly.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integrações -->
+        <div class="integration-section">
+            <h3>🔗 Integrações e Conectividade</h3>
+            <div class="integration-grid">
+                <div class="integration-item">
+                    <h4>☁️ Google Drive</h4>
+                    <p>Integração completa com OAuth2 real, sincronização bidirecional, estrutura de pastas organizada e indicadores visuais de status.</p>
+                </div>
+                
+                <div class="integration-item">
+                    <h4>☁️ Microsoft OneDrive</h4>
+                    <p>Autenticação via Microsoft Graph API, sincronização automática, gerenciamento de tokens e backup na nuvem.</p>
+                </div>
+                
+                <div class="integration-item">
+                    <h4>💾 Armazenamento Local</h4>
+                    <p>Sistema Hive para persistência local, backup automático em JSON, estrutura organizada e controle total dos dados.</p>
+                </div>
+                
+                <div class="integration-item">
+                    <h4>🔄 Sincronização Híbrida</h4>
+                    <p>Estratégia local-first com sincronização opcional, logs de mudanças, detecção de conflitos e limpeza automática.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Relações entre Componentes -->
+        <div class="diagram-container">
+            <h3>🔗 Relações entre Componentes</h3>
+            <div class="mermaid">
+flowchart LR
+    subgraph UI["🎨 Interface"]
+        Sidebar["🧭 Sidebar"]
+        Editor["📝 Editor"]
+        Search["🔍 Search"]
+        Profile["👤 Profile"]
+    end
+    
+    subgraph Core["⚙️ Core Services"]
+        ProfileService["👤 UserProfileService"]
+        WorkspaceService["🗂️ WorkspaceService"]
+        EditorService["📝 EditorService"]
+        SearchService["🔍 SearchService"]
+    end
+    
+    subgraph Storage["💾 Storage"]
+        LocalStorage["💻 LocalStorage"]
+        CloudStorage["☁️ CloudStorage"]
+        CacheStorage["🖼️ AvatarCache"]
+    end
+    
+    subgraph Providers["🔄 Providers"]
+        ProfileProvider["👤 UserProfileProvider"]
+        WorkspaceProvider["🗂️ WorkspaceProvider"]
+        ThemeProvider["🎨 ThemeProvider"]
+        SyncProvider["☁️ CloudSyncProvider"]
+    end
+    
+    subgraph Features["📦 Features"]
+        Notes["📄 Notes"]
+        Agenda["📅 Agenda"]
+        Database["🗃️ Database"]
+        Passwords["🔐 Passwords"]
+        Documents["📋 Documents"]
+    end
+    
+    UI --> Core
+    Core --> Storage
+    Core --> Providers
+    Providers --> Features
+    Features --> Storage
+    Storage --> Providers
+    
+    classDef ui fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
+    classDef core fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
+    classDef storage fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px;
+    classDef providers fill:#fff3e0,stroke:#ef6c00,stroke-width:2px;
+    classDef features fill:#fce4ec,stroke:#c2185b,stroke-width:2px;
+    
+    class Sidebar,Editor,Search,Profile ui;
+    class ProfileService,WorkspaceService,EditorService,SearchService core;
+    class LocalStorage,CloudStorage,CacheStorage storage;
+    class ProfileProvider,WorkspaceProvider,ThemeProvider,SyncProvider providers;
+    class Notes,Agenda,Database,Passwords,Documents features;
+            </div>
+        </div>
+
+        <!-- Fluxo de Dados -->
+        <div class="feature-card">
+            <h3>🔄 Fluxo de Dados e Estados</h3>
+            <p>O Bloquinho utiliza um sistema de gerenciamento de estado robusto com Riverpod, garantindo reatividade e performance otimizada.</p>
+            <ul>
+                <li><strong>Providers Hierárquicos:</strong> Estado global gerenciado por providers especializados</li>
+                <li><strong>Reatividade Automática:</strong> UI atualiza automaticamente quando dados mudam</li>
+                <li><strong>Cache Inteligente:</strong> Dados em memória com invalidação automática</li>
+                <li><strong>Persistência Local:</strong> Hive para armazenamento rápido e confiável</li>
+                <li><strong>Sincronização Bidirecional:</strong> Local ↔ Cloud com resolução de conflitos</li>
+                <li><strong>Estados de Loading:</strong> Feedback visual em todas as operações</li>
+            </ul>
+        </div>
+
+        <!-- Performance e Otimização -->
+        <div class="feature-highlight">
+            <h3>⚡ Performance e Otimização</h3>
+            <p>O Bloquinho foi otimizado para oferecer a melhor experiência possível, com carregamento rápido, operações assíncronas e uso eficiente de recursos.</p>
+        </div>
+
+        <!-- Conclusão -->
+        <div class="feature-card">
+            <h3>🌟 Conclusão</h3>
+            <p>O Bloquinho oferece um ecossistema completo de produtividade que combina simplicidade de uso com funcionalidades avançadas. Desde o editor Notion-like até as micro-funcionalidades como cache de avatares e gerador de senhas, cada componente foi projetado para trabalhar em harmonia, oferecendo controle total sobre suas informações em qualquer plataforma.</p>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="mailto:dr.karim.patatas@gmail.com">Email</a>
+            <a href="https://www.linkedin.com/in/k-patatas/" target="_blank">LinkedIn</a>
+            <a href="https://github.com/Sen2pi" target="_blank">GitHub</a>
+            <a href="https://bloquinho.kpsolucoes.pt/" target="_blank">Site</a>
+            <a href="tel:+351925542328">+351 925 542 328</a>
+            <a href="https://portfoliokarimsantos.vercel.app/" target="_blank">Portfolio</a>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html> 

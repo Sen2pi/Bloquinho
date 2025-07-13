@@ -62,7 +62,7 @@ class HtmlEnhancementParser {
 
   /// Processa o conteúdo markdown com enhancements HTML
   static String processWithEnhancements(String content) {
-    // Proteger blocos LaTeX ($ ... $) e Mermaid (```mermaid ... ```) para não serem processados
+    // Proteger blocos LaTeX ($$ ... $$) e Mermaid (```mermaid ... ```) para não serem processados
     final protectedBlocks = <String>[];
     content = content.replaceAllMapped(
       RegExp(r'\$\$([\s\S]+?)\$\$|```mermaid([\s\S]+?)```', multiLine: true),
@@ -135,12 +135,6 @@ class HtmlEnhancementParser {
       final color = properties['color']!;
       if (color.startsWith('#')) {
         styleAttributes.add('color: $color');
-      } else {
-        // Converter nomes de cores para hex
-        final colorHex = _colorNameToHex(color);
-        if (colorHex != null) {
-          styleAttributes.add('color: $colorHex');
-        }
       }
     }
 
@@ -149,11 +143,6 @@ class HtmlEnhancementParser {
       final bgColor = properties['background-color']!;
       if (bgColor.startsWith('#')) {
         styleAttributes.add('background-color: $bgColor');
-      } else {
-        final bgColorHex = _colorNameToHex(bgColor);
-        if (bgColorHex != null) {
-          styleAttributes.add('background-color: $bgColorHex');
-        }
       }
     }
 

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloquinho - Home</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="public/logo.png">
+  <style>
+    /* Animated Letters */
+    .animated-letters {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1000;
+      overflow: visible;
+    }
+    
+    .floating-letter {
+      position: absolute;
+      color: #8B4513;
+      font-size: 2rem;
+      font-weight: bold;
+      font-family: 'Arial', sans-serif;
+      animation: float 8s linear infinite;
+      opacity: 0;
+      z-index: 1001;
+    }
+    
+    @keyframes float {
+      0% {
+        opacity: 0;
+        transform: translateY(0px) rotate(0deg);
+      }
+      5% {
+        opacity: 1;
+      }
+      95% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(100vh) rotate(360deg);
+      }
+    }
+    
+    /* Different animation delays for variety */
+    .floating-letter:nth-child(1) { animation-delay: 0s; }
+    .floating-letter:nth-child(2) { animation-delay: 0.5s; }
+    .floating-letter:nth-child(3) { animation-delay: 1s; }
+    .floating-letter:nth-child(4) { animation-delay: 1.5s; }
+    .floating-letter:nth-child(5) { animation-delay: 2s; }
+    .floating-letter:nth-child(6) { animation-delay: 2.5s; }
+    .floating-letter:nth-child(7) { animation-delay: 3s; }
+    .floating-letter:nth-child(8) { animation-delay: 3.5s; }
+    .floating-letter:nth-child(9) { animation-delay: 4s; }
+    .floating-letter:nth-child(10) { animation-delay: 4.5s; }
+    .floating-letter:nth-child(11) { animation-delay: 5s; }
+    .floating-letter:nth-child(12) { animation-delay: 5.5s; }
+    .floating-letter:nth-child(13) { animation-delay: 6s; }
+    .floating-letter:nth-child(14) { animation-delay: 6.5s; }
+    .floating-letter:nth-child(15) { animation-delay: 7s; }
+    
+    /* Ensure content is above animated letters */
+    .navbar, .hero, .features-preview, .screenshots, .footer {
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .floating-letter {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body class="light-theme">
+  <!-- Animated Letters Background -->
+  <div class="animated-letters">
+    <div class="floating-letter" style="left: 15%; top: 0;">B</div>
+    <div class="floating-letter" style="left: 25%; top: 0;">L</div>
+    <div class="floating-letter" style="left: 35%; top: 0;">O</div>
+    <div class="floating-letter" style="left: 45%; top: 0;">Q</div>
+    <div class="floating-letter" style="left: 55%; top: 0;">U</div>
+    <div class="floating-letter" style="left: 65%; top: 0;">I</div>
+    <div class="floating-letter" style="left: 75%; top: 0;">N</div>
+    <div class="floating-letter" style="left: 85%; top: 0;">H</div>
+    <div class="floating-letter" style="left: 95%; top: 0;">O</div>
+    <div class="floating-letter" style="left: 10%; top: 0;">F</div>
+    <div class="floating-letter" style="left: 20%; top: 0;">R</div>
+    <div class="floating-letter" style="left: 30%; top: 0;">E</div>
+    <div class="floating-letter" style="left: 40%; top: 0;">E</div>
+    <div class="floating-letter" style="left: 50%; top: 0;">O</div>
+    <div class="floating-letter" style="left: 60%; top: 0;">P</div>
+    <div class="floating-letter" style="left: 70%; top: 0;">E</div>
+    <div class="floating-letter" style="left: 80%; top: 0;">N</div>
+    <div class="floating-letter" style="left: 90%; top: 0;">S</div>
+    <div class="floating-letter" style="left: 5%; top: 0;">S</div>
+    <div class="floating-letter" style="left: 12%; top: 0;">O</div>
+    <div class="floating-letter" style="left: 22%; top: 0;">U</div>
+    <div class="floating-letter" style="left: 32%; top: 0;">R</div>
+    <div class="floating-letter" style="left: 42%; top: 0;">C</div>
+    <div class="floating-letter" style="left: 52%; top: 0;">E</div>
+    <div class="floating-letter" style="left: 62%; top: 0;">P</div>
+    <div class="floating-letter" style="left: 72%; top: 0;">R</div>
+    <div class="floating-letter" style="left: 82%; top: 0;">I</div>
+    <div class="floating-letter" style="left: 92%; top: 0;">V</div>
+    <div class="floating-letter" style="left: 8%; top: 0;">A</div>
+    <div class="floating-letter" style="left: 18%; top: 0;">C</div>
+    <div class="floating-letter" style="left: 28%; top: 0;">Y</div>
+    <div class="floating-letter" style="left: 38%; top: 0;">F</div>
+    <div class="floating-letter" style="left: 48%; top: 0;">I</div>
+    <div class="floating-letter" style="left: 58%; top: 0;">R</div>
+    <div class="floating-letter" style="left: 68%; top: 0;">S</div>
+    <div class="floating-letter" style="left: 78%; top: 0;">T</div>
+    <div class="floating-letter" style="left: 88%; top: 0;">!</div>
+  </div>
+
+  <!-- Barra de Navegação -->
+  <nav class="navbar">
+    <div class="nav-left">
+      <img src="public/logo.png" alt="Bloquinho Logo" class="nav-logo">
+      <span class="nav-title">Bloquinho</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html" class="active">Home</a></li>
+      <li><a href="features.html">Features</a></li>
+      <li><a href="wiki.html">Wiki</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="downloads.html">Downloads</a></li>
+      <li><a href="donate.html">Donate</a></li>
+    </ul>
+    <div class="nav-lang">
+      <img src="public/flag_en.png" alt="English" class="lang-flag" onclick="setLang('en')">
+      <img src="public/flag_pt.png" alt="Português" class="lang-flag" onclick="setLang('pt')">
+      <img src="public/flag_fr.png" alt="Français" class="lang-flag" onclick="setLang('fr')">
+    </div>
+    <button class="nav-toggle" aria-label="Menu" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="hero-content">
+      <img src="public/logo.png" alt="Bloquinho Logo" class="hero-logo">
+      <h1 class="hero-title">Bloquinho</h1>
+      <p class="hero-subtitle">Your open, private, and powerful knowledge workspace.</p>
+      <div class="hero-downloads">
+        <a href="#downloads" class="download-btn"><img src="public/windows.png" alt="Windows"> Windows</a>
+        <a href="#downloads" class="download-btn"><img src="public/macos.png" alt="macOS"> macOS</a>
+        <a href="#downloads" class="download-btn"><img src="public/linux.png" alt="Linux"> Linux</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Features Preview -->
+  <section class="features-preview">
+    <h2>Features</h2>
+    <div class="features-cards">
+      <div class="feature-card">
+        <img src="public/notas.png" alt="Notes">
+        <h3>Notes & Rich Text</h3>
+        <p>Advanced markdown, rich text, and block editing.</p>
+      </div>
+      <div class="feature-card">
+        <img src="public/agenda.png" alt="Agenda">
+        <h3>Agenda & Tasks</h3>
+        <p>Organize your life with calendar, kanban, and reminders.</p>
+      </div>
+      <div class="feature-card">
+        <img src="public/dossier.png" alt="Database">
+        <h3>Database</h3>
+        <p>Flexible tables, formulas, and data types for any workflow.</p>
+      </div>
+      <div class="feature-card">
+        <img src="public/senha.png" alt="Passwords">
+        <h3>Password Manager</h3>
+        <p>Securely store and manage your credentials.</p>
+      </div>
+      <div class="feature-card">
+        <img src="public/cartao.png" alt="Cards">
+        <h3>Attachments</h3>
+        <p>Attach files, images, and documents to your notes.</p>
+      </div>
+    </div>
+    <a href="features.html" class="see-all">See all features →</a>
+  </section>
+
+  <!-- Screenshots Gallery -->
+  <section class="screenshots">
+    <h2>Screenshots</h2>
+    <div class="screenshots-gallery">
+      <img src="public/screenshots/dashboardDark.png" alt="Dashboard Dark">
+      <img src="public/screenshots/agendaMain.png" alt="Agenda Main">
+      <img src="public/screenshots/databaseMain.png" alt="Database Main">
+      <img src="public/screenshots/passwordsMain.png" alt="Passwords Main">
+      <img src="public/screenshots/tableOverview.png" alt="Table Overview">
+      <img src="public/screenshots/Welcome.png" alt="Welcome">
+    </div>
+  </section>
+
+  <!-- Donation & Footer -->
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="mailto:dr.karim.patatas@gmail.com">Email</a>
+      <a href="https://www.linkedin.com/in/k-patatas/" target="_blank">LinkedIn</a>
+      <a href="https://github.com/Sen2pi" target="_blank">GitHub</a>
+      <a href="https://bloquinho.kpsolucoes.pt/" target="_blank">Site</a>
+      <a href="tel:+351925542328">+351 925 542 328</a>
+      <a href="https://portfoliokarimsantos.vercel.app/" target="_blank">Portfolio</a>
+    </div>
+    <div class="footer-copy">Open source • Gratuito • Privacidade em primeiro lugar</div>
+  </footer>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/animations.js"></script>
+  <script>
+    function toggleMenu() {
+      document.querySelector('.nav-links').classList.toggle('open');
+    }
+    
+    // Create additional floating letters dynamically
+    function createFloatingLetters() {
+      const container = document.querySelector('.animated-letters');
+      const letters = 'BLOQUINHO FREE OPEN SOURCE PRIVACY FIRST!';
+      const colors = ['#8B4513', '#D2691E', '#CD853F', '#A0522D'];
+      
+      for (let i = 0; i < 20; i++) {
+        const letter = document.createElement('div');
+        letter.className = 'floating-letter';
+        letter.textContent = letters[Math.floor(Math.random() * letters.length)];
+        letter.style.left = Math.random() * 100 + '%';
+        letter.style.color = colors[Math.floor(Math.random() * colors.length)];
+        letter.style.animationDelay = Math.random() * 30 + 's';
+        letter.style.animationDuration = (15 + Math.random() * 10) + 's';
+        container.appendChild(letter);
+      }
+    }
+    
+    // Initialize floating letters
+    createFloatingLetters();
+    
+    // Add more letters periodically
+    setInterval(() => {
+      const container = document.querySelector('.animated-letters');
+      const letters = 'BLOQUINHO FREE OPEN SOURCE PRIVACY FIRST!';
+      const colors = ['#8B4513', '#D2691E', '#CD853F', '#A0522D'];
+      
+      const letter = document.createElement('div');
+      letter.className = 'floating-letter';
+      letter.textContent = letters[Math.floor(Math.random() * letters.length)];
+      letter.style.left = Math.random() * 100 + '%';
+      letter.style.color = colors[Math.floor(Math.random() * colors.length)];
+      letter.style.animationDelay = '0s';
+      letter.style.animationDuration = (15 + Math.random() * 10) + 's';
+      container.appendChild(letter);
+      
+      // Remove letter after animation
+      setTimeout(() => {
+        if (letter.parentNode) {
+          letter.parentNode.removeChild(letter);
+        }
+      }, 25000);
+    }, 3000);
+  </script>
+</body>
+</html> 

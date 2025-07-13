@@ -6,6 +6,7 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 /// Widget de visualização markdown com enhancements HTML moderno
 class EnhancedMarkdownPreviewWidget extends StatelessWidget {
@@ -102,6 +103,7 @@ class EnhancedMarkdownPreviewWidget extends StatelessWidget {
       ],
       blockSyntaxes: [
         LatexBlockSyntax(),
+        MermaidBlockSyntax(),
       ],
     );
   }
@@ -452,8 +454,9 @@ class ModernBlockquoteBuilder extends MarkdownElementBuilder {
               ),
             ),
             borderRadius: BorderRadius.circular(8),
-            color:
-                isDark ? Colors.grey[900]!.withOpacity(0.5) : Colors.grey[50]!,
+            color: isDark
+                ? Colors.grey[900]!.withOpacity(0.5)
+                : Colors.grey[50]!,
           ),
           child: Text(
             element.textContent,
@@ -624,55 +627,60 @@ class MarkdownFormattingExamplesWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const examples = '''
-# Exemplos de Formatação
+    const examples = r'''
+# 🎨 Exemplos de Formatação Avançada
 
-## Cores de Texto
-<color value="red">Texto vermelho</color>
-<color value="blue">Texto azul</color>
-<color value="green">Texto verde</color>
-<color value="purple">Texto roxo</color>
+## 🌈 Cores de Texto e Fundo
+<span style="color:red; background-color:#ffeeee; padding:2px 5px; border-radius:3px">**Texto vermelho com fundo claro**</span>
+<span style="color:white; background-color:green; padding:3px 8px; border-radius:5px">✅ Sucesso</span>
+<span style="color:white; background-color:red; padding:3px 8px; border-radius:5px">❌ Erro</span>
+<span style="color:orange; background-color:#fff3cd; padding:3px 8px; border-radius:5px">⚠️ Aviso</span>
 
-## Cores de Fundo
-<bg color="yellow">Texto com fundo amarelo</bg>
-<bg color="lightblue">Texto com fundo azul claro</bg>
-<bg color="lightgreen">Texto com fundo verde claro</bg>
+## 🔢 Fórmulas Matemáticas (LaTeX)
 
-## Alinhamento
-<align value="left">Texto alinhado à esquerda</align>
+**Inline:** A famosa equação de Einstein: $E = mc^2$
 
-<align value="center">Texto centralizado</align>
+**Bloco:**
+$$
+\int_a^b f(x) \, dx = F(b) - F(a)
+$$
 
-<align value="right">Texto alinhado à direita</align>
+## 📈 Diagramas (Mermaid)
 
-## Combinações
-<color value="white"><bg color="red">Texto branco com fundo vermelho</bg></color>
-
-<align value="center"><color value="blue">Texto azul centralizado</color></align>
-
-<bg color="yellow"><align value="right"><color value="black">Texto preto com fundo amarelo alinhado à direita</color></align></bg>
-
-## Markdown Padrão
-**Texto em negrito**
-*Texto em itálico*
-`código inline`
-
-### Lista
-- Item 1
-- Item 2
-- Item 3
-
-### Código
-```dart
-void main() {
-  print('Hello World!');
-}
+```mermaid
+graph TD
+    A[Início] --> B{Login válido?}
+    B -->|Sim| C[Dashboard]
+    B -->|Não| D[Tela de erro]
 ```
 
-### Citação
-> Esta é uma citação de exemplo
-> com múltiplas linhas
-''';
+## 🛠️ Elementos HTML Avançados
+
+### Detalhes Expansíveis
+<details>
+<summary><strong>Clique para ver os requisitos</strong></summary>
+
+- **Sistema Operacional:** Windows 10+
+- **RAM:** 8GB+
+
+</details>
+
+### Teclas e Atalhos
+Para salvar, pressione <kbd>Ctrl</kbd> + <kbd>S</kbd>
+
+### Texto Especial
+H<sub>2</sub>O e E=mc<sup>2</sup>
+<mark>Texto destacado</mark>
+
+### Barra de Progresso
+<div style="background-color:#f0f0f0; border-radius:10px; padding:3px; margin:10px 0;">
+<div style="background-color:#28a745; width:75%; height:20px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:12px;">
+75% Completo
+</div>
+</div>
+
+'''
+;
 
     return EnhancedMarkdownPreviewWidget(
       markdown: examples,
@@ -681,6 +689,7 @@ void main() {
     );
   }
 }
+
 
 class AdvancedCodeBlockBuilder extends MarkdownElementBuilder {
   @override
@@ -740,11 +749,23 @@ class KbdBuilder extends MarkdownElementBuilder {
 class SubBuilder extends MarkdownElementBuilder {
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    return Transform.translate(
-      offset: const Offset(0, 4),
-      child: Text(
-        element.textContent,
-        style: preferredStyle?.copyWith(fontSize: 12),
+    return RichText(
+      text: TextSpan(
+        children: [
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: Transform.translate(
+              offset: const Offset(0.0, 4.0),
+              child: Text(
+                element.textContent,
+                style: (preferredStyle ?? const TextStyle()).copyWith(
+                  fontSize: (preferredStyle?.fontSize ?? 16) * 0.75,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -753,11 +774,23 @@ class SubBuilder extends MarkdownElementBuilder {
 class SupBuilder extends MarkdownElementBuilder {
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    return Transform.translate(
-      offset: const Offset(0, -6),
-      child: Text(
-        element.textContent,
-        style: preferredStyle?.copyWith(fontSize: 12),
+    return RichText(
+      text: TextSpan(
+        children: [
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: Transform.translate(
+              offset: const Offset(0.0, -6.0),
+              child: Text(
+                element.textContent,
+                style: (preferredStyle ?? const TextStyle()).copyWith(
+                  fontSize: (preferredStyle?.fontSize ?? 16) * 0.75,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -821,7 +854,7 @@ class LatexBlockSyntax extends md.BlockSyntax {
       return md.Element.text('latex-block', content);
     }
     // Se não houver match, retornar um elemento vazio
-    return md.Element.text('latex-block', '');
+    return md.Element.text('p', parser.current.content);
   }
 }
 
@@ -844,34 +877,52 @@ class StyledSpanBuilder extends MarkdownElementBuilder {
     final text = element.textContent;
     final styleMap = _parseStyle(style);
     final isBlock = element.tag == 'div' || (styleMap['display'] == 'block');
-    return Container(
-      padding: styleMap['padding'] ??
-          const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      margin: styleMap['margin'] ?? EdgeInsets.zero,
-      decoration: BoxDecoration(
-        color: styleMap['backgroundColor'],
-        borderRadius: styleMap['borderRadius'],
-        border: styleMap['borderLeft'] ?? styleMap['border'],
-      ),
-      alignment: styleMap['alignment'],
-      width: styleMap['width'],
-      height: styleMap['height'],
-      child: Text(
-        text,
-        style: (preferredStyle ?? const TextStyle()).copyWith(
-          color: styleMap['color'],
-          fontWeight: styleMap['fontWeight'],
-          fontStyle: styleMap['fontStyle'],
-          decoration: styleMap['decoration'],
-          fontFamily: styleMap['fontFamily'],
-          fontSize: styleMap['fontSize'],
+
+    // Determine if it's an inline span or a block-level div
+    if (isBlock) {
+      return Container(
+        padding: styleMap['padding'] ??
+            const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        margin: styleMap['margin'] ?? EdgeInsets.zero,
+        decoration: BoxDecoration(
+          color: styleMap['backgroundColor'],
+          borderRadius: styleMap['borderRadius'],
+          border: styleMap['borderLeft'] ?? styleMap['border'],
         ),
-        textAlign: styleMap['textAlign'],
-        maxLines: isBlock ? null : 1,
-        overflow: isBlock ? TextOverflow.visible : TextOverflow.ellipsis,
-        softWrap: true,
-      ),
-    );
+        alignment: styleMap['alignment'],
+        width: styleMap['width'],
+        height: styleMap['height'],
+        child: Text(
+          text,
+          style: (preferredStyle ?? const TextStyle()).copyWith(
+            color: styleMap['color'],
+            fontWeight: styleMap['fontWeight'],
+            fontStyle: styleMap['fontStyle'],
+            decoration: styleMap['decoration'],
+            fontFamily: styleMap['fontFamily'],
+            fontSize: styleMap['fontSize'],
+          ),
+          textAlign: styleMap['textAlign'],
+          softWrap: true,
+        ),
+      );
+    } else {
+      // Inline span
+      return RichText(
+        text: TextSpan(
+          text: text,
+          style: (preferredStyle ?? const TextStyle()).copyWith(
+            color: styleMap['color'],
+            fontWeight: styleMap['fontWeight'],
+            fontStyle: styleMap['fontStyle'],
+            decoration: styleMap['decoration'],
+            fontFamily: styleMap['fontFamily'],
+            fontSize: styleMap['fontSize'],
+            backgroundColor: styleMap['backgroundColor'],
+          ),
+        ),
+      );
+    }
   }
 
   Map<String, dynamic> _parseStyle(String style) {
@@ -1105,44 +1156,51 @@ class MermaidBuilder extends MarkdownElementBuilder {
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
     final code = element.textContent;
-    // Placeholder visual amigável
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blueGrey[900],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blueGrey, width: 2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.device_hub, color: Colors.cyanAccent, size: 20),
-              const SizedBox(width: 8),
-              Text('Diagrama Mermaid',
-                  style: TextStyle(
-                      color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SelectableText(
-            code,
-            style: const TextStyle(
-              color: Colors.white,
-              fontFamily: 'monospace',
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Visualização real de Mermaid não suportada no Flutter puro. Copie o código acima e visualize em https://mermaid.live ou GitHub.',
-            style: TextStyle(
-                color: Colors.cyanAccent.withOpacity(0.7), fontSize: 11),
-          ),
-        ],
-      ),
+    final html = """
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body {
+              background-color: #1E1E1E;
+              color: white;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+              margin: 0;
+            }
+          </style>
+        </head>
+        <body>
+          <pre class="mermaid">
+            $code
+          </pre>
+          <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+          <script>mermaid.initialize({startOnLoad:true, theme: 'dark'});</script>
+        </body>
+      </html>
+    """;
+
+    return SizedBox(
+      height: 300,
+      child: WebViewWidget(controller: WebViewController()..loadHtmlString(html)),
     );
+  }
+}
+
+class MermaidBlockSyntax extends md.BlockSyntax {
+  @override
+  RegExp get pattern => RegExp(r'^```mermaid\n([\s\S]+?)\n```');
+
+  @override
+  md.Node parse(md.BlockParser parser) {
+    final match = pattern.firstMatch(parser.current.content);
+    if (match != null) {
+      parser.advance();
+      final code = match.group(1)!;
+      return md.Element.text('mermaid', code);
+    }
+    return md.Element.text('p', parser.current.content);
   }
 }

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitetura - Bloquinho</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        .architecture-hero {
+            background: linear-gradient(135deg, #f8f4f0 0%, #e8dcc8 100%);
+            padding: 80px 0;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .architecture-hero h1 {
+            font-size: 3.5rem;
+            color: #8B4513;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .architecture-hero p {
+            font-size: 1.3rem;
+            color: #6B4423;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .architecture-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 60px 0;
+        }
+        
+        .architecture-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(139, 69, 19, 0.1);
+            border: 1px solid #e8dcc8;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .architecture-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 48px rgba(139, 69, 19, 0.15);
+        }
+        
+        .architecture-card h3 {
+            font-size: 1.8rem;
+            color: #8B4513;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .architecture-card h3::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #D2691E, #CD853F);
+            border-radius: 2px;
+        }
+        
+        .architecture-card p {
+            color: #6B4423;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+        
+        .architecture-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .architecture-card li {
+            padding: 8px 0;
+            color: #6B4423;
+            position: relative;
+            padding-left: 24px;
+        }
+        
+        .architecture-card li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #D2691E;
+            font-weight: bold;
+        }
+        
+        .diagram-container {
+            background: #fff8f3;
+            border-radius: 16px;
+            padding: 40px;
+            margin: 40px 0;
+            box-shadow: 0 4px 24px rgba(139, 69, 19, 0.08);
+            border: 1px solid #e8dcc8;
+        }
+        
+        .diagram-container h3 {
+            text-align: center;
+            color: #8B4513;
+            margin-bottom: 30px;
+            font-size: 1.6rem;
+        }
+        
+        .mermaid {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        
+        .structure-tree {
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #6B4423;
+            border: 1px solid #e8dcc8;
+        }
+        
+        .structure-tree .folder {
+            color: #D2691E;
+            font-weight: bold;
+        }
+        
+        .structure-tree .file {
+            color: #8B4513;
+        }
+        
+        .feature-highlight {
+            background: linear-gradient(135deg, #D2691E, #CD853F);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            margin: 40px 0;
+            text-align: center;
+        }
+        
+        .feature-highlight h3 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        
+        .feature-highlight p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .security-section {
+            background: #f8f4f0;
+            border-radius: 16px;
+            padding: 40px;
+            margin: 40px 0;
+            border-left: 6px solid #D2691E;
+        }
+        
+        .security-section h3 {
+            color: #8B4513;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        
+        .flow-section {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            margin: 40px 0;
+            box-shadow: 0 4px 24px rgba(139, 69, 19, 0.1);
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f4f0;
+            border-radius: 12px;
+        }
+        
+        .flow-step .number {
+            background: #D2691E;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        
+        .flow-step .content {
+            flex: 1;
+        }
+        
+        .flow-step h4 {
+            color: #8B4513;
+            margin-bottom: 8px;
+        }
+        
+        .flow-step p {
+            color: #6B4423;
+            margin: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .architecture-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .architecture-hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .architecture-hero p {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-left">
+          <img src="public/logo.png" alt="Bloquinho Logo" class="nav-logo">
+          <span class="nav-title">Bloquinho</span>
+        </div>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="features.html">Features</a></li>
+          <li><a href="wiki.html" class="active">Wiki</a></li>
+          <li><a href="security.html">Security</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="downloads.html">Downloads</a></li>
+          <li><a href="donate.html">Donate</a></li>
+        </ul>
+        <button class="nav-toggle" aria-label="Menu" onclick="toggleMenu()">
+          <span></span><span></span><span></span>
+        </button>
+      </nav>
+
+    <!-- Hero Section -->
+    <section class="architecture-hero">
+        <div class="architecture-section">
+            <h1>🏛️ Arquitetura do Bloquinho</h1>
+            <p>Uma plataforma moderna, modular e extensível que combina organização de dados local, sincronização em nuvem e interface Notion-like para oferecer controle total sobre suas informações.</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="architecture-section">
+        
+        <!-- Visão Geral -->
+        <div class="architecture-card">
+            <h3>🌐 Visão Geral da Arquitetura</h3>
+            <p>O Bloquinho foi projetado para ser uma plataforma completa de produtividade, inspirada nos melhores padrões de organização e privacidade. Sua arquitetura combina:</p>
+            <ul>
+                <li>Armazenamento local seguro com sincronização em nuvem</li>
+                <li>Interface Notion-like com editor de blocos ricos</li>
+                <li>Sistema de workspaces e módulos organizados</li>
+                <li>Indicadores visuais de sincronização em tempo real</li>
+                <li>Design consistente com identidade visual única</li>
+            </ul>
+        </div>
+
+        <!-- Diagrama Principal -->
+        <div class="diagram-container">
+            <h3>📊 Arquitetura do Sistema</h3>
+            <div class="mermaid">
+flowchart TD
+    subgraph Usuário
+        U["👤 Usuário"]
+    end
+    subgraph App["📱 Bloquinho App"]
+        direction TB
+        UI["🎨 Interface (Flutter)"]
+        Theme["🎨 Sistema de Temas & Ícones"]
+        Nav["🧭 Navegação & Sidebar"]
+        Notion["📝 Editor Notion-like\n(Blocos, Hierarquia, Comandos Slash)"]
+        Search["🔍 Pesquisa Global"]
+        CloudSync["☁️ Indicador de Sincronização\n(CloudSyncStatusProvider)"]
+        Providers["⚙️ Providers Riverpod\n(Estado Global)"]
+    end
+    subgraph Persistência
+        Local["💾 Armazenamento Local\n(LocalStorageService)"]
+        Cloud["☁️ Nuvem (Google Drive, OneDrive)\n(CloudFolderService)"]
+    end
+    subgraph Estrutura
+        Profile["📁 profile/[nome_profile]/settings.json"]
+        Workspaces["📂 workspaces/\n├─ work/\n├─ personal/\n└─ school/"]
+        Modulos["📋 Cada workspace:\n├─ bloquinho/\n├─ documents/\n├─ agenda/\n├─ passwords/\n└─ databases/"]
+        Bloquinho["📄 bloquinho/\n├─ bloquinho.md\n├─ Subpágina1/\n│   └─ Subpágina1.md\n└─ ..."]
+    end
+    U --> UI
+    UI --> Nav
+    UI --> Notion
+    UI --> Search
+    UI --> CloudSync
+    UI --> Theme
+    Nav --> Providers
+    Notion --> Providers
+    Search --> Providers
+    CloudSync --> Providers
+    Providers --> Local
+    Providers --> Cloud
+    Local --> Profile
+    Local --> Workspaces
+    Workspaces --> Modulos
+    Modulos --> Bloquinho
+    Cloud --> Estrutura
+    classDef bloco fill:#f9f,stroke:#333,stroke-width:2px;
+    class Notion,Bloquinho bloco;
+            </div>
+        </div>
+
+        <!-- Organização de Dados -->
+        <div class="architecture-grid">
+            <div class="architecture-card">
+                <h3>🗂️ Organização de Dados</h3>
+                <p>Cada usuário possui uma estrutura organizada e hierárquica:</p>
+                <ul>
+                    <li><strong>Perfil:</strong> Pasta exclusiva com configurações e foto</li>
+                    <li><strong>Workspaces:</strong> Três espaços padrão (work, personal, school)</li>
+                    <li><strong>Módulos:</strong> Cinco módulos por workspace</li>
+                    <li><strong>Hierarquia:</strong> Estrutura de páginas e subpáginas</li>
+                </ul>
+            </div>
+            
+            <div class="architecture-card">
+                <h3>☁️ Sincronização e Nuvem</h3>
+                <p>Sistema híbrido que garante privacidade e acessibilidade:</p>
+                <ul>
+                    <li><strong>Local First:</strong> Todos os dados salvos localmente</li>
+                    <li><strong>Cloud Sync:</strong> Google Drive e OneDrive integrados</li>
+                    <li><strong>OAuth2 Persistente:</strong> Login único com renovação automática</li>
+                    <li><strong>Indicador Visual:</strong> Status de sincronização em tempo real</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Estrutura de Pastas -->
+        <div class="architecture-card">
+            <h3>📁 Estrutura de Pastas</h3>
+            <p>Exemplo da organização hierárquica de dados:</p>
+            <div class="structure-tree">
+<span class="folder">profile/</span>
+└── <span class="folder">karim_santos/</span>
+    ├── <span class="file">settings.json</span>
+    ├── <span class="file">profile_photo.jpg</span>
+    └── <span class="folder">workspaces/</span>
+        ├── <span class="folder">work/</span>
+        │   ├── <span class="folder">bloquinho/</span>
+        │   │   ├── <span class="file">bloquinho.md</span>
+        │   │   └── <span class="folder">Subpagina1/</span>
+        │   │       └── <span class="file">Subpagina1.md</span>
+        │   ├── <span class="folder">documents/</span>
+        │   ├── <span class="folder">agenda/</span>
+        │   ├── <span class="folder">passwords/</span>
+        │   └── <span class="folder">databases/</span>
+        ├── <span class="folder">personal/</span>
+        └── <span class="folder">school/</span>
+            </div>
+        </div>
+
+        <!-- Componentes-Chave -->
+        <div class="architecture-grid">
+            <div class="architecture-card">
+                <h3>🧩 Componentes-Chave</h3>
+                <p>Funcionalidades principais que definem a experiência:</p>
+                <ul>
+                    <li><strong>Editor Notion-like:</strong> Blocos ricos, comandos slash, hierarquia</li>
+                    <li><strong>Pesquisa Global:</strong> Busca instantânea em todos os módulos</li>
+                    <li><strong>Sidebar & Navegação:</strong> Interface responsiva e intuitiva</li>
+                    <li><strong>Sistema de Temas:</strong> Visual consistente e personalizável</li>
+                    <li><strong>Indicador de Sincronização:</strong> Feedback visual contínuo</li>
+                </ul>
+            </div>
+            
+            <div class="architecture-card">
+                <h3>🛡️ Segurança e Privacidade</h3>
+                <p>Proteção total dos dados do usuário:</p>
+                <ul>
+                    <li><strong>Armazenamento Local Seguro:</strong> Dados criptografados</li>
+                    <li><strong>Controle Total:</strong> Exportar, importar, backup</li>
+                    <li><strong>Open Source:</strong> Código aberto e auditável</li>
+                    <li><strong>Sem Dados para Terceiros:</strong> Privacidade garantida</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Fluxo de Inicialização -->
+        <div class="flow-section">
+            <h3>🚀 Fluxo de Inicialização</h3>
+            <div class="flow-step">
+                <div class="number">1</div>
+                <div class="content">
+                    <h4>App Inicia</h4>
+                    <p>Carrega perfil e workspace atual automaticamente</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="number">2</div>
+                <div class="content">
+                    <h4>Providers Riverpod</h4>
+                    <p>Inicializam estado global e gerenciamento de dados</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="number">3</div>
+                <div class="content">
+                    <h4>OAuth2Service</h4>
+                    <p>Restaura sessões e tokens de autenticação</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="number">4</div>
+                <div class="content">
+                    <h4>CloudFolderService</h4>
+                    <p>Garante estrutura de pastas na nuvem</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="number">5</div>
+                <div class="content">
+                    <h4>Interface Pronta</h4>
+                    <p>Exibe status, navegação e módulos prontos para uso</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Design Integrado -->
+        <div class="feature-highlight">
+            <h3>🎨 Design Integrado</h3>
+            <p>O design do Bloquinho foi pensado para transmitir leveza, organização e profissionalismo, com cards arredondados, paleta bege/castanho claro, ícones grandes e coloridos, tipografia clara e animações suaves.</p>
+        </div>
+
+        <!-- Conclusão -->
+        <div class="security-section">
+            <h3>🌟 Conclusão</h3>
+            <p>A arquitetura do Bloquinho une o melhor da produtividade, privacidade e design moderno. Com uma base robusta, sincronização inteligente e interface inspirada no Notion, o Bloquinho é a solução definitiva para quem busca controle total sobre suas informações, em qualquer plataforma.</p>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="mailto:dr.karim.patatas@gmail.com">Email</a>
+            <a href="https://www.linkedin.com/in/k-patatas/" target="_blank">LinkedIn</a>
+            <a href="https://github.com/Sen2pi" target="_blank">GitHub</a>
+            <a href="https://bloquinho.kpsolucoes.pt/" target="_blank">Site</a>
+            <a href="tel:+351925542328">+351 925 542 328</a>
+            <a href="https://portfoliokarimsantos.vercel.app/" target="_blank">Portfolio</a>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html> 

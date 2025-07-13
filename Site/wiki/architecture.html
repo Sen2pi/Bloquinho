@@ -1,0 +1,22 @@
+<h1>Architecture & Innovation</h1>
+<div class="architecture-content">
+  <div class="architecture-diagram">
+    <pre class="mermaid">
+      graph LR;
+        UI[Flutter UI] -->|Riverpod| Providers;
+        Providers -->|Reactive| Services;
+        Services -->|Hive/Files| LocalDB[Local Storage];
+        Services -->|OAuth2| CloudAPI[Cloud API];
+        LocalDB -->|Sync| CloudAPI;
+        UI -->|Wiki| Wiki[HTML Wiki];
+    </pre>
+  </div>
+  <div class="architecture-info">
+    <ul>
+      <li>Modular, extensible architecture with Riverpod, Hive, and file-based storage.</li>
+      <li>Cross-platform: Windows, Linux, macOS, Web, Mobile.</li>
+      <li>Built-in Wiki: every HTML file in /wiki is a page, easy to expand and document.</li>
+      <li>Innovative features: advanced markdown, slash commands, database-Agenda integration, and more.</li>
+    </ul>
+  </div>
+</div> 

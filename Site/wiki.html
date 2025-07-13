@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloquinho - Wiki</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="public/logo.png">
+</head>
+<body class="light-theme">
+  <nav class="navbar">
+    <div class="nav-left">
+      <img src="public/logo.png" alt="Bloquinho Logo" class="nav-logo">
+      <span class="nav-title">Bloquinho</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="features.html">Features</a></li>
+      <li><a href="wiki.html" class="active">Wiki</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="downloads.html">Downloads</a></li>
+      <li><a href="donate.html">Donate</a></li>
+    </ul>
+    <button class="nav-toggle" aria-label="Menu" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+  <main class="wiki-main">
+    <aside class="wiki-menu" id="wiki-menu">
+      <!-- Menu gerado automaticamente via JS -->
+    </aside>
+    <section class="wiki-content" id="wiki-content">
+      <div class="wiki-placeholder">Selecione um tópico no menu para ler a documentação.</div>
+    </section>
+  </main>
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="mailto:dr.karim.patatas@gmail.com">Email</a>
+      <a href="https://www.linkedin.com/in/k-patatas/" target="_blank">LinkedIn</a>
+      <a href="https://github.com/Sen2pi" target="_blank">GitHub</a>
+      <a href="https://bloquinho.kpsolucoes.pt/" target="_blank">Site</a>
+      <a href="tel:+351925542328">+351 925 542 328</a>
+      <a href="https://portfoliokarimsantos.vercel.app/" target="_blank">Portfolio</a>
+    </div>
+    <div class="footer-copy">© 2024 Bloquinho. All rights reserved.</div>
+  </footer>
+  <script src="js/i18n.js"></script>
+  <script src="js/wiki.js"></script>
+  <script>
+    function toggleMenu() {
+      document.querySelector('.nav-links').classList.toggle('open');
+    }
+  </script>
+</body>
+</html> 

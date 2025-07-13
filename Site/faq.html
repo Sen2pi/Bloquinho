@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Bloquinho</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .faq-hero {
+            background: linear-gradient(135deg, #f8f4f0 0%, #e8dcc8 100%);
+            padding: 80px 0;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .faq-hero h1 {
+            font-size: 3.5rem;
+            color: #8B4513;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .faq-hero p {
+            font-size: 1.3rem;
+            color: #6B4423;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .faq-section {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .faq-category {
+            margin: 60px 0;
+        }
+        
+        .faq-category h2 {
+            font-size: 2.2rem;
+            color: #8B4513;
+            margin-bottom: 30px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .faq-category h2::before {
+            content: '';
+            width: 4px;
+            height: 32px;
+            background: linear-gradient(135deg, #D2691E, #CD853F);
+            border-radius: 2px;
+        }
+        
+        .faq-item {
+            background: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 4px 24px rgba(139, 69, 19, 0.1);
+            border: 1px solid #e8dcc8;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .faq-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(139, 69, 19, 0.15);
+        }
+        
+        .faq-item h3 {
+            font-size: 1.4rem;
+            color: #8B4513;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .faq-item h3::before {
+            content: '❓';
+            font-size: 1.2rem;
+        }
+        
+        .faq-item p {
+            color: #6B4423;
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+        
+        .faq-item ul {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+        
+        .faq-item li {
+            padding: 8px 0;
+            color: #6B4423;
+            position: relative;
+            padding-left: 24px;
+        }
+        
+        .faq-item li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #D2691E;
+            font-weight: bold;
+        }
+        
+        .faq-item code {
+            background: #f8f4f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #8B4513;
+        }
+        
+        .faq-highlight {
+            background: linear-gradient(135deg, #D2691E, #CD853F);
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            margin: 40px 0;
+            text-align: center;
+        }
+        
+        .faq-highlight h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        
+        .faq-highlight p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .faq-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 40px 0;
+        }
+        
+        .faq-feature {
+            background: #fff;
+            border-radius: 12px;
+            padding: 25px;
+            border-left: 6px solid #D2691E;
+        }
+        
+        .faq-feature h4 {
+            color: #8B4513;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+        }
+        
+        .faq-feature p {
+            color: #6B4423;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+        
+        .faq-badge {
+            display: inline-block;
+            background: #D2691E;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin: 5px;
+        }
+        
+        .faq-badge.success {
+            background: #28a745;
+        }
+        
+        .faq-badge.info {
+            background: #17a2b8;
+        }
+        
+        @media (max-width: 768px) {
+            .faq-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .faq-hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .faq-hero p {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-left">
+          <img src="public/logo.png" alt="Bloquinho Logo" class="nav-logo">
+          <span class="nav-title">Bloquinho</span>
+        </div>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="features.html">Features</a></li>
+          <li><a href="wiki.html">Wiki</a></li>
+          <li><a href="security.html">Security</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+          <li><a href="faq.html" class="active">FAQ</a></li>
+          <li><a href="downloads.html">Downloads</a></li>
+          <li><a href="donate.html">Donate</a></li>
+        </ul>
+        <button class="nav-toggle" aria-label="Menu" onclick="toggleMenu()">
+          <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="faq-hero">
+        <div class="faq-section">
+            <h1>❓ Perguntas Frequentes</h1>
+            <p>Encontre respostas para as dúvidas mais comuns sobre o Bloquinho. Se não encontrar o que procura, entre em contato conosco!</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="faq-section">
+        
+        <!-- Geral -->
+        <div class="faq-category">
+            <h2>📋 Geral</h2>
+            
+            <div class="faq-item">
+                <h3>O Bloquinho é realmente gratuito?</h3>
+                <p>Sim! O Bloquinho é 100% open source e gratuito para todos, para sempre. Não há planos pagos, assinaturas ou limitações.</p>
+                <div style="margin-top: 15px;">
+                    <span class="faq-badge success">✅ 100% Gratuito</span>
+                    <span class="faq-badge success">✅ Open Source</span>
+                    <span class="faq-badge success">✅ Sem Limitações</span>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Quais plataformas são suportadas?</h3>
+                <p>O Bloquinho funciona em todas as principais plataformas:</p>
+                <ul>
+                    <li><strong>Desktop:</strong> Windows, macOS, Linux</li>
+                    <li><strong>Web:</strong> Navegadores modernos (Chrome, Firefox, Safari, Edge)</li>
+                    <li><strong>Mobile:</strong> Android e iOS (em desenvolvimento)</li>
+                </ul>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Como posso contribuir para o projeto?</h3>
+                <p>Existem várias formas de contribuir:</p>
+                <ul>
+                    <li><strong>Desenvolvimento:</strong> Contribua código no GitHub</li>
+                    <li><strong>Documentação:</strong> Ajude a melhorar a Wiki</li>
+                    <li><strong>Testes:</strong> Reporte bugs e sugestões</li>
+                    <li><strong>Tradução:</strong> Ajude com traduções</li>
+                    <li><strong>Doação:</strong> Suporte financeiro para o projeto</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Segurança e Privacidade -->
+        <div class="faq-category">
+            <h2>🔒 Segurança e Privacidade</h2>
+            
+            <div class="faq-item">
+                <h3>Como meus dados são armazenados?</h3>
+                <p>Seus dados são armazenados localmente no seu dispositivo com criptografia avançada:</p>
+                <ul>
+                    <li><strong>Armazenamento Local:</strong> Todos os dados ficam no seu dispositivo</li>
+                    <li><strong>Criptografia:</strong> Dados sensíveis são criptografados com AES</li>
+                    <li><strong>FlutterSecureStorage:</strong> Tokens OAuth2 protegidos</li>
+                    <li><strong>Hive Database:</strong> Armazenamento local rápido e confiável</li>
+                    <li><strong>Sem Telemetria:</strong> Nenhum dado é enviado sem sua permissão</li>
+                </ul>
+            </div>
+            
+            <div class="faq-item">
+                <h3>O OAuth2 é seguro?</h3>
+                <p>Sim! O sistema OAuth2 do Bloquinho foi projetado com máxima segurança:</p>
+                <ul>
+                    <li><strong>Tokens Criptografados:</strong> Armazenados com FlutterSecureStorage</li>
+                    <li><strong>Renovação Automática:</strong> Tokens são renovados automaticamente</li>
+                    <li><strong>Login Único:</strong> Você faz login uma vez e permanece conectado</li>
+                    <li><strong>Validação Robusta:</strong> Tokens expirados são removidos automaticamente</li>
+                    <li><strong>Logs Detalhados:</strong> Transparência total das operações</li>
+                </ul>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Posso usar o Bloquinho offline?</h3>
+                <p>Absolutamente! O Bloquinho funciona completamente offline:</p>
+                <ul>
+                    <li><strong>Modo Offline:</strong> Todas as funcionalidades principais funcionam sem internet</li>
+                    <li><strong>Sincronização Opcional:</strong> Nuvem é opcional, não obrigatória</li>
+                    <li><strong>Dados Locais:</strong> Tudo é salvo localmente primeiro</li>
+                    <li><strong>Backup Manual:</strong> Controle total sobre seus backups</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Funcionalidades -->
+        <div class="faq-category">
+            <h2>⚙️ Funcionalidades</h2>
+            
+            <div class="faq-item">
+                <h3>Quais são as principais funcionalidades?</h3>
+                <p>O Bloquinho oferece um conjunto completo de ferramentas de produtividade:</p>
+                <ul>
+                    <li><strong>Editor Notion-like:</strong> Editor avançado com blocos e comandos slash</li>
+                    <li><strong>Workspaces:</strong> Múltiplos contextos (pessoal, trabalho, estudos)</li>
+                    <li><strong>Sistema de Perfis:</strong> Perfis com avatares e informações pessoais</li>
+                    <li><strong>Backup e Sincronização:</strong> Sistema robusto de backup local e nuvem</li>
+                    <li><strong>Base de Dados:</strong> Tabelas avançadas com 17 tipos de dados</li>
+                    <li><strong>Agenda e Eventos:</strong> Gerenciamento completo de calendário</li>
+                    <li><strong>Gerenciador de Senhas:</strong> Armazenamento seguro de credenciais</li>
+                </ul>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Como funciona o sistema de workspaces?</h3>
+                <p>O sistema de workspaces permite organizar seus dados por contexto:</p>
+                <ul>
+                    <li><strong>Workspaces Padrão:</strong> Pessoal, Trabalho, Estudos</li>
+                    <li><strong>Isolamento Completo:</strong> Cada workspace tem dados independentes</li>
+                    <li><strong>Seções Organizadas:</strong> Notas, Documentos, Passwords, Agenda, BD</li>
+                    <li><strong>Personalização:</strong> Cores, ícones e nomes personalizados</li>
+                    <li><strong>Duplicação:</strong> Crie cópias de workspaces existentes</li>
+                </ul>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Como funciona o cache de avatares?</h3>
+                <p>O sistema de cache de avatares garante performance e privacidade:</p>
+                <ul>
+                    <li><strong>Download Automático:</strong> Fotos baixadas automaticamente via OAuth2</li>
+                    <li><strong>Armazenamento Local:</strong> Pasta dedicada no dispositivo</li>
+                    <li><strong>Controle Inteligente:</strong> Refresh automático após 1 dia</li>
+                    <li><strong>Limpeza Automática:</strong> Arquivos antigos removidos após 7 dias</li>
+                    <li><strong>Fallback Robusto:</strong> Iniciais quando não há foto disponível</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Sincronização e Nuvem -->
+        <div class="faq-category">
+            <h2>☁️ Sincronização e Nuvem</h2>
+            
+            <div class="faq-item">
+                <h3>Quais serviços de nuvem são suportados?</h3>
+                <p>O Bloquinho suporta os principais serviços de nuvem:</p>
+                <ul>
+                    <li><strong>Google Drive:</strong> Integração completa com OAuth2</li>
+                    <li><strong>Microsoft OneDrive:</strong> Suporte via Microsoft Graph API</li>
+                    <li><strong>Estrutura Organizada:</strong> Pastas criadas automaticamente</li>
+                    <li><strong>Sincronização Bidirecional:</strong> Upload e download automáticos</li>
+                    <li><strong>Indicadores Visuais:</strong> Status de sincronização em tempo real</li>
+                </ul>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Como funciona a persistência de sessões?</h3>
+                <p>O sistema mantém suas sessões ativas automaticamente:</p>
+                <ul>
+                    <li><strong>Login Único:</strong> Você faz login uma vez e permanece conectado</li>
+                    <li><strong>Restauração Automática:</strong> Sessões são restauradas na inicialização</li>
+                    <li><strong>Validação de Tokens:</strong> Tokens expirados são removidos automaticamente</li>
+                    <li><strong>Debug Completo:</strong> Logs detalhados para diagnóstico</li>
+                    <li><strong>Segurança Máxima:</strong> Tokens armazenados com criptografia</li>
+                </ul>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Como funciona o sistema de backup?</h3>
+                <p>O sistema de backup oferece múltiplas opções de proteção:</p>
+                <ul>
+                    <li><strong>Backup Local:</strong> Arquivos JSON com todos os dados</li>
+                    <li><strong>Exportação Manual:</strong> Controle total sobre backups</li>
+                    <li><strong>Importação Segura:</strong> Restauração com validação de integridade</li>
+                    <li><strong>Backup Automático:</strong> Criação automática com limpeza</li>
+                    <li><strong>Estatísticas Detalhadas:</strong> Informações completas sobre backups</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Desenvolvimento e Técnico -->
+        <div class="faq-category">
+            <h2>🔧 Desenvolvimento e Técnico</h2>
+            
+            <div class="faq-item">
+                <h3>Como posso expandir a Wiki?</h3>
+                <p>A Wiki é facilmente expansível:</p>
+                <ul>
+                    <li><strong>Arquivos HTML:</strong> Adicione novos arquivos na pasta <code>/Site/wiki</code></li>
+                    <li><strong>Menu Automático:</strong> O menu lateral atualiza automaticamente</li>
+                    <li><strong>Navegação Integrada:</strong> Sistema de navegação já implementado</li>
+                    <li><strong>Design Consistente:</strong> Use o CSS existente para manter o visual</li>
+                    <li><strong>Animações:</strong> Efeito de virar página já implementado</li>
+                </ul>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Quais tecnologias são usadas?</h3>
+                <p>O Bloquinho utiliza tecnologias modernas e confiáveis:</p>
+                <ul>
+                    <li><strong>Frontend:</strong> Flutter para interface multiplataforma</li>
+                    <li><strong>Estado:</strong> Riverpod para gerenciamento de estado reativo</li>
+                    <li><strong>Armazenamento:</strong> Hive para dados locais</li>
+                    <li><strong>Segurança:</strong> FlutterSecureStorage para dados sensíveis</li>
+                    <li><strong>Navegação:</strong> GoRouter para roteamento avançado</li>
+                    <li><strong>OAuth2:</strong> Autenticação segura com Google e Microsoft</li>
+                </ul>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Como reportar bugs ou solicitar funcionalidades?</h3>
+                <p>Existem várias formas de contribuir com feedback:</p>
+                <ul>
+                    <li><strong>GitHub Issues:</strong> Reporte bugs e sugestões no repositório</li>
+                    <li><strong>Email:</strong> Entre em contato diretamente via email</li>
+                    <li><strong>LinkedIn:</strong> Conecte-se com o desenvolvedor</li>
+                    <li><strong>Documentação:</strong> Consulte os logs de desenvolvimento</li>
+                    <li><strong>Contribuição Direta:</strong> Envie pull requests com melhorias</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Suporte e Contato -->
+        <div class="faq-category">
+            <h2>📞 Suporte e Contato</h2>
+            
+            <div class="faq-item">
+                <h3>Como posso obter suporte?</h3>
+                <p>Oferecemos múltiplos canais de suporte:</p>
+                <ul>
+                    <li><strong>Email:</strong> dr.karim.patatas@gmail.com</li>
+                    <li><strong>Telefone:</strong> +351 925 542 328</li>
+                    <li><strong>LinkedIn:</strong> https://www.linkedin.com/in/k-patatas/</li>
+                    <li><strong>GitHub:</strong> https://github.com/Sen2pi</li>
+                    <li><strong>Site:</strong> https://bloquinho.kpsolucoes.pt/</li>
+                    <li><strong>Portfolio:</strong> https://portfoliokarimsantos.vercel.app/</li>
+                </ul>
+            </div>
+            
+            <div class="faq-item">
+                <h3>O projeto é mantido ativamente?</h3>
+                <p>Sim! O Bloquinho é um projeto ativo com desenvolvimento contínuo:</p>
+                <ul>
+                    <li><strong>Atualizações Regulares:</strong> Novas funcionalidades e correções</li>
+                    <li><strong>Logs Detalhados:</strong> Documentação completa de desenvolvimento</li>
+                    <li><strong>Testes Abrangentes:</strong> Cobertura de testes de 95%+</li>
+                    <li><strong>Feedback da Comunidade:</strong> Melhorias baseadas em sugestões</li>
+                    <li><strong>Roadmap Claro:</strong> Planejamento de funcionalidades futuras</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Destaque -->
+        <div class="faq-highlight">
+            <h3>🌟 Ainda tem dúvidas?</h3>
+            <p>Se não encontrou a resposta que procurava, não hesite em entrar em contato conosco. Estamos aqui para ajudar e adoramos receber feedback da comunidade!</p>
+        </div>
+
+        <!-- Recursos Rápidos -->
+        <div class="faq-grid">
+            <div class="faq-feature">
+                <h4>📚 Documentação</h4>
+                <p>Consulte a Wiki para guias detalhados sobre todas as funcionalidades do Bloquinho.</p>
+            </div>
+            <div class="faq-feature">
+                <h4>🔒 Segurança</h4>
+                <p>Saiba mais sobre como protegemos seus dados e garantimos sua privacidade.</p>
+            </div>
+            <div class="faq-feature">
+                <h4>🏗️ Arquitetura</h4>
+                <p>Entenda a arquitetura técnica e as decisões de design do projeto.</p>
+            </div>
+            <div class="faq-feature">
+                <h4>💝 Doação</h4>
+                <p>Suporte o projeto e ajude a manter o desenvolvimento ativo.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="mailto:dr.karim.patatas@gmail.com">Email</a>
+            <a href="https://www.linkedin.com/in/k-patatas/" target="_blank">LinkedIn</a>
+            <a href="https://github.com/Sen2pi" target="_blank">GitHub</a>
+            <a href="https://bloquinho.kpsolucoes.pt/" target="_blank">Site</a>
+            <a href="tel:+351925542328">+351 925 542 328</a>
+            <a href="https://portfoliokarimsantos.vercel.app/" target="_blank">Portfolio</a>
+        </div>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            document.querySelector('.nav-links').classList.toggle('open');
+        }
+        
+        // Adicionar interatividade aos itens FAQ
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.addEventListener('click', function() {
+                this.style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 200);
+            });
+        });
+    </script>
+</body>
+</html> 
