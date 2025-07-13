@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloquinho - Downloads & Donate</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="public/logo.png">
+  <style>
+    .main-flex {
+      display: flex;
+      flex-direction: row;
+      gap: 48px;
+      max-width: 1100px;
+      margin: 60px auto 0 auto;
+      padding: 0 16px 60px 16px;
+      align-items: flex-start;
+    }
+    .downloads-card, .donate-card {
+      background: #fff8f3;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(139, 69, 19, 0.10);
+      border: 1px solid #e8dcc8;
+      padding: 40px 32px;
+      flex: 1 1 0;
+      min-width: 320px;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .downloads-card h1, .donate-card h1 {
+      font-size: 2.2rem;
+      color: #8B4513;
+      margin-bottom: 18px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .downloads-cards {
+      display: flex;
+      flex-direction: row;
+      gap: 24px;
+      margin: 24px 0 18px 0;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .download-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 12px rgba(139, 69, 19, 0.08);
+      border: 1px solid #e8dcc8;
+      padding: 24px 32px;
+      min-width: 120px;
+      text-decoration: none;
+      color: #8B4513;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .download-card:hover {
+      transform: translateY(-6px) scale(1.04);
+      box-shadow: 0 8px 32px rgba(139, 69, 19, 0.15);
+      background: #f8f4f0;
+    }
+    .download-card img {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 10px;
+    }
+    .downloads-info {
+      color: #6b4423;
+      font-size: 1.02rem;
+      text-align: center;
+      margin-bottom: 0;
+    }
+    .donate-qr {
+      margin: 18px 0 18px 0;
+      display: flex;
+      justify-content: center;
+    }
+    .donate-qr img {
+      width: 120px;
+      height: 120px;
+      border-radius: 12px;
+      border: 1px solid #e8dcc8;
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(139, 69, 19, 0.08);
+    }
+    .donate-inspire {
+      color: #6b4423;
+      font-size: 1.08rem;
+      margin-bottom: 18px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .donate-contacts {
+      margin-top: 10px;
+      font-size: 1.01rem;
+      color: #8B4513;
+      width: 100%;
+    }
+    .donate-contacts div {
+      margin-bottom: 6px;
+      text-align: left;
+      word-break: break-all;
+    }
+    @media (max-width: 900px) {
+      .main-flex {
+        flex-direction: column;
+        gap: 32px;
+        align-items: stretch;
+      }
+      .downloads-card, .donate-card {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="light-theme">
+  <nav class="navbar">
+    <div class="nav-left">
+      <img src="public/logo.png" alt="Bloquinho Logo" class="nav-logo">
+      <span class="nav-title">Bloquinho</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="features.html">Features</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="downloads_and_donate.html" class="active">Downloads & Donate</a></li>
+    </ul>
+    <button class="nav-toggle" aria-label="Menu" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+  <main>
+    <div class="main-flex">
+      <!-- Downloads -->
+      <section class="downloads-card">
+        <h1>Downloads</h1>
+        <div class="downloads-cards">
+          <a href="https://github.com/Sen2pi/Bloquinho/releases/tag/bloquinho_windows_1.0" target="_blank" class="download-card">
+            <img src="public/windows.png" alt="Windows">
+            <span>Windows</span>
+          </a>
+          <a href="https://github.com/karimsantos/Bloquinho/releases/latest" target="_blank" class="download-card">
+            <img src="public/macos.png" alt="macOS">
+            <span>macOS</span>
+          </a>
+          <a href="https://github.com/karimsantos/Bloquinho/releases/latest" target="_blank" class="download-card">
+            <img src="public/linux.png" alt="Linux">
+            <span>Linux</span>
+          </a>
+        </div>
+        <p class="downloads-info">All versions are open source, privacy-first, and free for everyone.<br>For more platforms, check our <a href="https://github.com/karimsantos/Bloquinho/releases" target="_blank">GitHub Releases</a>.</p>
+      </section>
+      <!-- Donate -->
+      <section class="donate-card">
+        <h1>Support & Donate</h1>
+        <div class="donate-qr">
+          <img src="public/qrcode.png" alt="PayPal QR Code" />
+        </div>
+        <p class="donate-inspire">Bloquinho is an open source, free project made with love for everyone. Your support helps keep the platform free, private, and innovative for thousands of people. If Bloquinho makes a difference in your life, consider donating and supporting independent development!</p>
+        <div class="donate-contacts">
+          <div><strong>Email:</strong> <a href="mailto:dr.karim.patatas@gmail.com">dr.karim.patatas@gmail.com</a></div>
+          <div><strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/k-patatas/" target="_blank">linkedin.com/in/k-patatas</a></div>
+          <div><strong>GitHub:</strong> <a href="https://github.com/Sen2pi" target="_blank">github.com/Sen2pi</a></div>
+          <div><strong>Site:</strong> <a href="https://bloquinho.kpsolucoes.pt/" target="_blank">bloquinho.kpsolucoes.pt</a></div>
+          <div><strong>Portfolio:</strong> <a href="https://portfoliokarimsantos.vercel.app/" target="_blank">portfoliokarimsantos.vercel.app</a></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="mailto:dr.karim.patatas@gmail.com">Email</a>
+      <a href="https://www.linkedin.com/in/k-patatas/" target="_blank">LinkedIn</a>
+      <a href="https://github.com/Sen2pi" target="_blank">GitHub</a>
+      <a href="https://bloquinho.kpsolucoes.pt/" target="_blank">Site</a>
+      <a href="tel:+351925542328">+351 925 542 328</a>
+      <a href="https://portfoliokarimsantos.vercel.app/" target="_blank">Portfolio</a>
+    </div>
+    <div class="footer-copy">© 2024 Bloquinho. All rights reserved.</div>
+  </footer>
+  <script src="js/i18n.js"></script>
+  <script>
+    function toggleMenu() {
+      document.querySelector('.nav-links').classList.toggle('open');
+    }
+  </script>
+</body>
+</html> 

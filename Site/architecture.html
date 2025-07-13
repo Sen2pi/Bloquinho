@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arquitetura - Bloquinho</title>
+    <title>Architecture - Bloquinho</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <style>
@@ -247,12 +247,10 @@
         <ul class="nav-links">
           <li><a href="index.html">Home</a></li>
           <li><a href="features.html">Features</a></li>
-          <li><a href="wiki.html" class="active">Wiki</a></li>
           <li><a href="security.html">Security</a></li>
           <li><a href="architecture.html">Architecture</a></li>
           <li><a href="faq.html">FAQ</a></li>
-          <li><a href="downloads.html">Downloads</a></li>
-          <li><a href="donate.html">Donate</a></li>
+          <li><a href="downloads_and_donate.html">Downloads & Donate</a></li>
         </ul>
         <button class="nav-toggle" aria-label="Menu" onclick="toggleMenu()">
           <span></span><span></span><span></span>
@@ -262,8 +260,8 @@
     <!-- Hero Section -->
     <section class="architecture-hero">
         <div class="architecture-section">
-            <h1>🏛️ Arquitetura do Bloquinho</h1>
-            <p>Uma plataforma moderna, modular e extensível que combina organização de dados local, sincronização em nuvem e interface Notion-like para oferecer controle total sobre suas informações.</p>
+            <h1>🏛️ Bloquinho Architecture</h1>
+            <p>A modern, modular and extensible platform that combines local data organization, cloud synchronization and Notion-like interface to offer total control over your information.</p>
         </div>
     </section>
 
@@ -272,44 +270,44 @@
         
         <!-- Visão Geral -->
         <div class="architecture-card">
-            <h3>🌐 Visão Geral da Arquitetura</h3>
-            <p>O Bloquinho foi projetado para ser uma plataforma completa de produtividade, inspirada nos melhores padrões de organização e privacidade. Sua arquitetura combina:</p>
+            <h3>🌐 Architecture Overview</h3>
+            <p>Bloquinho was designed to be a complete productivity platform, inspired by the best standards of organization and privacy. Its architecture combines:</p>
             <ul>
-                <li>Armazenamento local seguro com sincronização em nuvem</li>
-                <li>Interface Notion-like com editor de blocos ricos</li>
-                <li>Sistema de workspaces e módulos organizados</li>
-                <li>Indicadores visuais de sincronização em tempo real</li>
-                <li>Design consistente com identidade visual única</li>
+                <li>Secure local storage with cloud synchronization</li>
+                <li>Notion-like interface with rich block editor</li>
+                <li>Organized workspace and module system</li>
+                <li>Real-time synchronization visual indicators</li>
+                <li>Consistent design with unique visual identity</li>
             </ul>
         </div>
 
         <!-- Diagrama Principal -->
         <div class="diagram-container">
-            <h3>📊 Arquitetura do Sistema</h3>
+            <h3>📊 System Architecture</h3>
             <div class="mermaid">
 flowchart TD
-    subgraph Usuário
-        U["👤 Usuário"]
+    subgraph User
+        U["👤 User"]
     end
     subgraph App["📱 Bloquinho App"]
         direction TB
         UI["🎨 Interface (Flutter)"]
-        Theme["🎨 Sistema de Temas & Ícones"]
-        Nav["🧭 Navegação & Sidebar"]
-        Notion["📝 Editor Notion-like\n(Blocos, Hierarquia, Comandos Slash)"]
-        Search["🔍 Pesquisa Global"]
-        CloudSync["☁️ Indicador de Sincronização\n(CloudSyncStatusProvider)"]
-        Providers["⚙️ Providers Riverpod\n(Estado Global)"]
+        Theme["🎨 Theme & Icon System"]
+        Nav["🧭 Navigation & Sidebar"]
+        Notion["📝 Notion-like Editor\n(Blocks, Hierarchy, Slash Commands)"]
+        Search["🔍 Global Search"]
+        CloudSync["☁️ Sync Indicator\n(CloudSyncStatusProvider)"]
+        Providers["⚙️ Riverpod Providers\n(Global State)"]
     end
-    subgraph Persistência
-        Local["💾 Armazenamento Local\n(LocalStorageService)"]
-        Cloud["☁️ Nuvem (Google Drive, OneDrive)\n(CloudFolderService)"]
+    subgraph Persistence
+        Local["💾 Local Storage\n(LocalStorageService)"]
+        Cloud["☁️ Cloud (Google Drive, OneDrive)\n(CloudFolderService)"]
     end
-    subgraph Estrutura
-        Profile["📁 profile/[nome_profile]/settings.json"]
+    subgraph Structure
+        Profile["📁 profile/[profile_name]/settings.json"]
         Workspaces["📂 workspaces/\n├─ work/\n├─ personal/\n└─ school/"]
-        Modulos["📋 Cada workspace:\n├─ bloquinho/\n├─ documents/\n├─ agenda/\n├─ passwords/\n└─ databases/"]
-        Bloquinho["📄 bloquinho/\n├─ bloquinho.md\n├─ Subpágina1/\n│   └─ Subpágina1.md\n└─ ..."]
+        Modules["📋 Each workspace:\n├─ bloquinho/\n├─ documents/\n├─ agenda/\n├─ passwords/\n└─ databases/"]
+        Bloquinho["📄 bloquinho/\n├─ bloquinho.md\n├─ Subpage1/\n│   └─ Subpage1.md\n└─ ..."]
     end
     U --> UI
     UI --> Nav
@@ -336,32 +334,32 @@ flowchart TD
         <!-- Organização de Dados -->
         <div class="architecture-grid">
             <div class="architecture-card">
-                <h3>🗂️ Organização de Dados</h3>
-                <p>Cada usuário possui uma estrutura organizada e hierárquica:</p>
+                <h3>🗂️ Data Organization</h3>
+                <p>Each user has an organized and hierarchical structure:</p>
                 <ul>
-                    <li><strong>Perfil:</strong> Pasta exclusiva com configurações e foto</li>
-                    <li><strong>Workspaces:</strong> Três espaços padrão (work, personal, school)</li>
-                    <li><strong>Módulos:</strong> Cinco módulos por workspace</li>
-                    <li><strong>Hierarquia:</strong> Estrutura de páginas e subpáginas</li>
+                    <li><strong>Profile:</strong> Exclusive folder with settings and photo</li>
+                    <li><strong>Workspaces:</strong> Three default spaces (work, personal, school)</li>
+                    <li><strong>Modules:</strong> Five modules per workspace</li>
+                    <li><strong>Hierarchy:</strong> Structure of pages and subpages</li>
                 </ul>
             </div>
             
             <div class="architecture-card">
-                <h3>☁️ Sincronização e Nuvem</h3>
-                <p>Sistema híbrido que garante privacidade e acessibilidade:</p>
+                <h3>☁️ Synchronization and Cloud</h3>
+                <p>Hybrid system that ensures privacy and accessibility:</p>
                 <ul>
-                    <li><strong>Local First:</strong> Todos os dados salvos localmente</li>
-                    <li><strong>Cloud Sync:</strong> Google Drive e OneDrive integrados</li>
-                    <li><strong>OAuth2 Persistente:</strong> Login único com renovação automática</li>
-                    <li><strong>Indicador Visual:</strong> Status de sincronização em tempo real</li>
+                    <li><strong>Local First:</strong> All data saved locally</li>
+                    <li><strong>Cloud Sync:</strong> Google Drive and OneDrive integrated</li>
+                    <li><strong>Persistent OAuth2:</strong> Single login with automatic renewal</li>
+                    <li><strong>Visual Indicator:</strong> Real-time synchronization status</li>
                 </ul>
             </div>
         </div>
 
         <!-- Estrutura de Pastas -->
         <div class="architecture-card">
-            <h3>📁 Estrutura de Pastas</h3>
-            <p>Exemplo da organização hierárquica de dados:</p>
+            <h3>📁 Folder Structure</h3>
+            <p>Example of hierarchical data organization:</p>
             <div class="structure-tree">
 <span class="folder">profile/</span>
 └── <span class="folder">karim_santos/</span>
@@ -385,79 +383,79 @@ flowchart TD
         <!-- Componentes-Chave -->
         <div class="architecture-grid">
             <div class="architecture-card">
-                <h3>🧩 Componentes-Chave</h3>
-                <p>Funcionalidades principais que definem a experiência:</p>
+                <h3>🧩 Key Components</h3>
+                <p>Main features that define the experience:</p>
                 <ul>
-                    <li><strong>Editor Notion-like:</strong> Blocos ricos, comandos slash, hierarquia</li>
-                    <li><strong>Pesquisa Global:</strong> Busca instantânea em todos os módulos</li>
-                    <li><strong>Sidebar & Navegação:</strong> Interface responsiva e intuitiva</li>
-                    <li><strong>Sistema de Temas:</strong> Visual consistente e personalizável</li>
-                    <li><strong>Indicador de Sincronização:</strong> Feedback visual contínuo</li>
+                    <li><strong>Notion-like Editor:</strong> Rich blocks, slash commands, hierarchy</li>
+                    <li><strong>Global Search:</strong> Instant search across all modules</li>
+                    <li><strong>Sidebar & Navigation:</strong> Responsive and intuitive interface</li>
+                    <li><strong>Theme System:</strong> Consistent and customizable visual</li>
+                    <li><strong>Sync Indicator:</strong> Continuous visual feedback</li>
                 </ul>
             </div>
             
             <div class="architecture-card">
-                <h3>🛡️ Segurança e Privacidade</h3>
-                <p>Proteção total dos dados do usuário:</p>
+                <h3>🛡️ Security and Privacy</h3>
+                <p>Total protection of user data:</p>
                 <ul>
-                    <li><strong>Armazenamento Local Seguro:</strong> Dados criptografados</li>
-                    <li><strong>Controle Total:</strong> Exportar, importar, backup</li>
-                    <li><strong>Open Source:</strong> Código aberto e auditável</li>
-                    <li><strong>Sem Dados para Terceiros:</strong> Privacidade garantida</li>
+                    <li><strong>Secure Local Storage:</strong> Encrypted data</li>
+                    <li><strong>Total Control:</strong> Export, import, backup</li>
+                    <li><strong>Open Source:</strong> Open source and auditable code</li>
+                    <li><strong>No Data to Third Parties:</strong> Guaranteed privacy</li>
                 </ul>
             </div>
         </div>
 
         <!-- Fluxo de Inicialização -->
         <div class="flow-section">
-            <h3>🚀 Fluxo de Inicialização</h3>
+            <h3>🚀 Initialization Flow</h3>
             <div class="flow-step">
                 <div class="number">1</div>
                 <div class="content">
-                    <h4>App Inicia</h4>
-                    <p>Carrega perfil e workspace atual automaticamente</p>
+                    <h4>App Starts</h4>
+                    <p>Loads profile and current workspace automatically</p>
                 </div>
             </div>
             <div class="flow-step">
                 <div class="number">2</div>
                 <div class="content">
-                    <h4>Providers Riverpod</h4>
-                    <p>Inicializam estado global e gerenciamento de dados</p>
+                    <h4>Riverpod Providers</h4>
+                    <p>Initialize global state and data management</p>
                 </div>
             </div>
             <div class="flow-step">
                 <div class="number">3</div>
                 <div class="content">
                     <h4>OAuth2Service</h4>
-                    <p>Restaura sessões e tokens de autenticação</p>
+                    <p>Restores sessions and authentication tokens</p>
                 </div>
             </div>
             <div class="flow-step">
                 <div class="number">4</div>
                 <div class="content">
                     <h4>CloudFolderService</h4>
-                    <p>Garante estrutura de pastas na nuvem</p>
+                    <p>Ensures cloud folder structure</p>
                 </div>
             </div>
             <div class="flow-step">
                 <div class="number">5</div>
                 <div class="content">
-                    <h4>Interface Pronta</h4>
-                    <p>Exibe status, navegação e módulos prontos para uso</p>
+                    <h4>Interface Ready</h4>
+                    <p>Displays status, navigation and modules ready for use</p>
                 </div>
             </div>
         </div>
 
         <!-- Design Integrado -->
         <div class="feature-highlight">
-            <h3>🎨 Design Integrado</h3>
-            <p>O design do Bloquinho foi pensado para transmitir leveza, organização e profissionalismo, com cards arredondados, paleta bege/castanho claro, ícones grandes e coloridos, tipografia clara e animações suaves.</p>
+            <h3>🎨 Integrated Design</h3>
+            <p>Bloquinho's design was conceived to convey lightness, organization and professionalism, with rounded cards, beige/light brown palette, large and colorful icons, clear typography and smooth animations.</p>
         </div>
 
         <!-- Conclusão -->
         <div class="security-section">
-            <h3>🌟 Conclusão</h3>
-            <p>A arquitetura do Bloquinho une o melhor da produtividade, privacidade e design moderno. Com uma base robusta, sincronização inteligente e interface inspirada no Notion, o Bloquinho é a solução definitiva para quem busca controle total sobre suas informações, em qualquer plataforma.</p>
+            <h3>🌟 Conclusion</h3>
+            <p>Bloquinho's architecture unites the best of productivity, privacy and modern design. With a robust foundation, intelligent synchronization and Notion-inspired interface, Bloquinho is the definitive solution for those seeking total control over their information, on any platform.</p>
         </div>
 
     </div>
