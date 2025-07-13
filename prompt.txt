@@ -1,0 +1,95 @@
+Aqui está o html do que não está a previsualizar corretamente e as imagens do pre-visualizador de mostram a nao previsualizacao como deveria  partes do seguinte documento  @📊 Documento Markdown Completo com Todas as Funcion.md 
+Componentes a não renderizar : 
+- <span style="color:red">**Texto vermelho em negrito**</span>
+- <span style="color:blue; font-style:italic">Texto azul em itálico</span>
+- <span style="color:white; background-color:green; padding:3px 8px; border-radius:5px">✅ Sucesso</span>
+- <span style="color:white; background-color:red; padding:3px 8px; border-radius:5px">❌ Erro</span>
+- <span style="color:orange; background-color:#fff3cd; padding:3px 8px; border-radius:5px">⚠️ Aviso</span>
+Integral definida:
+
+$$
+\int_a^b f(x) \, dx = F(b) - F(a)
+$$
+
+Somatório:
+
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+$$
+
+Matriz:
+
+$$
+\begin{pmatrix}
+a & b \\
+c & d
+\end{pmatrix}
+\begin{pmatrix}
+x \\
+y
+\end{pmatrix}
+=
+\begin{pmatrix}
+
+
+ax + by \\
+cx + dy
+\end{pmatrix}
+$$
+
+Limite:
+
+$$
+\lim_{x \to \infty} \frac{1}{x} = 0
+$$
+
+```mermaid
+graph TD
+    A[Início] --> B{Login válido?}
+    B -->|Sim| C[Dashboard]
+    B -->|Não| D[Tela de erro]
+    C --> E{Tipo de usuário?}
+    E -->|Admin| F[Painel Admin]
+    E -->|User| G[Painel Usuário]
+    F --> H[Relatórios]
+    G --> I[Perfil]
+    H --> J[Fim]
+    I --> J
+
+    D --> A
+```
+
+<span style="background-color:#e1f5fe; border-left:4px solid #0277bd; padding:10px; display:block; margin:10px 0;">
+
+<span style="background-color:#28a745; color:white; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:bold;">ATIVO</span>
+<span style="background-color:#ffc107; color:black; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:bold;">PENDENTE</span>
+<span style="background-color:#dc3545; color:white; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:bold;">INATIVO</span>
+<span style="background-color:#28a745; color:white; padding:2px 8px; border-
+
+<div style="background-color:#f0f0f0; border-radius:10px; padding:3px; margin:10px 0;">
+<div style="background-color:#28a745; width:75%; height:20px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:12px;">
+75% Completo
+</div>
+</div>
+
+<span style="color:blue; text-decoration:underline">texto sublinhado azul</span>
+
+
+
+<sup>2</sup>
+
+<sub>2</sub>
+
+<span style="color:green; font-weight:bold">99.9%</span>
+<mark>Este texto está destacado</mark>
+
+
+### Teclas e Atalhos
+
+Para salvar o arquivo, pressione <kbd>Ctrl</kbd> + <kbd>S</kbd>
+
+Para copiar, use <kbd>Ctrl</kbd> + <kbd>C</kbd>
+
+
+
+

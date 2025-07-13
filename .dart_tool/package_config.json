@@ -1010,6 +1010,12 @@
       "languageVersion": "2.12"
     },
     {
+      "name": "screenshot",
+      "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/screenshot-3.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "share_plus",
       "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/share_plus-11.0.0",
       "packageUri": "lib/",
@@ -1284,6 +1290,30 @@
       "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/web_socket_channel-3.0.3",
       "packageUri": "lib/",
       "languageVersion": "3.3"
+    },
+    {
+      "name": "webview_flutter",
+      "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/webview_flutter-4.13.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "webview_flutter_android",
+      "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/webview_flutter_android-4.7.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "webview_flutter_platform_interface",
+      "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/webview_flutter_platform_interface-2.13.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "webview_flutter_wkwebview",
+      "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/webview_flutter_wkwebview-3.22.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
     },
     {
       "name": "win32",

@@ -51,13 +51,15 @@
         "provider",
         "reorderables",
         "riverpod",
+        "screenshot",
         "share_plus",
         "shimmer",
         "sqflite",
         "table_calendar",
         "url_launcher",
         "uuid",
-        "web_socket_channel"
+        "web_socket_channel",
+        "webview_flutter"
       ],
       "devDependencies": [
         "build_runner",
@@ -188,6 +190,13 @@
         "test_api",
         "vector_math",
         "vm_service"
+      ]
+    },
+    {
+      "name": "screenshot",
+      "version": "3.0.0",
+      "dependencies": [
+        "flutter"
       ]
     },
     {
@@ -2135,6 +2144,44 @@
       "dependencies": [
         "collection",
         "meta"
+      ]
+    },
+    {
+      "name": "webview_flutter",
+      "version": "4.13.0",
+      "dependencies": [
+        "flutter",
+        "webview_flutter_android",
+        "webview_flutter_platform_interface",
+        "webview_flutter_wkwebview"
+      ]
+    },
+    {
+      "name": "webview_flutter_wkwebview",
+      "version": "3.22.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "path",
+        "webview_flutter_platform_interface"
+      ]
+    },
+    {
+      "name": "webview_flutter_android",
+      "version": "4.7.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "webview_flutter_platform_interface"
+      ]
+    },
+    {
+      "name": "webview_flutter_platform_interface",
+      "version": "2.13.1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
       ]
     }
   ],
