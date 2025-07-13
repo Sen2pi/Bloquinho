@@ -38,11 +38,9 @@ class AIConfig {
 
   /// Busca o token do Google AI
   static String getGoogleAIToken(WidgetRef ref) {
+    // Retorna o token do usuário se não for nulo ou vazio, senão retorna o padrão.
     final userToken = ref.read(googleAITokenProvider);
-    if (userToken.isNotEmpty) {
-      return userToken;
-    }
-    return defaultGoogleAIToken;
+    return userToken.isNotEmpty ? userToken : defaultGoogleAIToken;
   }
 
   static bool isConfigured(WidgetRef ref) {

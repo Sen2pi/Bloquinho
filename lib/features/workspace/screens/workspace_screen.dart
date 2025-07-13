@@ -31,6 +31,7 @@ import '../../bloquinho/widgets/page_tree_widget.dart';
 import '../../bloquinho/providers/pages_provider.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
+import '../../../shared/providers/ai_status_provider.dart';
 
 enum Section { bloquinho, agenda, passwords, documentos, database }
 
@@ -57,6 +58,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       OAuth2Service.setSyncRef(ref);
       // Inicializar providers de contexto automaticamente
       _initializeProvidersContext();
+      // Testar status da IA ao iniciar
+      ref.read(aiStatusProvider.notifier).testAIAvailability(ref);
     });
   }
 
@@ -191,6 +194,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   Widget _buildSidebar(bool isDarkMode, dynamic currentProfile,
       Workspace? currentWorkspace, List<WorkspaceSection> workspaceSections) {
     final appStrings = AppStrings(ref.watch(languageProvider));
+    final aiStatus = ref.watch(aiStatusProvider);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: _isSidebarExpanded ? 280 : 60,

@@ -8,7 +8,7 @@ class AIService {
   static const String _huggingFaceBaseUrl =
       'https://api-inference.huggingface.co/models';
   static const String _googleAIBaseUrl =
-      'https://generativelanguage.googleapis.com/v1/models';
+      'https://generativelanguage.googleapis.com/v1beta/models';
 
   /// Gera conteúdo markdown usando Google AI (gratuito) ou Hugging Face
   static Future<String> generateMarkdownContent(String prompt,
@@ -33,7 +33,7 @@ class AIService {
     }
   }
 
-  /// ✅ CORRIGIDO: Google AI sem thinkingConfig
+  /// Otimizado para gerar conteúdo robusto com o Google AI
   static Future<String> _generateWithGoogleAI(
       String prompt, WidgetRef ref) async {
     final token = AIConfig.getGoogleAIToken(ref);
@@ -42,61 +42,107 @@ class AIService {
           'Token do Google AI não configurado. Configure em Settings > Configurações de IA');
     }
 
-    final uri = Uri.parse(
-        '$_googleAIBaseUrl/gemini-2.5-flash:generateContent?key=$token');
+    // Usando um modelo mais recente e a URL correta da API
+    final uri =
+        Uri.parse('$_googleAIBaseUrl/gemini-1.5-flash:generateContent?key=$token');
+
+    final body = jsonEncode({
+      'contents': [
+        {
+          'parts': [
+            {
+              'text':
+                  'Gere uma página markdown robusta e visualmente atraente sobre: $prompt\n\n'
+                      '**Diretrizes Estritas:**\n'
+                      '1.  **Ícones:** Use emojis (ícones) relevantes para cada seção ou item de lista para melhorar a legibilidade e o apelo visual (ex: ✨, 🚀, 💡, 📄, 🔗).\n'
+                      '2.  **Estrutura Avançada:**\n'
+                      '    - Utilize títulos e subtítulos (`#`, `##`, `###`) para uma hierarquia clara.\n'
+                      '    - Empregue **negrito** e *itálico* para ênfase.\n'
+                      '    - Crie `listas com marcadores` ou `numeradas` para organizar informações.\n'
+                      '    - Se aplicável, inclua `tabelas` para dados estruturados.\n'
+                      '    - Use `blocos de citação` (> citação) para destacar informações importantes.\n'
+                      '    - Adicione `links` se o contexto permitir.\n'
+                      '    - Inclua `blocos de código` (```) para exemplos de código ou comandos.\n'
+      '3.  **Qualidade:** O conteúdo deve ser bem escrito, profissional e informativo.\n'
+      '4.  **Idioma:** Responda em português brasileiro.\n'
+      '5.  **Saída:** Forneça APENAS o conteúdo markdown, sem nenhum texto ou explicação adicional.'
+            }
+          ]
+        }
+      ],
+      'generationConfig': {
+        'temperature': 0.8,
+        'topK': 40,
+        'topP': 0.95,
+        'maxOutputTokens': 4096, // Aumentado para páginas mais completas
+        'candidateCount': 1,
+        'stopSequences': []
+      },
+      'safetySettings': [
+        // Configurações para evitar bloqueios desnecessários
+        {
+          'category': 'HARM_CATEGORY_HARASSMENT',
+          'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
+        },
+        {
+          'category': 'HARM_CATEGORY_HATE_SPEECH',
+          'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
+        },
+        {
+          'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
+        },
+        {
+          'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
+        }
+      ]
+    });
 
     final response = await http.post(
       uri,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'contents': [
-          {
-            'parts': [
-              {
-                'text':
-                    'Gere conteúdo markdown bem estruturado sobre: $prompt\n\n'
-                        'Requisitos:\n'
-                        '- Use títulos e subtítulos apropriados (# ## ###)\n'
-                        '- Inclua listas com marcadores quando relevante\n'
-                        '- Use **negrito** para destacar pontos importantes\n'
-                        '- Inclua *itálico* para ênfase\n'
-                        '- Mantenha a formatação limpa e profissional\n'
-                        '- Responda em português brasileiro\n\n'
-                        'Responda apenas com o conteúdo markdown:'
-              }
-            ]
-          }
-        ],
-        'generationConfig': {
-          'temperature': 0.7,
-          'topK': 40,
-          'topP': 0.95,
-          'maxOutputTokens': 2048,
-          'candidateCount': 1,
-          'stopSequences': []
-        }
-      }),
+      headers: {'Content-Type': 'application/json'},
+      body: body,
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
 
-      if (data['candidates'] != null && data['candidates'].isNotEmpty) {
-        final generatedText =
-            data['candidates'][0]['content']['parts'][0]['text'];
-        return _ensureMarkdownFormat(generatedText);
-      } else {
-        throw Exception('Resposta vazia da Google AI');
+      // Análise robusta da resposta para evitar erros de '[]'
+      if (data['candidates'] != null &&
+          data['candidates'] is List &&
+          data['candidates'].isNotEmpty) {
+        final candidate = data['candidates'][0];
+        if (candidate['content'] != null &&
+            candidate['content']['parts'] != null &&
+            candidate['content']['parts'] is List &&
+            candidate['content']['parts'].isNotEmpty) {
+          final generatedText = candidate['content']['parts'][0]['text'];
+          if (generatedText != null) {
+            return _ensureMarkdownFormat(generatedText);
+          }
+        }
       }
+
+      // Trata casos de conteúdo bloqueado
+      if (data['promptFeedback'] != null) {
+        final blockReason = data['promptFeedback']['blockReason'];
+        debugPrint('Conteúdo bloqueado por: $blockReason.');
+        throw Exception(
+            'O conteúdo foi bloqueado por políticas de segurança. Motivo: $blockReason');
+      }
+
+      throw Exception('Resposta da Google AI com formato inesperado ou vazia.');
+    } else if (response.statusCode == 401) {
+      throw Exception(
+          'Token do Google AI inválido ou expirado. Configure um token válido em Configurações de IA.');
     } else {
       throw Exception(
           'Erro na Google AI: ${response.statusCode} - ${response.body}');
     }
   }
 
-  /// ✅ CORRIGIDO: Hugging Face sem recursão infinita
+  /// Fallback para Hugging Face com tratamento de erro aprimorado
   static Future<String> _generateWithHuggingFace(
       String prompt, String? model, WidgetRef ref) async {
     final selectedModel = model ?? AIConfig.defaultModel;
@@ -106,7 +152,6 @@ class AIService {
       throw Exception('Token do Hugging Face não configurado');
     }
 
-    // Lista de modelos para tentar
     final modelsToTry = [
       selectedModel,
       ...AIConfig.alternativeModels.where((m) => m != selectedModel)
@@ -136,33 +181,31 @@ class AIService {
               'repetition_penalty': 1.1,
               'return_full_text': false,
             },
-            'options': {
-              'wait_for_model': true,
-              'use_cache': false,
-            }
+            'options': {'wait_for_model': true, 'use_cache': false}
           }),
         );
 
         if (response.statusCode == 200) {
+          // A extração de texto agora é mais robusta
           final result = _extractGeneratedText(response.body);
-          if (result.isNotEmpty) {
+          if (result.isNotEmpty &&
+              !result.contains('Nenhum conteúdo foi gerado')) {
             debugPrint('✅ Sucesso com modelo: $currentModel');
             return result;
           }
+          // Se o resultado for vazio, trata como falha e tenta o próximo
+          debugPrint('⚠️ Modelo $currentModel retornou resposta vazia.');
         } else if (response.statusCode == 401) {
           throw Exception(
-              'Token inválido. Verifique seu token do Hugging Face');
+              'Token do Hugging Face inválido. Configure um token válido em Configurações de IA.');
         } else {
           debugPrint('⚠️ Modelo $currentModel falhou: ${response.statusCode}');
-          continue; // Tenta próximo modelo
         }
       } catch (e) {
         debugPrint('❌ Erro com modelo $currentModel: $e');
-        if (i == modelsToTry.length - 1) {
-          // Último modelo, lança exceção
-          throw Exception('Todos os modelos do Hugging Face falharam');
+        if (e.toString().contains('Token do Hugging Face inválido')) {
+          rethrow;
         }
-        continue; // Tenta próximo modelo
       }
     }
 
@@ -172,54 +215,60 @@ class AIService {
   /// Constrói prompt otimizado para Hugging Face
   static String _buildHuggingFacePrompt(String prompt) {
     return '''
-Tópico: $prompt
+**Tarefa**: Gerar um documento markdown detalhado e bem formatado sobre o tópico abaixo.
 
-Crie um documento markdown estruturado com:
-- Título principal
-- Subtítulos
-- Listas com marcadores
-- Texto formatado
+**Tópico**: $prompt
 
-Documento:
+**Instruções**:
+- Use um título principal (`#`).
+- Organize com subtítulos (`##`, `###`).
+- Utilize listas (`*` ou `-`) e **negrito** para clareza.
+- Opcional: adicione emojis para apelo visual.
+- Responda em português.
+
+**Documento Markdown**:
 ''';
   }
 
-  /// ✅ CORRIGIDO: Extração de texto melhorada
+  /// Extração de texto robusta para Hugging Face
   static String _extractGeneratedText(String responseBody) {
     try {
       final data = jsonDecode(responseBody);
       String generatedText = '';
 
+      if (data == null) return '';
+
       if (data is List && data.isNotEmpty) {
-        generatedText = data.first['generated_text'] ?? '';
+        final firstItem = data.first;
+        if (firstItem is Map && firstItem.containsKey('generated_text')) {
+          generatedText = firstItem['generated_text'] ?? '';
+        }
       } else if (data is Map && data.containsKey('generated_text')) {
         generatedText = data['generated_text'] ?? '';
-      } else {
-        throw Exception('Formato de resposta inválido');
+      } else if (data is List && data.isEmpty) {
+        // Resposta '[]' é tratada como falha do modelo
+        return '';
       }
 
-      // Remove o prompt original se presente
       final cleanText = _removeOriginalPrompt(generatedText);
       return _ensureMarkdownFormat(cleanText);
     } catch (e) {
-      debugPrint('❌ Erro ao processar resposta: $e');
-      rethrow;
+      debugPrint('❌ Erro ao processar resposta do Hugging Face: $e');
+      return ''; // Retorna vazio para indicar falha
     }
   }
 
   /// Remove prompt original da resposta
   static String _removeOriginalPrompt(String generatedText) {
     final lines = generatedText.split('\n');
-
-    // Remove linhas que parecem ser o prompt original
     final filteredLines = lines.where((line) {
       final trimmed = line.trim();
-      return !trimmed.startsWith('Tópico:') &&
-          !trimmed.startsWith('Crie um documento') &&
-          !trimmed.startsWith('Documento:') &&
+      return !trimmed.startsWith('**Tarefa**:') &&
+          !trimmed.startsWith('**Tópico**:') &&
+          !trimmed.startsWith('**Instruções**:') &&
+          !trimmed.startsWith('**Documento Markdown**:') &&
           trimmed.isNotEmpty;
     }).toList();
-
     return filteredLines.join('\n').trim();
   }
 
@@ -228,16 +277,12 @@ Documento:
     if (text.isEmpty) {
       return '# Conteúdo\n\nNenhum conteúdo foi gerado.';
     }
-
     String cleaned = text.trim();
-
-    // Garante quebras de linha adequadas
     cleaned = cleaned.replaceAll(RegExp(r'\n{3,}'), '\n\n');
-
     return cleaned;
   }
 
-  /// ✅ NOVO: Conteúdo de fallback quando todas as APIs falham
+  /// Conteúdo de fallback quando todas as APIs falham
   static String _generateFallbackContent(String prompt) {
     return '''
 # 📄 $prompt
@@ -264,22 +309,18 @@ Este documento foi gerado automaticamente sobre o tema: **$prompt**.
 
   /// Verifica disponibilidade dos serviços
   static Future<bool> isAvailable(WidgetRef ref) async {
-    // Testa Google AI primeiro
     try {
       final token = AIConfig.getGoogleAIToken(ref);
       if (token.isNotEmpty) {
         final response = await http.get(
-          Uri.parse('$_googleAIBaseUrl/gemini-2.5-flash?key=$token'),
+          Uri.parse('$_googleAIBaseUrl/gemini-1.5-flash?key=$token'),
         );
-        if (response.statusCode == 200) {
-          return true;
-        }
+        if (response.statusCode == 200) return true;
       }
     } catch (e) {
       debugPrint('Google AI não disponível: $e');
     }
 
-    // Testa Hugging Face como fallback
     try {
       final token = AIConfig.getHuggingFaceToken(ref);
       if (token.isNotEmpty) {

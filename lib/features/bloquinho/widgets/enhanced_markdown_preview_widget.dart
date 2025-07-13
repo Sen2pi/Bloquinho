@@ -37,7 +37,7 @@ class EnhancedMarkdownPreviewWidget extends StatelessWidget {
     final textStyle = baseTextStyle ?? theme.textTheme.bodyMedium!;
     final isDark = theme.brightness == Brightness.dark;
     final containerColor =
-        backgroundColor ?? (isDark ? Colors.black : Colors.white);
+        backgroundColor ?? (isDark ? Colors.transparent : Colors.white);
 
     return Container(
       color: containerColor,
@@ -454,9 +454,8 @@ class ModernBlockquoteBuilder extends MarkdownElementBuilder {
               ),
             ),
             borderRadius: BorderRadius.circular(8),
-            color: isDark
-                ? Colors.grey[900]!.withOpacity(0.5)
-                : Colors.grey[50]!,
+            color:
+                isDark ? Colors.grey[900]!.withOpacity(0.5) : Colors.grey[50]!,
           ),
           child: Text(
             element.textContent,
@@ -679,8 +678,7 @@ H<sub>2</sub>O e E=mc<sup>2</sup>
 </div>
 </div>
 
-'''
-;
+''';
 
     return EnhancedMarkdownPreviewWidget(
       markdown: examples,
@@ -689,7 +687,6 @@ H<sub>2</sub>O e E=mc<sup>2</sup>
     );
   }
 }
-
 
 class AdvancedCodeBlockBuilder extends MarkdownElementBuilder {
   @override
@@ -1184,7 +1181,8 @@ class MermaidBuilder extends MarkdownElementBuilder {
 
     return SizedBox(
       height: 300,
-      child: WebViewWidget(controller: WebViewController()..loadHtmlString(html)),
+      child:
+          WebViewWidget(controller: WebViewController()..loadHtmlString(html)),
     );
   }
 }

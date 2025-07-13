@@ -16,17 +16,19 @@ class AppColors {
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
 
-  // Modo claro
-  static const Color lightBackground = Color(0xFFFFFFFF);
-  static const Color lightSurface = Color(0xFFF8FAFC);
-  static const Color lightCardBackground = Color(0xFFFFFFFF);
-  static const Color lightBorder = Color(0xFFE2E8F0);
-  static const Color lightTextPrimary = Color(0xFF0F172A);
-  static const Color lightTextSecondary = Color(0xFF475569);
-  static const Color lightTextTertiary = Color(0xFF94A3B8);
-  static const Color lightDivider = Color(0xFFE2E8F0);
-  static const Color lightHover = Color(0xFFF1F5F9);
-  static const Color lightPressed = Color(0xFFE2E8F0);
+  // Modo claro (tons de bege/castanho)
+  static const Color lightBackground = Color(0xFFF5E9DA); // Bege claro
+  static const Color lightSurface = Color(0xFFFFF8F2); // Creme
+  static const Color lightCardBackground =
+      Color(0xFFFFF3E6); // Bege mais escuro
+  static const Color lightBorder = Color(0xFFD2B48C); // Castanho claro
+  static const Color lightTextPrimary = Color(0xFF5C4033); // Castanho escuro
+  static const Color lightTextSecondary = Color(0xFF8B6F4E); // Castanho médio
+  static const Color lightTextTertiary =
+      Color(0xFFBFA074); // Bege/castanho claro
+  static const Color lightDivider = Color(0xFFD2B48C); // Castanho claro
+  static const Color lightHover = Color(0xFFFFF3E6); // Bege mais escuro
+  static const Color lightPressed = Color(0xFFEAD7C0); // Bege pressionado
 
   // Modo escuro
   static const Color darkBackground = Color(0xFF0F172A);

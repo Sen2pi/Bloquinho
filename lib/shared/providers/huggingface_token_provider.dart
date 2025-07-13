@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../../core/services/data_directory_service.dart';
 
 final huggingFaceTokenProvider =
     StateNotifierProvider<HuggingFaceTokenNotifier, String>((ref) {
@@ -12,28 +13,52 @@ class HuggingFaceTokenNotifier extends StateNotifier<String> {
   Box<String>? _box;
 
   HuggingFaceTokenNotifier() : super('') {
-    _loadToken();
+    _initHive();
   }
 
-  Future<void> _loadToken() async {
+  Future<void> _initHive() async {
     try {
-      if (!Hive.isBoxOpen(_boxName)) {
-        _box = await Hive.openBox<String>(_boxName);
-      } else {
-        _box = Hive.box<String>(_boxName);
-      }
-      final token = _box?.get(_tokenKey);
-      if (token != null && token.isNotEmpty) {
-        state = token;
+      // Hive já foi inicializado globalmente
+      final dataDir = await DataDirectoryService().initialize();
+      final dbPath = await DataDirectoryService().getBasePath();
+      _box = await Hive.openBox<String>(_boxName, path: dbPath);
+
+      // Carregar token salvo
+      final savedToken = _box!.get(_tokenKey, defaultValue: '');
+      if (savedToken != null && savedToken.isNotEmpty) {
+        state = savedToken;
       }
     } catch (e) {
-      // Se houver erro ao abrir a box, continua sem token
-      print('Erro ao carregar token: $e');
+      // Em caso de erro, manter token vazio
+      print('Erro ao inicializar HuggingFace token: $e');
+    }
+  }
+
+  Future<void> _ensureBoxIsOpen() async {
+    if (_box == null || !_box!.isOpen) {
+      try {
+        final dataDir = await DataDirectoryService().initialize();
+        final dbPath = await DataDirectoryService().getBasePath();
+        _box = await Hive.openBox<String>(_boxName, path: dbPath);
+      } catch (e) {
+        // Se não conseguir abrir o box, criar um novo
+        final dataDir = await DataDirectoryService().initialize();
+        final dbPath = await DataDirectoryService().getBasePath();
+        await Hive.deleteBoxFromDisk(_boxName, path: dbPath);
+        _box = await Hive.openBox<String>(_boxName, path: dbPath);
+      }
     }
   }
 
   Future<void> setToken(String token) async {
-    state = token;
-    await _box?.put(_tokenKey, token);
+    try {
+      state = token;
+
+      // Garantir que o box está aberto antes de salvar
+      await _ensureBoxIsOpen();
+      await _box!.put(_tokenKey, token);
+    } catch (e) {
+      print('Erro ao salvar token HuggingFace: $e');
+    }
   }
 }
