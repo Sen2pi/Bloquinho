@@ -24,6 +24,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'latex_widget.dart';
 import '../../../core/services/pdf_export_service.dart';
+import 'mermaid_diagram_widget.dart'; // Adicionar import para WindowsMermaidDiagramWidget
 
 import 'dart:io';
 
@@ -1954,18 +1955,6 @@ class _MermaidSvgWidgetState extends State<MermaidSvgWidget> {
       padding: const EdgeInsets.all(16),
       child: const Text('Erro ao gerar diagrama Mermaid'),
     );
-  }
-}
-
-/// Widget para diagramas Mermaid no Windows
-class WindowsMermaidDiagramWidget extends StatelessWidget {
-  final String diagram;
-
-  const WindowsMermaidDiagramWidget({super.key, required this.diagram});
-
-  @override
-  Widget build(BuildContext context) {
-    return MermaidSvgWidget(diagram: diagram);
   }
 }
 

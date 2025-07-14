@@ -10,6 +10,8 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import 'mermaid_diagram_widget.dart'; // Adicionar import para MermaidTemplates
+import 'latex_widget.dart'; // Adicionar import para LaTeXWidget
 
 class BloquinhoFormatMenu extends StatefulWidget {
   final Function(String formatType,
@@ -405,6 +407,8 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
   }
 
   void _showLaTeXDialog(BuildContext context) {
+    final TextEditingController latexController = TextEditingController();
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -415,6 +419,7 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
           child: Column(
             children: [
               TextField(
+                controller: latexController,
                 decoration: const InputDecoration(
                   labelText: 'Digite sua fórmula LaTeX',
                   hintText: 'Ex: \\frac{a}{b} ou E = mc^2',
@@ -452,8 +457,11 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
           ),
           ElevatedButton(
             onPressed: () {
-              // Implementar inserção da fórmula
-              Navigator.of(context).pop();
+              final latexContent = latexController.text.trim();
+              if (latexContent.isNotEmpty) {
+                Navigator.of(context).pop();
+                widget.onFormatApplied('latex', color: latexContent);
+              }
             },
             child: const Text('Inserir'),
           ),
@@ -520,8 +528,12 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
               return InkWell(
                 onTap: () {
                   Navigator.of(context).pop();
-                  widget.onFormatApplied('matrix',
-                      color: matrix['template'] as String);
+                  final templateName = matrix['template'] as String;
+                  final templateContent =
+                      LaTeXWidget.matrixTemplates[templateName];
+                  if (templateContent != null) {
+                    widget.onFormatApplied('matrix', color: templateContent);
+                  }
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -595,6 +607,9 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
       },
     ];
 
+    final TextEditingController customMermaidController =
+        TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -623,8 +638,13 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
                     return InkWell(
                       onTap: () {
                         Navigator.of(context).pop();
-                        widget.onFormatApplied('mermaid',
-                            color: diagram['template'] as String);
+                        final templateName = diagram['template'] as String;
+                        final templateContent =
+                            MermaidTemplates.templates[templateName];
+                        if (templateContent != null) {
+                          widget.onFormatApplied('mermaid',
+                              color: templateContent);
+                        }
                       },
                       child: Container(
                         decoration: BoxDecoration(
@@ -655,6 +675,7 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
               ),
               const SizedBox(height: 8),
               TextField(
+                controller: customMermaidController,
                 decoration: const InputDecoration(
                   labelText: 'Código Mermaid',
                   hintText: 'graph TD\nA[Início] --> B[Fim]',
@@ -677,8 +698,11 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
           ),
           ElevatedButton(
             onPressed: () {
-              // Implementar inserção do diagrama
-              Navigator.of(context).pop();
+              final customContent = customMermaidController.text.trim();
+              if (customContent.isNotEmpty) {
+                Navigator.of(context).pop();
+                widget.onFormatApplied('mermaid', color: customContent);
+              }
             },
             child: const Text('Inserir'),
           ),
