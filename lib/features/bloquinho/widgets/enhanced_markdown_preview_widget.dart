@@ -1055,6 +1055,7 @@ class DynamicColoredSpanBuilder extends MarkdownElementBuilder {
       textId: textId,
       baseStyle: (preferredStyle ?? const TextStyle()).copyWith(
         color: styleMap['color'],
+        backgroundColor: styleMap['backgroundColor'],
         fontWeight: styleMap['fontWeight'],
         fontStyle: styleMap['fontStyle'],
         decoration: styleMap['decoration'],
@@ -1531,16 +1532,9 @@ class MermaidBuilder extends MarkdownElementBuilder {
 
     return SizedBox(
       height: 300,
-      child: Platform.isWindows
-          ? Center(
-              child: Text(
-                'Visualização Mermaid não suportada no Windows',
-                style:
-                    TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-              ),
-            )
-          : WebViewWidget(
-              controller: WebViewController()..loadHtmlString(html)),
+      child: WindowsMermaidDiagramWidget(
+        diagram: code,
+      ),
     );
   }
 }
