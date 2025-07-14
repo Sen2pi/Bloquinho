@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2025 Karim Hussen Patatas Hassam dos Santos
+ * 
+ * This file is part of Bloquinho.
+ * 
+ * Licensed under CC BY-NC-SA 4.0
+ * Commercial use prohibited without permission.
+ */
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../core/services/data_directory_service.dart';

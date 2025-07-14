@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2025 Karim Hussen Patatas Hassam dos Santos
+ * 
+ * This file is part of Bloquinho.
+ * 
+ * Licensed under CC BY-NC-SA 4.0
+ * Commercial use prohibited without permission.
+ */
+
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
@@ -63,6 +72,9 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   String _currentPageId = '';
   List<String> _navigationStack = [];
 
+  // Limite para a pilha de navegação
+  static const int _navigationStackLimit = 20;
+
   @override
   void initState() {
     super.initState();
@@ -76,27 +88,34 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
       _currentPageId = pageId;
       if (!_navigationStack.contains(pageId)) {
         _navigationStack.add(pageId);
+        if (_navigationStack.length > _navigationStackLimit) {
+          _navigationStack.removeAt(0);
+        }
       }
     });
   }
 
+  // Cache simples para conteúdo de página
+  final Map<String, String> _pageContentCache = {};
+
   // Métodos para carregar e salvar conteúdo em arquivos .md
   Future<String> loadPageContent(String pageId) async {
+    if (_pageContentCache.containsKey(pageId)) {
+      return _pageContentCache[pageId]!;
+    }
     try {
       final currentProfile = ref.read(currentProfileProvider);
       final currentWorkspace = ref.read(currentWorkspaceProvider);
-
       if (currentProfile == null || currentWorkspace == null) {
         return '';
       }
-
       final bloquinhoStorage = BloquinhoStorageService();
       await bloquinhoStorage.initialize();
-
       final page = await bloquinhoStorage.loadPage(
           pageId, currentProfile.name, currentWorkspace.name);
-
-      return page?.content ?? '';
+      final content = page?.content ?? '';
+      _pageContentCache[pageId] = content;
+      return content;
     } catch (e) {
       return '';
     }
@@ -189,6 +208,9 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
       _currentPageId = pageId;
       if (!_navigationStack.contains(pageId)) {
         _navigationStack.add(pageId);
+        if (_navigationStack.length > _navigationStackLimit) {
+          _navigationStack.removeAt(0);
+        }
       }
     });
   }
@@ -625,66 +647,31 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         child: CircularProgressIndicator(),
       );
     }
-
     if (editorState.error != null) {
       return _buildErrorView(editorState.error!, strings);
     }
-
     if (!editorState.isInitialized) {
       return Center(
         child: Text(strings.editorNotInitialized),
       );
     }
-
+    // Usar Consumer para granularidade em PageContentWidget
     return Column(
       children: [
-        // Lista horizontal de subpáginas e botão +
         if (currentPage != null)
           _SubPagesBar(
             parentPage: currentPage,
             onNavigateToPage: _navigateToPage,
             onCreateSubPage: _createSubPage,
           ),
-
-        // REMOVIDO: Card de subpáginas vertical (PageChildrenList)
-        // if (currentPage != null)
-        //   PageChildrenList(
-        //     currentPageId: currentPage.id,
-        //     onNavigateToPage: _navigateToPage,
-        //     onCreateSubPage: _createSubPage,
-        //   ),
-
-        // Editor de conteúdo com auto-save
         Expanded(
-          child: Column(
-            children: [
-              // Exemplo de texto colorido (pode ser removido depois)
-              if (currentPage?.title.contains('Exemplo') ?? false)
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? AppColors.darkSurface
-                        : AppColors.lightSurface,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isDarkMode
-                          ? AppColors.darkBorder
-                          : AppColors.lightBorder,
-                    ),
-                  ),
-                  child: const ColorDemoWidget(),
-                ),
-
-              // Editor principal
-              Expanded(
-                child: PageContentWidget(
-                  pageId: currentPage?.id ?? '',
-                  isEditing: false, // Sempre em modo visualização por padrão
-                ),
-              ),
-            ],
+          child: Consumer(
+            builder: (context, ref, _) {
+              return PageContentWidget(
+                pageId: currentPage?.id ?? '',
+                isEditing: false,
+              );
+            },
           ),
         ),
       ],

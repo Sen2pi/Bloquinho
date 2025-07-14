@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2025 Karim Hussen Patatas Hassam dos Santos
+ * 
+ * This file is part of Bloquinho.
+ * 
+ * Licensed under CC BY-NC-SA 4.0
+ * Commercial use prohibited without permission.
+ */
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -408,6 +417,29 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
         if (alignment != null) {
           formattedText = '<align value="$alignment">$selectedText</align>';
         }
+        break;
+      case 'latex':
+        // color aqui é o conteúdo da fórmula
+        final latexContent = color ?? '';
+        formattedText = '''
+\\(
+$latexContent
+\\)
+''';
+        break;
+      case 'matrix':
+        // color aqui é o template da matriz
+        final matrixTemplate = color ?? '';
+        formattedText = '''
+\\[
+$matrixTemplate
+\\]
+''';
+        break;
+      case 'mermaid':
+        // color aqui é o conteúdo do diagrama
+        final mermaidContent = color ?? '';
+        formattedText = '```mermaid\n$mermaidContent\n```\n';
         break;
       default:
         return; // Não aplicar formatação desconhecida

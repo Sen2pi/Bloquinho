@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2025 Karim Hussen Patatas Hassam dos Santos
+ * 
+ * This file is part of Bloquinho.
+ * 
+ * Licensed under CC BY-NC-SA 4.0
+ * Commercial use prohibited without permission.
+ */
+
 /// Constantes para ícones de páginas do Bloquinho
 /// Lista unificada de emojis usados como ícones de páginas
 class PageIcons {

@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2025 Karim Hussen Patatas Hassam dos Santos
+ * 
+ * This file is part of Bloquinho.
+ * 
+ * Licensed under CC BY-NC-SA 4.0
+ * Commercial use prohibited without permission.
+ */
+
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../services/html_enhancement_parser.dart';
@@ -28,6 +37,9 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   final Color? backgroundColor;
   final bool showScrollbar;
   final ScrollPhysics? scrollPhysics;
+
+  // Cache estático para markdown processado
+  static final Map<int, String> _markdownCache = {};
 
   const EnhancedMarkdownPreviewWidget({
     super.key,
@@ -83,7 +95,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
 
   void _exportToPdf(BuildContext context) async {
     FocusScope.of(context).unfocus(); // Evita erro de teclado
-    
+
     try {
       // Mostrar loading
       ScaffoldMessenger.of(context).showSnackBar(
@@ -105,7 +117,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
       if (filePath != null) {
         // Abrir arquivo
         await pdfService.openExportedFile(filePath);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('PDF exportado com sucesso!\nSalvo em: $filePath'),
@@ -198,8 +210,17 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
       );
     }
 
-    final processedContent =
-        HtmlEnhancementParser.processWithEnhancements(markdown);
+    // Cache do markdown processado
+    final hash = markdown.hashCode ^ enableHtmlEnhancements.hashCode;
+    String processedContent;
+    if (_markdownCache.containsKey(hash)) {
+      processedContent = _markdownCache[hash]!;
+    } else {
+      processedContent =
+          HtmlEnhancementParser.processWithEnhancements(markdown);
+      _markdownCache[hash] = processedContent;
+    }
+
     return MarkdownBody(
       data: processedContent,
       styleSheet: _createEnhancedStyleSheet(context, baseStyle),

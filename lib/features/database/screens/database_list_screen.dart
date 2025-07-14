@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2025 Karim Hussen Patatas Hassam dos Santos
+ * 
+ * This file is part of Bloquinho.
+ * 
+ * Licensed under CC BY-NC-SA 4.0
+ * Commercial use prohibited without permission.
+ */
+
 import 'package:flutter/material.dart';
 import 'package:bloquinho/core/models/database_models.dart';
 import 'package:bloquinho/core/services/database_service.dart';
