@@ -11,6 +11,7 @@ import 'package:flutter/rendering.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../../../features/bloquinho/models/code_theme.dart';
+import '../../../core/services/pdf_export_service.dart';
 
 class WindowsCodeBlockWidget extends ConsumerStatefulWidget {
   final String code;
@@ -151,6 +152,12 @@ class _WindowsCodeBlockWidgetState
           const SizedBox(width: 8),
           _buildHeaderButton(
             PhosphorIcons.downloadSimple(),
+            'Exportar como arquivo',
+            _exportAsFile,
+          ),
+          const SizedBox(width: 8),
+          _buildHeaderButton(
+            PhosphorIcons.image(),
             'Exportar como imagem',
             _exportAsImage,
           ),
@@ -354,23 +361,47 @@ class _WindowsCodeBlockWidgetState
     });
   }
 
-  void _exportAsImage() async {
+  void _exportAsFile() async {
     try {
-      final RenderRepaintBoundary boundary = _repaintBoundaryKey.currentContext!
-          .findRenderObject() as RenderRepaintBoundary;
+      // Mostrar loading
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Exportando código como arquivo...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
 
-      final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
-      final ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      // Exportar como arquivo
+      final pdfService = PdfExportService();
+      final filePath = await pdfService.exportCodeAsFile(
+        code: widget.code,
+        language: _selectedLanguage,
+        fileName:
+            'codigo_${_selectedLanguage}_${DateTime.now().millisecondsSinceEpoch}',
+      );
 
-      if (byteData != null) {
-        final Uint8List pngBytes = byteData.buffer.asUint8List();
+      if (filePath != null) {
+        // Abrir arquivo
+        await pdfService.openExportedFile(filePath);
 
-        // Aqui você pode implementar o salvamento
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text('Arquivo exportado com sucesso!\nSalvo em: $filePath'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Imagem gerada com sucesso'),
+              content: Text('Erro ao exportar arquivo'),
+              backgroundColor: Colors.red,
               duration: Duration(seconds: 2),
             ),
           );
@@ -380,8 +411,67 @@ class _WindowsCodeBlockWidgetState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao gerar imagem: $e'),
+            content: Text('Erro ao exportar arquivo: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  void _exportAsImage() async {
+    try {
+      // Mostrar loading
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Exportando código como imagem...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+
+      // Exportar como imagem
+      final pdfService = PdfExportService();
+      final filePath = await pdfService.exportWidgetAsImage(
+        widgetKey: _repaintBoundaryKey,
+        fileName:
+            'codigo_${_selectedLanguage}_${DateTime.now().millisecondsSinceEpoch}',
+      );
+
+      if (filePath != null) {
+        // Abrir arquivo
+        await pdfService.openExportedFile(filePath);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text('Imagem exportada com sucesso!\nSalva em: $filePath'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erro ao exportar imagem'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao exportar imagem: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
           ),
         );
       }

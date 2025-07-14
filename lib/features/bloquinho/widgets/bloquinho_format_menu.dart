@@ -133,7 +133,16 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
         _buildFormatButton(
           icon: Icons.functions,
           tooltip: 'Fórmula LaTeX',
-          onTap: () => widget.onFormatApplied('latex'),
+          onTap: () => _showLaTeXDialog(context),
+          isDarkMode: isDarkMode,
+        ),
+        const SizedBox(width: 4),
+
+        // Matrizes
+        _buildFormatButton(
+          icon: Icons.grid_on,
+          tooltip: 'Matrizes',
+          onTap: () => _showMatrixDialog(context),
           isDarkMode: isDarkMode,
         ),
         const SizedBox(width: 4),
@@ -142,7 +151,7 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
         _buildFormatButton(
           icon: Icons.device_hub,
           tooltip: 'Diagrama Mermaid',
-          onTap: () => widget.onFormatApplied('mermaid'),
+          onTap: () => _showMermaidDialog(context),
           isDarkMode: isDarkMode,
         ),
         const SizedBox(width: 4),
@@ -384,5 +393,288 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
     // Retorna branco para fundos escuros, preto para fundos claros
     final luminance = backgroundColor.computeLuminance();
     return luminance > 0.5 ? Colors.black : Colors.white;
+  }
+
+  void _showLaTeXDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Fórmula LaTeX'),
+        content: SizedBox(
+          width: 400,
+          height: 300,
+          child: Column(
+            children: [
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Digite sua fórmula LaTeX',
+                  hintText: 'Ex: \\frac{a}{b} ou E = mc^2',
+                ),
+                maxLines: 3,
+                onSubmitted: (value) {
+                  Navigator.of(context).pop();
+                  if (value.isNotEmpty) {
+                    widget.onFormatApplied('latex', color: value);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              const Text('Exemplos rápidos:'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildQuickLaTeXButton('Fração', '\\frac{a}{b}'),
+                  _buildQuickLaTeXButton('Raiz', '\\sqrt{x}'),
+                  _buildQuickLaTeXButton('Potência', 'x^n'),
+                  _buildQuickLaTeXButton('Integral', '\\int_{a}^{b} f(x) dx'),
+                  _buildQuickLaTeXButton('Soma', '\\sum_{i=1}^{n} x_i'),
+                  _buildQuickLaTeXButton('Limite', '\\lim_{x \\to \\infty}'),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Implementar inserção da fórmula
+              Navigator.of(context).pop();
+            },
+            child: const Text('Inserir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMatrixDialog(BuildContext context) {
+    final matrixTypes = [
+      {'name': 'Matriz 2x2', 'template': 'matrix-2x2', 'icon': Icons.grid_on},
+      {'name': 'Matriz 3x3', 'template': 'matrix-3x3', 'icon': Icons.grid_on},
+      {'name': 'Matriz 4x4', 'template': 'matrix-4x4', 'icon': Icons.grid_on},
+      {
+        'name': 'Determinante 2x2',
+        'template': 'determinant-2x2',
+        'icon': Icons.calculate
+      },
+      {
+        'name': 'Determinante 3x3',
+        'template': 'determinant-3x3',
+        'icon': Icons.calculate
+      },
+      {
+        'name': 'Sistema 2x2',
+        'template': 'system-2x2',
+        'icon': Icons.system_update
+      },
+      {
+        'name': 'Sistema 3x3',
+        'template': 'system-3x3',
+        'icon': Icons.system_update
+      },
+      {'name': 'Vetor', 'template': 'vector', 'icon': Icons.arrow_upward},
+      {
+        'name': 'Matriz com colchetes',
+        'template': 'matrix-brackets',
+        'icon': Icons.grid_on
+      },
+      {
+        'name': 'Matriz com chaves',
+        'template': 'matrix-braces',
+        'icon': Icons.grid_on
+      },
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Selecionar Matriz'),
+        content: SizedBox(
+          width: 350,
+          height: 400,
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 2.5,
+            ),
+            itemCount: matrixTypes.length,
+            itemBuilder: (context, index) {
+              final matrix = matrixTypes[index];
+              return InkWell(
+                onTap: () {
+                  Navigator.of(context).pop();
+                  widget.onFormatApplied('matrix',
+                      color: matrix['template'] as String);
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(matrix['icon'] as IconData, size: 24),
+                      const SizedBox(height: 4),
+                      Text(
+                        matrix['name'] as String,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickLaTeXButton(String label, String formula) {
+    return ElevatedButton(
+      onPressed: () {
+        Navigator.of(context).pop();
+        widget.onFormatApplied('latex', color: formula);
+      },
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        minimumSize: Size.zero,
+      ),
+      child: Text(label, style: const TextStyle(fontSize: 12)),
+    );
+  }
+
+  void _showMermaidDialog(BuildContext context) {
+    final diagramTypes = [
+      {
+        'name': 'Fluxograma',
+        'template': 'flowchart',
+        'icon': Icons.account_tree
+      },
+      {
+        'name': 'Diagrama de Sequência',
+        'template': 'sequence',
+        'icon': Icons.timeline
+      },
+      {'name': 'Diagrama de Classe', 'template': 'class', 'icon': Icons.class_},
+      {'name': 'Diagrama ER', 'template': 'er', 'icon': Icons.storage},
+      {'name': 'Gantt Chart', 'template': 'gantt', 'icon': Icons.schedule},
+      {'name': 'Gráfico de Pizza', 'template': 'pie', 'icon': Icons.pie_chart},
+      {'name': 'Mapa Mental', 'template': 'mindmap', 'icon': Icons.psychology},
+      {'name': 'Git Graph', 'template': 'gitgraph', 'icon': Icons.account_tree},
+      {'name': 'C4 Context', 'template': 'c4', 'icon': Icons.architecture},
+      {
+        'name': 'Mermaid Básico',
+        'template': 'mermaid',
+        'icon': Icons.device_hub
+      },
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Selecionar Diagrama Mermaid'),
+        content: SizedBox(
+          width: 400,
+          height: 500,
+          child: Column(
+            children: [
+              const Text(
+                'Escolha um tipo de diagrama:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 2.5,
+                  ),
+                  itemCount: diagramTypes.length,
+                  itemBuilder: (context, index) {
+                    final diagram = diagramTypes[index];
+                    return InkWell(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        widget.onFormatApplied('mermaid',
+                            color: diagram['template'] as String);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(diagram['icon'] as IconData, size: 24),
+                            const SizedBox(height: 4),
+                            Text(
+                              diagram['name'] as String,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Ou digite seu próprio código Mermaid:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Código Mermaid',
+                  hintText: 'graph TD\nA[Início] --> B[Fim]',
+                ),
+                maxLines: 4,
+                onSubmitted: (value) {
+                  Navigator.of(context).pop();
+                  if (value.isNotEmpty) {
+                    widget.onFormatApplied('mermaid', color: value);
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Implementar inserção do diagrama
+              Navigator.of(context).pop();
+            },
+            child: const Text('Inserir'),
+          ),
+        ],
+      ),
+    );
   }
 }

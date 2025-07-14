@@ -13,6 +13,8 @@ import 'simple_diagram_widget.dart';
 import 'windows_code_block_widget.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
+import 'latex_widget.dart';
+import '../../../core/services/pdf_export_service.dart';
 
 import 'dart:io';
 
@@ -79,14 +81,56 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     );
   }
 
-  void _exportToPdf(BuildContext context) {
+  void _exportToPdf(BuildContext context) async {
     FocusScope.of(context).unfocus(); // Evita erro de teclado
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Exportação PDF em desenvolvimento...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    
+    try {
+      // Mostrar loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gerando PDF...'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+
+      // Exportar PDF
+      final pdfService = PdfExportService();
+      final filePath = await pdfService.exportMarkdownAsPdf(
+        markdown: markdown,
+        title: 'Documento Bloquinho',
+        author: 'Bloquinho App',
+        subject: 'Documento exportado',
+      );
+
+      if (filePath != null) {
+        // Abrir arquivo
+        await pdfService.openExportedFile(filePath);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF exportado com sucesso!\nSalvo em: $filePath'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro ao gerar PDF'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao exportar PDF: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Widget _buildCustomCodeBlock(md.Element element) {
@@ -957,11 +1001,15 @@ class LatexBlockSyntax extends md.BlockSyntax {
 class LatexBuilder extends MarkdownElementBuilder {
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    return Math.tex(
-      element.textContent,
-      textStyle: preferredStyle,
-      mathStyle:
-          element.tag == 'latex-block' ? MathStyle.display : MathStyle.text,
+    final latex = element.textContent;
+    final isBlock = element.tag == 'latex-block';
+
+    // Usar LaTeXWidget em vez de Math.tex diretamente
+    return LaTeXWidget(
+      latex: latex,
+      isBlock: isBlock,
+      fontSize: preferredStyle?.fontSize,
+      textColor: preferredStyle?.color,
     );
   }
 }
