@@ -449,6 +449,15 @@ class CodeTheme {
     return ProgrammingLanguage.getByCode('text') ??
         ProgrammingLanguage.defaultLanguage;
   }
+
+  // Adiciona utilitário para fundo adaptativo
+  static Color adaptiveBackground(BuildContext context,
+      {double opacity = 0.95}) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.black.withOpacity(opacity)
+        : Colors.white.withOpacity(opacity);
+  }
 }
 
 /// Linguagem de programação

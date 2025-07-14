@@ -87,7 +87,7 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: widget.theme.headerBackgroundColor,
+        color: widget.theme.headerBackgroundColor.withOpacity(0.95),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(8),
           topRight: Radius.circular(8),
@@ -101,6 +101,17 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
       ),
       child: Row(
         children: [
+          // Pontos de janela estilo Mac
+          Row(
+            children: [
+              _buildWindowDot(Colors.red),
+              const SizedBox(width: 4),
+              _buildWindowDot(Colors.amber),
+              const SizedBox(width: 4),
+              _buildWindowDot(Colors.green),
+              const SizedBox(width: 12),
+            ],
+          ),
           // Language info
           Row(
             children: [
@@ -120,9 +131,7 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
               ),
             ],
           ),
-
           const Spacer(),
-
           // Action buttons
           if (widget.showCopyButton)
             _buildActionButton(
@@ -130,7 +139,6 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
               tooltip: 'Copiar código',
               onPressed: _copyCode,
             ),
-
           if (widget.showExportButton)
             _buildActionButton(
               icon: PhosphorIcons.image(),
@@ -138,6 +146,18 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
               onPressed: _exportAsImage,
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWindowDot(Color color) {
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.black.withOpacity(0.12), width: 1),
       ),
     );
   }
@@ -496,12 +516,12 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
       key: boundaryKey,
       child: Container(
         decoration: BoxDecoration(
-          color: widget.theme.backgroundColor,
+          color: Colors.transparent, // Fundo transparente para exportação
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: widget.theme.borderColor, width: 2),
           boxShadow: [
             BoxShadow(
-              color: widget.theme.backgroundColor.withOpacity(0.2),
+              color: widget.theme.backgroundColor.withOpacity(0.08),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),
@@ -512,9 +532,15 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header estilizado
+            // Header estilizado com pontos de janela
             Row(
               children: [
+                _buildWindowDot(Colors.red),
+                const SizedBox(width: 4),
+                _buildWindowDot(Colors.amber),
+                const SizedBox(width: 4),
+                _buildWindowDot(Colors.green),
+                const SizedBox(width: 12),
                 if (ProgrammingLanguage.getByCode(widget.language)?.icon !=
                     null)
                   Text(
@@ -546,7 +572,7 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: widget.theme.backgroundColor,
+                color: Colors.transparent, // Fundo transparente
                 borderRadius: BorderRadius.circular(8),
               ),
               child: _buildHighlightedCode(widget.code.split('\n')),

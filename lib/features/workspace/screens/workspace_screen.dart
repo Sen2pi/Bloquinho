@@ -930,6 +930,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   }
 
   Widget _buildUserProfileFooter(bool isDarkMode, dynamic currentProfile) {
+    final aiStatus = ref.watch(aiStatusProvider);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -969,6 +970,23 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     constraints: const BoxConstraints(
                       minWidth: 24,
                       minHeight: 24,
+                    ),
+                  ),
+                  // Indicador de status da IA
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Tooltip(
+                      message: aiStatus.status == AIStatus.online
+                          ? 'Bloquinho AI: Connected'
+                          : 'Bloquinho AI: Disconnected',
+                      child: Image.asset(
+                        'assets/images/BloquinhoAi.png',
+                        width: 18,
+                        height: 18,
+                        color: aiStatus.status == AIStatus.online
+                            ? Colors.green
+                            : Colors.red,
+                      ),
                     ),
                   ),
                 ],

@@ -20,6 +20,9 @@ import '../../../shared/providers/user_profile_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../widgets/page_children_list.dart';
 import '../widgets/notion_editor.dart';
+import '../widgets/colored_text_widget.dart';
+import '../widgets/dynamic_colored_text.dart';
+import '../widgets/color_demo_widget.dart';
 import '../providers/pages_provider.dart';
 import '../models/page_model.dart';
 import '../../../core/services/bloquinho_storage_service.dart';
@@ -640,9 +643,35 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
         // Editor de conteúdo com auto-save
         Expanded(
-          child: PageContentWidget(
-            pageId: currentPage?.id ?? '',
-            isEditing: false, // Sempre em modo visualização por padrão
+          child: Column(
+            children: [
+              // Exemplo de texto colorido (pode ser removido depois)
+              if (currentPage?.title.contains('Exemplo') ?? false)
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDarkMode
+                        ? AppColors.darkSurface
+                        : AppColors.lightSurface,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDarkMode
+                          ? AppColors.darkBorder
+                          : AppColors.lightBorder,
+                    ),
+                  ),
+                  child: const ColorDemoWidget(),
+                ),
+
+              // Editor principal
+              Expanded(
+                child: PageContentWidget(
+                  pageId: currentPage?.id ?? '',
+                  isEditing: false, // Sempre em modo visualização por padrão
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -894,20 +923,105 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
   void _exportDocument() {
     final strings = ref.read(appStringsProvider);
+    final currentProfile = ref.read(currentProfileProvider);
+    final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+    if (currentProfile == null || currentWorkspace == null) {
+      _showErrorSnackBar(strings.errorProfileOrWorkspaceNotAvailable);
+      return;
+    }
+
+    final pages = ref.read(pagesProvider((
+      profileName: currentProfile.name,
+      workspaceName: currentWorkspace.name
+    )));
+    final currentPage = pages.firstWhere(
+      (p) => p.id == _currentPageId,
+      orElse: () => PageModel.create(title: strings.pageNotFound),
+    );
+
     showDialog(
       context: context,
       builder: (context) => _ExportDialog(
         onExport: (format) async {
           try {
-            final data = await ref
-                .read(editorControllerProvider.notifier)
-                .exportDocument(format: format);
-            _showSuccessSnackBar(strings.documentExportedSuccessfully);
+            if (format == 'pdf') {
+              // Para PDF, precisamos capturar o widget de conteúdo
+              final contentWidget = _buildContentWidgetForExport(currentPage);
+
+              final data = await ref
+                  .read(editorControllerProvider.notifier)
+                  .exportDocument(
+                    format: format,
+                    page: currentPage,
+                    contentWidget: contentWidget,
+                  );
+
+              if (data['file'] != null) {
+                final file = data['file'] as File;
+                _showSuccessSnackBar(
+                    '${strings.documentExportedSuccessfully} - ${file.path}');
+              } else {
+                _showSuccessSnackBar(strings.documentExportedSuccessfully);
+              }
+            } else {
+              // Para outros formatos (markdown, html)
+              final data = await ref
+                  .read(editorControllerProvider.notifier)
+                  .exportDocument(format: format);
+              _showSuccessSnackBar(strings.documentExportedSuccessfully);
+            }
           } catch (e) {
             _showErrorSnackBar(
                 '${strings.errorExportingDocument}: ${e.toString()}');
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildContentWidgetForExport(PageModel page) {
+    // Criar um widget de conteúdo limpo para exportação
+    return Container(
+      width: 800, // Largura fixa para PDF
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Título da página
+          Text(
+            page.title,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Conteúdo da página (simulado)
+          Expanded(
+            child: FutureBuilder<String>(
+              future: loadPageContent(page.id),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return SingleChildScrollView(
+                    child: Text(
+                      snapshot.data!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                  );
+                } else {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

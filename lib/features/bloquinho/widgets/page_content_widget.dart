@@ -16,6 +16,8 @@ import 'bloquinho_slash_menu.dart';
 import 'bloquinho_format_menu.dart';
 import 'ai_generation_dialog.dart';
 import 'enhanced_markdown_preview_widget.dart';
+import 'colored_text_widget.dart';
+import 'dynamic_colored_text.dart';
 
 class PageContentWidget extends ConsumerStatefulWidget {
   final String pageId;
@@ -559,10 +561,29 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
           const SizedBox(height: 16),
           // Conteúdo da preview
           Expanded(
-            child: EnhancedMarkdownPreviewWidget(
-              markdown: _textController.text,
-              enableHtmlEnhancements: true,
-              backgroundColor: Colors.transparent,
+            child: Column(
+              children: [
+                // Exemplo de texto colorido
+                if (_textController.text.contains('{{colored_text}}'))
+                  DynamicColoredText(
+                    text: 'Este é um exemplo de texto com cores dinâmicas!',
+                    showControls: true,
+                    onColorsChanged: (textColor, backgroundColor) {
+                      // Callback quando as cores mudam
+                      print(
+                          'Cores alteradas: texto=$textColor, fundo=$backgroundColor');
+                    },
+                  ),
+
+                // Preview markdown normal
+                Expanded(
+                  child: EnhancedMarkdownPreviewWidget(
+                    markdown: _textController.text,
+                    enableHtmlEnhancements: true,
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

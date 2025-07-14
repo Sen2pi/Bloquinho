@@ -2,10 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:io';
 import '../models/bloco_base_model.dart';
 import '../models/bloco_tipo_enum.dart';
+import '../models/page_model.dart';
 import '../services/clipboard_parser_service.dart';
 import '../services/blocos_converter_service.dart';
+import '../services/pdf_export_service.dart';
 import 'blocos_provider.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
@@ -79,11 +82,13 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
   static const _uuid = Uuid();
   final ClipboardParserService _clipboardService;
   final BlocosConverterService _converterService;
+  final PdfExportService _pdfExportService;
   final Ref _ref;
 
   EditorControllerNotifier(
     this._clipboardService,
     this._converterService,
+    this._pdfExportService,
     this._ref,
   ) : super(const EditorControllerState());
 
@@ -345,17 +350,40 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
   }
 
   /// Exportar documento
-  Future<Map<String, dynamic>> exportDocument(
-      {String format = 'markdown'}) async {
+  Future<Map<String, dynamic>> exportDocument({
+    String format = 'markdown',
+    PageModel? page,
+    Widget? contentWidget,
+  }) async {
     try {
-      // TODO: Implementar exportação
-      await Future.delayed(const Duration(seconds: 1)); // Simular exportação
+      final strings = _ref.read(appStringsProvider);
 
-      return {
-        'format': format,
-        'content': 'Conteúdo exportado',
-        'exportedAt': DateTime.now().toIso8601String(),
-      };
+      if (format == 'pdf') {
+        if (page == null || contentWidget == null) {
+          throw Exception(
+              'Página e widget de conteúdo são necessários para exportação PDF');
+        }
+
+        final pdfFile = await _pdfExportService.exportPageToPdf(
+          page: page,
+          contentWidget: contentWidget,
+          strings: strings,
+        );
+
+        return {
+          'format': format,
+          'file': pdfFile,
+          'filePath': pdfFile.path,
+          'exportedAt': DateTime.now().toIso8601String(),
+        };
+      } else {
+        // Exportação markdown (padrão)
+        return {
+          'format': format,
+          'content': state.content ?? '',
+          'exportedAt': DateTime.now().toIso8601String(),
+        };
+      }
     } catch (e) {
       final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
@@ -402,14 +430,20 @@ final blocosConverterServiceProvider = Provider((ref) {
   return BlocosConverterService();
 });
 
+final pdfExportServiceProvider = Provider((ref) {
+  return PdfExportService();
+});
+
 /// Provider principal do editor
 final editorControllerProvider =
     StateNotifierProvider<EditorControllerNotifier, EditorControllerState>(
         (ref) {
   final clipboardService = ref.watch(clipboardParserServiceProvider);
   final converterService = ref.watch(blocosConverterServiceProvider);
+  final pdfExportService = ref.watch(pdfExportServiceProvider);
 
-  return EditorControllerNotifier(clipboardService, converterService, ref);
+  return EditorControllerNotifier(
+      clipboardService, converterService, pdfExportService, ref);
 });
 
 /// Providers derivados
