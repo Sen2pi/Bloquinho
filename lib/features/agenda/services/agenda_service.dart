@@ -223,9 +223,7 @@ class AgendaService {
     try {
       // Aqui você pode integrar com o DatabaseProvider para buscar itens com deadline
       // Por enquanto, vamos apenas simular
-      print('Sincronizando agenda com base de dados...');
     } catch (e) {
-      print('Erro ao sincronizar com base de dados: $e');
     }
   }
 

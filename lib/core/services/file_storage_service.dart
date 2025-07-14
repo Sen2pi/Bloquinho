@@ -52,9 +52,7 @@ class FileStorageService {
       }
 
       _isInitialized = true;
-      debugPrint('✅ FileStorageService inicializado: $_basePath');
     } catch (e) {
-      debugPrint('❌ Erro ao inicializar FileStorageService: $e');
       throw Exception('Erro ao inicializar armazenamento local: $e');
     }
   }
@@ -87,7 +85,6 @@ class FileStorageService {
 
       return false;
     } catch (e) {
-      debugPrint('❌ Erro ao verificar perfil existente: $e');
       return false;
     }
   }
@@ -116,15 +113,12 @@ class FileStorageService {
             final profile = UserProfile.fromJson(profileData);
             profiles.add(profile);
           } catch (e) {
-            debugPrint(
-                '⚠️ Erro ao carregar perfil de ${profileFolder.path}: $e');
           }
         }
       }
 
       return profiles;
     } catch (e) {
-      debugPrint('❌ Erro ao obter perfis existentes: $e');
       return [];
     }
   }
@@ -164,10 +158,8 @@ class FileStorageService {
       // Criar workspace padrão "Pessoal" com estrutura completa
       await _createDefaultWorkspaceStructure(profilePath, 'Pessoal');
 
-      debugPrint('✅ Estrutura criada para perfil: $profilePath');
       return profilePath;
     } catch (e) {
-      debugPrint('❌ Erro ao criar estrutura do perfil: $e');
       throw Exception('Erro ao criar estrutura do perfil: $e');
     }
   }
@@ -206,9 +198,7 @@ class FileStorageService {
         await _createDefaultFiles(folderPath, folder);
       }
 
-      debugPrint('✅ Estrutura do workspace criada: $workspacePath');
     } catch (e) {
-      debugPrint('❌ Erro ao criar estrutura do workspace: $e');
       throw Exception('Erro ao criar estrutura do workspace: $e');
     }
   }
@@ -309,9 +299,7 @@ Boa escrita! ✨
           break;
       }
 
-      debugPrint('✅ Arquivos padrão criados para: $folderType');
     } catch (e) {
-      debugPrint('❌ Erro ao criar arquivos padrão para $folderType: $e');
     }
   }
 
@@ -332,9 +320,7 @@ Boa escrita! ✨
       final profileJson = json.encode(profile.toJson());
       await settingsFile.writeAsString(profileJson);
 
-      debugPrint('✅ Perfil salvo: ${settingsFile.path}');
     } catch (e) {
-      debugPrint('❌ Erro ao salvar perfil: $e');
       throw Exception('Erro ao salvar perfil: $e');
     }
   }
@@ -345,7 +331,6 @@ Boa escrita! ✨
     await _ensureInitialized();
 
     if (kIsWeb) {
-      debugPrint('⚠️ Salvamento de foto não suportado no web');
       return null;
     }
 
@@ -366,10 +351,8 @@ Boa escrita! ✨
         throw Exception('Tipo de imagem não suportado');
       }
 
-      debugPrint('✅ Foto de perfil salva: $photoPath');
       return photoPath;
     } catch (e) {
-      debugPrint('❌ Erro ao salvar foto de perfil: $e');
       return null;
     }
   }
@@ -391,7 +374,6 @@ Boa escrita! ✨
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao obter foto de perfil: $e');
       return null;
     }
   }
@@ -413,7 +395,6 @@ Boa escrita! ✨
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao obter pasta de workspaces: $e');
       return null;
     }
   }
@@ -442,10 +423,8 @@ Boa escrita! ✨
       await _createDefaultWorkspaceStructure(
           path.join(_basePath!, _profileFolder, safeName), workspaceName);
 
-      debugPrint('✅ Workspace criado: $workspacePath');
       return workspaceDir;
     } catch (e) {
-      debugPrint('❌ Erro ao criar workspace: $e');
       throw Exception('Erro ao criar workspace: $e');
     }
   }
@@ -460,7 +439,6 @@ Boa escrita! ✨
       final workspaceFolders = entities.whereType<Directory>().toList();
       return workspaceFolders.map((dir) => path.basename(dir.path)).toList();
     } catch (e) {
-      debugPrint('❌ Erro ao listar workspaces: $e');
       return [];
     }
   }
@@ -480,10 +458,8 @@ Boa escrita! ✨
 
       if (await profileDir.exists()) {
         await profileDir.delete(recursive: true);
-        debugPrint('✅ Perfil deletado: $profilePath');
       }
     } catch (e) {
-      debugPrint('❌ Erro ao deletar perfil: $e');
       throw Exception('Erro ao deletar perfil: $e');
     }
   }
@@ -511,7 +487,6 @@ Boa escrita! ✨
 
       return componentDir;
     } catch (e) {
-      debugPrint('❌ Erro ao obter diretório do componente: $e');
       return null;
     }
   }
@@ -542,9 +517,7 @@ Boa escrita! ✨
       }
 
       await file.writeAsString(content);
-      debugPrint('✅ Arquivo salvo: $filePath');
     } catch (e) {
-      debugPrint('❌ Erro ao salvar arquivo: $e');
       throw Exception('Erro ao salvar arquivo: $e');
     }
   }
@@ -569,7 +542,6 @@ Boa escrita! ✨
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao carregar arquivo: $e');
       return null;
     }
   }
@@ -590,7 +562,6 @@ Boa escrita! ✨
       final files = entities.whereType<File>().toList();
       return files.map((file) => path.basename(file.path)).toList();
     } catch (e) {
-      debugPrint('❌ Erro ao listar arquivos: $e');
       return [];
     }
   }
@@ -616,10 +587,8 @@ Boa escrita! ✨
 
       if (await file.exists()) {
         await file.delete();
-        debugPrint('✅ Arquivo deletado: $filePath');
       }
     } catch (e) {
-      debugPrint('❌ Erro ao deletar arquivo: $e');
       throw Exception('Erro ao deletar arquivo: $e');
     }
   }
@@ -671,7 +640,6 @@ Boa escrita! ✨
         'basePath': _basePath,
       };
     } catch (e) {
-      debugPrint('❌ Erro ao obter estatísticas: $e');
       return {};
     }
   }

@@ -130,8 +130,7 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
     if (!state.canEdit) return;
 
     try {
-      // TODO: Implementar inserção de bloco no editor
-      debugPrint('Inserindo bloco: ${bloco.tipo}');
+      // TODO: Implementar inserção de bloco
 
       state = state.copyWith(
         hasChanges: true,
@@ -151,7 +150,6 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
 
     try {
       // TODO: Implementar formatação de texto
-      debugPrint('Formatando texto: $format');
 
       state = state.copyWith(
         hasChanges: true,
@@ -171,7 +169,6 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
 
     try {
       // TODO: Implementar inserção de link
-      debugPrint('Inserindo link: $url');
 
       state = state.copyWith(
         hasChanges: true,
@@ -191,7 +188,6 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
 
     try {
       // TODO: Implementar inserção de título
-      debugPrint('Inserindo título nível $level');
 
       state = state.copyWith(
         hasChanges: true,
@@ -211,7 +207,6 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
 
     try {
       // TODO: Implementar inserção de lista
-      debugPrint('Inserindo lista com marcadores');
 
       state = state.copyWith(
         hasChanges: true,
@@ -231,7 +226,6 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
 
     try {
       // TODO: Implementar inserção de lista numerada
-      debugPrint('Inserindo lista numerada');
 
       state = state.copyWith(
         hasChanges: true,
@@ -251,7 +245,6 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
 
     try {
       // TODO: Implementar inserção de tarefa
-      debugPrint('Inserindo tarefa');
 
       state = state.copyWith(
         hasChanges: true,
@@ -271,7 +264,6 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
 
     try {
       // TODO: Implementar desfazer
-      debugPrint('Desfazendo ação');
 
       state = state.copyWith(
         hasChanges: true,
@@ -291,7 +283,6 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
 
     try {
       // TODO: Implementar refazer
-      debugPrint('Refazendo ação');
 
       state = state.copyWith(
         hasChanges: true,
@@ -401,10 +392,16 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
 
   /// Obter estatísticas do documento
   Map<String, dynamic> getDocumentStats() {
+    final content = state.content ?? '';
+    final wordCount = content.trim().isEmpty
+        ? 0
+        : content.trim().split(RegExp(r'\s+')).length;
+    final charCount = content.length;
+    final lineCount = content.isEmpty ? 0 : content.split('\n').length;
     return {
-      'wordCount': 0,
-      'characterCount': 0,
-      'lineCount': 0,
+      'wordCount': wordCount,
+      'characterCount': charCount,
+      'lineCount': lineCount,
     };
   }
 
@@ -418,6 +415,45 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
   /// Limpar erro
   void clearError() {
     state = state.copyWith(clearError: true);
+  }
+
+  /// Envolve o texto selecionado com uma tag customizada ([color=...], [bg=...], [badge color=...])
+  void wrapSelectionWithTag(String tag, String color) {
+    if (!state.canEdit) return;
+    final content = state.content ?? '';
+    final selection = state.selection;
+    if (selection == null || selection.isCollapsed) return;
+    final start = selection.start;
+    final end = selection.end;
+    final selectedText = content.substring(start, end);
+
+    // Detectar se já existe tag [color=...] ou [bg=...] ou [badge color=...]
+    final colorRegex = RegExp(r'\[color=([^\]]+)\](.*?)\[/color\]', dotAll: true);
+    final bgRegex = RegExp(r'\[bg=([^\]]+)\](.*?)\[/bg\]', dotAll: true);
+    final badgeRegex = RegExp(r'\[badge color=([^\]]+)\](.*?)\[/badge\]', dotAll: true);
+
+    String newText = selectedText;
+    if (tag == 'color' && colorRegex.hasMatch(selectedText)) {
+      // Trocar apenas o valor da cor
+      newText = selectedText.replaceAllMapped(colorRegex, (m) => '[color=$color]${m[2]}[/color]');
+    } else if (tag == 'bg' && bgRegex.hasMatch(selectedText)) {
+      newText = selectedText.replaceAllMapped(bgRegex, (m) => '[bg=$color]${m[2]}[/bg]');
+    } else if (tag == 'badge' && badgeRegex.hasMatch(selectedText)) {
+      newText = selectedText.replaceAllMapped(badgeRegex, (m) => '[badge color=$color]${m[2]}[/badge]');
+    } else {
+      // Se não existe, envolver com a tag
+      if (tag == 'color') {
+        newText = '[color=$color]$selectedText[/color]';
+      } else if (tag == 'bg') {
+        newText = '[bg=$color]$selectedText[/bg]';
+      } else if (tag == 'badge') {
+        newText = '[badge color=$color]$selectedText[/badge]';
+      }
+    }
+
+    final newContent = content.replaceRange(start, end, newText);
+    final newSelection = TextSelection.collapsed(offset: start + newText.length);
+    state = state.copyWith(content: newContent, selection: newSelection, hasChanges: true);
   }
 }
 

@@ -80,7 +80,6 @@ class OAuth2Config {
         );
       }
     } catch (e) {
-      print('Erro ao carregar configuração OAuth2: $e');
     }
     return null;
   }
@@ -120,7 +119,6 @@ class OAuth2Service {
   /// Configura a referência do provider para atualizações de status
   static void setSyncRef(WidgetRef ref) {
     _syncRef = ref;
-    debugPrint('🔄 SyncRef configurado para OAuth2Service');
 
     // Re-verificar status de conexões ativas após SyncRef estar disponível
     _updateStatusAfterSyncRefAvailable();
@@ -129,43 +127,34 @@ class OAuth2Service {
   /// Re-verifica e atualiza status visual após SyncRef estar disponível
   static Future<void> _updateStatusAfterSyncRefAvailable() async {
     try {
-      debugPrint(
-          '🔄 Re-verificando status de conexões após SyncRef disponível...');
 
       // Verificar Google
       final googleActive = await isGoogleAuthenticated();
       if (googleActive) {
-        debugPrint('✅ Conexão Google detectada, atualizando status visual...');
         if (_syncRef != null) {
           final notifier = _syncRef!.read(cloudSyncStatusProvider.notifier);
           notifier.setConnected(
             provider: 'google',
             lastSync: DateTime.now(),
           );
-          debugPrint('🔄 Status visual Google atualizado para CONNECTED');
         }
       }
 
       // Verificar Microsoft
       final microsoftActive = await isMicrosoftAuthenticated();
       if (microsoftActive) {
-        debugPrint(
-            '✅ Conexão Microsoft detectada, atualizando status visual...');
         if (_syncRef != null) {
           final notifier = _syncRef!.read(cloudSyncStatusProvider.notifier);
           notifier.setConnected(
             provider: 'microsoft',
             lastSync: DateTime.now(),
           );
-          debugPrint('🔄 Status visual Microsoft atualizado para CONNECTED');
         }
       }
 
       if (!googleActive && !microsoftActive) {
-        debugPrint('❌ Nenhuma conexão ativa detectada');
       }
     } catch (e) {
-      debugPrint('❌ Erro ao re-verificar status após SyncRef: $e');
     }
   }
 
@@ -254,10 +243,8 @@ class OAuth2Service {
         if (kIsWeb) {
           // No web, salvar apenas a URL
           avatarUrl = userInfo['picture'];
-          debugPrint('✅ Avatar URL Google salva: $avatarUrl');
         } else {
           // No mobile, baixar e cachear arquivo
-          debugPrint('🔄 Baixando avatar Google: ${userInfo['picture']}');
           avatarPath = await AvatarCacheService.downloadAndCacheAvatar(
             url: userInfo['picture'],
             userId: userInfo['email'] ?? userInfo['id'],
@@ -273,7 +260,6 @@ class OAuth2Service {
 
       // Criar estrutura de pastas na nuvem automaticamente
       try {
-        debugPrint('🗂️ Criando estrutura de pastas Google Drive...');
         _updateSyncStatus(status: CloudSyncStatus.syncing, provider: 'google');
 
         await CloudFolderService.createGoogleDriveFolders();
@@ -283,9 +269,7 @@ class OAuth2Service {
           final notifier = _syncRef!.read(cloudSyncStatusProvider.notifier);
           notifier.finishSync();
         }
-        debugPrint('✅ Estrutura de pastas Google Drive criada');
       } catch (e) {
-        debugPrint('⚠️ Erro ao criar estrutura de pastas Google Drive: $e');
         // Finalizar sincronização mesmo com erro
         if (_syncRef != null) {
           final notifier = _syncRef!.read(cloudSyncStatusProvider.notifier);
@@ -354,10 +338,8 @@ class OAuth2Service {
             final bytes = photoResponse.bodyBytes;
             final base64 = base64Encode(bytes);
             avatarUrl = 'data:image/jpeg;base64,$base64';
-            debugPrint('✅ Avatar Microsoft convertido para data URL');
           } else {
             // No mobile, salvar arquivo localmente
-            debugPrint('🔄 Baixando avatar Microsoft para: ${userInfo['id']}');
 
             final cacheDir =
                 await AvatarCacheService.getAvatarsCacheDirectory();
@@ -368,11 +350,9 @@ class OAuth2Service {
             await file.writeAsBytes(photoResponse.bodyBytes);
             avatarPath = filePath;
 
-            debugPrint('✅ Avatar Microsoft salvo: $filePath');
           }
         }
       } catch (e) {
-        debugPrint('⚠️ Erro ao processar avatar Microsoft: $e');
       }
 
       _updateSyncStatus(
@@ -382,7 +362,6 @@ class OAuth2Service {
 
       // Criar estrutura de pastas na nuvem automaticamente
       try {
-        debugPrint('🗂️ Criando estrutura de pastas OneDrive...');
         _updateSyncStatus(
             status: CloudSyncStatus.syncing, provider: 'microsoft');
 
@@ -393,9 +372,7 @@ class OAuth2Service {
           final notifier = _syncRef!.read(cloudSyncStatusProvider.notifier);
           notifier.finishSync();
         }
-        debugPrint('✅ Estrutura de pastas OneDrive criada');
       } catch (e) {
-        debugPrint('⚠️ Erro ao criar estrutura de pastas OneDrive: $e');
         // Finalizar sincronização mesmo com erro
         if (_syncRef != null) {
           final notifier = _syncRef!.read(cloudSyncStatusProvider.notifier);
@@ -618,22 +595,18 @@ class OAuth2Service {
   /// Salva tokens Google no armazenamento seguro
   static Future<void> _saveGoogleTokens(Client client) async {
     try {
-      debugPrint('💾 Salvando tokens Google...');
 
       await _storage.write(
         key: 'google_access_token',
         value: client.credentials.accessToken,
       );
-      debugPrint('✅ Access token Google salvo');
 
       if (client.credentials.refreshToken != null) {
         await _storage.write(
           key: 'google_refresh_token',
           value: client.credentials.refreshToken!,
         );
-        debugPrint('✅ Refresh token Google salvo');
       } else {
-        debugPrint('⚠️ Refresh token Google não disponível');
       }
 
       final expirationStr = client.credentials.expiration?.toIso8601String();
@@ -642,12 +615,9 @@ class OAuth2Service {
           key: 'google_expires_at',
           value: expirationStr,
         );
-        debugPrint('✅ Expiração Google salva: $expirationStr');
       }
 
-      debugPrint('🎉 Tokens Google salvos com sucesso!');
     } catch (e) {
-      debugPrint('❌ Erro ao salvar tokens Google: $e');
       rethrow;
     }
   }
@@ -655,22 +625,18 @@ class OAuth2Service {
   /// Salva tokens Microsoft no armazenamento seguro
   static Future<void> _saveMicrosoftTokens(Client client) async {
     try {
-      debugPrint('💾 Salvando tokens Microsoft...');
 
       await _storage.write(
         key: 'microsoft_access_token',
         value: client.credentials.accessToken,
       );
-      debugPrint('✅ Access token Microsoft salvo');
 
       if (client.credentials.refreshToken != null) {
         await _storage.write(
           key: 'microsoft_refresh_token',
           value: client.credentials.refreshToken!,
         );
-        debugPrint('✅ Refresh token Microsoft salvo');
       } else {
-        debugPrint('⚠️ Refresh token Microsoft não disponível');
       }
 
       final expirationStr = client.credentials.expiration?.toIso8601String();
@@ -679,12 +645,9 @@ class OAuth2Service {
           key: 'microsoft_expires_at',
           value: expirationStr,
         );
-        debugPrint('✅ Expiração Microsoft salva: $expirationStr');
       }
 
-      debugPrint('🎉 Tokens Microsoft salvos com sucesso!');
     } catch (e) {
-      debugPrint('❌ Erro ao salvar tokens Microsoft: $e');
       rethrow;
     }
   }
@@ -738,12 +701,10 @@ class OAuth2Service {
       final isExpiring = await _isTokenExpiringSoon('google_expires_at');
 
       if (isExpiring) {
-        debugPrint('⏰ Token Google está expirando, tentando renovar...');
         final renewedClient = await _refreshGoogleToken();
         if (renewedClient != null) {
           return renewedClient;
         }
-        debugPrint('❌ Falha ao renovar token Google, usando token atual');
       }
 
       final accessToken = await _storage.read(key: 'google_access_token');
@@ -771,7 +732,6 @@ class OAuth2Service {
 
       return Client(credentials);
     } catch (e) {
-      debugPrint('❌ Erro ao restaurar cliente Google: $e');
       return null;
     }
   }
@@ -783,12 +743,10 @@ class OAuth2Service {
       final isExpiring = await _isTokenExpiringSoon('microsoft_expires_at');
 
       if (isExpiring) {
-        debugPrint('⏰ Token Microsoft está expirando, tentando renovar...');
         final renewedClient = await _refreshMicrosoftToken();
         if (renewedClient != null) {
           return renewedClient;
         }
-        debugPrint('❌ Falha ao renovar token Microsoft, usando token atual');
       }
 
       final accessToken = await _storage.read(key: 'microsoft_access_token');
@@ -816,26 +774,21 @@ class OAuth2Service {
 
       return Client(credentials);
     } catch (e) {
-      debugPrint('❌ Erro ao restaurar cliente Microsoft: $e');
       return null;
     }
   }
 
   /// Verifica e restaura sessões existentes na inicialização
   static Future<void> restoreExistingSessions() async {
-    debugPrint('🔄 Verificando sessões OAuth2 existentes...');
 
     // Debug: Verificar tokens salvos
-    await _debugSavedTokens();
 
     // Tentar restaurar Google
     final googleClient = await restoreGoogleClient();
     if (googleClient != null) {
       try {
-        debugPrint('🔍 Testando validade do token Google...');
         // Verificar se o token ainda é válido
         final userInfo = await _getGoogleUserInfo(googleClient);
-        debugPrint('✅ Sessão Google restaurada: ${userInfo['email']}');
 
         if (_syncRef != null) {
           final notifier = _syncRef!.read(cloudSyncStatusProvider.notifier);
@@ -843,28 +796,20 @@ class OAuth2Service {
             provider: 'google',
             lastSync: DateTime.now(),
           );
-          debugPrint('🔄 Status visual Google atualizado para CONNECTED');
         } else {
-          debugPrint('⚠️ SyncRef não disponível para Google');
         }
       } catch (e) {
-        debugPrint('⚠️ Token Google expirado/inválido: $e');
-        debugPrint('🧹 Limpando tokens Google...');
         await clearGoogleTokens();
       }
     } else {
-      debugPrint('🚫 Nenhum token Google encontrado');
     }
 
     // Tentar restaurar Microsoft
     final microsoftClient = await restoreMicrosoftClient();
     if (microsoftClient != null) {
       try {
-        debugPrint('🔍 Testando validade do token Microsoft...');
         // Verificar se o token ainda é válido
         final userInfo = await _getMicrosoftUserInfo(microsoftClient);
-        debugPrint(
-            '✅ Sessão Microsoft restaurada: ${userInfo['mail'] ?? userInfo['userPrincipalName']}');
 
         if (_syncRef != null) {
           final notifier = _syncRef!.read(cloudSyncStatusProvider.notifier);
@@ -872,28 +817,20 @@ class OAuth2Service {
             provider: 'microsoft',
             lastSync: DateTime.now(),
           );
-          debugPrint('🔄 Status visual Microsoft atualizado para CONNECTED');
         } else {
-          debugPrint('⚠️ SyncRef não disponível para Microsoft');
         }
       } catch (e) {
-        debugPrint('⚠️ Token Microsoft expirado/inválido: $e');
-        debugPrint('🧹 Limpando tokens Microsoft...');
         await clearMicrosoftTokens();
       }
     } else {
-      debugPrint('🚫 Nenhum token Microsoft encontrado');
     }
 
     if (googleClient == null && microsoftClient == null) {
-      debugPrint('📱 Nenhuma sessão OAuth2 encontrada');
     } else {
       // Verificar estrutura de pastas apenas se não há criação recente
       try {
-        debugPrint('🔄 Verificando estrutura de pastas existente...');
         // CloudFolderService.ensureCloudFoldersExist() - desabilitado temporariamente para evitar duplicação
       } catch (e) {
-        debugPrint('⚠️ Erro ao verificar estrutura de pastas: $e');
       }
     }
   }
@@ -918,7 +855,6 @@ class OAuth2Service {
       // Se expira em menos de 10 minutos, considerar como "expirando"
       return difference.inMinutes < 10;
     } catch (e) {
-      debugPrint('❌ Erro ao verificar expiração: $e');
       return true; // Em caso de erro, assumir que está expirando
     }
   }
@@ -926,11 +862,9 @@ class OAuth2Service {
   /// Renova token Microsoft usando refresh token
   static Future<Client?> _refreshMicrosoftToken() async {
     try {
-      debugPrint('🔄 Renovando token Microsoft...');
 
       final refreshToken = await _storage.read(key: 'microsoft_refresh_token');
       if (refreshToken == null) {
-        debugPrint('❌ Refresh token Microsoft não encontrado');
         return null;
       }
 
@@ -972,17 +906,11 @@ class OAuth2Service {
         // Salvar novos tokens
         await _saveMicrosoftTokens(newClient);
 
-        debugPrint('✅ Token Microsoft renovado com sucesso!');
-        debugPrint('🕒 Nova expiração: ${newCredentials.expiration}');
-
         return newClient;
       } else {
-        debugPrint('❌ Erro ao renovar token Microsoft: ${response.statusCode}');
-        debugPrint('   Response: ${response.body}');
         return null;
       }
     } catch (e) {
-      debugPrint('❌ Erro ao renovar token Microsoft: $e');
       return null;
     }
   }
@@ -990,11 +918,9 @@ class OAuth2Service {
   /// Renova token Google usando refresh token
   static Future<Client?> _refreshGoogleToken() async {
     try {
-      debugPrint('🔄 Renovando token Google...');
 
       final refreshToken = await _storage.read(key: 'google_refresh_token');
       if (refreshToken == null) {
-        debugPrint('❌ Refresh token Google não encontrado');
         return null;
       }
 
@@ -1035,17 +961,11 @@ class OAuth2Service {
         // Salvar novos tokens
         await _saveGoogleTokens(newClient);
 
-        debugPrint('✅ Token Google renovado com sucesso!');
-        debugPrint('🕒 Nova expiração: ${newCredentials.expiration}');
-
         return newClient;
       } else {
-        debugPrint('❌ Erro ao renovar token Google: ${response.statusCode}');
-        debugPrint('   Response: ${response.body}');
         return null;
       }
     } catch (e) {
-      debugPrint('❌ Erro ao renovar token Google: $e');
       return null;
     }
   }
@@ -1070,12 +990,6 @@ class OAuth2Service {
       final googleRefresh = await _storage.read(key: 'google_refresh_token');
       final googleExpires = await _storage.read(key: 'google_expires_at');
 
-      debugPrint('📊 Google tokens:');
-      debugPrint(
-          '  - Access token: ${googleAccess != null ? '✅ Presente (${googleAccess.length} chars)' : '❌ Ausente'}');
-      debugPrint(
-          '  - Refresh token: ${googleRefresh != null ? '✅ Presente (${googleRefresh.length} chars)' : '❌ Ausente'}');
-      debugPrint('  - Expires at: ${googleExpires ?? '❌ Não definido'}');
 
       // Verificar Microsoft tokens
       final microsoftAccess =
@@ -1084,14 +998,7 @@ class OAuth2Service {
           await _storage.read(key: 'microsoft_refresh_token');
       final microsoftExpires = await _storage.read(key: 'microsoft_expires_at');
 
-      debugPrint('📊 Microsoft tokens:');
-      debugPrint(
-          '  - Access token: ${microsoftAccess != null ? '✅ Presente (${microsoftAccess.length} chars)' : '❌ Ausente'}');
-      debugPrint(
-          '  - Refresh token: ${microsoftRefresh != null ? '✅ Presente (${microsoftRefresh.length} chars)' : '❌ Ausente'}');
-      debugPrint('  - Expires at: ${microsoftExpires ?? '❌ Não definido'}');
     } catch (e) {
-      debugPrint('❌ Erro ao debugar tokens: $e');
     }
   }
 }

@@ -308,7 +308,6 @@ class _BloquinhoSlashMenuState extends State<BloquinhoSlashMenu> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          print('🔍 DEBUG: Comando selecionado no menu: ${command.title}');
           widget.onCommandSelected(command); // Executa ação primeiro
           // O overlay será removido pelo callback _insertSlashCommand
         },

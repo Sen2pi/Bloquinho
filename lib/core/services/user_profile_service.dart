@@ -321,7 +321,6 @@ class UserProfileService {
 
       return null;
     } catch (e) {
-      debugPrint('⚠️ Erro ao verificar arquivo de avatar: $e');
       return null;
     }
   }
@@ -344,7 +343,6 @@ class UserProfileService {
           try {
             await _localStorageService.deleteProfile(currentProfile.name);
           } catch (e) {
-            debugPrint('⚠️ Erro ao deletar perfil do LocalStorageService: $e');
           }
         }
 
@@ -355,9 +353,7 @@ class UserProfileService {
       // Limpar cache
       _cachedProfile = null;
 
-      debugPrint('✅ Perfil deletado com sucesso');
     } catch (e) {
-      debugPrint('❌ Erro ao deletar perfil: $e');
       throw UserProfileException(
         'Erro ao deletar perfil',
         originalError: e,
@@ -386,7 +382,6 @@ class UserProfileService {
         await settingsBox.clear();
         await settingsBox.close();
       } catch (e) {
-        debugPrint('⚠️ Settings box não encontrado ou erro ao limpar: $e');
       }
 
       try {
@@ -397,8 +392,6 @@ class UserProfileService {
         await storageSettingsBox.clear();
         await storageSettingsBox.close();
       } catch (e) {
-        debugPrint(
-            '⚠️ Storage settings box não encontrado ou erro ao limpar: $e');
       }
 
       try {
@@ -408,7 +401,6 @@ class UserProfileService {
         await changeLogBox.clear();
         await changeLogBox.close();
       } catch (e) {
-        debugPrint('⚠️ Change log box não encontrado ou erro ao limpar: $e');
       }
 
       try {
@@ -418,16 +410,12 @@ class UserProfileService {
         await syncSettingsBox.clear();
         await syncSettingsBox.close();
       } catch (e) {
-        debugPrint('⚠️ Sync settings box não encontrado ou erro ao limpar: $e');
       }
 
       // 4. Limpar cache
       _cachedProfile = null;
 
-      debugPrint(
-          '✅ Todos os dados do aplicativo deletados - pronto para onboarding');
     } catch (e) {
-      debugPrint('❌ Erro ao deletar todos os dados: $e');
       throw UserProfileException(
         'Erro ao deletar todos os dados',
         originalError: e,
@@ -555,7 +543,6 @@ class UserProfileService {
 
       return avatarsDir;
     } catch (e) {
-      debugPrint('⚠️ Erro ao obter diretório de avatars: $e');
       throw UserProfileException(
         'Erro ao criar diretório de avatars',
         originalError: e,
@@ -572,7 +559,6 @@ class UserProfileService {
       }
     } catch (e) {
       // Log do erro mas não falha a operação
-      debugPrint('Erro ao deletar avatar: $e');
     }
   }
 
@@ -586,7 +572,6 @@ class UserProfileService {
       _cachedProfile = profile;
       return profile;
     } catch (e) {
-      debugPrint('Erro ao carregar perfil do armazenamento: $e');
       return null;
     }
   }

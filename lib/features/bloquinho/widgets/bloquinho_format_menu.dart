@@ -120,29 +120,11 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
         ),
         const SizedBox(width: 4),
 
-        // Spoiler
-        _buildFormatButton(
-          icon: Icons.visibility_off,
-          tooltip: 'Spoiler',
-          onTap: () => widget.onFormatApplied('spoiler'),
-          isDarkMode: isDarkMode,
-        ),
-        const SizedBox(width: 4),
-
         // Badge
         _buildFormatButton(
           icon: Icons.label,
           tooltip: 'Badge',
           onTap: () => widget.onFormatApplied('badge'),
-          isDarkMode: isDarkMode,
-        ),
-        const SizedBox(width: 4),
-
-        // Callout
-        _buildFormatButton(
-          icon: Icons.info_outline,
-          tooltip: 'Callout',
-          onTap: () => widget.onFormatApplied('callout'),
           isDarkMode: isDarkMode,
         ),
         const SizedBox(width: 4),
@@ -165,20 +147,11 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
         ),
         const SizedBox(width: 4),
 
-        // Progresso
+        // Barra de Progresso
         _buildFormatButton(
           icon: Icons.linear_scale,
           tooltip: 'Barra de Progresso',
           onTap: () => widget.onFormatApplied('progress'),
-          isDarkMode: isDarkMode,
-        ),
-        const SizedBox(width: 4),
-
-        // Divider
-        _buildFormatButton(
-          icon: Icons.horizontal_rule,
-          tooltip: 'Divisor',
-          onTap: () => widget.onFormatApplied('divider'),
           isDarkMode: isDarkMode,
         ),
         const SizedBox(width: 4),
@@ -293,27 +266,31 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
             itemCount: colors.length,
             itemBuilder: (context, index) {
               final color = colors[index];
+              final colorValue = _getColorFromName(color);
               return InkWell(
                 onTap: () {
                   Navigator.of(context).pop();
                   widget.onFormatApplied(
                       type == 'text' ? 'textColor' : 'backgroundColor',
-                      color: color);
+                      color: type == 'text' ? color : null,
+                      backgroundColor: type == 'background' ? color : null);
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: _getColorFromName(color),
+                    color: type == 'text' ? null : colorValue,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.grey),
                   ),
                   child: Center(
                     child: Text(
-                      color.replaceAll('bg-', ''),
+                      'A',
                       style: TextStyle(
-                        color: _getTextColorForBackground(
-                            _getColorFromName(color)),
-                        fontSize: 10,
+                        color: type == 'text'
+                            ? colorValue
+                            : _getTextColorForBackground(colorValue),
                         fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        backgroundColor: type == 'text' ? null : colorValue,
                       ),
                     ),
                   ),

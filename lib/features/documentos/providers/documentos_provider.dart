@@ -131,7 +131,6 @@ class DocumentosNotifier extends StateNotifier<DocumentosState> {
     try {
       // Verificar se temos contexto definido
       if (!_storageService.hasContext) {
-        debugPrint('⚠️ Contexto não definido para documentos');
         state = state.copyWith(isLoading: false);
         return;
       }

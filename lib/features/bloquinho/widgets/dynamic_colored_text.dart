@@ -471,32 +471,61 @@ class DynamicColoredTextWithProvider extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final textColors = ref.watch(dynamicTextColorsProvider);
     final colors = textColors[textId] ?? {};
-    final textColor = colors['text'] ?? Colors.black;
-    final backgroundColor = colors['background'] ?? Colors.transparent;
+    // Usar cor do provider, senão do estilo base, senão preto/transparente
+    final textColor = colors['text'] ?? baseStyle?.color ?? Colors.black;
+    final backgroundColor = colors['background'] ??
+        baseStyle?.backgroundColor ??
+        Colors.transparent;
+
+    // PRESERVAR formatação original do texto (negrito, itálico, etc.)
+    // Combinar estilo base com cor, MANTENDO fontWeight/fontStyle/decoration
+    final effectiveStyle = (baseStyle ?? const TextStyle()).copyWith(
+      color: textColor,
+      backgroundColor:
+          null, // Não usar backgroundColor do TextStyle, só do Container
+      // MANTER formatação original:
+      fontWeight: baseStyle?.fontWeight,
+      fontStyle: baseStyle?.fontStyle,
+      decoration: baseStyle?.decoration,
+      decorationColor: baseStyle?.decorationColor,
+      decorationStyle: baseStyle?.decorationStyle,
+      decorationThickness: baseStyle?.decorationThickness,
+      fontFamily: baseStyle?.fontFamily,
+      fontSize: baseStyle?.fontSize,
+      letterSpacing: baseStyle?.letterSpacing,
+      wordSpacing: baseStyle?.wordSpacing,
+      height: baseStyle?.height,
+      leadingDistribution: baseStyle?.leadingDistribution,
+      locale: baseStyle?.locale,
+      shadows: baseStyle?.shadows,
+      foreground: baseStyle?.foreground,
+      background: baseStyle?.background,
+    );
+
+    final textWidget = Text(
+      text,
+      style: effectiveStyle,
+    );
+
+    // Só usar Container se houver cor de fundo
+    final hasBackground =
+        backgroundColor != null && backgroundColor != Colors.transparent;
 
     return Column(
       children: [
-        // Widget de texto colorido
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: backgroundColor == Colors.transparent
-                  ? Colors.grey.withOpacity(0.3)
-                  : Colors.transparent,
-            ),
-          ),
-          child: Text(
-            text,
-            style: (baseStyle ?? const TextStyle()).copyWith(
-              color: textColor,
-              fontSize: 16,
-            ),
-          ),
-        ),
-
+        hasBackground
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: Colors.grey.withOpacity(0.15),
+                  ),
+                ),
+                child: textWidget,
+              )
+            : textWidget,
         // Controles de cor (se habilitado)
         if (showControls) ...[
           const SizedBox(height: 16),

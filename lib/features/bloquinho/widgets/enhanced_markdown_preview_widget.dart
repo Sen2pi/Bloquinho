@@ -7,9 +7,17 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'dynamic_colored_text.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'simple_diagram_widget.dart';
+import 'windows_code_block_widget.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
+
+import 'dart:io';
 
 /// Widget de visualização markdown com enhancements HTML moderno
-class EnhancedMarkdownPreviewWidget extends StatelessWidget {
+class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   final String markdown;
   final bool showLineNumbers;
   final bool enableHtmlEnhancements;
@@ -32,7 +40,7 @@ class EnhancedMarkdownPreviewWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final textStyle = baseTextStyle ?? theme.textTheme.bodyMedium!;
     final isDark = theme.brightness == Brightness.dark;
@@ -47,7 +55,7 @@ class EnhancedMarkdownPreviewWidget extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
             child: Padding(
               padding: padding,
-              child: _buildEnhancedMarkdown(context, textStyle),
+              child: _buildEnhancedMarkdown(context, textStyle, ref),
             ),
           ),
           // Botão de exportação PDF
@@ -72,7 +80,7 @@ class EnhancedMarkdownPreviewWidget extends StatelessWidget {
   }
 
   void _exportToPdf(BuildContext context) {
-    // TODO: Implementar exportação PDF
+    FocusScope.of(context).unfocus(); // Evita erro de teclado
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Exportação PDF em desenvolvimento...'),
@@ -81,7 +89,43 @@ class EnhancedMarkdownPreviewWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildEnhancedMarkdown(BuildContext context, TextStyle baseStyle) {
+  Widget _buildCustomCodeBlock(md.Element element) {
+    final textContent = element.textContent;
+    final language = _extractLanguage(element) ?? 'text';
+
+    // Sempre usar WindowsCodeBlockWidget para blocos de código
+    if (language.toLowerCase() == 'mermaid') {
+      return WindowsMermaidDiagramWidget(diagram: textContent);
+    }
+
+    return WindowsCodeBlockWidget(
+      code: textContent,
+      language: language,
+      showLineNumbers: true,
+      showMacOSHeader: true,
+    );
+  }
+
+  /// Extrai a linguagem de programação de um elemento de código markdown
+  String? _extractLanguage(md.Element element) {
+    // Tenta extrair da classe (ex: class="language-dart")
+    final classAttr = element.attributes['class'];
+    if (classAttr != null && classAttr.startsWith('language-')) {
+      return classAttr.substring('language-'.length);
+    }
+    // Tenta pelo tag (ex: <code dart>)
+    if (element.attributes.containsKey('language')) {
+      return element.attributes['language'];
+    }
+    // Tenta pelo info string (ex: ```dart)
+    if (element.attributes.containsKey('info')) {
+      return element.attributes['info'];
+    }
+    return null;
+  }
+
+  Widget _buildEnhancedMarkdown(
+      BuildContext context, TextStyle baseStyle, WidgetRef ref) {
     if (!enableHtmlEnhancements) {
       return MarkdownBody(
         data: markdown,
@@ -94,10 +138,15 @@ class EnhancedMarkdownPreviewWidget extends StatelessWidget {
           'sup': SupBuilder(),
           'details': DetailsBuilder(),
           'summary': SummaryBuilder(),
-          // ... outros builders customizados ...
+          'color': ColorBuilder(ref: ref),
+          'bg': BgBuilder(ref: ref),
+          'badge': BadgeBuilder(ref: ref),
         },
         inlineSyntaxes: [
           LatexInlineSyntax(),
+          ColorSyntax(),
+          BgSyntax(),
+          BadgeSyntax(),
         ],
         blockSyntaxes: [
           LatexBlockSyntax(),
@@ -105,10 +154,8 @@ class EnhancedMarkdownPreviewWidget extends StatelessWidget {
       );
     }
 
-    // Processar enhancements HTML
     final processedContent =
         HtmlEnhancementParser.processWithEnhancements(markdown);
-
     return MarkdownBody(
       data: processedContent,
       styleSheet: _createEnhancedStyleSheet(context, baseStyle),
@@ -122,14 +169,23 @@ class EnhancedMarkdownPreviewWidget extends StatelessWidget {
         'summary': SummaryBuilder(),
         'latex-inline': LatexBuilder(),
         'latex-block': LatexBuilder(),
-        'span': StyledSpanBuilder(),
-        'div': StyledSpanBuilder(),
+        'span': DynamicColoredSpanBuilder(ref: ref),
+        'div': DynamicColoredDivBuilder(ref: ref),
         'progress': ProgressBuilder(),
         'mermaid': MermaidBuilder(),
-        // ... outros builders customizados ...
+        'color': ColorBuilder(ref: ref),
+        'bg': BgBuilder(ref: ref),
+        'badge': BadgeBuilder(ref: ref),
+        'bloquinho-color': BloquinhoColorBuilder(ref: ref),
+        'align': AlignBuilder(),
       },
       inlineSyntaxes: [
         LatexInlineSyntax(),
+        ColorSyntax(),
+        BgSyntax(),
+        BadgeSyntax(),
+        BloquinhoColorSyntax(),
+        SpanInlineSyntax(), // Novo para <span style="...">...</span>
       ],
       blockSyntaxes: [
         LatexBlockSyntax(),
@@ -718,16 +774,29 @@ H<sub>2</sub>O e E=mc<sup>2</sup>
   }
 }
 
+// Garantir que o builder de código sempre usa WindowsCodeBlockWidget
 class AdvancedCodeBlockBuilder extends MarkdownElementBuilder {
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
     final code = element.textContent;
     final language =
-        element.attributes['class']?.replaceFirst('language-', '') ?? 'dart';
-    return AdvancedCodeBlock(
+        element.attributes['class']?.replaceFirst('language-', '') ?? '';
+    if (language == 'mermaid') {
+      // Renderizar diagrama Mermaid
+      return MermaidBuilder()
+          .visitElementAfter(md.Element.text('mermaid', code), preferredStyle);
+    }
+    if (language == 'latex' || language == 'tex') {
+      // Renderizar LaTeX
+      return LatexBuilder().visitElementAfter(
+          md.Element.text('latex-block', code), preferredStyle);
+    }
+    // Sempre renderizar código com WindowsCodeBlockWidget
+    return WindowsCodeBlockWidget(
       code: code,
-      language: language,
+      language: language.isEmpty ? 'dart' : language,
       showLineNumbers: true,
+      showMacOSHeader: true,
     );
   }
 }
@@ -897,59 +966,241 @@ class LatexBuilder extends MarkdownElementBuilder {
   }
 }
 
-class StyledSpanBuilder extends MarkdownElementBuilder {
+class DynamicColoredSpanBuilder extends MarkdownElementBuilder {
+  final WidgetRef ref;
+
+  DynamicColoredSpanBuilder({required this.ref});
+
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final style = element.attributes['style'] ?? '';
     final text = element.textContent;
+    final style = element.attributes['style'] ?? '';
     final styleMap = _parseStyle(style);
-    final isBlock = element.tag == 'div' || (styleMap['display'] == 'block');
 
-    // Determine if it's an inline span or a block-level div
-    if (isBlock) {
-      return Container(
-        padding: styleMap['padding'] ??
-            const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        margin: styleMap['margin'] ?? EdgeInsets.zero,
-        decoration: BoxDecoration(
-          color: styleMap['backgroundColor'],
-          borderRadius: styleMap['borderRadius'],
-          border: styleMap['borderLeft'] ?? styleMap['border'],
-        ),
-        alignment: styleMap['alignment'],
-        width: styleMap['width'],
-        height: styleMap['height'],
-        child: Text(
-          text,
-          style: (preferredStyle ?? const TextStyle()).copyWith(
-            color: styleMap['color'],
-            fontWeight: styleMap['fontWeight'],
-            fontStyle: styleMap['fontStyle'],
-            decoration: styleMap['decoration'],
-            fontFamily: styleMap['fontFamily'],
-            fontSize: styleMap['fontSize'],
-          ),
-          textAlign: styleMap['textAlign'],
-          softWrap: true,
-        ),
-      );
-    } else {
-      // Inline span
-      return RichText(
-        text: TextSpan(
-          text: text,
-          style: (preferredStyle ?? const TextStyle()).copyWith(
-            color: styleMap['color'],
-            fontWeight: styleMap['fontWeight'],
-            fontStyle: styleMap['fontStyle'],
-            decoration: styleMap['decoration'],
-            fontFamily: styleMap['fontFamily'],
-            fontSize: styleMap['fontSize'],
-            backgroundColor: styleMap['backgroundColor'],
-          ),
-        ),
-      );
+    // Gerar ID único para este texto
+    final textId = 'preview_${element.hashCode}';
+
+    // Usar o sistema DynamicColoredText
+    return DynamicColoredTextWithProvider(
+      text: text,
+      textId: textId,
+      baseStyle: (preferredStyle ?? const TextStyle()).copyWith(
+        color: styleMap['color'],
+        fontWeight: styleMap['fontWeight'],
+        fontStyle: styleMap['fontStyle'],
+        decoration: styleMap['decoration'],
+        fontFamily: styleMap['fontFamily'],
+        fontSize: styleMap['fontSize'],
+      ),
+      showControls: false, // Não mostrar controles no preview
+    );
+  }
+
+  Map<String, dynamic> _parseStyle(String style) {
+    final map = <String, dynamic>{};
+    final props = style.split(';');
+    for (final prop in props) {
+      final parts = prop.split(':');
+      if (parts.length != 2) continue;
+      final key = parts[0].trim();
+      final value = parts[1].trim();
+      switch (key) {
+        case 'color':
+          map['color'] = _parseColor(value);
+          break;
+        case 'background-color':
+          map['backgroundColor'] = _parseColor(value);
+          break;
+        case 'font-weight':
+          map['fontWeight'] =
+              value == 'bold' ? FontWeight.bold : FontWeight.normal;
+          break;
+        case 'font-style':
+          map['fontStyle'] =
+              value == 'italic' ? FontStyle.italic : FontStyle.normal;
+          break;
+        case 'text-decoration':
+          if (value.contains('underline'))
+            map['decoration'] = TextDecoration.underline;
+          if (value.contains('line-through'))
+            map['decoration'] = TextDecoration.lineThrough;
+          break;
+        case 'font-family':
+          map['fontFamily'] = value;
+          break;
+        case 'font-size':
+          map['fontSize'] = double.tryParse(value.replaceAll('px', ''));
+          break;
+        case 'padding':
+          map['padding'] = _parseEdgeInsets(value);
+          break;
+        case 'margin':
+          map['margin'] = _parseEdgeInsets(value);
+          break;
+        case 'border-radius':
+          map['borderRadius'] = BorderRadius.circular(
+              double.tryParse(value.replaceAll('px', '')) ?? 0);
+          break;
+        case 'border':
+          map['border'] = _parseBorder(value);
+          break;
+        case 'border-left':
+          map['borderLeft'] = _parseBorderSide(value, left: true);
+          break;
+        case 'display':
+          map['display'] = value;
+          break;
+        case 'width':
+          map['width'] = double.tryParse(value.replaceAll('px', ''));
+          break;
+        case 'height':
+          map['height'] = double.tryParse(value.replaceAll('px', ''));
+          break;
+        case 'text-align':
+          map['textAlign'] = _parseTextAlign(value);
+          break;
+        case 'align-items':
+          map['alignment'] = _parseAlignment(value);
+          break;
+      }
     }
+    return map;
+  }
+
+  Color? _parseColor(String value) {
+    if (value.startsWith('#')) {
+      return Color(int.parse(value.substring(1), radix: 16) + 0xFF000000);
+    }
+    switch (value) {
+      case 'red':
+        return Colors.red;
+      case 'blue':
+        return Colors.blue;
+      case 'green':
+        return Colors.green;
+      case 'yellow':
+        return Colors.yellow;
+      case 'orange':
+        return Colors.orange;
+      case 'purple':
+        return Colors.purple;
+      case 'black':
+        return Colors.black;
+      case 'white':
+        return Colors.white;
+      case 'gray':
+      case 'grey':
+        return Colors.grey;
+      default:
+        return null;
+    }
+  }
+
+  EdgeInsets _parseEdgeInsets(String value) {
+    final parts = value.replaceAll('px', '').split(' ');
+    if (parts.length == 1) {
+      final v = double.tryParse(parts[0]) ?? 0;
+      return EdgeInsets.all(v);
+    } else if (parts.length == 2) {
+      final v1 = double.tryParse(parts[0]) ?? 0;
+      final v2 = double.tryParse(parts[1]) ?? 0;
+      return EdgeInsets.symmetric(vertical: v1, horizontal: v2);
+    } else if (parts.length == 4) {
+      final top = double.tryParse(parts[0]) ?? 0;
+      final right = double.tryParse(parts[1]) ?? 0;
+      final bottom = double.tryParse(parts[2]) ?? 0;
+      final left = double.tryParse(parts[3]) ?? 0;
+      return EdgeInsets.fromLTRB(left, top, right, bottom);
+    }
+    return EdgeInsets.zero;
+  }
+
+  Border? _parseBorder(String value) {
+    // Exemplo: 1px solid #FF0000
+    final parts = value.split(' ');
+    if (parts.length == 3) {
+      final width = double.tryParse(parts[0].replaceAll('px', '')) ?? 1;
+      final color = _parseColor(parts[2]);
+      return Border.all(color: color ?? Colors.black, width: width);
+    }
+    return null;
+  }
+
+  Border? _parseBorderSide(String value, {bool left = false}) {
+    // Exemplo: 4px solid #0277bd
+    final parts = value.split(' ');
+    if (parts.length == 3) {
+      final width = double.tryParse(parts[0].replaceAll('px', '')) ?? 1;
+      final color = _parseColor(parts[2]);
+      if (left) {
+        return Border(
+            left: BorderSide(color: color ?? Colors.black, width: width));
+      }
+    }
+    return null;
+  }
+
+  TextAlign? _parseTextAlign(String value) {
+    switch (value) {
+      case 'center':
+        return TextAlign.center;
+      case 'right':
+        return TextAlign.right;
+      case 'left':
+        return TextAlign.left;
+      case 'justify':
+        return TextAlign.justify;
+      default:
+        return null;
+    }
+  }
+
+  Alignment? _parseAlignment(String value) {
+    switch (value) {
+      case 'center':
+        return Alignment.center;
+      case 'right':
+        return Alignment.centerRight;
+      case 'left':
+        return Alignment.centerLeft;
+      case 'top':
+        return Alignment.topCenter;
+      case 'bottom':
+        return Alignment.bottomCenter;
+      default:
+        return null;
+    }
+  }
+}
+
+class DynamicColoredDivBuilder extends MarkdownElementBuilder {
+  final WidgetRef ref;
+
+  DynamicColoredDivBuilder({required this.ref});
+
+  @override
+  Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    final text = element.textContent;
+    final style = element.attributes['style'] ?? '';
+    final styleMap = _parseStyle(style);
+
+    // Gerar ID único para este texto
+    final textId = 'preview_div_${element.hashCode}';
+
+    // Usar o sistema DynamicColoredText para divs também
+    return DynamicColoredTextWithProvider(
+      text: text,
+      textId: textId,
+      baseStyle: (preferredStyle ?? const TextStyle()).copyWith(
+        color: styleMap['color'],
+        fontWeight: styleMap['fontWeight'],
+        fontStyle: styleMap['fontStyle'],
+        decoration: styleMap['decoration'],
+        fontFamily: styleMap['fontFamily'],
+        fontSize: styleMap['fontSize'],
+      ),
+      showControls: false, // Não mostrar controles no preview
+    );
   }
 
   Map<String, dynamic> _parseStyle(String style) {
@@ -1211,8 +1462,16 @@ class MermaidBuilder extends MarkdownElementBuilder {
 
     return SizedBox(
       height: 300,
-      child:
-          WebViewWidget(controller: WebViewController()..loadHtmlString(html)),
+      child: Platform.isWindows
+          ? Center(
+              child: Text(
+                'Visualização Mermaid não suportada no Windows',
+                style:
+                    TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            )
+          : WebViewWidget(
+              controller: WebViewController()..loadHtmlString(html)),
     );
   }
 }
@@ -1230,5 +1489,479 @@ class MermaidBlockSyntax extends md.BlockSyntax {
       return md.Element.text('mermaid', code);
     }
     return md.Element.text('p', parser.current.content);
+  }
+}
+
+// Adicionar InlineSyntax para bloquinho-color
+class BloquinhoColorSyntax extends md.InlineSyntax {
+  BloquinhoColorSyntax()
+      : super(r'<bloquinho-color value="(.*?)">(.*?)<\/bloquinho-color>');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final color = match.group(1)!;
+    final text = match.group(2)!;
+    final element = md.Element.text('bloquinho-color', text);
+    element.attributes['value'] = color;
+    parser.addNode(element);
+    return true;
+  }
+}
+
+class BloquinhoColorBuilder extends MarkdownElementBuilder {
+  final WidgetRef ref;
+  BloquinhoColorBuilder({required this.ref});
+  @override
+  Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    // Extrair cor do texto
+    String? color = element.attributes['value'] ?? element.attributes['color'];
+    // Extrair cor de fundo
+    String? background = element.attributes['background'] ??
+        element.attributes['background-color'];
+    // Se vier via style
+    final style = element.attributes['style'] ?? '';
+    if (style.isNotEmpty) {
+      final styleParts = style.split(';');
+      for (final part in styleParts) {
+        final kv = part.split(':');
+        if (kv.length == 2) {
+          final key = kv[0].trim();
+          final value = kv[1].trim();
+          if (key == 'color') color = value;
+          if (key == 'background-color') background = value;
+        }
+      }
+    }
+    final text = element.textContent;
+    return DynamicColoredTextWithProvider(
+      text: text,
+      textId: 'preview_color_${element.hashCode}',
+      baseStyle: (preferredStyle ?? const TextStyle()).copyWith(
+        color: _parseColor(color),
+        backgroundColor: _parseColor(background),
+      ),
+      showControls: false,
+    );
+  }
+
+  Color? _parseColor(String? value) {
+    if (value == null) return null;
+    if (value.startsWith('#')) {
+      return Color(int.parse(value.substring(1), radix: 16) + 0xFF000000);
+    }
+    switch (value) {
+      case 'red':
+        return Colors.red;
+      case 'blue':
+        return Colors.blue;
+      case 'green':
+        return Colors.green;
+      case 'yellow':
+        return Colors.yellow;
+      case 'orange':
+        return Colors.orange;
+      case 'purple':
+        return Colors.purple;
+      case 'black':
+        return Colors.black;
+      case 'white':
+        return Colors.white;
+      case 'gray':
+      case 'grey':
+        return Colors.grey;
+      case 'pink':
+        return Colors.pink;
+      case 'cyan':
+        return Colors.cyan;
+      case 'teal':
+        return Colors.teal;
+      case 'indigo':
+        return Colors.indigo;
+      case 'lime':
+        return Colors.lime;
+      case 'amber':
+        return Colors.amber;
+      case 'deeporange':
+        return Colors.deepOrange;
+      case 'lightblue':
+        return Colors.lightBlue;
+      case 'lightgreen':
+        return Colors.lightGreen;
+      default:
+        return null;
+    }
+  }
+}
+
+// InlineSyntax para [color=red]...[/color]
+class ColorSyntax extends md.InlineSyntax {
+  ColorSyntax() : super(r'\[color=(.*?)\](.*?)\[/color\]');
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final color = match.group(1)!;
+    final text = match.group(2)!;
+    final element = md.Element.text('color', text);
+    element.attributes['color'] = color;
+    parser.addNode(element);
+    return true;
+  }
+}
+
+// InlineSyntax para [bg=yellow]...[/bg]
+class BgSyntax extends md.InlineSyntax {
+  BgSyntax() : super(r'\[bg=(.*?)\](.*?)\[/bg\]');
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final bg = match.group(1)!;
+    final text = match.group(2)!;
+    final element = md.Element.text('bg', text);
+    element.attributes['background'] = bg;
+    parser.addNode(element);
+    return true;
+  }
+}
+
+// InlineSyntax para [badge color=blue]...[/badge]
+class BadgeSyntax extends md.InlineSyntax {
+  BadgeSyntax() : super(r'\[badge(?: color=(.*?))?\](.*?)\[/badge\]');
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final color = match.group(1) ?? 'blue';
+    final text = match.group(2)!;
+    final element = md.Element.text('badge', text);
+    element.attributes['color'] = color;
+    parser.addNode(element);
+    return true;
+  }
+}
+
+class ColorBuilder extends MarkdownElementBuilder {
+  final WidgetRef ref;
+  ColorBuilder({required this.ref});
+  @override
+  Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    // Corrigir: ler o atributo 'value' em vez de 'color'
+    final color = element.attributes['value'] ?? element.attributes['color'];
+    return DynamicColoredTextWithProvider(
+      text: element.textContent,
+      textId: 'preview_color_${element.hashCode}',
+      baseStyle: (preferredStyle ?? const TextStyle()).copyWith(
+        color: _parseColor(color),
+      ),
+      showControls: false,
+    );
+  }
+
+  Color? _parseColor(String? value) {
+    if (value == null) return null;
+    if (value.startsWith('#')) {
+      return Color(int.parse(value.substring(1), radix: 16) + 0xFF000000);
+    }
+    switch (value) {
+      case 'red':
+        return Colors.red;
+      case 'blue':
+        return Colors.blue;
+      case 'green':
+        return Colors.green;
+      case 'yellow':
+        return Colors.yellow;
+      case 'orange':
+        return Colors.orange;
+      case 'purple':
+        return Colors.purple;
+      case 'black':
+        return Colors.black;
+      case 'white':
+        return Colors.white;
+      case 'gray':
+      case 'grey':
+        return Colors.grey;
+      case 'pink':
+        return Colors.pink;
+      case 'cyan':
+        return Colors.cyan;
+      case 'teal':
+        return Colors.teal;
+      case 'indigo':
+        return Colors.indigo;
+      case 'lime':
+        return Colors.lime;
+      case 'amber':
+        return Colors.amber;
+      case 'deeporange':
+        return Colors.deepOrange;
+      case 'lightblue':
+        return Colors.lightBlue;
+      case 'lightgreen':
+        return Colors.lightGreen;
+      default:
+        return null;
+    }
+  }
+}
+
+class BgBuilder extends MarkdownElementBuilder {
+  final WidgetRef ref;
+  BgBuilder({required this.ref});
+  @override
+  Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    // Corrigir: ler o atributo 'color' da tag <bg>
+    final bg = element.attributes['color'] ?? element.attributes['background'];
+    return DynamicColoredTextWithProvider(
+      text: element.textContent,
+      textId: 'preview_bg_${element.hashCode}',
+      baseStyle: (preferredStyle ?? const TextStyle()).copyWith(
+        backgroundColor: _parseColor(bg),
+      ),
+      showControls: false,
+    );
+  }
+
+  Color? _parseColor(String? value) {
+    if (value == null) return null;
+    if (value.startsWith('#')) {
+      return Color(int.parse(value.substring(1), radix: 16) + 0xFF000000);
+    }
+    switch (value) {
+      case 'red':
+        return Colors.red;
+      case 'blue':
+        return Colors.blue;
+      case 'green':
+        return Colors.green;
+      case 'yellow':
+        return Colors.yellow;
+      case 'orange':
+        return Colors.orange;
+      case 'purple':
+        return Colors.purple;
+      case 'black':
+        return Colors.black;
+      case 'white':
+        return Colors.white;
+      case 'gray':
+      case 'grey':
+        return Colors.grey;
+      case 'pink':
+        return Colors.pink;
+      case 'cyan':
+        return Colors.cyan;
+      case 'teal':
+        return Colors.teal;
+      case 'indigo':
+        return Colors.indigo;
+      case 'lime':
+        return Colors.lime;
+      case 'amber':
+        return Colors.amber;
+      case 'deeporange':
+        return Colors.deepOrange;
+      case 'lightblue':
+        return Colors.lightBlue;
+      case 'lightgreen':
+        return Colors.lightGreen;
+      default:
+        return null;
+    }
+  }
+}
+
+class BadgeBuilder extends MarkdownElementBuilder {
+  final WidgetRef ref;
+  BadgeBuilder({required this.ref});
+  @override
+  Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    final color = element.attributes['color'] ?? 'blue';
+    return DynamicColoredTextWithProvider(
+      text: element.textContent,
+      textId: 'preview_badge_${element.hashCode}',
+      baseStyle: (preferredStyle ?? const TextStyle()).copyWith(
+        color: Colors.white,
+        backgroundColor: _parseColor(color),
+        fontWeight: FontWeight.bold,
+      ),
+      showControls: false,
+    );
+  }
+
+  Color? _parseColor(String? value) {
+    if (value == null) return null;
+    if (value.startsWith('#')) {
+      return Color(int.parse(value.substring(1), radix: 16) + 0xFF000000);
+    }
+    switch (value) {
+      case 'red':
+        return Colors.red;
+      case 'blue':
+        return Colors.blue;
+      case 'green':
+        return Colors.green;
+      case 'yellow':
+        return Colors.yellow;
+      case 'orange':
+        return Colors.orange;
+      case 'purple':
+        return Colors.purple;
+      case 'black':
+        return Colors.black;
+      case 'white':
+        return Colors.white;
+      case 'gray':
+      case 'grey':
+        return Colors.grey;
+      case 'pink':
+        return Colors.pink;
+      case 'cyan':
+        return Colors.cyan;
+      case 'teal':
+        return Colors.teal;
+      case 'indigo':
+        return Colors.indigo;
+      case 'lime':
+        return Colors.lime;
+      case 'amber':
+        return Colors.amber;
+      case 'deeporange':
+        return Colors.deepOrange;
+      case 'lightblue':
+        return Colors.lightBlue;
+      case 'lightgreen':
+        return Colors.lightGreen;
+      default:
+        return null;
+    }
+  }
+}
+
+/// Widget para renderizar diagramas Mermaid usando API externa
+class MermaidSvgWidget extends StatefulWidget {
+  final String diagram;
+
+  const MermaidSvgWidget({super.key, required this.diagram});
+
+  @override
+  State<MermaidSvgWidget> createState() => _MermaidSvgWidgetState();
+}
+
+class _MermaidSvgWidgetState extends State<MermaidSvgWidget> {
+  String? svgData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _generateSvg();
+  }
+
+  Future<void> _generateSvg() async {
+    try {
+      // Usar API do Mermaid Ink para gerar SVG
+      final encodedDiagram = Uri.encodeComponent(widget.diagram);
+      final url = 'https://mermaid.ink/svg/$encodedDiagram';
+
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        setState(() {
+          svgData = response.body;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (svgData != null) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 16),
+        child: SvgPicture.string(svgData!),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: const Text('Erro ao gerar diagrama Mermaid'),
+    );
+  }
+}
+
+/// Widget para diagramas Mermaid no Windows
+class WindowsMermaidDiagramWidget extends StatelessWidget {
+  final String diagram;
+
+  const WindowsMermaidDiagramWidget({super.key, required this.diagram});
+
+  @override
+  Widget build(BuildContext context) {
+    return MermaidSvgWidget(diagram: diagram);
+  }
+}
+
+/// Widget para diagramas Mermaid em outras plataformas
+class MermaidDiagramWidget extends StatelessWidget {
+  final String diagram;
+
+  const MermaidDiagramWidget({super.key, required this.diagram});
+
+  @override
+  Widget build(BuildContext context) {
+    return MermaidSvgWidget(diagram: diagram);
+  }
+}
+
+class AlignBuilder extends MarkdownElementBuilder {
+  @override
+  Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    final align = element.attributes['value'] ?? 'left';
+    TextAlign textAlign = TextAlign.left;
+    switch (align) {
+      case 'center':
+        textAlign = TextAlign.center;
+        break;
+      case 'right':
+        textAlign = TextAlign.right;
+        break;
+      case 'justify':
+        textAlign = TextAlign.justify;
+        break;
+      case 'left':
+      default:
+        textAlign = TextAlign.left;
+    }
+    return Align(
+      alignment: textAlign == TextAlign.center
+          ? Alignment.center
+          : textAlign == TextAlign.right
+              ? Alignment.centerRight
+              : Alignment.centerLeft,
+      child: Text(
+        element.textContent,
+        textAlign: textAlign,
+        style: preferredStyle,
+      ),
+    );
+  }
+}
+
+// Adicionar InlineSyntax para <span style="...">...</span>
+class SpanInlineSyntax extends md.InlineSyntax {
+  SpanInlineSyntax() : super(r'<span style="(.*?)">(.*?)<\/span>');
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final style = match.group(1)!;
+    final text = match.group(2)!;
+    final element = md.Element.text('span', text);
+    element.attributes['style'] = style;
+    parser.addNode(element);
+    return true;
   }
 }

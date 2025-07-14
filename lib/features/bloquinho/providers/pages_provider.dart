@@ -41,7 +41,6 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       _isInitialized = true;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Erro ao inicializar PagesProvider: $e');
       }
     }
   }
@@ -193,9 +192,6 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       if (icon != null) {
         validIcon = PageIcons.getValidIcon(icon);
         if (validIcon != icon) {
-          if (kDebugMode) {
-            print('⚠️ Ícone inválido "$icon" substituído por "$validIcon"');
-          }
         }
       }
 
@@ -222,7 +218,6 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Erro ao atualizar página: $e');
       }
       throw Exception('Erro ao atualizar página: $e');
     }
@@ -253,7 +248,6 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Erro ao salvar conteúdo: $e');
       }
     }
   }
@@ -281,7 +275,6 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       await updatePage(id, title: newTitle);
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Erro ao renomear página: $e');
       }
       throw Exception('Erro ao renomear página: $e');
     }
@@ -295,21 +288,17 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       final page = getById(id);
       if (page == null) {
         if (kDebugMode) {
-          print('⚠️ Página não encontrada para remoção: $id');
         }
         return;
       }
 
       if (kDebugMode) {
-        print('🗑️ Iniciando remoção da página: ${page.title} (ID: $id)');
-        print('  - Subpáginas: ${page.childrenIds.length}');
       }
 
       // Remover filhos recursivamente primeiro
       final childrenToRemove = List<String>.from(page.childrenIds);
       for (final childId in childrenToRemove) {
         if (kDebugMode) {
-          print('  🗑️ Removendo subpágina: $childId');
         }
         await removePage(childId);
       }
@@ -325,18 +314,15 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       // Deletar do armazenamento (arquivo e pasta)
       if (_currentProfileName != null && _currentWorkspaceName != null) {
         if (kDebugMode) {
-          print('  🗑️ Deletando arquivos da página: ${page.title}');
         }
         await _storageService.deletePage(
             id, _currentProfileName!, _currentWorkspaceName!);
       }
 
       if (kDebugMode) {
-        print('✅ Página removida completamente: ${page.title}');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Erro ao remover página: $e');
       }
       throw Exception('Erro ao remover página: $e');
     }
@@ -369,7 +355,6 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       // Verificar se temos contexto válido
       if (_currentProfileName == null || _currentWorkspaceName == null) {
         if (kDebugMode) {
-          print('⚠️ Contexto não disponível para salvar página');
         }
         return;
       }
@@ -378,7 +363,6 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
           page, _currentProfileName!, _currentWorkspaceName!);
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Erro ao salvar página no armazenamento: $e');
       }
     }
   }
@@ -400,12 +384,10 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
       state = [...state, ...importedPages];
 
       if (kDebugMode) {
-        print('✅ Páginas importadas: ${importedPages.length} páginas');
       }
       return importedPages;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Erro ao importar páginas: $e');
       }
       throw Exception('Erro ao importar páginas: $e');
     }

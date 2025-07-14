@@ -200,6 +200,22 @@ class _BlocoToolbarState extends ConsumerState<BlocoToolbar> {
         ),
         _buildDivider(isVertical: true),
         _buildToolbarButton(
+          icon: PhosphorIcons.paintBrush(),
+          tooltip: 'Cor do texto',
+          onPressed: _showTextColorPicker,
+        ),
+        _buildToolbarButton(
+          icon: PhosphorIcons.paintBucket(),
+          tooltip: 'Cor de fundo',
+          onPressed: _showBgColorPicker,
+        ),
+        _buildToolbarButton(
+          icon: PhosphorIcons.sealCheck(),
+          tooltip: 'Badge',
+          onPressed: _showBadgeColorPicker,
+        ),
+        _buildDivider(isVertical: true),
+        _buildToolbarButton(
           icon: PhosphorIcons.code(),
           tooltip: 'Código Inline',
           onPressed: () => _formatText('code'),
@@ -213,6 +229,140 @@ class _BlocoToolbarState extends ConsumerState<BlocoToolbar> {
         ),
       ],
     );
+  }
+
+  void _showTextColorPicker() async {
+    final color = await _showColorPickerDialog('Escolha a cor do texto');
+    if (color != null) {
+      _wrapSelectionWithTag('color', color);
+    }
+  }
+
+  void _showBgColorPicker() async {
+    final color = await _showColorPickerDialog('Escolha a cor de fundo');
+    if (color != null) {
+      _wrapSelectionWithTag('bg', color);
+    }
+  }
+
+  void _showBadgeColorPicker() async {
+    final color = await _showColorPickerDialog('Escolha a cor do badge');
+    if (color != null) {
+      _wrapSelectionWithTag('badge', color);
+    }
+  }
+
+  Future<String?> _showColorPickerDialog(String title) async {
+    final isDark = widget.isDarkMode;
+    final colors = [
+      'red',
+      'blue',
+      'green',
+      'yellow',
+      'orange',
+      'purple',
+      'black',
+      'white',
+      'gray',
+      'pink',
+      'cyan',
+      'teal',
+      'indigo',
+      'lime',
+      'amber',
+      'deeporange',
+      'lightblue',
+      'lightgreen',
+    ];
+    return await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor:
+            isDark ? AppColors.darkSurface : AppColors.lightSurface,
+        title: Text(title),
+        content: SizedBox(
+          width: 300,
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: colors
+                .map((c) => GestureDetector(
+                      onTap: () => Navigator.of(context).pop(c),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: _colorFromName(c),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: isDark ? Colors.white : Colors.black,
+                              width: 1),
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _colorFromName(String name) {
+    switch (name) {
+      case 'red':
+        return Colors.red;
+      case 'blue':
+        return Colors.blue;
+      case 'green':
+        return Colors.green;
+      case 'yellow':
+        return Colors.yellow;
+      case 'orange':
+        return Colors.orange;
+      case 'purple':
+        return Colors.purple;
+      case 'black':
+        return Colors.black;
+      case 'white':
+        return Colors.white;
+      case 'gray':
+        return Colors.grey;
+      case 'pink':
+        return Colors.pink;
+      case 'cyan':
+        return Colors.cyan;
+      case 'teal':
+        return Colors.teal;
+      case 'indigo':
+        return Colors.indigo;
+      case 'lime':
+        return Colors.lime;
+      case 'amber':
+        return Colors.amber;
+      case 'deeporange':
+        return Colors.deepOrange;
+      case 'lightblue':
+        return Colors.lightBlue;
+      case 'lightgreen':
+        return Colors.lightGreen;
+      default:
+        return Colors.black;
+    }
+  }
+
+  void _wrapSelectionWithTag(String tag, String color) {
+    // Envolve o texto selecionado com a tag customizada
+    final editorState = ref.read(editorControllerProvider);
+    final selection = editorState.selection;
+    if (selection == null || selection.isCollapsed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione o texto para aplicar a cor.')),
+      );
+      return;
+    }
+    ref
+        .read(editorControllerProvider.notifier)
+        .wrapSelectionWithTag(tag, color);
   }
 
   Widget _buildInsertActionsGroup() {

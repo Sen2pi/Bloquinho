@@ -49,9 +49,7 @@ class DataDirectoryService {
       _createDefaultSubdirectories();
 
       _isInitialized = true;
-      debugPrint('✅ DataDirectoryService inicializado: $_basePath');
     } catch (e) {
-      debugPrint('❌ Erro ao inicializar DataDirectoryService: $e');
       throw Exception('Erro ao inicializar diretório de dados: $e');
     }
   }
@@ -186,7 +184,6 @@ class DataDirectoryService {
         }
       }
     } catch (e) {
-      debugPrint('⚠️ Erro ao limpar diretório temporário: $e');
     }
   }
 
@@ -205,7 +202,6 @@ class DataDirectoryService {
       // Limpar cache de avatares
       await _clearOldFiles(avatarsDir, maxDays);
     } catch (e) {
-      debugPrint('⚠️ Erro ao limpar cache antigo: $e');
     }
   }
 
@@ -257,7 +253,6 @@ class DataDirectoryService {
 
       return stats;
     } catch (e) {
-      debugPrint('❌ Erro ao calcular uso do disco: $e');
       return {};
     }
   }

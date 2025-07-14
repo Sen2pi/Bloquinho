@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import '../models/bloco_base_model.dart';
 import '../models/bloco_tipo_enum.dart';
@@ -25,10 +27,11 @@ import '../widgets/dynamic_colored_text.dart';
 import '../widgets/color_demo_widget.dart';
 import '../providers/pages_provider.dart';
 import '../models/page_model.dart';
-import '../../../core/services/bloquinho_storage_service.dart';
 import '../../../core/constants/page_icons.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
+import 'package:flutter/rendering.dart';
+import '../../../core/services/bloquinho_storage_service.dart';
 
 class BlocoEditorScreen extends ConsumerStatefulWidget {
   final String? documentId;
@@ -560,6 +563,9 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   void _editPageTitle(PageModel? page, AppStrings strings) {
     if (page == null) return;
 
+    // Remover foco do editor antes de abrir o diálogo
+    FocusScope.of(context).unfocus();
+
     final titleController = TextEditingController(text: page.title);
 
     showDialog(
@@ -602,7 +608,14 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
           ),
         ],
       ),
-    );
+    ).then((_) {
+      // Após fechar o diálogo, devolver o foco ao editor principal
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          FocusScope.of(context).requestFocus(_editorFocusNode);
+        }
+      });
+    });
   }
 
   Widget _buildBody(bool isDarkMode, EditorControllerState editorState,
@@ -805,8 +818,9 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         ref.read(editorControllerProvider.notifier).getDocumentStats();
     final wordCount = stats['wordCount'] ?? 0;
     final charCount = stats['characterCount'] ?? 0;
+    final lineCount = stats['lineCount'] ?? 0;
 
-    return strings.wordAndCharCount(wordCount, charCount);
+    return '${strings.wordAndCharCount(wordCount, charCount)} • Linhas: $lineCount';
   }
 
   // Event Handlers
@@ -921,6 +935,52 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     }
   }
 
+  Future<void> _exportDocumentWithPdfCapture(
+      PageModel currentPage, AppStrings strings) async {
+    try {
+      final key = GlobalKey();
+      final widgetToCapture = Material(
+        type: MaterialType.transparency,
+        child: Container(
+          width: 800,
+          padding: const EdgeInsets.all(20),
+          child: PageContentWidget(
+            key: key,
+            pageId: currentPage.id,
+            isEditing: false,
+          ),
+        ),
+      );
+
+      // Renderizar widget offstage
+      final boundary = await _captureWidgetAsImage(widgetToCapture, key);
+      if (boundary == null) throw Exception('Erro ao capturar widget para PDF');
+
+      // Gerar PDF
+      final pdfExportService = ref.read(pdfExportServiceProvider);
+      final file = await pdfExportService.exportImageToPdf(
+        imageBytes: boundary,
+        title: currentPage.title,
+        strings: strings,
+      );
+      _showSuccessSnackBar(
+          '${strings.documentExportedSuccessfully} - ${file.path}');
+    } catch (e) {
+      _showErrorSnackBar('${strings.errorExportingDocument}: ${e.toString()}');
+    }
+  }
+
+  Future<Uint8List?> _captureWidgetAsImage(Widget widget, GlobalKey key) async {
+    final repaintBoundary =
+        key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    if (repaintBoundary != null) {
+      final image = await repaintBoundary.toImage(pixelRatio: 2.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      return byteData?.buffer.asUint8List();
+    }
+    return null;
+  }
+
   void _exportDocument() {
     final strings = ref.read(appStringsProvider);
     final currentProfile = ref.read(currentProfileProvider);
@@ -946,24 +1006,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         onExport: (format) async {
           try {
             if (format == 'pdf') {
-              // Para PDF, precisamos capturar o widget de conteúdo
-              final contentWidget = _buildContentWidgetForExport(currentPage);
-
-              final data = await ref
-                  .read(editorControllerProvider.notifier)
-                  .exportDocument(
-                    format: format,
-                    page: currentPage,
-                    contentWidget: contentWidget,
-                  );
-
-              if (data['file'] != null) {
-                final file = data['file'] as File;
-                _showSuccessSnackBar(
-                    '${strings.documentExportedSuccessfully} - ${file.path}');
-              } else {
-                _showSuccessSnackBar(strings.documentExportedSuccessfully);
-              }
+              await _exportDocumentWithPdfCapture(currentPage, strings);
             } else {
               // Para outros formatos (markdown, html)
               final data = await ref
@@ -981,47 +1024,13 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   }
 
   Widget _buildContentWidgetForExport(PageModel page) {
-    // Criar um widget de conteúdo limpo para exportação
+    // Renderizar o preview real da página para exportação PDF
     return Container(
       width: 800, // Largura fixa para PDF
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Título da página
-          Text(
-            page.title,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Conteúdo da página (simulado)
-          Expanded(
-            child: FutureBuilder<String>(
-              future: loadPageContent(page.id),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return SingleChildScrollView(
-                    child: Text(
-                      snapshot.data!,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                  );
-                } else {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-              },
-            ),
-          ),
-        ],
+      child: PageContentWidget(
+        pageId: page.id,
+        isEditing: false,
       ),
     );
   }

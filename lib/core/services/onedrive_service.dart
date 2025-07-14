@@ -91,7 +91,6 @@ class OneDriveService extends CloudStorageService {
         return true;
       }
     } catch (e) {
-      print('Erro ao renovar token: $e');
     }
 
     return false;
@@ -135,7 +134,6 @@ class OneDriveService extends CloudStorageService {
 
       return false;
     } catch (e) {
-      print('Erro ao verificar subscrição: $e');
       return false;
     }
   }
@@ -202,7 +200,6 @@ class OneDriveService extends CloudStorageService {
 
       return false;
     } catch (e) {
-      print('Erro ao criar pasta do app: $e');
       return false;
     }
   }
@@ -704,7 +701,6 @@ class OneDriveService extends CloudStorageService {
         };
       }
     } catch (e) {
-      print('Erro ao obter informações do usuário: $e');
     }
 
     // Retornar dados mock em caso de erro
@@ -732,7 +728,6 @@ class OneDriveService extends CloudStorageService {
         return 'data:image/jpeg;base64,${base64Encode(bytes)}';
       }
     } catch (e) {
-      print('Erro ao obter foto do perfil: $e');
     }
 
     return null;

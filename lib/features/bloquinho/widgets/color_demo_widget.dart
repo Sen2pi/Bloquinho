@@ -69,8 +69,6 @@ class _ColorDemoWidgetState extends ConsumerState<ColorDemoWidget> {
                 'Este é um exemplo usando o widget DynamicColoredText com controles integrados!',
             showControls: true,
             onColorsChanged: (textColor, backgroundColor) {
-              print(
-                  'Cores alteradas via DynamicColoredText: texto=$textColor, fundo=$backgroundColor');
             },
           ),
         ],

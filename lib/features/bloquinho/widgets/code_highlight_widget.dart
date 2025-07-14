@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
+import 'package:screenshot/screenshot.dart';
 
 import '../models/code_theme.dart';
 import '../models/bloco_base_model.dart';
@@ -41,6 +42,7 @@ class CodeHighlightWidget extends ConsumerStatefulWidget {
 class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
   late ScrollController _scrollController;
   bool _isHovered = false;
+  final ScreenshotController _screenshotController = ScreenshotController();
 
   @override
   void initState() {
@@ -57,25 +59,32 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(isDarkModeProvider);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: widget.theme.backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: widget.theme.borderColor,
-          width: 1,
+    return Screenshot(
+      controller: _screenshotController,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: widget.theme.borderColor.withOpacity(0.3),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: widget.theme.backgroundColor.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          _buildHeader(isDarkMode),
-
-          // Code content
-          _buildCodeContent(),
-        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header com ícones de janela e botões sempre visível
+            _buildHeader(isDarkMode),
+            _buildCodeContent(),
+          ],
+        ),
       ),
     );
   }
@@ -85,40 +94,31 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
         ProgrammingLanguage.defaultLanguage;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: widget.theme.headerBackgroundColor.withOpacity(0.95),
+        color: Colors.transparent,
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(8),
-          topRight: Radius.circular(8),
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(12),
         ),
         border: Border(
           bottom: BorderSide(
-            color: widget.theme.borderColor,
+            color: widget.theme.borderColor.withOpacity(0.3),
             width: 1,
           ),
         ),
       ),
       child: Row(
         children: [
-          // Pontos de janela estilo Mac
-          Row(
-            children: [
-              _buildWindowDot(Colors.red),
-              const SizedBox(width: 4),
-              _buildWindowDot(Colors.amber),
-              const SizedBox(width: 4),
-              _buildWindowDot(Colors.green),
-              const SizedBox(width: 12),
-            ],
-          ),
+          // Ícones de janela estilo Mac (vermelho, amarelo, verde)
+
           // Language info
           Row(
             children: [
               if (language.icon != null)
                 Text(
                   language.icon!,
-                  style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(fontSize: 18),
                 ),
               const SizedBox(width: 8),
               Text(
@@ -132,6 +132,16 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
             ],
           ),
           const Spacer(),
+          Row(
+            children: [
+              _buildWindowDot(Colors.red),
+              const SizedBox(width: 6),
+              _buildWindowDot(Colors.amber),
+              const SizedBox(width: 6),
+              _buildWindowDot(Colors.green),
+              const SizedBox(width: 16),
+            ],
+          ),
           // Action buttons
           if (widget.showCopyButton)
             _buildActionButton(
@@ -152,12 +162,19 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
 
   Widget _buildWindowDot(Color color) {
     return Container(
-      width: 10,
-      height: 10,
+      width: 12,
+      height: 12,
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.black.withOpacity(0.12), width: 1),
+        border: Border.all(color: Colors.black.withOpacity(0.15), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
     );
   }
@@ -170,15 +187,21 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedOpacity(
-        opacity: _isHovered ? 1.0 : 0.7,
+      child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: _isHovered
+              ? widget.theme.headerTextColor.withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
         child: IconButton(
           onPressed: onPressed,
-          icon: Icon(icon, size: 16),
+          icon: Icon(icon, size: 18),
           tooltip: tooltip,
           color: widget.theme.headerTextColor,
-          hoverColor: widget.theme.headerTextColor.withOpacity(0.1),
+          hoverColor: Colors.transparent,
+          padding: const EdgeInsets.all(8),
         ),
       ),
     );
@@ -187,33 +210,32 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
   Widget _buildCodeContent() {
     final lines = widget.code.split('\n');
 
-    return Center(
-      child: Container(
-        width: MediaQuery.of(context).size.width *
-            0.8, // 80% da largura da área de conteúdo
-        constraints: const BoxConstraints(
-            minHeight: 100, maxWidth: 900), // Limite máximo para desktop
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          scrollDirection: Axis.horizontal,
-          child: IntrinsicWidth(
-            child: SingleChildScrollView(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Line numbers
-                  if (widget.showLineNumbers) _buildLineNumbers(lines),
-
-                  // Code content
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      child: _buildHighlightedCode(lines),
-                    ),
-                  ),
-                ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.transparent, // Fundo sempre transparente
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+      ),
+      width: double.infinity,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.showLineNumbers) _buildLineNumbers(lines),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  color:
+                      Colors.transparent, // Fundo transparente atrás do código
+                  child: _buildHighlightedCode(lines),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -222,13 +244,13 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
 
   Widget _buildLineNumbers(List<String> lines) {
     return Container(
-      width: 60, // Aumentado de 50 para 60
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      width: 60,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: widget.theme.lineNumberBackgroundColor,
+        color: Colors.transparent, // Fundo transparente atrás dos números
         border: Border(
           right: BorderSide(
-            color: widget.theme.borderColor,
+            color: widget.theme.borderColor.withOpacity(0.3),
             width: 1,
           ),
         ),
@@ -237,15 +259,13 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: lines.asMap().entries.map((entry) {
           final index = entry.key;
-          final line = entry.value;
-
           return Container(
-            height: 20,
+            height: 22,
             alignment: Alignment.centerRight,
             child: Text(
               '${index + 1}',
               style: TextStyle(
-                color: widget.theme.lineNumberColor,
+                color: widget.theme.lineNumberColor.withOpacity(0.7),
                 fontSize: 12,
                 fontFamily: 'Courier',
                 fontWeight: FontWeight.w500,
@@ -262,7 +282,7 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: lines.map((line) {
         return Container(
-          height: 20,
+          height: 22,
           child: _buildHighlightedLine(line),
         );
       }).toList(),
@@ -271,7 +291,7 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
 
   Widget _buildHighlightedLine(String line) {
     if (line.isEmpty) {
-      return const SizedBox(height: 20);
+      return const SizedBox(height: 22);
     }
 
     // Simple syntax highlighting (can be enhanced with a proper parser)
@@ -283,7 +303,7 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
           color: widget.theme.textColor,
           fontSize: 14,
           fontFamily: 'Courier',
-          height: 1.4,
+          height: 1.5,
         ),
         children: highlightedSpans,
       ),
@@ -510,118 +530,89 @@ class _CodeHighlightWidgetState extends ConsumerState<CodeHighlightWidget> {
   }
 
   void _exportAsImage() async {
-    // Renderizar o widget como imagem
-    final boundaryKey = GlobalKey();
-    final codeWidget = RepaintBoundary(
-      key: boundaryKey,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.transparent, // Fundo transparente para exportação
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: widget.theme.borderColor, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: widget.theme.backgroundColor.withOpacity(0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(24),
-        width: 700,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header estilizado com pontos de janela
-            Row(
-              children: [
-                _buildWindowDot(Colors.red),
-                const SizedBox(width: 4),
-                _buildWindowDot(Colors.amber),
-                const SizedBox(width: 4),
-                _buildWindowDot(Colors.green),
-                const SizedBox(width: 12),
-                if (ProgrammingLanguage.getByCode(widget.language)?.icon !=
-                    null)
-                  Text(
-                    ProgrammingLanguage.getByCode(widget.language)!.icon!,
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                const SizedBox(width: 8),
-                Text(
-                  ProgrammingLanguage.getByCode(widget.language)?.displayName ??
-                      'Código',
-                  style: TextStyle(
-                    color: widget.theme.headerTextColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  widget.theme.displayName,
-                  style: TextStyle(
-                    color: widget.theme.headerTextColor.withOpacity(0.7),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Código propriamente dito
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.transparent, // Fundo transparente
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: _buildHighlightedCode(widget.code.split('\n')),
-            ),
-          ],
-        ),
-      ),
-    );
+    try {
+      // Capturar screenshot do widget
+      final image = await _screenshotController.capture(
+        delay: const Duration(milliseconds: 100),
+        pixelRatio: 2.0,
+      );
 
-    // Exibir diálogo de preview e salvar imagem
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: widget.theme.backgroundColor,
-          content: SizedBox(
-            width: 720,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                codeWidget,
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.download),
-                  label: const Text('Salvar como imagem'),
-                  onPressed: () async {
-                    RenderRepaintBoundary boundary = boundaryKey.currentContext!
-                        .findRenderObject() as RenderRepaintBoundary;
-                    var image = await boundary.toImage(pixelRatio: 2.0);
-                    ByteData? byteData =
-                        await image.toByteData(format: ui.ImageByteFormat.png);
-                    if (byteData != null) {
-                      final pngBytes = byteData.buffer.asUint8List();
-                      // Salvar arquivo usando file_picker ou outro método
-                      // TODO: Implementar salvar arquivo no sistema
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text(
-                                'Imagem gerada! (Salvar em arquivo ainda não implementado)')),
-                      );
-                    }
-                  },
+      if (image != null) {
+        // Mostrar preview da imagem
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              backgroundColor: widget.theme.backgroundColor,
+              content: SizedBox(
+                width: 600,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Preview da imagem
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: widget.theme.borderColor.withOpacity(0.3),
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.memory(
+                          image,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Botões de ação
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.download),
+                          label: const Text('Salvar'),
+                          onPressed: () async {
+                            // TODO: Implementar salvamento de arquivo
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Funcionalidade de salvamento em desenvolvimento'),
+                              ),
+                            );
+                          },
+                        ),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.share),
+                          label: const Text('Compartilhar'),
+                          onPressed: () async {
+                            // TODO: Implementar compartilhamento
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Funcionalidade de compartilhamento em desenvolvimento'),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
-      },
-    );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao gerar imagem: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
 
@@ -640,8 +631,8 @@ class CodeImageExporter {
       final canvas = Canvas(recorder);
       final paint = Paint();
 
-      // Background
-      paint.color = theme.backgroundColor;
+      // Background transparente
+      paint.color = Colors.transparent;
       canvas.drawRect(Rect.fromLTWH(0, 0, width, height), paint);
 
       // TODO: Implement full image rendering

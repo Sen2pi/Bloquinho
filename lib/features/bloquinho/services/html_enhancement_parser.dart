@@ -272,7 +272,7 @@ class HtmlEnhancementParser {
         final color = textColors[colorName];
 
         if (color != null) {
-          return '<span style="color: #${_colorToHex(color)}">$text</span>';
+          return '<bloquinho-color value="$colorName">$text</bloquinho-color>';
         }
         return match.group(0)!;
       },
@@ -289,7 +289,7 @@ class HtmlEnhancementParser {
         final color = backgroundColorColors[colorName];
 
         if (color != null) {
-          return '<span style="background-color: #${_colorToHex(color)}">$text</span>';
+          return '<bloquinho-bg color="$colorName">$text</bloquinho-bg>';
         }
         return match.group(0)!;
       },

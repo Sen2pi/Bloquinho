@@ -220,6 +220,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(8),
+                shrinkWrap: true,
                 children: [
                   // Seções principais
                   ...workspaceSections.map((section) {
@@ -383,7 +384,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                       section: section,
                       isDarkMode: isDarkMode,
                     );
-                  }),
+                  }).toList(),
 
                   const SizedBox(height: 24),
 
@@ -945,6 +946,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Indicador de estado da nuvem
           if (_isSidebarExpanded) ...[
@@ -979,13 +981,28 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                       message: aiStatus.status == AIStatus.online
                           ? 'Bloquinho AI: Connected'
                           : 'Bloquinho AI: Disconnected',
-                      child: Image.asset(
-                        'assets/images/BloquinhoAi.png',
-                        width: 18,
-                        height: 18,
-                        color: aiStatus.status == AIStatus.online
-                            ? Colors.green
-                            : Colors.red,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/images/BloquinhoAi.png',
+                            width: 18,
+                            height: 18,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            aiStatus.status == AIStatus.online
+                                ? 'AI OK'
+                                : 'AI KO',
+                            style: TextStyle(
+                              color: aiStatus.status == AIStatus.online
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -1010,114 +1027,102 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
           // Perfil do usuário
           if (_isSidebarExpanded) ...[
-            Builder(
-              builder: (context) {
-                debugPrint(
-                    '🔍 WorkspaceScreen - currentProfile: ${currentProfile?.name}');
-                debugPrint(
-                    '🔍 WorkspaceScreen - currentProfile avatarPath: ${currentProfile?.avatarPath}');
-                debugPrint(
-                    '🔍 WorkspaceScreen - currentProfile avatarUrl: ${currentProfile?.avatarUrl}');
-                debugPrint(
-                    '🔍 WorkspaceScreen - currentProfile hasCustomAvatar: ${currentProfile?.hasCustomAvatar}');
-
-                return Row(
-                  children: [
-                    // Avatar
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () => context.pushNamed('profile'),
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: currentProfile != null
-                              ? ProfileAvatar(
-                                  profile: currentProfile,
-                                  size: 32,
-                                  showLoadingIndicator: false,
-                                )
-                              : CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: AppColors.primary,
-                                  child: const Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                ),
-                        ),
-                      ),
+            Row(
+              children: [
+                // Avatar
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => context.pushNamed('profile'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: currentProfile != null
+                          ? ProfileAvatar(
+                              profile: currentProfile,
+                              size: 32,
+                              showLoadingIndicator: false,
+                            )
+                          : CircleAvatar(
+                              radius: 16,
+                              backgroundColor: AppColors.primary,
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            currentProfile?.name ?? 'Usuário',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (currentProfile?.email != null)
-                            Text(
-                              currentProfile.email,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        currentProfile?.name ?? 'Usuário',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (currentProfile?.email != null)
+                        Text(
+                          currentProfile.email,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Colors.grey[600],
                                   ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+                // Menu de opções do usuário
+                PopupMenuButton<String>(
+                  onSelected: (value) => _handleUserMenuAction(value),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'profile',
+                      child: Row(
+                        children: [
+                          Icon(Icons.person),
+                          SizedBox(width: 12),
+                          Text('Perfil'),
                         ],
                       ),
                     ),
-                    // Menu de opções do usuário
-                    PopupMenuButton<String>(
-                      onSelected: (value) => _handleUserMenuAction(value),
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'profile',
-                          child: ListTile(
-                            leading: Icon(Icons.person),
-                            title: Text('Perfil'),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'settings',
-                          child: ListTile(
-                            leading: Icon(Icons.settings),
-                            title: Text('Configurações'),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                        const PopupMenuDivider(),
-                        const PopupMenuItem(
-                          value: 'logout',
-                          child: ListTile(
-                            leading: Icon(Icons.logout),
-                            title: Text('Sair'),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                      ],
-                      child: Icon(
-                        Icons.more_horiz,
-                        size: 20,
-                        color: Colors.grey[600],
+                    const PopupMenuItem(
+                      value: 'settings',
+                      child: Row(
+                        children: [
+                          Icon(Icons.settings),
+                          SizedBox(width: 12),
+                          Text('Configurações'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout),
+                          SizedBox(width: 12),
+                          Text('Sair'),
+                        ],
                       ),
                     ),
                   ],
-                );
-              },
+                  child: Icon(
+                    Icons.more_horiz,
+                    size: 20,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
             ),
           ] else ...[
             // Avatar compacto quando collapsed

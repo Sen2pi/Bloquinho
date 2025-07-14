@@ -14,17 +14,17 @@ class AIService {
   static Future<String> generateMarkdownContent(String prompt,
       {String? model, required WidgetRef ref}) async {
     try {
-      debugPrint('🤖 Tentando Google AI...');
+      
       return await _generateWithGoogleAI(prompt, ref);
     } catch (e) {
-      debugPrint('❌ Google AI falhou: $e');
+      
       final huggingFaceToken = AIConfig.getHuggingFaceToken(ref);
       if (huggingFaceToken.isNotEmpty) {
         try {
-          debugPrint('🤖 Tentando Hugging Face...');
+          
           return await _generateWithHuggingFace(prompt, model, ref);
         } catch (e) {
-          debugPrint('❌ Hugging Face falhou: $e');
+          
           return _generateFallbackContent(prompt);
         }
       } else {
@@ -127,7 +127,7 @@ class AIService {
       // Trata casos de conteúdo bloqueado
       if (data['promptFeedback'] != null) {
         final blockReason = data['promptFeedback']['blockReason'];
-        debugPrint('Conteúdo bloqueado por: $blockReason.');
+        
         throw Exception(
             'O conteúdo foi bloqueado por políticas de segurança. Motivo: $blockReason');
       }
@@ -161,8 +161,7 @@ class AIService {
       final currentModel = modelsToTry[i];
 
       try {
-        debugPrint(
-            '🤖 Tentando modelo: $currentModel (${i + 1}/${modelsToTry.length})');
+        
 
         final uri = Uri.parse('$_huggingFaceBaseUrl/$currentModel');
         final response = await http.post(
@@ -190,19 +189,19 @@ class AIService {
           final result = _extractGeneratedText(response.body);
           if (result.isNotEmpty &&
               !result.contains('Nenhum conteúdo foi gerado')) {
-            debugPrint('✅ Sucesso com modelo: $currentModel');
+            
             return result;
           }
           // Se o resultado for vazio, trata como falha e tenta o próximo
-          debugPrint('⚠️ Modelo $currentModel retornou resposta vazia.');
+          
         } else if (response.statusCode == 401) {
           throw Exception(
               'Token do Hugging Face inválido. Configure um token válido em Configurações de IA.');
         } else {
-          debugPrint('⚠️ Modelo $currentModel falhou: ${response.statusCode}');
+          
         }
       } catch (e) {
-        debugPrint('❌ Erro com modelo $currentModel: $e');
+        
         if (e.toString().contains('Token do Hugging Face inválido')) {
           rethrow;
         }
@@ -253,7 +252,7 @@ class AIService {
       final cleanText = _removeOriginalPrompt(generatedText);
       return _ensureMarkdownFormat(cleanText);
     } catch (e) {
-      debugPrint('❌ Erro ao processar resposta do Hugging Face: $e');
+      
       return ''; // Retorna vazio para indicar falha
     }
   }
@@ -318,7 +317,7 @@ Este documento foi gerado automaticamente sobre o tema: **$prompt**.
         if (response.statusCode == 200) return true;
       }
     } catch (e) {
-      debugPrint('Google AI não disponível: $e');
+      
     }
 
     try {
@@ -331,7 +330,7 @@ Este documento foi gerado automaticamente sobre o tema: **$prompt**.
         return response.statusCode == 200;
       }
     } catch (e) {
-      debugPrint('Hugging Face não disponível: $e');
+      
     }
 
     return false;

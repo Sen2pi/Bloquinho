@@ -1,5 +1,48 @@
 import 'package:flutter/material.dart';
 
+/// Enum para linguagens de programação suportadas nos blocos de código
+enum ProgrammingLanguage {
+  dart('dart', 'Dart', '🎯'),
+  python('python', 'Python', '🐍'),
+  javascript('javascript', 'JavaScript', '🟨'),
+  typescript('typescript', 'TypeScript', '🟦'),
+  java('java', 'Java', '☕'),
+  csharp('csharp', 'C#', '♯'),
+  cpp('cpp', 'C++', '➕'),
+  c('c', 'C', '🅲'),
+  go('go', 'Go', '💙'),
+  rust('rust', 'Rust', '🦀'),
+  php('php', 'PHP', '🐘'),
+  ruby('ruby', 'Ruby', '💎'),
+  swift('swift', 'Swift', '🦅'),
+  kotlin('kotlin', 'Kotlin', '🟪'),
+  html('html', 'HTML', '🌐'),
+  css('css', 'CSS', '🎨'),
+  json('json', 'JSON', '🔢'),
+  yaml('yaml', 'YAML', '📄'),
+  markdown('markdown', 'Markdown', '📝'),
+  shell('shell', 'Shell', '💻'),
+  sql('sql', 'SQL', '🗄️'),
+  text('text', 'Texto', '📄');
+
+  final String code;
+  final String displayName;
+  final String icon;
+  const ProgrammingLanguage(this.code, this.displayName, this.icon);
+
+  static ProgrammingLanguage get defaultLanguage => ProgrammingLanguage.text;
+
+  static List<ProgrammingLanguage> get languages => ProgrammingLanguage.values;
+
+  static ProgrammingLanguage? getByCode(String code) {
+    try {
+      return ProgrammingLanguage.values.firstWhere((lang) => lang.code == code);
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
 /// Tema para blocos de código
 class CodeTheme {
   final String name;
@@ -460,228 +503,74 @@ class CodeTheme {
   }
 }
 
-/// Linguagem de programação
-class ProgrammingLanguage {
-  final String code;
-  final String name;
-  final String displayName;
-  final List<String> fileExtensions;
-  final String? icon;
+class LanguageSyntax {
+  final RegExp keywordPattern;
+  final RegExp variablePattern;
+  final RegExp stringPattern;
+  final RegExp numberPattern;
+  final RegExp commentPattern;
+  final RegExp functionPattern;
+  final RegExp classPattern;
+  final RegExp operatorPattern;
+  final RegExp punctuationPattern;
 
-  const ProgrammingLanguage({
-    required this.code,
-    required this.name,
-    required this.displayName,
-    required this.fileExtensions,
-    this.icon,
+  const LanguageSyntax({
+    required this.keywordPattern,
+    required this.variablePattern,
+    required this.stringPattern,
+    required this.numberPattern,
+    required this.commentPattern,
+    required this.functionPattern,
+    required this.classPattern,
+    required this.operatorPattern,
+    required this.punctuationPattern,
   });
+}
 
-  /// Linguagens suportadas
-  static const List<ProgrammingLanguage> languages = [
-    // Web
-    ProgrammingLanguage(
-      code: 'html',
-      name: 'HTML',
-      displayName: 'HTML',
-      fileExtensions: ['html', 'htm'],
-      icon: '🌐',
-    ),
-    ProgrammingLanguage(
-      code: 'css',
-      name: 'CSS',
-      displayName: 'CSS',
-      fileExtensions: ['css'],
-      icon: '🎨',
-    ),
-    ProgrammingLanguage(
-      code: 'javascript',
-      name: 'JavaScript',
-      displayName: 'JavaScript',
-      fileExtensions: ['js', 'jsx', 'ts', 'tsx'],
-      icon: '⚡',
-    ),
-    ProgrammingLanguage(
-      code: 'typescript',
-      name: 'TypeScript',
-      displayName: 'TypeScript',
-      fileExtensions: ['ts', 'tsx'],
-      icon: '📘',
-    ),
+// Sintaxes por linguagem
+final Map<String, LanguageSyntax> _languageSyntaxes = {
+  'python': LanguageSyntax(
+    keywordPattern: RegExp(
+        r'\b(def|class|if|else|elif|for|while|return|import|from|as|with|try|except|finally|raise|pass|break|continue|lambda|yield|global|nonlocal|assert|del|in|is|not|or|and)\b'),
+    variablePattern: RegExp(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b'),
+    stringPattern: RegExp(
+        r"""'''(?:[^'\\]|\\.)*'''|\"\"\"(?:[^"\\]|\\.)*\"\"\"|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*" """),
+    numberPattern: RegExp(r'\b\d+\.?\d*\b'),
+    commentPattern: RegExp(r'#.*'),
+    functionPattern: RegExp(r'\bdef ([a-zA-Z_][a-zA-Z0-9_]*)'),
+    classPattern: RegExp(r'\bclass ([a-zA-Z_][a-zA-Z0-9_]*)'),
+    operatorPattern: RegExp(r'[+\-*/%=<>!&|^~]'),
+    punctuationPattern: RegExp(r'[(){}\[\];:,.]'),
+  ),
+  'javascript': LanguageSyntax(
+    keywordPattern: RegExp(
+        r'\b(const|let|var|function|return|if|else|for|while|class|export|import|async|await|new|this|super|extends|try|catch|finally|throw|break|continue|switch|case|default|typeof|instanceof|in|of|do|void|delete)\b'),
+    variablePattern: RegExp(r'\b[a-zA-Z_\$][a-zA-Z0-9_\$]*\b'),
+    stringPattern: RegExp(
+        r"""'''(?:[^'\\]|\\.)*'''|\"\"\"(?:[^"\\]|\\.)*\"\"\"|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*" """),
+    numberPattern: RegExp(r'\b\d+\.?\d*\b'),
+    commentPattern: RegExp(r'//.*|/\*[\s\S]*?\*/'),
+    functionPattern: RegExp(r'\bfunction ([a-zA-Z_\$][a-zA-Z0-9_\$]*)'),
+    classPattern: RegExp(r'\bclass ([a-zA-Z_\$][a-zA-Z0-9_\$]*)'),
+    operatorPattern: RegExp(r'[+\-*/%=<>!&|^~]'),
+    punctuationPattern: RegExp(r'[(){}\[\];:,.]'),
+  ),
+  // Fallback genérico
+  'text': LanguageSyntax(
+    keywordPattern: RegExp(r''),
+    variablePattern: RegExp(r''),
+    stringPattern: RegExp(r''),
+    numberPattern: RegExp(r''),
+    commentPattern: RegExp(r''),
+    functionPattern: RegExp(r''),
+    classPattern: RegExp(r''),
+    operatorPattern: RegExp(r''),
+    punctuationPattern: RegExp(r''),
+  ),
+};
 
-    // Mobile & Desktop
-    ProgrammingLanguage(
-      code: 'dart',
-      name: 'Dart',
-      displayName: 'Dart',
-      fileExtensions: ['dart'],
-      icon: '🎯',
-    ),
-    ProgrammingLanguage(
-      code: 'swift',
-      name: 'Swift',
-      displayName: 'Swift',
-      fileExtensions: ['swift'],
-      icon: '🍎',
-    ),
-    ProgrammingLanguage(
-      code: 'kotlin',
-      name: 'Kotlin',
-      displayName: 'Kotlin',
-      fileExtensions: ['kt', 'kts'],
-      icon: '🤖',
-    ),
-
-    // Backend
-    ProgrammingLanguage(
-      code: 'python',
-      name: 'Python',
-      displayName: 'Python',
-      fileExtensions: ['py', 'pyw'],
-      icon: '🐍',
-    ),
-    ProgrammingLanguage(
-      code: 'java',
-      name: 'Java',
-      displayName: 'Java',
-      fileExtensions: ['java'],
-      icon: '☕',
-    ),
-    ProgrammingLanguage(
-      code: 'csharp',
-      name: 'C#',
-      displayName: 'C#',
-      fileExtensions: ['cs'],
-      icon: '💎',
-    ),
-    ProgrammingLanguage(
-      code: 'php',
-      name: 'PHP',
-      displayName: 'PHP',
-      fileExtensions: ['php'],
-      icon: '🐘',
-    ),
-    ProgrammingLanguage(
-      code: 'ruby',
-      name: 'Ruby',
-      displayName: 'Ruby',
-      fileExtensions: ['rb'],
-      icon: '💎',
-    ),
-    ProgrammingLanguage(
-      code: 'go',
-      name: 'Go',
-      displayName: 'Go',
-      fileExtensions: ['go'],
-      icon: '🚀',
-    ),
-    ProgrammingLanguage(
-      code: 'rust',
-      name: 'Rust',
-      displayName: 'Rust',
-      fileExtensions: ['rs'],
-      icon: '🦀',
-    ),
-
-    // C/C++
-    ProgrammingLanguage(
-      code: 'c',
-      name: 'C',
-      displayName: 'C',
-      fileExtensions: ['c', 'h'],
-      icon: '🔧',
-    ),
-    ProgrammingLanguage(
-      code: 'cpp',
-      name: 'C++',
-      displayName: 'C++',
-      fileExtensions: ['cpp', 'cc', 'cxx', 'hpp'],
-      icon: '⚙️',
-    ),
-
-    // Data & Config
-    ProgrammingLanguage(
-      code: 'json',
-      name: 'JSON',
-      displayName: 'JSON',
-      fileExtensions: ['json'],
-      icon: '📄',
-    ),
-    ProgrammingLanguage(
-      code: 'xml',
-      name: 'XML',
-      displayName: 'XML',
-      fileExtensions: ['xml'],
-      icon: '📋',
-    ),
-    ProgrammingLanguage(
-      code: 'yaml',
-      name: 'YAML',
-      displayName: 'YAML',
-      fileExtensions: ['yml', 'yaml'],
-      icon: '⚙️',
-    ),
-    ProgrammingLanguage(
-      code: 'sql',
-      name: 'SQL',
-      displayName: 'SQL',
-      fileExtensions: ['sql'],
-      icon: '🗄️',
-    ),
-
-    // Shell & Scripts
-    ProgrammingLanguage(
-      code: 'bash',
-      name: 'Bash',
-      displayName: 'Bash',
-      fileExtensions: ['sh', 'bash'],
-      icon: '💻',
-    ),
-    ProgrammingLanguage(
-      code: 'powershell',
-      name: 'PowerShell',
-      displayName: 'PowerShell',
-      fileExtensions: ['ps1'],
-      icon: '⚡',
-    ),
-
-    // Markup
-    ProgrammingLanguage(
-      code: 'markdown',
-      name: 'Markdown',
-      displayName: 'Markdown',
-      fileExtensions: ['md', 'markdown'],
-      icon: '📝',
-    ),
-
-    // Generic
-    ProgrammingLanguage(
-      code: 'text',
-      name: 'Text',
-      displayName: 'Text',
-      fileExtensions: ['txt'],
-      icon: '📄',
-    ),
-  ];
-
-  /// Obter linguagem por código
-  static ProgrammingLanguage? getByCode(String code) {
-    try {
-      return languages.firstWhere((lang) => lang.code == code);
-    } catch (e) {
-      return null;
-    }
+extension CodeThemeSyntaxExt on CodeTheme {
+  static LanguageSyntax getSyntax(String languageCode) {
+    return _languageSyntaxes[languageCode] ?? _languageSyntaxes['javascript']!;
   }
-
-  /// Obter linguagem por extensão de arquivo
-  static ProgrammingLanguage? getByExtension(String extension) {
-    final ext = extension.toLowerCase().replaceAll('.', '');
-    try {
-      return languages.firstWhere((lang) => lang.fileExtensions.contains(ext));
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Linguagem padrão
-  static ProgrammingLanguage get defaultLanguage => languages.first;
 }

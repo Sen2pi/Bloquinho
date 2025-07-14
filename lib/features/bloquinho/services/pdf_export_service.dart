@@ -319,6 +319,79 @@ class PdfExportService {
     }
   }
 
+  /// Exportar imagem PNG para PDF
+  Future<File> exportImageToPdf({
+    required Uint8List imageBytes,
+    required String title,
+    required AppStrings strings,
+    bool includeHeader = true,
+    bool includeFooter = true,
+    PdfPageFormat pageFormat = PdfPageFormat.a4,
+  }) async {
+    try {
+      final pdf = pw.Document();
+      pdf.addPage(
+        pw.Page(
+          pageFormat: pageFormat,
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (includeHeader) ...[
+                  pw.Text(
+                    title,
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.Divider(),
+                  pw.SizedBox(height: 20),
+                ],
+                pw.Expanded(
+                  child: pw.Image(
+                    pw.MemoryImage(imageBytes),
+                    fit: pw.BoxFit.contain,
+                  ),
+                ),
+                if (includeFooter) ...[
+                  pw.SizedBox(height: 20),
+                  pw.Divider(),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        'Bloquinho',
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          color: PdfColors.grey,
+                        ),
+                      ),
+                      pw.Text(
+                        'Exportado em: ${DateTime.now().toString().split('.')[0]}',
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          color: PdfColors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+      );
+      final output = await getTemporaryDirectory();
+      final file = File(
+          '${output.path}/${title.replaceAll(RegExp(r'[^ -\u007F]+'), '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf');
+      await file.writeAsBytes(await pdf.save());
+      return file;
+    } catch (e) {
+      throw Exception('Erro ao exportar PDF: $e');
+    }
+  }
+
   /// Converter markdown para HTML simples
   String _convertMarkdownToHtml(String markdown) {
     // Implementação simples de conversão markdown para HTML

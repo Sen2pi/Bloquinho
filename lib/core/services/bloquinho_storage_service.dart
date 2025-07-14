@@ -45,7 +45,7 @@ class BloquinhoStorageService {
 
       return bloquinhoDir;
     } catch (e) {
-      debugPrint('❌ Erro ao obter diretório do Bloquinho: $e');
+      
       return null;
     }
   }
@@ -77,10 +77,10 @@ class BloquinhoStorageService {
         await bloquinhoDir.create(recursive: true);
       }
 
-      debugPrint('✅ Diretório do Bloquinho criado: ${bloquinhoDir.path}');
+      
       return bloquinhoDir;
     } catch (e) {
-      debugPrint('❌ Erro ao criar diretório do Bloquinho: $e');
+      
       throw Exception('Erro ao criar diretório do Bloquinho: $e');
     }
   }
@@ -95,7 +95,6 @@ class BloquinhoStorageService {
 
       // Se não existir, criar automaticamente
       if (bloquinhoDir == null) {
-        debugPrint('🔄 Criando diretório do Bloquinho automaticamente...');
         bloquinhoDir =
             await createBloquinhoDirectory(profileName, workspaceName);
       }
@@ -154,7 +153,6 @@ class BloquinhoStorageService {
       await _savePageMetadata(page, bloquinhoDir.path);
       // Removido debugPrint de ícone e página salva
     } catch (e) {
-      debugPrint('❌ Erro ao salvar página: $e');
       throw Exception('Erro ao salvar página: $e');
     }
   }
@@ -176,7 +174,6 @@ class BloquinhoStorageService {
 
       return metadata.copyWith(content: content);
     } catch (e) {
-      debugPrint('❌ Erro ao carregar página: $e');
       return null;
     }
   }
@@ -197,10 +194,8 @@ class BloquinhoStorageService {
       // Atualizar childrenIds baseado na hierarquia carregada
       _updateChildrenIds(pages);
 
-      debugPrint('✅ Estrutura hierárquica carregada: ${pages.length} páginas');
       return pages;
     } catch (e) {
-      debugPrint('❌ Erro ao carregar páginas: $e');
       return [];
     }
   }
@@ -317,7 +312,6 @@ class BloquinhoStorageService {
         await _loadHierarchicalStructureTree(directory, pages, parentId);
       }
     } catch (e) {
-      debugPrint('❌ Erro ao carregar estrutura hierárquica: $e');
     }
   }
 
@@ -345,7 +339,6 @@ class BloquinhoStorageService {
       }
     }
 
-    debugPrint('🔄 ChildrenIds atualizados para ${pages.length} páginas');
   }
 
   /// Renomear página (arquivo e pasta)
@@ -358,7 +351,6 @@ class BloquinhoStorageService {
 
       // Se não existir, criar automaticamente
       if (bloquinhoDir == null) {
-        debugPrint('🔄 Criando diretório do Bloquinho automaticamente...');
         bloquinhoDir =
             await createBloquinhoDirectory(profileName, workspaceName);
       }
@@ -399,9 +391,7 @@ class BloquinhoStorageService {
       // Atualizar metadados
       await _savePageMetadata(newPage, bloquinhoDir.path);
 
-      debugPrint('✅ Página renomeada: $oldPath -> $newPath');
     } catch (e) {
-      debugPrint('❌ Erro ao renomear página: $e');
       throw Exception('Erro ao renomear página: $e');
     }
   }
@@ -434,21 +424,15 @@ class BloquinhoStorageService {
           final files = await bloquinhoDir.list().toList();
           if (files.isEmpty) {
             await bloquinhoDir.delete(recursive: true);
-            debugPrint('  ✅ Pasta do Bloquinho removida (vazia)');
           }
         } catch (e) {
-          debugPrint(
-              '  ⚠️ Não foi possível remover pasta do Bloquinho (pode estar em uso): $e');
         }
       } else {
         await metadataFile.writeAsString(json.encode(metadata));
       }
       if (idsToRemove.isNotEmpty) {
-        debugPrint(
-            '🧹 Metadados limpos: páginas corrompidas removidas: ${idsToRemove.join(', ')}');
       }
     } catch (e) {
-      debugPrint('❌ Erro ao limpar metadados corrompidos: $e');
     }
   }
 
@@ -456,7 +440,6 @@ class BloquinhoStorageService {
   Future<void> deletePage(
       String pageId, String profileName, String workspaceName) async {
     try {
-      debugPrint('🗑️ Iniciando deleção da página: $pageId');
 
       // Tentar obter diretório existente
       Directory? bloquinhoDir =
@@ -464,7 +447,6 @@ class BloquinhoStorageService {
 
       // Se não existir, criar automaticamente
       if (bloquinhoDir == null) {
-        debugPrint('🔄 Criando diretório do Bloquinho automaticamente...');
         bloquinhoDir =
             await createBloquinhoDirectory(profileName, workspaceName);
       }
@@ -472,15 +454,12 @@ class BloquinhoStorageService {
       // Carregar página para obter informações
       final page = await loadPage(pageId, profileName, workspaceName);
       if (page == null) {
-        debugPrint('⚠️ Página não encontrada para deleção: $pageId');
         return;
       }
 
-      debugPrint('🗑️ Deletando página: ${page.title}');
 
       // Primeiro, deletar todas as subpáginas recursivamente
       for (final childId in page.childrenIds) {
-        debugPrint('  🗑️ Deletando subpágina: $childId');
         await deletePage(childId, profileName, workspaceName);
       }
 
@@ -544,16 +523,12 @@ class BloquinhoStorageService {
         }
       }
 
-      debugPrint('  🗑️ Caminho do arquivo: $filePath');
-      debugPrint('  🗑️ Caminho da pasta: $pageDirPath');
 
       // Deletar arquivo da página
       final pageFile = File(filePath);
       if (await pageFile.exists()) {
         await pageFile.delete();
-        debugPrint('  ✅ Arquivo deletado: $filePath');
       } else {
-        debugPrint('  ⚠️ Arquivo não encontrado: $filePath');
       }
 
       // Deletar pasta da página (e todas as subpáginas)
@@ -561,37 +536,27 @@ class BloquinhoStorageService {
       if (await pageDir.exists()) {
         try {
           await pageDir.delete(recursive: true);
-          debugPrint('  ✅ Pasta deletada: $pageDirPath');
         } catch (e) {
-          debugPrint('  ⚠️ Erro ao deletar pasta (pode estar em uso): $e');
           // Tentar deletar arquivos individualmente se a pasta não puder ser removida
           try {
             final files = await pageDir.list().toList();
             for (final file in files) {
               if (file is File) {
                 await file.delete();
-                debugPrint('  ✅ Arquivo deletado: ${file.path}');
               }
             }
-            debugPrint(
-                '  ⚠️ Pasta não pôde ser removida, mas arquivos foram deletados');
           } catch (e2) {
-            debugPrint('  ⚠️ Erro ao deletar arquivos individuais: $e2');
           }
         }
       } else {
-        debugPrint('  ⚠️ Pasta não encontrada: $pageDirPath');
       }
 
       // Deletar metadados
       await _deletePageMetadata(pageId, bloquinhoDir.path);
-      debugPrint('  ✅ Metadados deletados');
 
-      debugPrint('✅ Página deletada completamente: ${page.title}');
       // Limpeza extra após deleção
       await cleanCorruptedPagesAndMetadata(profileName, workspaceName);
     } catch (e) {
-      debugPrint('❌ Erro ao deletar página: $e');
       throw Exception('Erro ao deletar página: $e');
     }
   }
@@ -612,11 +577,8 @@ class BloquinhoStorageService {
       await _importPagesRecursively(
           sourceDir, bloquinhoDir, importedPages, null);
 
-      debugPrint(
-          '✅ Importação concluída: ${importedPages.length} páginas importadas');
       return importedPages;
     } catch (e) {
-      debugPrint('❌ Erro ao importar do Notion: $e');
       throw Exception('Erro ao importar do Notion: $e');
     }
   }
@@ -644,10 +606,8 @@ class BloquinhoStorageService {
       await _copyDirectoryRecursively(
           workspaceDir, Directory(path.dirname(exportPath)));
 
-      debugPrint('✅ Workspace exportado: $exportPath');
       return zipFile;
     } catch (e) {
-      debugPrint('❌ Erro ao exportar workspace: $e');
       throw Exception('Erro ao exportar workspace: $e');
     }
   }
@@ -684,7 +644,6 @@ class BloquinhoStorageService {
 
       // Removido debugPrint de metadados salvos
     } catch (e) {
-      debugPrint('❌ Erro ao salvar metadados: $e');
     }
   }
 
@@ -709,7 +668,6 @@ class BloquinhoStorageService {
 
       return page;
     } catch (e) {
-      debugPrint('❌ Erro ao carregar metadados: $e');
       return null;
     }
   }
@@ -726,7 +684,6 @@ class BloquinhoStorageService {
       metadata.remove(pageId);
       await metadataFile.writeAsString(json.encode(metadata));
     } catch (e) {
-      debugPrint('❌ Erro ao deletar metadados: $e');
     }
   }
 
@@ -747,7 +704,6 @@ class BloquinhoStorageService {
       }
       return '';
     } catch (e) {
-      debugPrint('❌ Erro ao carregar conteúdo: $e');
       return '';
     }
   }
@@ -810,7 +766,6 @@ class BloquinhoStorageService {
         }
       }
     } catch (e) {
-      debugPrint('❌ Erro ao importar páginas recursivamente: $e');
     }
   }
 
@@ -896,7 +851,6 @@ class BloquinhoStorageService {
 
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao buscar página por ID: $e');
       return null;
     }
   }

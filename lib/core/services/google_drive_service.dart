@@ -87,7 +87,6 @@ class GoogleDriveService extends CloudStorageService {
         return true;
       }
     } catch (e) {
-      print('Erro ao renovar token: $e');
     }
 
     return false;
@@ -576,7 +575,6 @@ class GoogleDriveService extends CloudStorageService {
         return json.decode(response.body);
       }
     } catch (e) {
-      print('Erro ao obter informações do usuário: $e');
     }
 
     // Retornar dados mock em caso de erro

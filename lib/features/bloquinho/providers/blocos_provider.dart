@@ -496,7 +496,6 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
 
     // TODO: Implementar sistema de undo/redo
     // Por enquanto, placeholder
-    debugPrint('Undo solicitado');
   }
 
   /// Refazer última ação desfeita
@@ -505,21 +504,18 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
 
     // TODO: Implementar sistema de undo/redo
     // Por enquanto, placeholder
-    debugPrint('Redo solicitado');
   }
 
   /// Salvar estado atual no histórico
   void _saveToHistory() {
     // TODO: Implementar sistema de histórico
     // Por enquanto, placeholder
-    debugPrint('Estado salvo no histórico');
   }
 
   /// Salvar automaticamente
   void _autoSave() {
     // TODO: Implementar auto-save
     // Por enquanto, placeholder
-    debugPrint('Auto-save executado');
   }
 
   /// Salvar manualmente

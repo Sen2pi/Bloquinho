@@ -32,10 +32,7 @@ class DatabaseService {
       await _workspaceStorage.initialize();
       await _loadTables();
       _initialized = true;
-      debugPrint(
-          '✅ DatabaseService inicializado com ${_tables.length} tabelas');
     } catch (e) {
-      debugPrint('❌ Erro ao inicializar DatabaseService: $e');
       rethrow;
     }
   }
@@ -69,7 +66,6 @@ class DatabaseService {
         _tables = [];
       }
     } catch (e) {
-      debugPrint('❌ Erro ao carregar tabelas: $e');
       _tables = [];
     }
   }
@@ -86,7 +82,6 @@ class DatabaseService {
       // Também salvar em arquivos locais para backup
       await _saveToLocalFiles();
     } catch (e) {
-      debugPrint('❌ Erro ao salvar tabelas: $e');
       rethrow;
     }
   }
@@ -123,9 +118,7 @@ class DatabaseService {
         'lastUpdated': DateTime.now().toIso8601String(),
       }));
 
-      debugPrint('💾 Backup das tabelas salvo em: ${databaseDir.path}');
     } catch (e) {
-      debugPrint('⚠️ Erro ao salvar backup local: $e');
       // Não falhar se o backup local falhar
     }
   }
@@ -137,18 +130,12 @@ class DatabaseService {
     final previousWorkspace = _currentWorkspaceId;
     _currentWorkspaceId = workspaceId;
 
-    debugPrint('🔄 Workspace mudou: $previousWorkspace → $workspaceId');
-    debugPrint('📊 Total de tabelas: ${_tables.length}');
 
     // Migrar tabelas sem workspaceId para o workspace atual
     _migrateOrphanTables();
 
     final filteredTables = tables;
-    debugPrint(
-        '🔍 Tabelas no workspace "$workspaceId": ${filteredTables.length}');
-    for (final table in filteredTables) {
-      debugPrint('  - ${table.name} (workspace: ${table.workspaceId})');
-    }
+
   }
 
   /// Obter workspace atual
@@ -161,8 +148,6 @@ class DatabaseService {
     for (int i = 0; i < _tables.length; i++) {
       final table = _tables[i];
       if (table.workspaceId == null) {
-        debugPrint(
-            '🔄 Migrando tabela órfã "${table.name}" para workspace "$_currentWorkspaceId"');
         _tables[i] = table.copyWith(workspaceId: _currentWorkspaceId);
         hasChanges = true;
       }
@@ -170,15 +155,12 @@ class DatabaseService {
 
     if (hasChanges) {
       _saveTables(); // Salvar mudanças de migração
-      debugPrint('✅ Migração de tabelas órfãs concluída');
     }
   }
 
   /// Obtém todas as tabelas do workspace atual
   List<DatabaseTable> get tables {
     if (_currentWorkspaceId == null) {
-      debugPrint(
-          '⚠️ Nenhum workspace selecionado, retornando todas as tabelas');
       return List.unmodifiable(_tables);
     }
 
@@ -186,8 +168,6 @@ class DatabaseService {
         .where((table) => table.workspaceId == _currentWorkspaceId)
         .toList();
 
-    debugPrint(
-        '🔍 Filtrando tabelas para workspace "$_currentWorkspaceId": ${filtered.length}/${_tables.length}');
 
     return List.unmodifiable(filtered);
   }
@@ -232,8 +212,6 @@ class DatabaseService {
     _tables.add(table);
     await _saveTables();
 
-    debugPrint(
-        '✅ Tabela criada: ${table.name} (workspace: ${table.workspaceId})');
     return table;
   }
 
@@ -249,7 +227,6 @@ class DatabaseService {
       );
       _tables[index] = updatedTable;
       await _saveTables();
-      debugPrint('✅ Tabela atualizada: ${table.name}');
       return updatedTable;
     }
     return table;
@@ -261,7 +238,6 @@ class DatabaseService {
 
     _tables.removeWhere((table) => table.id == tableId);
     await _saveTables();
-    debugPrint('🗑️ Tabela deletada: $tableId');
   }
 
   /// Adiciona uma coluna à tabela
@@ -445,7 +421,6 @@ class DatabaseService {
     _tables.add(duplicatedTable);
     await _saveTables();
 
-    debugPrint('✅ Tabela duplicada: ${duplicatedTable.name}');
     return duplicatedTable;
   }
 
@@ -466,7 +441,6 @@ class DatabaseService {
     _tables.add(importedTable);
     await _saveTables();
 
-    debugPrint('✅ Tabela importada: ${importedTable.name}');
     return importedTable;
   }
 
@@ -558,6 +532,5 @@ class DatabaseService {
   Future<void> refresh() async {
     _tables.clear();
     await _loadTables();
-    debugPrint('🔄 DatabaseService recarregado');
   }
 }

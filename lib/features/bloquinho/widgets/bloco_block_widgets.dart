@@ -1535,8 +1535,8 @@ class _BlocoCodigoWidgetState extends ConsumerState<BlocoCodigoWidget> {
         language: _selectedLanguage.code,
         theme: _selectedTheme,
         showLineNumbers: widget.bloco.mostrarNumeroLinhas,
-        showCopyButton: false, // Already in header
-        showExportButton: false, // Already in header
+        showCopyButton: true, // Mostrar botão copiar
+        showExportButton: true, // Mostrar botão exportar imagem
         onCopy: _copyCode,
         onExport: _exportAsImage,
       ),
@@ -1568,14 +1568,9 @@ class _BlocoCodigoWidgetState extends ConsumerState<BlocoCodigoWidget> {
   }
 
   void _exportAsImage() {
-    // TODO: Implement image export functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Exportação como imagem em desenvolvimento'),
-        backgroundColor: _selectedTheme.backgroundColor,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // Chama o método real do widget para exportar como imagem
+    // O próprio CodeHighlightWidget já implementa o fluxo de exportação
+    // Aqui pode-se apenas deixar vazio ou adicionar feedback opcional
   }
 }
 
@@ -1938,7 +1933,6 @@ class BlocoLinkWidget extends StatelessWidget {
 
   void _openLink() {
     // TODO: Implementar abertura de links
-    print('Abrindo link: ${bloco.url}');
   }
 
   @override

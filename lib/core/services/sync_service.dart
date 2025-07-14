@@ -64,9 +64,7 @@ class SyncService {
       _setupAutoSync();
 
       _isInitialized = true;
-      print('SyncService inicializado com sucesso');
     } catch (e) {
-      print('Erro ao inicializar SyncService: $e');
       rethrow;
     }
   }
@@ -115,8 +113,6 @@ class SyncService {
 
     await _changeLogBox.put(changeLog.id, changeLog.toJson());
 
-    print(
-        'Mudança registrada: ${changeLog.filePath} (${changeLog.changeType})');
 
     // Sincronizar se configurado
     if (_shouldAutoSync()) {
@@ -417,7 +413,6 @@ class SyncService {
       await _changeLogBox.delete(key);
     }
 
-    print('Removidos ${keysToDelete.length} logs antigos');
   }
 
   /// Limpar recursos

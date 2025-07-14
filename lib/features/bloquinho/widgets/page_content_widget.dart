@@ -8,6 +8,7 @@ import 'dart:async';
 import '../models/page_model.dart';
 import '../models/bloquinho_slash_command.dart';
 import '../providers/pages_provider.dart';
+import '../providers/editor_controller_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../screens/bloco_editor_screen.dart';
 import '../../../shared/providers/user_profile_provider.dart';
@@ -46,27 +47,68 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
   String _slashQuery = '';
   bool _slashMenuLocked = false;
   TextSelection? _selectedText;
+  String _pageContent = ''; // Adicionado para armazenar o conteúdo da página
+  Timer? _updateProviderTimer; // Adicionado para debounce
 
   @override
   void initState() {
     super.initState();
     _textController = TextEditingController();
     _editing = false; // Sempre em modo visualização por padrão
-    _loadContentFromFile();
+    _loadPageContent();
+    _initializeEditorContent();
     _editorFocusNode.addListener(_onFocusChange);
 
     // Adicionar listener para detectar seleção de texto
     _textController.addListener(_onTextSelectionChanged);
   }
 
-  Future<void> _loadContentFromFile() async {
+  void _initializeEditorContent() {
+    // Inicializar o provider com o conteúdo da página para contagem imediata
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pageContent.isNotEmpty) {
+        ref.read(editorControllerProvider.notifier).state = ref
+            .read(editorControllerProvider.notifier)
+            .state
+            .copyWith(content: _pageContent);
+      }
+    });
+  }
+
+  Future<void> _loadPageContent() async {
     // Busca o método do editor principal para carregar o conteúdo
     final state = context.findAncestorStateOfType<BlocoEditorScreenState>();
     if (state != null) {
       final content = await state.loadPageContent(widget.pageId);
+      final finalContent =
+          content.isNotEmpty ? content : getPageContent(widget.pageId);
       setState(() {
-        _textController.text =
-            content.isNotEmpty ? content : getPageContent(widget.pageId);
+        _pageContent = finalContent;
+        _textController.text = finalContent;
+      });
+      // Inicializar provider após carregar o conteúdo
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(editorControllerProvider.notifier).state = ref
+              .read(editorControllerProvider.notifier)
+              .state
+              .copyWith(content: finalContent);
+        }
+      });
+    } else {
+      final content = getPageContent(widget.pageId);
+      setState(() {
+        _pageContent = content;
+        _textController.text = content;
+      });
+      // Inicializar provider após carregar o conteúdo
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(editorControllerProvider.notifier).state = ref
+              .read(editorControllerProvider.notifier)
+              .state
+              .copyWith(content: content);
+        }
       });
     }
   }
@@ -82,11 +124,10 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
 
   @override
   void dispose() {
-    _textController.dispose();
     _autoSaveTimer?.cancel();
+    _updateProviderTimer?.cancel();
+    _textController.dispose();
     _editorFocusNode.dispose();
-    _removeSlashMenu();
-    _removeFormatMenu(); // Limpar o menu de formatação
     super.dispose();
   }
 
@@ -103,6 +144,18 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
     _autoSaveTimer = Timer(const Duration(seconds: 2), () {
       _autoSaveContent(text);
     });
+
+    // Debounce para evitar múltiplas atualizações do provider
+    _updateProviderTimer?.cancel();
+    _updateProviderTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        ref.read(editorControllerProvider.notifier).state = ref
+            .read(editorControllerProvider.notifier)
+            .state
+            .copyWith(content: text);
+      }
+    });
+
     _detectSlashCommand();
   }
 
@@ -315,6 +368,7 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
 
     String formattedText = selectedText;
 
+    // Permitir combinação de formatações: aplica a tag ao texto já formatado
     switch (formatType) {
       case 'bold':
         formattedText = '**$selectedText**';
@@ -359,6 +413,7 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
         return; // Não aplicar formatação desconhecida
     }
 
+    // Se o texto já tem tags, permite aninhar (ex: <color><u>texto</u></color>)
     final newText =
         text.substring(0, start) + formattedText + text.substring(end);
     _textController.text = newText;
@@ -570,8 +625,6 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
                     showControls: true,
                     onColorsChanged: (textColor, backgroundColor) {
                       // Callback quando as cores mudam
-                      print(
-                          'Cores alteradas: texto=$textColor, fundo=$backgroundColor');
                     },
                   ),
 

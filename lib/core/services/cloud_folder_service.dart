@@ -28,7 +28,6 @@ class CloudFolderService {
       throw Exception('Cliente Google Drive não disponível');
     }
 
-    debugPrint('🗂️ Criando estrutura de pastas no Google Drive...');
 
     final Map<String, String> folderIds = {};
 
@@ -41,9 +40,7 @@ class CloudFolderService {
         // Criar pasta principal
         appFolderId =
             await _createGoogleDriveFolder(client, _appFolderName, null);
-        debugPrint('✅ Pasta principal criada: $_appFolderName');
       } else {
-        debugPrint('📁 Pasta principal já existe: $_appFolderName');
       }
 
       folderIds['root'] = appFolderId;
@@ -60,9 +57,7 @@ class CloudFolderService {
         if (folderId == null) {
           folderId =
               await _createGoogleDriveFolder(client, folderName, appFolderId);
-          debugPrint('✅ Subpasta criada: $folderName');
         } else {
-          debugPrint('📁 Subpasta já existe: $folderName');
         }
 
         folderIds[folderName] = folderId;
@@ -75,19 +70,15 @@ class CloudFolderService {
           if (subFolderId == null) {
             subFolderId =
                 await _createGoogleDriveFolder(client, subFolder, folderId);
-            debugPrint('✅ Sub-subpasta criada: $folderName/$subFolder');
           } else {
-            debugPrint('📁 Sub-subpasta já existe: $folderName/$subFolder');
           }
 
           folderIds['$folderName/$subFolder'] = subFolderId;
         }
       }
 
-      debugPrint('🎉 Estrutura Google Drive criada com sucesso!');
       return folderIds;
     } catch (e) {
-      debugPrint('❌ Erro ao criar estrutura Google Drive: $e');
       rethrow;
     }
   }
@@ -99,7 +90,6 @@ class CloudFolderService {
       throw Exception('Cliente OneDrive não disponível');
     }
 
-    debugPrint('🗂️ Criando estrutura de pastas no OneDrive...');
 
     final Map<String, String> folderIds = {};
 
@@ -111,9 +101,7 @@ class CloudFolderService {
       if (appFolderId == null) {
         // Criar pasta principal
         appFolderId = await _createOneDriveFolder(client, _appFolderName, null);
-        debugPrint('✅ Pasta principal criada: $_appFolderName');
       } else {
-        debugPrint('📁 Pasta principal já existe: $_appFolderName');
       }
 
       folderIds['root'] = appFolderId;
@@ -130,9 +118,7 @@ class CloudFolderService {
         if (folderId == null) {
           folderId =
               await _createOneDriveFolder(client, folderName, appFolderId);
-          debugPrint('✅ Subpasta criada: $folderName');
         } else {
-          debugPrint('📁 Subpasta já existe: $folderName');
         }
 
         folderIds[folderName] = folderId;
@@ -145,19 +131,15 @@ class CloudFolderService {
           if (subFolderId == null) {
             subFolderId =
                 await _createOneDriveFolder(client, subFolder, folderId);
-            debugPrint('✅ Sub-subpasta criada: $folderName/$subFolder');
           } else {
-            debugPrint('📁 Sub-subpasta já existe: $folderName/$subFolder');
           }
 
           folderIds['$folderName/$subFolder'] = subFolderId;
         }
       }
 
-      debugPrint('🎉 Estrutura OneDrive criada com sucesso!');
       return folderIds;
     } catch (e) {
-      debugPrint('❌ Erro ao criar estrutura OneDrive: $e');
       rethrow;
     }
   }
@@ -165,13 +147,11 @@ class CloudFolderService {
   /// Verificar e criar estrutura de pastas automaticamente
   static Future<bool> ensureCloudFoldersExist() async {
     try {
-      debugPrint('🔄 Verificando estrutura de pastas na nuvem...');
 
       bool hasGoogleDrive = await OAuth2Service.isGoogleAuthenticated();
       bool hasOneDrive = await OAuth2Service.isMicrosoftAuthenticated();
 
       if (!hasGoogleDrive && !hasOneDrive) {
-        debugPrint('📱 Nenhuma conexão na nuvem disponível');
         return false;
       }
 
@@ -179,24 +159,19 @@ class CloudFolderService {
       if (hasGoogleDrive) {
         try {
           await createGoogleDriveFolders();
-          debugPrint('✅ Estrutura Google Drive verificada/criada');
         } catch (e) {
-          debugPrint('⚠️ Erro na estrutura Google Drive: $e');
         }
       }
 
       if (hasOneDrive) {
         try {
           await createOneDriveFolders();
-          debugPrint('✅ Estrutura OneDrive verificada/criada');
         } catch (e) {
-          debugPrint('⚠️ Erro na estrutura OneDrive: $e');
         }
       }
 
       return true;
     } catch (e) {
-      debugPrint('❌ Erro ao verificar estrutura de pastas: $e');
       return false;
     }
   }
@@ -230,7 +205,6 @@ class CloudFolderService {
 
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao buscar pasta Google Drive: $e');
       return null;
     }
   }
@@ -285,7 +259,6 @@ class CloudFolderService {
 
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao buscar pasta OneDrive: $e');
       return null;
     }
   }
@@ -346,7 +319,6 @@ class CloudFolderService {
 
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao obter info da pasta: $e');
       return null;
     }
   }
@@ -384,7 +356,6 @@ class CloudFolderService {
 
       return [];
     } catch (e) {
-      debugPrint('❌ Erro ao listar conteúdo da pasta: $e');
       return [];
     }
   }

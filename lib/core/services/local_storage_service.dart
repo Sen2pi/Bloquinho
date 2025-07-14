@@ -45,9 +45,7 @@ class LocalStorageService {
       }
 
       _isInitialized = true;
-      debugPrint('✅ LocalStorageService inicializado: $_basePath');
     } catch (e) {
-      debugPrint('❌ Erro ao inicializar LocalStorageService: $e');
       throw Exception('Erro ao inicializar armazenamento local: $e');
     }
   }
@@ -80,7 +78,6 @@ class LocalStorageService {
 
       return false;
     } catch (e) {
-      debugPrint('❌ Erro ao verificar perfil existente: $e');
       return false;
     }
   }
@@ -109,15 +106,12 @@ class LocalStorageService {
             final profile = UserProfile.fromJson(profileData);
             profiles.add(profile);
           } catch (e) {
-            debugPrint(
-                '⚠️ Erro ao carregar perfil de ${profileFolder.path}: $e');
           }
         }
       }
 
       return profiles;
     } catch (e) {
-      debugPrint('❌ Erro ao obter perfis existentes: $e');
       return [];
     }
   }
@@ -157,10 +151,8 @@ class LocalStorageService {
       // Criar workspace padrão "Pessoal" apenas se não existir
       await ensureWorkspaceExists(profileName, 'Pessoal');
 
-      debugPrint('✅ Estrutura criada para perfil: $profilePath');
       return profilePath;
     } catch (e) {
-      debugPrint('❌ Erro ao criar estrutura do perfil: $e');
       throw Exception('Erro ao criar estrutura do perfil: $e');
     }
   }
@@ -177,7 +169,6 @@ class LocalStorageService {
 
       // Verificar se o workspace já existe
       if (await workspaceDir.exists()) {
-        debugPrint('✅ Workspace já existe: $workspacePath');
         return;
       }
 
@@ -193,7 +184,6 @@ class LocalStorageService {
 
         // Verificar se a pasta já existe
         if (await folderDir.exists()) {
-          debugPrint('✅ Pasta já existe: $folderPath');
           continue;
         }
 
@@ -203,9 +193,7 @@ class LocalStorageService {
         await _createDefaultFiles(folderPath, folder, workspaceName);
       }
 
-      debugPrint('✅ Estrutura do workspace criada: $workspacePath');
     } catch (e) {
-      debugPrint('❌ Erro ao criar estrutura do workspace: $e');
       throw Exception('Erro ao criar estrutura do workspace: $e');
     }
   }
@@ -290,9 +278,7 @@ Boa escrita! ✨
           break;
       }
 
-      debugPrint('✅ Arquivos padrão criados para: $folderType');
     } catch (e) {
-      debugPrint('❌ Erro ao criar arquivos padrão para $folderType: $e');
     }
   }
 
@@ -313,9 +299,7 @@ Boa escrita! ✨
       final profileJson = json.encode(profile.toJson());
       await settingsFile.writeAsString(profileJson);
 
-      debugPrint('✅ Perfil salvo: ${settingsFile.path}');
     } catch (e) {
-      debugPrint('❌ Erro ao salvar perfil: $e');
       throw Exception('Erro ao salvar perfil: $e');
     }
   }
@@ -326,7 +310,6 @@ Boa escrita! ✨
     await _ensureInitialized();
 
     if (kIsWeb) {
-      debugPrint('⚠️ Salvamento de foto não suportado no web');
       return null;
     }
 
@@ -347,10 +330,8 @@ Boa escrita! ✨
         throw Exception('Tipo de imagem não suportado');
       }
 
-      debugPrint('✅ Foto de perfil salva: $photoPath');
       return photoPath;
     } catch (e) {
-      debugPrint('❌ Erro ao salvar foto de perfil: $e');
       return null;
     }
   }
@@ -372,7 +353,6 @@ Boa escrita! ✨
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao obter foto de perfil: $e');
       return null;
     }
   }
@@ -395,7 +375,6 @@ Boa escrita! ✨
 
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao obter diretório de workspaces: $e');
       return null;
     }
   }
@@ -415,7 +394,6 @@ Boa escrita! ✨
 
       return await workspaceDir.exists();
     } catch (e) {
-      debugPrint('❌ Erro ao verificar existência do workspace: $e');
       return false;
     }
   }
@@ -433,7 +411,6 @@ Boa escrita! ✨
         await _createDefaultWorkspaceStructure(profileName, workspaceName);
       }
     } catch (e) {
-      debugPrint('❌ Erro ao garantir existência do workspace: $e');
     }
   }
 
@@ -457,7 +434,6 @@ Boa escrita! ✨
 
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao obter caminho do workspace: $e');
       return null;
     }
   }
@@ -475,7 +451,6 @@ Boa escrita! ✨
       // Verificar se o workspace já existe
       final exists = await workspaceExists(profileName, workspaceName);
       if (exists) {
-        debugPrint('✅ Workspace já existe: $workspaceName');
         return await getWorkspacePath(profileName, workspaceName);
       }
 
@@ -483,10 +458,8 @@ Boa escrita! ✨
       await _createDefaultWorkspaceStructure(profileName, workspaceName);
 
       final workspacePath = await getWorkspacePath(profileName, workspaceName);
-      debugPrint('✅ Workspace criado: $workspacePath');
       return workspacePath;
     } catch (e) {
-      debugPrint('❌ Erro ao criar workspace: $e');
       return null;
     }
   }
@@ -510,7 +483,6 @@ Boa escrita! ✨
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao obter workspace: $e');
       return null;
     }
   }
@@ -525,7 +497,6 @@ Boa escrita! ✨
       final workspaceFolders = entities.whereType<Directory>().toList();
       return workspaceFolders.map((dir) => path.basename(dir.path)).toList();
     } catch (e) {
-      debugPrint('❌ Erro ao listar workspaces: $e');
       return [];
     }
   }
@@ -545,10 +516,8 @@ Boa escrita! ✨
 
       if (await profileDir.exists()) {
         await profileDir.delete(recursive: true);
-        debugPrint('✅ Perfil deletado: $profilePath');
       }
     } catch (e) {
-      debugPrint('❌ Erro ao deletar perfil: $e');
       throw Exception('Erro ao deletar perfil: $e');
     }
   }
@@ -565,10 +534,8 @@ Boa escrita! ✨
       final profilesDir = Directory(path.join(_basePath!, _profileFolder));
       if (await profilesDir.exists()) {
         await profilesDir.delete(recursive: true);
-        debugPrint('✅ Todos os perfis deletados');
       }
     } catch (e) {
-      debugPrint('❌ Erro ao deletar todos os perfis: $e');
       throw Exception('Erro ao deletar todos os perfis: $e');
     }
   }
@@ -620,7 +587,6 @@ Boa escrita! ✨
         'basePath': _basePath,
       };
     } catch (e) {
-      debugPrint('❌ Erro ao obter estatísticas: $e');
       return {};
     }
   }
@@ -647,7 +613,6 @@ Boa escrita! ✨
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Erro ao obter dados: $e');
       return null;
     }
   }
@@ -681,9 +646,7 @@ Boa escrita! ✨
       final dataFile = File(path.join(profilePath, '${key}.json'));
 
       await dataFile.writeAsString(data);
-      debugPrint('✅ Dados salvos: ${dataFile.path}');
     } catch (e) {
-      debugPrint('❌ Erro ao salvar dados: $e');
       throw Exception('Erro ao salvar dados: $e');
     }
   }
@@ -692,7 +655,7 @@ Boa escrita! ✨
   String _sanitizeFileName(String name) {
     // Remover caracteres especiais e espaços
     return name
-        .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+        .replaceAll(RegExp(r'[<>:"/\|?*]'), '_')
         .replaceAll(' ', '_')
         .toLowerCase();
   }
@@ -827,7 +790,6 @@ Boa escrita! ✨
       final folderDir = Directory(folderPath);
       if (!await folderDir.exists()) {
         await folderDir.create(recursive: true);
-        debugPrint('✅ Pasta criada: $folderPath');
       }
 
       // Criar arquivo se não existir
@@ -835,12 +797,9 @@ Boa escrita! ✨
       final dataFile = File(filePath);
       if (!await dataFile.exists()) {
         await dataFile.writeAsString(defaultContent);
-        debugPrint('✅ Arquivo de dados criado: $filePath');
       } else {
-        debugPrint('✅ Arquivo de dados já existe: $filePath');
       }
     } catch (e) {
-      debugPrint('❌ Erro ao garantir arquivo de dados: $e');
       throw Exception('Erro ao criar arquivo de dados: $e');
     }
   }

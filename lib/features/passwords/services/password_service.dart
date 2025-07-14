@@ -423,7 +423,6 @@ class PasswordService {
         vaults.forEach((key, value) => _vaults[key] = value.toString());
       }
     } catch (e) {
-      debugPrint('Erro ao carregar vaults: $e');
     }
   }
 
@@ -432,7 +431,6 @@ class PasswordService {
     try {
       await _secureStorage.write(key: _vaultsKey, value: jsonEncode(_vaults));
     } catch (e) {
-      debugPrint('Erro ao salvar vaults: $e');
     }
   }
 
@@ -446,7 +444,6 @@ class PasswordService {
             .addAll(jsonDecode(settingsData) as Map<String, dynamic>);
       }
     } catch (e) {
-      debugPrint('Erro ao carregar configurações de segurança: $e');
     }
   }
 
@@ -456,7 +453,6 @@ class PasswordService {
       await _secureStorage.write(
           key: _settingsKey, value: jsonEncode(_securitySettings));
     } catch (e) {
-      debugPrint('Erro ao salvar configurações de segurança: $e');
     }
   }
 
