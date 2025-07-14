@@ -7,6 +7,8 @@ import '../providers/agenda_provider.dart';
 import '../models/agenda_item.dart';
 import 'agenda_item_card.dart';
 import 'add_agenda_item_dialog.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 class AgendaKanbanView extends ConsumerWidget {
   const AgendaKanbanView({super.key});
@@ -18,6 +20,7 @@ class AgendaKanbanView extends ConsumerWidget {
     final inProgressItems = ref.watch(inProgressItemsProvider);
     final doneItems = ref.watch(doneItemsProvider);
     final cancelledItems = ref.watch(cancelledItemsProvider);
+    final strings = ref.watch(appStringsProvider);
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -27,7 +30,7 @@ class AgendaKanbanView extends ConsumerWidget {
           Expanded(
             child: _buildKanbanColumn(
               context,
-              'A Fazer',
+              strings.statusTodo,
               todoItems,
               TaskStatus.todo,
               Colors.grey,
@@ -41,7 +44,7 @@ class AgendaKanbanView extends ConsumerWidget {
           Expanded(
             child: _buildKanbanColumn(
               context,
-              'Em Progresso',
+              strings.statusInProgress,
               inProgressItems,
               TaskStatus.inProgress,
               Colors.blue,
@@ -55,7 +58,7 @@ class AgendaKanbanView extends ConsumerWidget {
           Expanded(
             child: _buildKanbanColumn(
               context,
-              'Concluída',
+              strings.statusCompleted,
               doneItems,
               TaskStatus.done,
               Colors.green,
@@ -69,7 +72,7 @@ class AgendaKanbanView extends ConsumerWidget {
           Expanded(
             child: _buildKanbanColumn(
               context,
-              'Cancelada',
+              strings.statusCancelled,
               cancelledItems,
               TaskStatus.cancelled,
               Colors.red,
@@ -91,6 +94,7 @@ class AgendaKanbanView extends ConsumerWidget {
     bool isDarkMode,
     WidgetRef ref,
   ) {
+    final strings = ref.watch(appStringsProvider);
     return Container(
       decoration: BoxDecoration(
         color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
@@ -150,7 +154,7 @@ class AgendaKanbanView extends ConsumerWidget {
           // Lista de itens
           Expanded(
             child: items.isEmpty
-                ? _buildEmptyColumn(context, title, isDarkMode)
+                ? _buildEmptyColumn(context, title, isDarkMode, strings)
                 : ListView.builder(
                     padding: const EdgeInsets.all(8),
                     itemCount: items.length,
@@ -167,11 +171,12 @@ class AgendaKanbanView extends ConsumerWidget {
                               width: 280,
                               child: AgendaItemCard(
                                 item: item,
-                                onTap: () => _showItemDetails(context, item),
+                                onTap: () =>
+                                    _showItemDetails(context, item, strings),
                                 onEdit: () =>
                                     _showEditItemDialog(context, item),
-                                onDelete: () =>
-                                    _showDeleteConfirmation(context, item),
+                                onDelete: () => _showDeleteConfirmation(
+                                    context, item, strings),
                               ),
                             ),
                           ),
@@ -194,11 +199,12 @@ class AgendaKanbanView extends ConsumerWidget {
                             builder: (context, candidateData, rejectedData) {
                               return AgendaItemCard(
                                 item: item,
-                                onTap: () => _showItemDetails(context, item),
+                                onTap: () =>
+                                    _showItemDetails(context, item, strings),
                                 onEdit: () =>
                                     _showEditItemDialog(context, item),
-                                onDelete: () =>
-                                    _showDeleteConfirmation(context, item),
+                                onDelete: () => _showDeleteConfirmation(
+                                    context, item, strings),
                               );
                             },
                           ),
@@ -213,7 +219,7 @@ class AgendaKanbanView extends ConsumerWidget {
   }
 
   Widget _buildEmptyColumn(
-      BuildContext context, String title, bool isDarkMode) {
+      BuildContext context, String title, bool isDarkMode, AppStrings strings) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -225,14 +231,14 @@ class AgendaKanbanView extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Nenhum item',
+            strings.noItems,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: isDarkMode ? Colors.white70 : Colors.black54,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Arraste itens para cá',
+            strings.dragItemsHere,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey[600],
                 ),
@@ -248,12 +254,13 @@ class AgendaKanbanView extends ConsumerWidget {
     ref.read(agendaProvider.notifier).updateItemStatus(item.id, newStatus);
   }
 
-  void _showItemDetails(BuildContext context, AgendaItem item) {
+  void _showItemDetails(
+      BuildContext context, AgendaItem item, AppStrings strings) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _buildItemDetailsSheet(context, item),
+      builder: (context) => _buildItemDetailsSheet(context, item, strings),
     );
   }
 
@@ -264,16 +271,17 @@ class AgendaKanbanView extends ConsumerWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, AgendaItem item) {
+  void _showDeleteConfirmation(
+      BuildContext context, AgendaItem item, AppStrings strings) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirmar Exclusão'),
-        content: Text('Tem certeza que deseja excluir "${item.title}"?'),
+        title: Text(strings.confirmExclusion),
+        content: Text(strings.areYouSureYouWantToDelete(item.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+            child: Text(strings.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -281,14 +289,15 @@ class AgendaKanbanView extends ConsumerWidget {
               // Implementar exclusão
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Excluir'),
+            child: Text(strings.delete),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildItemDetailsSheet(BuildContext context, AgendaItem item) {
+  Widget _buildItemDetailsSheet(
+      BuildContext context, AgendaItem item, AppStrings strings) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
       decoration: BoxDecoration(
@@ -357,31 +366,34 @@ class AgendaKanbanView extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (item.description != null) ...[
-                    _buildDetailItem(
-                        context, 'Descrição', item.description!, null),
+                    _buildDetailItem(context, strings.description,
+                        item.description!, null, strings),
                     const SizedBox(height: 16),
                   ],
-                  _buildDetailItem(context, 'Data', item.displayDate, null),
+                  _buildDetailItem(
+                      context, strings.date, item.displayDate, null, strings),
                   if (item.displayTime.isNotEmpty)
-                    _buildDetailItem(context, 'Hora', item.displayTime, null),
-                  _buildDetailItem(
-                      context, 'Tipo', _getTypeText(item.type), null),
+                    _buildDetailItem(
+                        context, strings.time, item.displayTime, null, strings),
+                  _buildDetailItem(context, strings.type,
+                      _getTypeText(item.type, strings), null, strings),
                   if (item.status != null)
-                    _buildDetailItem(context, 'Status', item.statusText, null,
+                    _buildDetailItem(
+                        context, strings.status, item.statusText, null, strings,
                         color: item.statusColor),
-                  _buildDetailItem(
-                      context, 'Prioridade', item.priorityText, null,
+                  _buildDetailItem(context, strings.priority, item.priorityText,
+                      null, strings,
                       color: item.priorityColor),
                   if (item.attendees.isNotEmpty)
-                    _buildDetailItem(context, 'Participantes',
-                        item.attendees.join(', '), null),
+                    _buildDetailItem(context, strings.attendees,
+                        item.attendees.join(', '), null, strings),
                   if (item.tags.isNotEmpty)
-                    _buildDetailItem(
-                        context, 'Tags', item.tags.join(', '), null),
-                  _buildDetailItem(
-                      context, 'Criado', _formatDate(item.createdAt), null),
-                  _buildDetailItem(
-                      context, 'Atualizado', _formatDate(item.updatedAt), null),
+                    _buildDetailItem(context, strings.tags,
+                        item.tags.join(', '), null, strings),
+                  _buildDetailItem(context, strings.createdAt,
+                      _formatDate(item.createdAt), null, strings),
+                  _buildDetailItem(context, strings.updatedAt,
+                      _formatDate(item.updatedAt), null, strings),
                 ],
               ),
             ),
@@ -399,7 +411,7 @@ class AgendaKanbanView extends ConsumerWidget {
                       _showEditItemDialog(context, item);
                     },
                     icon: Icon(Icons.edit),
-                    label: const Text('Editar'),
+                    label: Text(strings.edit),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -410,7 +422,7 @@ class AgendaKanbanView extends ConsumerWidget {
                       // Implementar ação específica
                     },
                     icon: Icon(Icons.check),
-                    label: const Text('Concluir'),
+                    label: Text(strings.complete),
                   ),
                 ),
               ],
@@ -421,8 +433,8 @@ class AgendaKanbanView extends ConsumerWidget {
     );
   }
 
-  Widget _buildDetailItem(
-      BuildContext context, String label, String value, VoidCallback? onCopy,
+  Widget _buildDetailItem(BuildContext context, String label, String value,
+      VoidCallback? onCopy, AppStrings strings,
       {Color? color}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -451,7 +463,7 @@ class AgendaKanbanView extends ConsumerWidget {
                 IconButton(
                   onPressed: onCopy,
                   icon: Icon(Icons.copy),
-                  tooltip: 'Copiar',
+                  tooltip: strings.copy,
                 ),
             ],
           ),
@@ -460,16 +472,16 @@ class AgendaKanbanView extends ConsumerWidget {
     );
   }
 
-  String _getTypeText(AgendaItemType type) {
+  String _getTypeText(AgendaItemType type, AppStrings strings) {
     switch (type) {
       case AgendaItemType.event:
-        return 'Evento';
+        return strings.event;
       case AgendaItemType.task:
-        return 'Tarefa';
+        return strings.task;
       case AgendaItemType.reminder:
-        return 'Lembrete';
+        return strings.reminder;
       case AgendaItemType.meeting:
-        return 'Reunião';
+        return strings.meeting;
     }
   }
 

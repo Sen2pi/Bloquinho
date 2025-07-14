@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../models/agenda_item.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 class AgendaItemCard extends ConsumerWidget {
   final AgendaItem item;
@@ -22,6 +24,7 @@ class AgendaItemCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDarkMode = ref.watch(isDarkModeProvider);
+    final strings = ref.watch(appStringsProvider);
 
     return Card(
       elevation: 2,
@@ -121,24 +124,23 @@ class AgendaItemCard extends ConsumerWidget {
                       }
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'edit',
                         child: Row(
                           children: [
                             Icon(Icons.edit, size: 16),
                             SizedBox(width: 8),
-                            Text('Editar'),
+                            Text(strings.edit),
                           ],
                         ),
                       ),
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
                         child: Row(
                           children: [
                             Icon(Icons.delete, size: 16, color: Colors.red),
                             SizedBox(width: 8),
-                            Text('Excluir',
-                                style: TextStyle(color: Colors.red)),
+                            Text(strings.delete, style: TextStyle(color: Colors.red)),
                           ],
                         ),
                       ),
@@ -267,7 +269,7 @@ class AgendaItemCard extends ConsumerWidget {
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
-                                'Atrasado',
+                                strings.overdue,
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelSmall

@@ -4,6 +4,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/services/backup_service.dart';
 import '../../../shared/providers/backup_provider.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 class BackupRestoreDialog extends ConsumerStatefulWidget {
   final String? fileName;
@@ -35,6 +37,7 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
   }
 
   Future<void> _loadBackupData() async {
+    final strings = ref.read(appStringsProvider);
     try {
       setState(() {
         _isLoading = true;
@@ -49,9 +52,9 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
         final backupService = ref.read(backupServiceProvider);
         // Para backup local, precisaria implementar método para ler arquivo por nome
         throw UnimplementedError(
-            'Restauração de backup local por nome ainda não implementada');
+            strings.restoreNotImplemented);
       } else {
-        throw Exception('Nenhum backup fornecido');
+        throw Exception(strings.noBackupProvided);
       }
 
       final stats = {
@@ -77,6 +80,7 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final strings = ref.watch(appStringsProvider);
 
     return AlertDialog(
       title: Row(
@@ -86,35 +90,35 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
             color: colorScheme.primary,
           ),
           const SizedBox(width: 8),
-          const Text('Restaurar Backup'),
+          Text(strings.restoreBackup),
         ],
       ),
       content: SizedBox(
         width: double.maxFinite,
         child: _isLoading
-            ? const Column(
+            ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('Carregando informações do backup...'),
+                  Text(strings.loadingBackupInfo),
                 ],
               )
             : _error != null
-                ? _buildErrorContent(colorScheme)
-                : _buildContent(colorScheme),
+                ? _buildErrorContent(colorScheme, strings)
+                : _buildContent(colorScheme, strings),
       ),
       actions: _isLoading || _error != null
           ? [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Fechar'),
+                child: Text(strings.closeButton),
               ),
             ]
           : [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancelar'),
+                child: Text(strings.cancel),
               ),
               Consumer(
                 builder: (context, ref, child) {
@@ -133,7 +137,7 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
                             ),
                           )
                         : const Icon(PhosphorIconsRegular.downloadSimple),
-                    label: Text(isBusy ? 'Restaurando...' : 'Restaurar'),
+                    label: Text(isBusy ? strings.restoring : strings.restore),
                   );
                 },
               ),
@@ -141,7 +145,7 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
     );
   }
 
-  Widget _buildErrorContent(ColorScheme colorScheme) {
+  Widget _buildErrorContent(ColorScheme colorScheme, AppStrings strings) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -152,7 +156,7 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Erro ao carregar backup',
+          strings.errorLoadingBackup,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -171,21 +175,21 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
     );
   }
 
-  Widget _buildContent(ColorScheme colorScheme) {
+  Widget _buildContent(ColorScheme colorScheme, AppStrings strings) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildBackupInfo(colorScheme),
+        _buildBackupInfo(colorScheme, strings),
         const SizedBox(height: 20),
-        _buildOptions(colorScheme),
+        _buildOptions(colorScheme, strings),
         const SizedBox(height: 16),
-        _buildWarning(colorScheme),
+        _buildWarning(colorScheme, strings),
       ],
     );
   }
 
-  Widget _buildBackupInfo(ColorScheme colorScheme) {
+  Widget _buildBackupInfo(ColorScheme colorScheme, AppStrings strings) {
     if (_backupStats == null) return const SizedBox.shrink();
 
     return Container(
@@ -198,7 +202,7 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Informações do Backup',
+            strings.backupInfo,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -209,28 +213,28 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
           _buildInfoRow(
             colorScheme,
             PhosphorIconsRegular.folder,
-            'Workspaces',
+            strings.workspaces,
             _backupStats!['workspaces'].toString(),
           ),
           const SizedBox(height: 8),
           _buildInfoRow(
             colorScheme,
             PhosphorIconsRegular.file,
-            'Documentos',
+            strings.documents,
             _backupStats!['documents'].toString(),
           ),
           const SizedBox(height: 8),
           _buildInfoRow(
             colorScheme,
             PhosphorIconsRegular.cube,
-            'Blocos',
+            strings.blocks,
             _backupStats!['blocks'].toString(),
           ),
           const SizedBox(height: 8),
           _buildInfoRow(
             colorScheme,
             PhosphorIconsRegular.calendar,
-            'Criado em',
+            strings.createdAt,
             _formatDate(_backupStats!['createdAt'] as DateTime),
           ),
         ],
@@ -267,12 +271,12 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
     );
   }
 
-  Widget _buildOptions(ColorScheme colorScheme) {
+  Widget _buildOptions(ColorScheme colorScheme, AppStrings strings) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Opções de Restauração',
+          strings.restoreOptions,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -287,11 +291,11 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
               _clearExistingData = value ?? false;
             });
           },
-          title: const Text('Substituir dados existentes'),
+          title: Text(strings.replaceExistingData),
           subtitle: Text(
             _clearExistingData
-                ? 'Todos os dados atuais serão removidos antes da restauração'
-                : 'Os dados do backup serão mesclados com os existentes',
+                ? strings.allDataWillBeRemoved
+                : strings.backupDataWillBeMerged,
             style: TextStyle(
               fontSize: 12,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -306,9 +310,9 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
               _restoreSettings = value ?? true;
             });
           },
-          title: const Text('Restaurar configurações'),
+          title: Text(strings.restoreSettings),
           subtitle: Text(
-            'Incluir tema, idioma e outras preferências do backup',
+            strings.includeThemeLanguagePreferences,
             style: TextStyle(
               fontSize: 12,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -320,7 +324,7 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
     );
   }
 
-  Widget _buildWarning(ColorScheme colorScheme) {
+  Widget _buildWarning(ColorScheme colorScheme, AppStrings strings) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -340,7 +344,7 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Atenção',
+                  strings.attention,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onErrorContainer,
@@ -348,8 +352,8 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
                 ),
                 Text(
                   _clearExistingData
-                      ? 'Esta ação removerá permanentemente todos os seus dados atuais. Esta operação não pode ser desfeita.'
-                      : 'Esta ação modificará seus dados atuais. Recomendamos criar um backup antes de continuar.',
+                      ? strings.thisActionWillPermanentlyRemoveData
+                      : strings.thisActionWillModifyData,
                   style: TextStyle(
                     fontSize: 12,
                     color: colorScheme.onErrorContainer,
@@ -364,6 +368,7 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
   }
 
   Future<void> _restore() async {
+    final strings = ref.read(appStringsProvider);
     if (_backupData == null) return;
 
     try {
@@ -371,7 +376,7 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Backup restaurado com sucesso!'),
+            content: Text(strings.backupRestoredSuccessfully),
             backgroundColor: Theme.of(context).primaryColor,
           ),
         );
@@ -380,7 +385,7 @@ class _BackupRestoreDialogState extends ConsumerState<BackupRestoreDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro inesperado: $e'),
+            content: Text(strings.unexpectedError(e.toString())),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

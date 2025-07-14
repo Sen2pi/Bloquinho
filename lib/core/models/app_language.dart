@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 enum AppLanguage {
   portuguese('pt', 'BR', 'Português', '🇵🇹'),
   english('en', 'US', 'English', '🇺🇸'),
-  french('fr', 'FR', 'Français', '🇫🇷'),
-  spanish('es', 'ES', 'Español', '🇪🇸'),
-  german('de', 'DE', 'Deutsch', '🇩🇪'),
-  italian('it', 'IT', 'Italiano', '🇮🇹');
+  french('fr', 'FR', 'Français', '🇫🇷');
 
   const AppLanguage(
       this.languageCode, this.countryCode, this.displayName, this.flag);

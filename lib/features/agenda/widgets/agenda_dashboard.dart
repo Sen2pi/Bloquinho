@@ -5,6 +5,8 @@ import '../../../shared/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/agenda_provider.dart';
 import '../models/agenda_item.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 class AgendaDashboard extends ConsumerWidget {
   const AgendaDashboard({super.key});
@@ -13,6 +15,7 @@ class AgendaDashboard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDarkMode = ref.watch(isDarkModeProvider);
     final items = ref.watch(agendaItemsProvider);
+    final strings = ref.watch(appStringsProvider);
 
     // Filtrar eventos por período
     final todayItems = _getTodayItems(items);
@@ -34,7 +37,7 @@ class AgendaDashboard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Dashboard da Agenda',
+            strings.agendaDashboard,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: isDarkMode ? Colors.white : Colors.black87,
@@ -47,11 +50,12 @@ class AgendaDashboard extends ConsumerWidget {
               Expanded(
                 child: _buildDashboardCard(
                   context,
-                  'Hoje',
+                  strings.today,
                   todayItems,
                   Icons.today,
                   Colors.blue,
                   isDarkMode,
+                  strings,
                 ),
               ),
               const SizedBox(width: 12),
@@ -59,11 +63,12 @@ class AgendaDashboard extends ConsumerWidget {
               Expanded(
                 child: _buildDashboardCard(
                   context,
-                  'Esta Semana',
+                  strings.thisWeek,
                   thisWeekItems,
                   Icons.view_week,
                   Colors.green,
                   isDarkMode,
+                  strings,
                 ),
               ),
               const SizedBox(width: 12),
@@ -71,11 +76,12 @@ class AgendaDashboard extends ConsumerWidget {
               Expanded(
                 child: _buildDashboardCard(
                   context,
-                  'Este Mês',
+                  strings.thisMonth,
                   thisMonthItems,
                   Icons.calendar_month,
                   Colors.orange,
                   isDarkMode,
+                  strings,
                 ),
               ),
             ],
@@ -92,6 +98,7 @@ class AgendaDashboard extends ConsumerWidget {
     IconData icon,
     Color color,
     bool isDarkMode,
+    AppStrings strings,
   ) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -141,7 +148,7 @@ class AgendaDashboard extends ConsumerWidget {
           const SizedBox(height: 12),
           if (items.isEmpty)
             Text(
-              'Nenhum evento',
+              strings.noEvents,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.grey[600],
                   ),
@@ -150,14 +157,14 @@ class AgendaDashboard extends ConsumerWidget {
             Column(
               children: items
                   .take(3)
-                  .map((item) => _buildEventItem(context, item, isDarkMode))
+                  .map((item) => _buildEventItem(context, item, isDarkMode, strings))
                   .toList(),
             ),
           if (items.length > 3)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                '+${items.length - 3} mais',
+                strings.moreItems(items.length - 3),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: color,
                       fontWeight: FontWeight.w500,
@@ -170,7 +177,7 @@ class AgendaDashboard extends ConsumerWidget {
   }
 
   Widget _buildEventItem(
-      BuildContext context, AgendaItem item, bool isDarkMode) {
+      BuildContext context, AgendaItem item, bool isDarkMode, AppStrings strings) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -198,7 +205,7 @@ class AgendaDashboard extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  item.displayTime.isNotEmpty ? item.displayTime : 'Sem hora',
+                  item.displayTime.isNotEmpty ? item.displayTime : strings.noTime,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.grey[600],
                         fontSize: 11,

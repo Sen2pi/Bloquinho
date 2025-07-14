@@ -5,6 +5,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/user_profile_provider.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -60,6 +62,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(isDarkModeProvider);
+    final strings = ref.watch(appStringsProvider);
 
     return Scaffold(
       body: Container(
@@ -135,7 +138,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
             // Descrição
             Text(
-              'Seu workspace pessoal',
+              strings.personalWorkspace,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Colors.grey[600],
                   ),
@@ -169,13 +172,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 final isLoading = ref.watch(isProfileLoadingProvider);
                 final hasProfile = ref.watch(hasProfileProvider);
 
-                String statusText = 'Inicializando...';
+                String statusText = strings.initializing;
                 if (isLoading) {
-                  statusText = 'Carregando dados salvos...';
+                  statusText = strings.loadingSavedData;
                 } else if (hasProfile) {
-                  statusText = 'Perfil encontrado!';
+                  statusText = strings.profileFound;
                 } else {
-                  statusText = 'Primeiro acesso detectado';
+                  statusText = strings.firstAccessDetected;
                 }
 
                 return Text(

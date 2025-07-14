@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../models/bloquinho_slash_command.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../core/models/app_language.dart';
 
 class BloquinhoSlashMenu extends StatefulWidget {
   final String searchQuery;
@@ -38,15 +40,22 @@ class _BloquinhoSlashMenuState extends State<BloquinhoSlashMenu> {
   }
 
   void _filterCommands() {
+    final strings = AppStringsProvider.of(AppLanguage.portuguese);
     if (widget.searchQuery.isEmpty) {
-      _filteredCommands = BloquinhoSlashCommand.popularCommands;
+      _filteredCommands = BloquinhoSlashCommand.popularCommands(strings);
     } else {
-      _filteredCommands = BloquinhoSlashCommand.search(widget.searchQuery);
+      _filteredCommands =
+          BloquinhoSlashCommand.search(widget.searchQuery, strings);
     }
   }
 
   List<BloquinhoSlashCommand> _getCommandsByCategory(String category) {
     return _filteredCommands.where((cmd) => cmd.category == category).toList();
+  }
+
+  List<String> _getCategories() {
+    final strings = AppStringsProvider.of(AppLanguage.portuguese);
+    return strings.slashCommandCategories;
   }
 
   @override
@@ -236,7 +245,8 @@ class _BloquinhoSlashMenuState extends State<BloquinhoSlashMenu> {
   }
 
   Widget _buildCategorizedContent(bool isDarkMode) {
-    final categories = BloquinhoSlashCommand.categories;
+    final strings = AppStringsProvider.of(AppLanguage.portuguese);
+    final categories = BloquinhoSlashCommand.categories(strings);
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -257,6 +267,7 @@ class _BloquinhoSlashMenuState extends State<BloquinhoSlashMenu> {
     List<BloquinhoSlashCommand> commands,
     bool isDarkMode,
   ) {
+    final strings = AppStringsProvider.of(AppLanguage.portuguese);
     final categoryCommand = commands.first;
 
     return Column(
@@ -274,7 +285,7 @@ class _BloquinhoSlashMenuState extends State<BloquinhoSlashMenu> {
               ),
               const SizedBox(width: 8),
               Text(
-                categoryCommand.categoryName,
+                categoryCommand.getCategoryName(strings),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,

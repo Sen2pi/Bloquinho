@@ -3,8 +3,11 @@ import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/services/backup_service.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BackupCard extends StatelessWidget {
+class BackupCard extends ConsumerWidget {
   final BackupMetadata backup;
   final VoidCallback? onExport;
   final VoidCallback? onDelete;
@@ -19,8 +22,9 @@ class BackupCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final strings = ref.watch(appStringsProvider);
 
     return Card(
       elevation: 2,
@@ -33,18 +37,18 @@ class BackupCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(colorScheme),
+            _buildHeader(colorScheme, strings),
             const SizedBox(height: 12),
-            _buildDetails(colorScheme),
+            _buildDetails(colorScheme, strings),
             const SizedBox(height: 16),
-            _buildActions(colorScheme),
+            _buildActions(colorScheme, strings),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(ColorScheme colorScheme) {
+  Widget _buildHeader(ColorScheme colorScheme, AppStrings strings) {
     return Row(
       children: [
         Container(
@@ -65,7 +69,7 @@ class BackupCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _getDisplayName(),
+                _getDisplayName(strings),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -73,7 +77,7 @@ class BackupCard extends StatelessWidget {
                 ),
               ),
               Text(
-                _formatDate(backup.createdAt),
+                _formatDate(backup.createdAt, strings),
                 style: TextStyle(
                   fontSize: 12,
                   color: colorScheme.onSurface.withOpacity(0.6),
@@ -101,7 +105,7 @@ class BackupCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetails(ColorScheme colorScheme) {
+  Widget _buildDetails(ColorScheme colorScheme, AppStrings strings) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -116,21 +120,21 @@ class BackupCard extends StatelessWidget {
           _buildDetailRow(
             colorScheme,
             PhosphorIconsRegular.file,
-            'Documentos',
+            strings.documents,
             backup.documentsCount.toString(),
           ),
           const SizedBox(height: 8),
           _buildDetailRow(
             colorScheme,
             PhosphorIconsRegular.folder,
-            'Workspaces',
+            strings.workspaces,
             backup.workspacesCount.toString(),
           ),
           const SizedBox(height: 8),
           _buildDetailRow(
             colorScheme,
             PhosphorIconsRegular.hardDrive,
-            'Tamanho',
+            strings.size,
             _formatFileSize(backup.fileSize),
           ),
         ],
@@ -169,7 +173,7 @@ class BackupCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(ColorScheme colorScheme) {
+  Widget _buildActions(ColorScheme colorScheme, AppStrings strings) {
     return Row(
       children: [
         Expanded(
@@ -183,7 +187,7 @@ class BackupCard extends StatelessWidget {
               ),
             ),
             icon: const Icon(PhosphorIconsRegular.downloadSimple, size: 16),
-            label: const Text('Restaurar'),
+            label: Text(strings.restore),
           ),
         ),
         const SizedBox(width: 8),
@@ -197,7 +201,7 @@ class BackupCard extends StatelessWidget {
             ),
           ),
           icon: const Icon(PhosphorIconsRegular.export, size: 18),
-          tooltip: 'Exportar',
+          tooltip: strings.export,
         ),
         const SizedBox(width: 4),
         IconButton(
@@ -210,40 +214,40 @@ class BackupCard extends StatelessWidget {
             ),
           ),
           icon: const Icon(PhosphorIconsRegular.trash, size: 18),
-          tooltip: 'Deletar',
+          tooltip: strings.delete,
         ),
       ],
     );
   }
 
-  String _getDisplayName() {
+  String _getDisplayName(AppStrings strings) {
     final fileName = backup.fileName;
 
     // Remover extensão e timestamp para nomes automáticos
     if (fileName.startsWith('bloquinho_backup_') ||
         fileName.startsWith('auto_backup_')) {
       return fileName.startsWith('auto_backup_')
-          ? 'Backup Automático'
-          : 'Backup Manual';
+          ? strings.automaticBackup
+          : strings.manualBackup;
     }
 
     // Para nomes personalizados, remover apenas a extensão
     return fileName.replaceAll('.json', '');
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(DateTime date, AppStrings strings) {
     final now = DateTime.now();
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
-        return 'Há ${difference.inMinutes} minutos';
+        return strings.minutesAgo(difference.inMinutes);
       }
-      return 'Há ${difference.inHours} horas';
+      return strings.hoursAgo(difference.inHours);
     } else if (difference.inDays == 1) {
-      return 'Ontem às ${DateFormat('HH:mm').format(date)}';
+      return '${strings.yesterday} ${DateFormat('HH:mm').format(date)}';
     } else if (difference.inDays < 7) {
-      return 'Há ${difference.inDays} dias';
+      return strings.daysAgo(difference.inDays);
     } else {
       return DateFormat('dd/MM/yyyy').format(date);
     }

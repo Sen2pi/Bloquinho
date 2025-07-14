@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/constants/page_icons.dart';
 import 'dart:math' as math;
+import '../../../core/l10n/app_strings.dart';
 
 /// Modelo para representar uma página no sistema
 class PageModel {
@@ -35,6 +36,7 @@ class PageModel {
     String? parentId,
     String content = '',
     String? customId,
+    AppStrings? strings,
   }) {
     final now = DateTime.now();
     return PageModel(
@@ -119,7 +121,7 @@ class PageModel {
   bool get isBloquinhoRoot => title.toLowerCase() == 'bloquinho' && isRoot;
 
   /// Obter nível de profundidade (0 = raiz)
-  int getDepth(List<PageModel> allPages) {
+  int getDepth(List<PageModel> allPages, AppStrings strings) {
     if (isRoot) return 0;
 
     int depth = 0;
@@ -129,7 +131,7 @@ class PageModel {
       depth++;
       final parent = allPages.firstWhere(
         (page) => page.id == currentParentId,
-        orElse: () => PageModel.create(title: 'Página não encontrada'),
+        orElse: () => PageModel.create(title: strings.pageNotFound),
       );
       currentParentId = parent.parentId;
     }
@@ -138,14 +140,14 @@ class PageModel {
   }
 
   /// Obter caminho completo da página
-  List<String> getPath(List<PageModel> allPages) {
+  List<String> getPath(List<PageModel> allPages, AppStrings strings) {
     final path = <String>[title];
     String? currentParentId = parentId;
 
     while (currentParentId != null) {
       final parent = allPages.firstWhere(
         (page) => page.id == currentParentId,
-        orElse: () => PageModel.create(title: 'Página não encontrada'),
+        orElse: () => PageModel.create(title: strings.pageNotFound),
       );
       path.insert(0, parent.title);
       currentParentId = parent.parentId;
@@ -155,8 +157,8 @@ class PageModel {
   }
 
   /// Obter string do caminho
-  String getPathString(List<PageModel> allPages) {
-    return getPath(allPages).join(' > ');
+  String getPathString(List<PageModel> allPages, AppStrings strings) {
+    return getPath(allPages, strings).join(' > ');
   }
 
   @override
@@ -178,10 +180,12 @@ class PageModel {
 class PageTree {
   final List<PageModel> pages;
   final String rootPageId;
+  final AppStrings strings;
 
   const PageTree({
     required this.pages,
     required this.rootPageId,
+    required this.strings,
   });
 
   /// Obter página raiz
@@ -211,7 +215,7 @@ class PageTree {
     while (currentId != null) {
       final page = pages.firstWhere(
         (p) => p.id == currentId,
-        orElse: () => PageModel.create(title: 'Página não encontrada'),
+        orElse: () => PageModel.create(title: strings.pageNotFound),
       );
 
       if (page.parentId != null) {

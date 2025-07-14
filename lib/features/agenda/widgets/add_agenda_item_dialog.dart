@@ -5,6 +5,8 @@ import '../../../shared/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/agenda_provider.dart';
 import '../models/agenda_item.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 class AddAgendaItemDialog extends ConsumerStatefulWidget {
   final AgendaItem? item;
@@ -76,6 +78,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
     final isDarkMode = ref.watch(isDarkModeProvider);
     final isCreating = ref.watch(agendaIsCreatingProvider);
     final isUpdating = ref.watch(agendaIsUpdatingProvider);
+    final strings = ref.watch(appStringsProvider);
 
     return Dialog(
       child: Container(
@@ -108,7 +111,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    widget.item != null ? 'Editar Item' : 'Novo Item',
+                    widget.item != null ? strings.editItem : strings.newItem,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -134,9 +137,9 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                       // Título
                       TextFormField(
                         controller: _titleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Título *',
-                          hintText: 'Digite o título do item',
+                        decoration: InputDecoration(
+                          labelText: '${strings.title} *',
+                          hintText: strings.typeItemTitle,
                         ),
                         textInputAction: TextInputAction.next,
                         enableInteractiveSelection: true,
@@ -144,7 +147,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                         enableSuggestions: true,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Título é obrigatório';
+                            return strings.titleIsRequired;
                           }
                           return null;
                         },
@@ -154,8 +157,8 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                       // Tipo
                       DropdownButtonFormField<AgendaItemType>(
                         value: _selectedType,
-                        decoration: const InputDecoration(
-                          labelText: 'Tipo *',
+                        decoration: InputDecoration(
+                          labelText: '${strings.type} *',
                         ),
                         items: AgendaItemType.values.map((type) {
                           return DropdownMenuItem(
@@ -164,7 +167,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                               children: [
                                 Icon(_getTypeIcon(type)),
                                 const SizedBox(width: 8),
-                                Text(_getTypeText(type)),
+                                Text(_getTypeText(type, strings)),
                               ],
                             ),
                           );
@@ -185,8 +188,8 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                       if (_selectedType == AgendaItemType.task)
                         DropdownButtonFormField<TaskStatus>(
                           value: _selectedStatus,
-                          decoration: const InputDecoration(
-                            labelText: 'Status',
+                          decoration: InputDecoration(
+                            labelText: strings.status,
                           ),
                           items: TaskStatus.values.map((status) {
                             return DropdownMenuItem(
@@ -202,7 +205,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(_getStatusText(status)),
+                                  Text(_getStatusText(status, strings)),
                                 ],
                               ),
                             );
@@ -219,8 +222,8 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                       // Prioridade
                       DropdownButtonFormField<Priority>(
                         value: _selectedPriority,
-                        decoration: const InputDecoration(
-                          labelText: 'Prioridade',
+                        decoration: InputDecoration(
+                          labelText: strings.priority,
                         ),
                         items: Priority.values.map((priority) {
                           return DropdownMenuItem(
@@ -236,7 +239,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Text(_getPriorityText(priority)),
+                                Text(_getPriorityText(priority, strings)),
                               ],
                             ),
                           );
@@ -252,9 +255,9 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                       // Descrição
                       TextFormField(
                         controller: _descriptionController,
-                        decoration: const InputDecoration(
-                          labelText: 'Descrição',
-                          hintText: 'Digite uma descrição (opcional)',
+                        decoration: InputDecoration(
+                          labelText: strings.description,
+                          hintText: strings.typeDescriptionOptional,
                         ),
                         maxLines: 3,
                         textInputAction: TextInputAction.next,
@@ -267,9 +270,9 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                       // Localização
                       TextFormField(
                         controller: _locationController,
-                        decoration: const InputDecoration(
-                          labelText: 'Localização',
-                          hintText: 'Digite o local (opcional)',
+                        decoration: InputDecoration(
+                          labelText: strings.location,
+                          hintText: strings.typeLocationOptional,
                         ),
                         textInputAction: TextInputAction.next,
                         enableInteractiveSelection: true,
@@ -283,7 +286,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                         children: [
                           Expanded(
                             child: _buildDateTimeField(
-                              'Data e Hora de Início',
+                              strings.startDateTime,
                               _startDate,
                               (date) => setState(() => _startDate = date),
                             ),
@@ -291,7 +294,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildDateTimeField(
-                              'Data e Hora de Fim',
+                              strings.endDateTime,
                               _endDate,
                               (date) => setState(() => _endDate = date),
                             ),
@@ -302,7 +305,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
 
                       // Deadline
                       _buildDateTimeField(
-                        'Deadline (Data e Hora)',
+                        strings.deadlineDateTime,
                         _deadline,
                         (date) => setState(() => _deadline = date),
                       ),
@@ -319,7 +322,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                               });
                             },
                           ),
-                          const Text('Dia inteiro'),
+                          Text(strings.allDay),
                           const SizedBox(width: 24),
                           Checkbox(
                             value: _isRecurring,
@@ -329,7 +332,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                               });
                             },
                           ),
-                          const Text('Recorrente'),
+                          Text(strings.recurring),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -337,10 +340,10 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                       // Participantes
                       TextFormField(
                         controller: _attendeesController,
-                        decoration: const InputDecoration(
-                          labelText: 'Participantes',
+                        decoration: InputDecoration(
+                          labelText: strings.attendees,
                           hintText:
-                              'Digite os participantes separados por vírgula',
+                              strings.typeAttendeesCommaSeparated,
                         ),
                         textInputAction: TextInputAction.next,
                         enableInteractiveSelection: true,
@@ -352,9 +355,9 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                       // Tags
                       TextFormField(
                         controller: _tagsController,
-                        decoration: const InputDecoration(
-                          labelText: 'Tags',
-                          hintText: 'Digite as tags separadas por vírgula',
+                        decoration: InputDecoration(
+                          labelText: strings.tags,
+                          hintText: strings.typeTagsCommaSeparated,
                         ),
                         textInputAction: TextInputAction.done,
                         enableInteractiveSelection: true,
@@ -388,7 +391,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancelar'),
+                      child: Text(strings.cancel),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -401,7 +404,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Text(widget.item != null ? 'Atualizar' : 'Criar'),
+                          : Text(widget.item != null ? strings.update : strings.create),
                     ),
                   ),
                 ],
@@ -415,6 +418,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
 
   Widget _buildDateTimeField(
       String label, DateTime? value, Function(DateTime?) onChanged) {
+    final strings = ref.watch(appStringsProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -466,7 +470,7 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
                 Text(
                   value != null
                       ? '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year} ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}'
-                      : 'Selecionar data e hora',
+                      : strings.selectDateTime,
                 ),
               ],
             ),
@@ -556,16 +560,16 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
     }
   }
 
-  String _getTypeText(AgendaItemType type) {
+  String _getTypeText(AgendaItemType type, AppStrings strings) {
     switch (type) {
       case AgendaItemType.event:
-        return 'Evento';
+        return strings.event;
       case AgendaItemType.task:
-        return 'Tarefa';
+        return strings.task;
       case AgendaItemType.reminder:
-        return 'Lembrete';
+        return strings.reminder;
       case AgendaItemType.meeting:
-        return 'Reunião';
+        return strings.meeting;
     }
   }
 
@@ -582,16 +586,16 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
     }
   }
 
-  String _getStatusText(TaskStatus status) {
+  String _getStatusText(TaskStatus status, AppStrings strings) {
     switch (status) {
       case TaskStatus.todo:
-        return 'A fazer';
+        return strings.statusTodo;
       case TaskStatus.inProgress:
-        return 'Em progresso';
+        return strings.statusInProgress;
       case TaskStatus.done:
-        return 'Concluída';
+        return strings.statusCompleted;
       case TaskStatus.cancelled:
-        return 'Cancelada';
+        return strings.statusCancelled;
     }
   }
 
@@ -608,16 +612,16 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
     }
   }
 
-  String _getPriorityText(Priority priority) {
+  String _getPriorityText(Priority priority, AppStrings strings) {
     switch (priority) {
       case Priority.low:
-        return 'Baixa';
+        return strings.priorityLow;
       case Priority.medium:
-        return 'Média';
+        return strings.priorityMedium;
       case Priority.high:
-        return 'Alta';
+        return strings.priorityHigh;
       case Priority.urgent:
-        return 'Urgente';
+        return strings.priorityUrgent;
     }
   }
 }

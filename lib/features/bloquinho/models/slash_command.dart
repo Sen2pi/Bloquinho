@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'notion_block_type.dart';
+import '../../../core/l10n/app_strings.dart';
 
 /// Comando slash para o editor Notion-like
 /// Representa um comando que pode ser executado digitando "/" + trigger
@@ -26,12 +27,12 @@ class SlashCommand {
   });
 
   /// Lista de todos os comandos disponíveis
-  static List<SlashCommand> get allCommands => [
+  static List<SlashCommand> allCommands(AppStrings strings) => [
         // Comandos básicos de texto
         SlashCommand(
           trigger: 'texto',
-          title: 'Texto',
-          description: 'Parágrafo simples',
+          title: strings.text,
+          description: strings.simpleParagraph,
           icon: PhosphorIcons.textT(),
           blockType: NotionBlockType.text,
           isPopular: true,
@@ -41,8 +42,8 @@ class SlashCommand {
         // Títulos
         SlashCommand(
           trigger: 'h1',
-          title: 'Título 1',
-          description: 'Cabeçalho grande',
+          title: strings.title1,
+          description: strings.largeHeader,
           icon: PhosphorIcons.textHOne(),
           blockType: NotionBlockType.heading1,
           isPopular: true,
@@ -50,16 +51,16 @@ class SlashCommand {
         ),
         SlashCommand(
           trigger: 'h2',
-          title: 'Título 2',
-          description: 'Cabeçalho médio',
+          title: strings.title2,
+          description: strings.mediumHeader,
           icon: PhosphorIcons.textHTwo(),
           blockType: NotionBlockType.heading2,
           category: 'titulos',
         ),
         SlashCommand(
           trigger: 'h3',
-          title: 'Título 3',
-          description: 'Cabeçalho pequeno',
+          title: strings.title3,
+          description: strings.smallHeader,
           icon: PhosphorIcons.textHThree(),
           blockType: NotionBlockType.heading3,
           category: 'titulos',
@@ -68,8 +69,8 @@ class SlashCommand {
         // Listas
         SlashCommand(
           trigger: 'lista',
-          title: 'Lista',
-          description: 'Lista com marcadores',
+          title: strings.list,
+          description: strings.bulletList,
           icon: PhosphorIcons.listBullets(),
           blockType: NotionBlockType.bulletList,
           isPopular: true,
@@ -77,16 +78,16 @@ class SlashCommand {
         ),
         SlashCommand(
           trigger: 'numerada',
-          title: 'Lista numerada',
-          description: 'Lista com números',
+          title: strings.numberedList,
+          description: strings.numberedListDescription,
           icon: PhosphorIcons.listNumbers(),
           blockType: NotionBlockType.numberedList,
           category: 'listas',
         ),
         SlashCommand(
           trigger: 'todo',
-          title: 'Lista de tarefas',
-          description: 'Lista com checkboxes',
+          title: strings.todoList,
+          description: strings.todoListWithCheckboxes,
           icon: PhosphorIcons.checkSquare(),
           blockType: NotionBlockType.todoList,
           isPopular: true,
@@ -94,8 +95,8 @@ class SlashCommand {
         ),
         SlashCommand(
           trigger: 'toggle',
-          title: 'Lista expansível',
-          description: 'Lista que pode ser expandida',
+          title: strings.expandableList,
+          description: strings.expandableListDescription,
           icon: PhosphorIcons.caretRight(),
           blockType: NotionBlockType.toggle,
           category: 'listas',
@@ -104,16 +105,16 @@ class SlashCommand {
         // Blocos especiais
         SlashCommand(
           trigger: 'citacao',
-          title: 'Citação',
-          description: 'Bloco de citação',
+          title: strings.quote,
+          description: strings.quoteBlock,
           icon: PhosphorIcons.quotes(),
           blockType: NotionBlockType.quote,
           category: 'especiais',
         ),
         SlashCommand(
           trigger: 'callout',
-          title: 'Callout',
-          description: 'Bloco destacado com ícone',
+          title: strings.callout,
+          description: strings.calloutWithIcon,
           icon: PhosphorIcons.lightbulb(),
           blockType: NotionBlockType.callout,
           category: 'especiais',
@@ -122,8 +123,8 @@ class SlashCommand {
         // Código
         SlashCommand(
           trigger: 'codigo',
-          title: 'Código',
-          description: 'Bloco de código',
+          title: strings.code,
+          description: strings.codeBlock,
           icon: PhosphorIcons.code(),
           blockType: NotionBlockType.codeBlock,
           isPopular: true,
@@ -131,8 +132,8 @@ class SlashCommand {
         ),
         SlashCommand(
           trigger: 'equacao',
-          title: 'Equação',
-          description: 'Equação matemática',
+          title: strings.equation,
+          description: strings.mathEquation,
           icon: PhosphorIcons.mathOperations(),
           blockType: NotionBlockType.equation,
           category: 'codigo',
@@ -141,16 +142,16 @@ class SlashCommand {
         // Layout
         SlashCommand(
           trigger: 'divisor',
-          title: 'Divisor',
-          description: 'Linha divisória',
+          title: strings.divider,
+          description: strings.dividerLine,
           icon: PhosphorIcons.minus(),
           blockType: NotionBlockType.divider,
           category: 'layout',
         ),
         SlashCommand(
           trigger: 'espacador',
-          title: 'Espaçador',
-          description: 'Espaço vertical',
+          title: strings.spacer,
+          description: strings.verticalSpace,
           icon: PhosphorIcons.arrowsVertical(),
           blockType: NotionBlockType.spacer,
           category: 'layout',
@@ -159,8 +160,8 @@ class SlashCommand {
         // Mídia
         SlashCommand(
           trigger: 'imagem',
-          title: 'Imagem',
-          description: 'Inserir imagem',
+          title: strings.image,
+          description: strings.insertImage,
           icon: PhosphorIcons.image(),
           blockType: NotionBlockType.image,
           isPopular: true,
@@ -168,16 +169,16 @@ class SlashCommand {
         ),
         SlashCommand(
           trigger: 'video',
-          title: 'Vídeo',
-          description: 'Inserir vídeo',
+          title: strings.video,
+          description: strings.insertVideo,
           icon: PhosphorIcons.video(),
           blockType: NotionBlockType.video,
           category: 'midia',
         ),
         SlashCommand(
           trigger: 'arquivo',
-          title: 'Arquivo',
-          description: 'Inserir arquivo',
+          title: strings.file,
+          description: strings.insertFile,
           icon: PhosphorIcons.file(),
           blockType: NotionBlockType.file,
           category: 'midia',
@@ -186,16 +187,16 @@ class SlashCommand {
         // Links
         SlashCommand(
           trigger: 'pagina',
-          title: 'Link de página',
-          description: 'Link para outra página',
+          title: strings.pageLink,
+          description: strings.linkToAnotherPage,
           icon: PhosphorIcons.link(),
           blockType: NotionBlockType.pageLink,
           category: 'links',
         ),
         SlashCommand(
           trigger: 'weblink',
-          title: 'Link web',
-          description: 'Link para site externo',
+          title: strings.webLink,
+          description: strings.linkToExternalSite,
           icon: PhosphorIcons.globe(),
           blockType: NotionBlockType.webLink,
           category: 'links',
@@ -204,16 +205,16 @@ class SlashCommand {
         // Dados
         SlashCommand(
           trigger: 'tabela',
-          title: 'Tabela',
-          description: 'Criar tabela',
+          title: strings.table,
+          description: strings.createTable,
           icon: PhosphorIcons.table(),
           blockType: NotionBlockType.table,
           category: 'dados',
         ),
         SlashCommand(
           trigger: 'database',
-          title: 'Base de dados',
-          description: 'Criar base de dados',
+          title: strings.database,
+          description: strings.createDatabase,
           icon: PhosphorIcons.database(),
           blockType: NotionBlockType.database,
           category: 'dados',
@@ -222,24 +223,24 @@ class SlashCommand {
         // Avançados
         SlashCommand(
           trigger: 'embed',
-          title: 'Embed',
-          description: 'Incorporar conteúdo externo',
+          title: strings.embed,
+          description: strings.embedExternalContent,
           icon: PhosphorIcons.browser(),
           blockType: NotionBlockType.embed,
           category: 'avancado',
         ),
         SlashCommand(
           trigger: 'bookmark',
-          title: 'Bookmark',
-          description: 'Salvar link como bookmark',
+          title: strings.bookmark,
+          description: strings.saveLinkAsBookmark,
           icon: PhosphorIcons.bookmark(),
           blockType: NotionBlockType.bookmark,
           category: 'avancado',
         ),
         SlashCommand(
           trigger: 'indice',
-          title: 'Índice',
-          description: 'Criar índice da página',
+          title: strings.tableOfContents,
+          description: strings.createTableOfContents,
           icon: PhosphorIcons.listChecks(),
           blockType: NotionBlockType.tableOfContents,
           category: 'avancado',
@@ -247,21 +248,21 @@ class SlashCommand {
       ];
 
   /// Filtrar comandos por categoria
-  static List<SlashCommand> getByCategory(String category) {
-    return allCommands.where((cmd) => cmd.category == category).toList();
+  static List<SlashCommand> getByCategory(String category, AppStrings strings) {
+    return allCommands(strings).where((cmd) => cmd.category == category).toList();
   }
 
   /// Obter comandos populares
-  static List<SlashCommand> get popularCommands {
-    return allCommands.where((cmd) => cmd.isPopular).toList();
+  static List<SlashCommand> popularCommands(AppStrings strings) {
+    return allCommands(strings).where((cmd) => cmd.isPopular).toList();
   }
 
   /// Buscar comandos por texto
-  static List<SlashCommand> search(String query) {
-    if (query.isEmpty) return popularCommands;
+  static List<SlashCommand> search(String query, AppStrings strings) {
+    if (query.isEmpty) return popularCommands(strings);
 
     final lowerQuery = query.toLowerCase();
-    return allCommands.where((cmd) {
+    return allCommands(strings).where((cmd) {
       return cmd.trigger.toLowerCase().contains(lowerQuery) ||
           cmd.title.toLowerCase().contains(lowerQuery) ||
           cmd.description.toLowerCase().contains(lowerQuery);
@@ -269,26 +270,26 @@ class SlashCommand {
   }
 
   /// Obter comando por trigger
-  static SlashCommand? getByTrigger(String trigger) {
+  static SlashCommand? getByTrigger(String trigger, AppStrings strings) {
     try {
-      return allCommands.firstWhere((cmd) => cmd.trigger == trigger);
+      return allCommands(strings).firstWhere((cmd) => cmd.trigger == trigger);
     } catch (e) {
       return null;
     }
   }
 
   /// Obter comando por tipo de bloco
-  static SlashCommand? getByBlockType(NotionBlockType blockType) {
+  static SlashCommand? getByBlockType(NotionBlockType blockType, AppStrings strings) {
     try {
-      return allCommands.firstWhere((cmd) => cmd.blockType == blockType);
+      return allCommands(strings).firstWhere((cmd) => cmd.blockType == blockType);
     } catch (e) {
       return null;
     }
   }
 
   /// Categorias disponíveis
-  static List<String> get categories {
-    return allCommands
+  static List<String> categories(AppStrings strings) {
+    return allCommands(strings)
         .map((cmd) => cmd.category)
         .where((cat) => cat != null)
         .cast<String>()
@@ -297,30 +298,30 @@ class SlashCommand {
   }
 
   /// Nome da categoria
-  String get categoryName {
+  String getCategoryName(AppStrings strings) {
     switch (category) {
       case 'texto':
-        return 'Texto';
+        return strings.text;
       case 'titulos':
-        return 'Títulos';
+        return strings.titles;
       case 'listas':
-        return 'Listas';
+        return strings.lists;
       case 'especiais':
-        return 'Especiais';
+        return strings.specials;
       case 'codigo':
-        return 'Código';
+        return strings.code;
       case 'layout':
-        return 'Layout';
+        return strings.layout;
       case 'midia':
-        return 'Mídia';
+        return strings.media;
       case 'links':
-        return 'Links';
+        return strings.links;
       case 'dados':
-        return 'Dados';
+        return strings.data;
       case 'avancado':
-        return 'Avançado';
+        return strings.advanced;
       default:
-        return 'Outros';
+        return strings.others;
     }
   }
 

@@ -12,6 +12,8 @@ import '../../../core/services/backup_service.dart';
 import '../widgets/backup_card.dart';
 import '../widgets/backup_restore_dialog.dart';
 import '../widgets/backup_import_dialog.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 class BackupScreen extends ConsumerStatefulWidget {
   const BackupScreen({super.key});
@@ -37,12 +39,13 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     final isDarkMode = ref.watch(isDarkModeProvider);
     final currentProfile = ref.watch(currentProfileProvider);
     final currentWorkspace = ref.watch(currentWorkspaceProvider);
+    final strings = ref.watch(appStringsProvider);
 
     return Scaffold(
       backgroundColor:
           isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
-        title: const Text('Backup e Sincronização'),
+        title: Text(strings.backupAndSync),
         backgroundColor:
             isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
         foregroundColor:
@@ -58,25 +61,25 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             icon: Icon(_showAdvancedOptions
                 ? PhosphorIcons.caretUp()
                 : PhosphorIcons.caretDown()),
-            tooltip: 'Opções avançadas',
+            tooltip: strings.advancedOptions,
           ),
         ],
       ),
       body: Column(
         children: [
-          _buildHeader(isDarkMode, currentProfile, currentWorkspace),
-          if (_showAdvancedOptions) _buildAdvancedOptions(isDarkMode),
+          _buildHeader(isDarkMode, currentProfile, currentWorkspace, strings),
+          if (_showAdvancedOptions) _buildAdvancedOptions(isDarkMode, strings),
           Expanded(
-            child: _buildBackupList(backupState, isDarkMode),
+            child: _buildBackupList(backupState, isDarkMode, strings),
           ),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButton(isDarkMode),
+      floatingActionButton: _buildFloatingActionButton(isDarkMode, strings),
     );
   }
 
   Widget _buildHeader(
-      bool isDarkMode, dynamic currentProfile, dynamic currentWorkspace) {
+      bool isDarkMode, dynamic currentProfile, dynamic currentWorkspace, AppStrings strings) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -103,13 +106,13 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Backup e Sincronização',
+                      strings.backupAndSync,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                     ),
                     Text(
-                      'Gerencie seus backups e importe dados do Notion',
+                      strings.manageBackupsAndImportNotion,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: isDarkMode
                                 ? AppColors.darkTextSecondary
@@ -122,22 +125,22 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildStatusCards(isDarkMode, currentProfile, currentWorkspace),
+          _buildStatusCards(isDarkMode, currentProfile, currentWorkspace, strings),
         ],
       ),
     );
   }
 
   Widget _buildStatusCards(
-      bool isDarkMode, dynamic currentProfile, dynamic currentWorkspace) {
+      bool isDarkMode, dynamic currentProfile, dynamic currentWorkspace, AppStrings strings) {
     return Row(
       children: [
         Expanded(
           child: _buildStatusCard(
             isDarkMode,
             PhosphorIcons.user(),
-            'Perfil',
-            currentProfile?.name ?? 'Não definido',
+            strings.profile,
+            currentProfile?.name ?? strings.notDefined,
             AppColors.primary,
           ),
         ),
@@ -146,8 +149,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           child: _buildStatusCard(
             isDarkMode,
             PhosphorIcons.buildings(),
-            'Workspace',
-            currentWorkspace?.name ?? 'Não definido',
+            strings.workspace,
+            currentWorkspace?.name ?? strings.notDefined,
             AppColors.secondary,
           ),
         ),
@@ -195,7 +198,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     );
   }
 
-  Widget _buildAdvancedOptions(bool isDarkMode) {
+  Widget _buildAdvancedOptions(bool isDarkMode, AppStrings strings) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -210,7 +213,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Opções Avançadas',
+            strings.advancedOptions,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -222,7 +225,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 child: OutlinedButton.icon(
                   onPressed: _createWorkspaceBackup,
                   icon: Icon(PhosphorIcons.archive(), size: 16),
-                  label: Text('Backup Workspace'),
+                  label: Text(strings.backupWorkspace),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     side: BorderSide(color: AppColors.primary),
@@ -234,7 +237,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 child: OutlinedButton.icon(
                   onPressed: _importFromNotion,
                   icon: Icon(PhosphorIcons.upload(), size: 16),
-                  label: Text('Importar Notion'),
+                  label: Text(strings.importNotion),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.secondary,
                     side: BorderSide(color: AppColors.secondary),
@@ -248,9 +251,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     );
   }
 
-  Widget _buildBackupList(BackupState backupState, bool isDarkMode) {
+  Widget _buildBackupList(BackupState backupState, bool isDarkMode, AppStrings strings) {
     if (backupState.localBackups.isEmpty) {
-      return _buildEmptyState(isDarkMode);
+      return _buildEmptyState(isDarkMode, strings);
     }
 
     return ListView.builder(
@@ -263,15 +266,15 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           child: BackupCard(
             backup: backup,
             onExport: () => _exportBackup(backup),
-            onDelete: () => _deleteBackup(backup),
-            onRestore: () => _restoreBackup(backup),
+            onDelete: () => _deleteBackup(backup, strings),
+            onRestore: () => _restoreBackup(backup, strings),
           ),
         );
       },
     );
   }
 
-  Widget _buildEmptyState(bool isDarkMode) {
+  Widget _buildEmptyState(bool isDarkMode, AppStrings strings) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -285,7 +288,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Nenhum backup encontrado',
+            strings.noBackupFound,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: isDarkMode
                       ? AppColors.darkTextSecondary
@@ -294,7 +297,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Crie seu primeiro backup para proteger seus dados',
+            strings.createFirstBackup,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: isDarkMode
                       ? AppColors.darkTextSecondary
@@ -307,24 +310,25 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     );
   }
 
-  Widget _buildFloatingActionButton(bool isDarkMode) {
+  Widget _buildFloatingActionButton(bool isDarkMode, AppStrings strings) {
     return FloatingActionButton.extended(
       onPressed: _createBackup,
       backgroundColor: AppColors.primary,
       foregroundColor: Colors.white,
       icon: Icon(PhosphorIcons.plus()),
-      label: Text('Criar Backup'),
+      label: Text(strings.createBackup),
     );
   }
 
   Future<void> _createBackup() async {
+    final strings = ref.read(appStringsProvider);
     try {
       final backup = await ref.read(backupProvider.notifier).createBackup();
       if (backup != null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Backup criado com sucesso!'),
+              content: Text(strings.backupCreatedSuccessfully),
               backgroundColor: AppColors.primary,
             ),
           );
@@ -334,7 +338,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao criar backup: $e'),
+            content: Text(strings.errorCreatingBackup(e.toString())),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -343,14 +347,15 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   }
 
   Future<void> _createWorkspaceBackup() async {
+    final strings = ref.read(appStringsProvider);
     try {
       final currentWorkspace = ref.read(currentWorkspaceProvider);
       final currentProfile = ref.read(currentProfileProvider);
 
       if (currentWorkspace == null || currentProfile == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Selecione um workspace e perfil primeiro'),
+          SnackBar(
+            content: Text(strings.selectWorkspaceAndProfile),
             backgroundColor: Colors.orange,
           ),
         );
@@ -359,8 +364,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
       // TODO: Implementar backup de workspace completo
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Funcionalidade em desenvolvimento'),
+        SnackBar(
+          content: Text(strings.featureInDevelopment),
           backgroundColor: Colors.orange,
         ),
       );
@@ -368,7 +373,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao criar backup de workspace: $e'),
+            content: Text(strings.errorCreatingWorkspaceBackup(e.toString())),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -377,14 +382,15 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   }
 
   Future<void> _importFromNotion() async {
+    final strings = ref.read(appStringsProvider);
     try {
       final currentWorkspace = ref.read(currentWorkspaceProvider);
       final currentProfile = ref.read(currentProfileProvider);
 
       if (currentWorkspace == null || currentProfile == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Selecione um workspace e perfil primeiro'),
+          SnackBar(
+            content: Text(strings.selectWorkspaceAndProfile),
             backgroundColor: Colors.orange,
           ),
         );
@@ -393,8 +399,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
       // TODO: Implementar importação de pasta do Notion
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Funcionalidade em desenvolvimento'),
+        SnackBar(
+          content: Text(strings.featureInDevelopment),
           backgroundColor: Colors.orange,
         ),
       );
@@ -402,7 +408,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao importar do Notion: $e'),
+            content: Text(strings.errorImportingFromNotion(e.toString())),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -411,11 +417,12 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   }
 
   Future<void> _exportBackup(BackupMetadata backup) async {
+    final strings = ref.read(appStringsProvider);
     try {
       // TODO: Implementar exportação de backup
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Funcionalidade em desenvolvimento'),
+        SnackBar(
+          content: Text(strings.featureInDevelopment),
           backgroundColor: Colors.orange,
         ),
       );
@@ -423,7 +430,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao exportar backup: $e'),
+            content: Text(strings.errorExportingBackup(e.toString())),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -431,23 +438,23 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     }
   }
 
-  Future<void> _deleteBackup(BackupMetadata backup) async {
+  Future<void> _deleteBackup(BackupMetadata backup, AppStrings strings) async {
     try {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Confirmar exclusão'),
+          title: Text(strings.confirmExclusion),
           content: Text(
-              'Tem certeza que deseja excluir o backup "${backup.fileName}"?'),
+              strings.areYouSureYouWantToDeleteBackup(backup.fileName)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
+              child: Text(strings.cancel),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
               style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Excluir'),
+              child: Text(strings.delete),
             ),
           ],
         ),
@@ -456,8 +463,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       if (confirmed == true) {
         // TODO: Implementar deleção de backup
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Funcionalidade em desenvolvimento'),
+          SnackBar(
+            content: Text(strings.featureInDevelopment),
             backgroundColor: Colors.orange,
           ),
         );
@@ -466,7 +473,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao excluir backup: $e'),
+            content: Text(strings.errorDeletingBackup(e.toString())),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -474,23 +481,23 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     }
   }
 
-  Future<void> _restoreBackup(BackupMetadata backup) async {
+  Future<void> _restoreBackup(BackupMetadata backup, AppStrings strings) async {
     try {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Confirmar restauração'),
+          title: Text(strings.confirmRestore),
           content: Text(
-              'Tem certeza que deseja restaurar o backup "${backup.fileName}"?'),
+              strings.areYouSureYouWantToRestoreBackup(backup.fileName)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
+              child: Text(strings.cancel),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
               style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-              child: const Text('Restaurar'),
+              child: Text(strings.restore),
             ),
           ],
         ),
@@ -499,8 +506,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       if (confirmed == true) {
         // TODO: Implementar restauração de backup
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Funcionalidade em desenvolvimento'),
+          SnackBar(
+            content: Text(strings.featureInDevelopment),
             backgroundColor: Colors.orange,
           ),
         );
@@ -509,7 +516,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao restaurar backup: $e'),
+            content: Text(strings.errorRestoringBackup(e.toString())),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

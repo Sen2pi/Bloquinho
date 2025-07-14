@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../core/l10n/app_strings.dart';
 
 /// Comando slash para o editor Bloquinho
 /// Representa um comando que pode ser executado digitando "/" + trigger
@@ -25,12 +26,12 @@ class BloquinhoSlashCommand {
   });
 
   /// Lista de todos os comandos disponíveis
-  static List<BloquinhoSlashCommand> get allCommands => [
+  static List<BloquinhoSlashCommand> allCommands(AppStrings strings) => [
         // ===== TÍTULOS =====
         BloquinhoSlashCommand(
           trigger: 'h1',
-          title: 'Título 1',
-          description: 'Cabeçalho grande',
+          title: strings.title1,
+          description: strings.largeHeader,
           icon: PhosphorIcons.textHOne(),
           markdownTemplate: '# ',
           isPopular: true,
@@ -39,8 +40,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'h2',
-          title: 'Título 2',
-          description: 'Cabeçalho médio',
+          title: strings.title2,
+          description: strings.mediumHeader,
           icon: PhosphorIcons.textHTwo(),
           markdownTemplate: '## ',
           category: 'titulos',
@@ -48,8 +49,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'h3',
-          title: 'Título 3',
-          description: 'Cabeçalho pequeno',
+          title: strings.title3,
+          description: strings.smallHeader,
           icon: PhosphorIcons.textHThree(),
           markdownTemplate: '### ',
           category: 'titulos',
@@ -57,8 +58,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'h4',
-          title: 'Título 4',
-          description: 'Cabeçalho muito pequeno',
+          title: strings.title4,
+          description: strings.verySmallHeader,
           icon: PhosphorIcons.textHFour(),
           markdownTemplate: '#### ',
           category: 'titulos',
@@ -68,8 +69,8 @@ class BloquinhoSlashCommand {
         // ===== LISTAS =====
         BloquinhoSlashCommand(
           trigger: 'lista',
-          title: 'Lista',
-          description: 'Lista com marcadores',
+          title: strings.list,
+          description: strings.bulletList,
           icon: PhosphorIcons.listBullets(),
           markdownTemplate: '- ',
           isPopular: true,
@@ -78,8 +79,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'numerada',
-          title: 'Lista numerada',
-          description: 'Lista com números',
+          title: strings.numberedList,
+          description: strings.numberedListDescription,
           icon: PhosphorIcons.listNumbers(),
           markdownTemplate: '1. ',
           category: 'listas',
@@ -87,8 +88,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'todo',
-          title: 'Checklist',
-          description: 'Lista de tarefas',
+          title: strings.checklist,
+          description: strings.todoList,
           icon: PhosphorIcons.checkSquare(),
           markdownTemplate: '- [ ] ',
           isPopular: true,
@@ -97,8 +98,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'feito',
-          title: 'Item feito',
-          description: 'Item de checklist marcado',
+          title: strings.doneItem,
+          description: strings.checkedChecklistItem,
           icon: PhosphorIcons.checkSquare(),
           markdownTemplate: '- [x] ',
           category: 'listas',
@@ -108,8 +109,8 @@ class BloquinhoSlashCommand {
         // ===== TEXTO =====
         BloquinhoSlashCommand(
           trigger: 'texto',
-          title: 'Texto',
-          description: 'Parágrafo simples',
+          title: strings.text,
+          description: strings.simpleParagraph,
           icon: PhosphorIcons.textT(),
           markdownTemplate: '',
           isPopular: true,
@@ -118,8 +119,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'negrito',
-          title: 'Negrito',
-          description: 'Texto em negrito',
+          title: strings.bold,
+          description: strings.boldText,
           icon: PhosphorIcons.textB(),
           markdownTemplate: '**texto**',
           category: 'texto',
@@ -127,8 +128,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'italico',
-          title: 'Itálico',
-          description: 'Texto em itálico',
+          title: strings.italic,
+          description: strings.italicText,
           icon: PhosphorIcons.textItalic(),
           markdownTemplate: '*texto*',
           category: 'texto',
@@ -136,8 +137,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'riscado',
-          title: 'Riscado',
-          description: 'Texto riscado',
+          title: strings.strikethrough,
+          description: strings.strikethroughText,
           icon: PhosphorIcons.textStrikethrough(),
           markdownTemplate: '~~texto~~',
           category: 'texto',
@@ -145,8 +146,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'codigo',
-          title: 'Código inline',
-          description: 'Código na linha',
+          title: strings.inlineCode,
+          description: strings.inlineCodeDescription,
           icon: PhosphorIcons.code(),
           markdownTemplate: '`código`',
           category: 'texto',
@@ -156,8 +157,8 @@ class BloquinhoSlashCommand {
         // ===== CITAÇÕES =====
         BloquinhoSlashCommand(
           trigger: 'citacao',
-          title: 'Citação',
-          description: 'Bloco de citação',
+          title: strings.quote,
+          description: strings.quoteBlock,
           icon: PhosphorIcons.quotes(),
           markdownTemplate: '> ',
           category: 'citacoes',
@@ -165,8 +166,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'callout',
-          title: 'Callout',
-          description: 'Bloco destacado',
+          title: strings.callout,
+          description: strings.calloutBlock,
           icon: PhosphorIcons.lightbulb(),
           markdownTemplate: '> 💡 **Callout**\n> ',
           category: 'citacoes',
@@ -176,8 +177,8 @@ class BloquinhoSlashCommand {
         // ===== CÓDIGO =====
         BloquinhoSlashCommand(
           trigger: 'bloco',
-          title: 'Bloco de código',
-          description: 'Código com syntax highlighting',
+          title: strings.codeBlock,
+          description: strings.codeBlockWithSyntaxHighlighting,
           icon: PhosphorIcons.codeBlock(),
           markdownTemplate: '```\n\n```',
           isPopular: true,
@@ -187,7 +188,7 @@ class BloquinhoSlashCommand {
         BloquinhoSlashCommand(
           trigger: 'javascript',
           title: 'JavaScript',
-          description: 'Código JavaScript',
+          description: strings.javascriptCode,
           icon: PhosphorIcons.fileJs(),
           markdownTemplate: '```javascript\n\n```',
           category: 'codigo',
@@ -196,7 +197,7 @@ class BloquinhoSlashCommand {
         BloquinhoSlashCommand(
           trigger: 'python',
           title: 'Python',
-          description: 'Código Python',
+          description: strings.pythonCode,
           icon: PhosphorIcons.filePy(),
           markdownTemplate: '```python\n\n```',
           category: 'codigo',
@@ -205,7 +206,7 @@ class BloquinhoSlashCommand {
         BloquinhoSlashCommand(
           trigger: 'dart',
           title: 'Dart',
-          description: 'Código Dart',
+          description: strings.dartCode,
           icon: PhosphorIcons.fileCode(),
           markdownTemplate: '```dart\n\n```',
           category: 'codigo',
@@ -214,7 +215,7 @@ class BloquinhoSlashCommand {
         BloquinhoSlashCommand(
           trigger: 'html',
           title: 'HTML',
-          description: 'Código HTML',
+          description: strings.htmlCode,
           icon: PhosphorIcons.fileHtml(),
           markdownTemplate: '```html\n\n```',
           category: 'codigo',
@@ -223,7 +224,7 @@ class BloquinhoSlashCommand {
         BloquinhoSlashCommand(
           trigger: 'css',
           title: 'CSS',
-          description: 'Código CSS',
+          description: strings.cssCode,
           icon: PhosphorIcons.fileCss(),
           markdownTemplate: '```css\n\n```',
           category: 'codigo',
@@ -232,7 +233,7 @@ class BloquinhoSlashCommand {
         BloquinhoSlashCommand(
           trigger: 'json',
           title: 'JSON',
-          description: 'Código JSON',
+          description: strings.jsonCode,
           icon: PhosphorIcons.fileCode(),
           markdownTemplate: '```json\n\n```',
           category: 'codigo',
@@ -243,73 +244,73 @@ class BloquinhoSlashCommand {
         BloquinhoSlashCommand(
           trigger: 'latex',
           title: 'LaTeX',
-          description: 'Equação LaTeX',
+          description: strings.latexEquation,
           icon: PhosphorIcons.mathOperations(),
-          markdownTemplate: r'$$\frac{a}{b}$$',
+          markdownTemplate: r'\frac{a}{b}',
           isPopular: true,
           category: 'matematica',
           categoryColor: Colors.red,
         ),
         BloquinhoSlashCommand(
           trigger: 'equacao',
-          title: 'Equação inline',
-          description: 'Equação na linha',
+          title: strings.inlineEquation,
+          description: strings.inlineEquationDescription,
           icon: PhosphorIcons.mathOperations(),
-          markdownTemplate: r'$x = y$',
+          markdownTemplate: r'x = y',
           category: 'matematica',
           categoryColor: Colors.red,
         ),
         BloquinhoSlashCommand(
           trigger: 'integral',
-          title: 'Integral',
-          description: 'Símbolo de integral',
+          title: strings.integral,
+          description: strings.integralSymbol,
           icon: PhosphorIcons.mathOperations(),
-          markdownTemplate: r'$$\int_{a}^{b} f(x) dx$$',
+          markdownTemplate: r'\int_{a}^{b} f(x) dx',
           category: 'matematica',
           categoryColor: Colors.red,
         ),
         BloquinhoSlashCommand(
           trigger: 'soma',
-          title: 'Somatório',
-          description: 'Símbolo de somatório',
+          title: strings.summation,
+          description: strings.summationSymbol,
           icon: PhosphorIcons.mathOperations(),
-          markdownTemplate: r'$$\sum_{i=1}^{n} x_i$$',
+          markdownTemplate: r'\sum_{i=1}^{n} x_i',
           category: 'matematica',
           categoryColor: Colors.red,
         ),
         BloquinhoSlashCommand(
           trigger: 'produto',
-          title: 'Produtório',
-          description: 'Símbolo de produtório',
+          title: strings.product,
+          description: strings.productSymbol,
           icon: PhosphorIcons.mathOperations(),
-          markdownTemplate: r'$$\prod_{i=1}^{n} x_i$$',
+          markdownTemplate: r'\prod_{i=1}^{n} x_i',
           category: 'matematica',
           categoryColor: Colors.red,
         ),
         BloquinhoSlashCommand(
           trigger: 'limite',
-          title: 'Limite',
-          description: 'Símbolo de limite',
+          title: strings.limit,
+          description: strings.limitSymbol,
           icon: PhosphorIcons.mathOperations(),
-          markdownTemplate: r'$$\lim_{x \to \infty} f(x)$$',
+          markdownTemplate: r'\lim_{x \to \infty} f(x)',
           category: 'matematica',
           categoryColor: Colors.red,
         ),
         BloquinhoSlashCommand(
           trigger: 'derivada',
-          title: 'Derivada',
-          description: 'Símbolo de derivada',
+          title: strings.derivative,
+          description: strings.derivativeSymbol,
           icon: PhosphorIcons.mathOperations(),
-          markdownTemplate: r'$$\frac{d}{dx} f(x)$$',
+          markdownTemplate: r'\frac{d}{dx} f(x)',
           category: 'matematica',
           categoryColor: Colors.red,
         ),
         BloquinhoSlashCommand(
           trigger: 'matriz',
-          title: 'Matriz',
-          description: 'Matriz LaTeX',
+          title: strings.matrix,
+          description: strings.latexMatrix,
           icon: PhosphorIcons.table(),
-          markdownTemplate: r'$$\begin{pmatrix} a & b \\ c & d \end{pmatrix}$$',
+          markdownTemplate: r'\begin{pmatrix} a & b \\ c & d \end{pmatrix}',
           category: 'matematica',
           categoryColor: Colors.red,
         ),
@@ -317,8 +318,8 @@ class BloquinhoSlashCommand {
         // ===== DIAGRAMAS =====
         BloquinhoSlashCommand(
           trigger: 'mermaid',
-          title: 'Diagrama Mermaid',
-          description: 'Diagrama com Mermaid',
+          title: strings.mermaidDiagram,
+          description: strings.mermaidDiagramDescription,
           icon: PhosphorIcons.flowArrow(),
           markdownTemplate:
               '```mermaid\ngraph TD\n    A[Início] --> B[Processo]\n    B --> C[Fim]\n```',
@@ -328,8 +329,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'fluxograma',
-          title: 'Fluxograma',
-          description: 'Diagrama de fluxo',
+          title: strings.flowchart,
+          description: strings.flowchartDescription,
           icon: PhosphorIcons.flowArrow(),
           markdownTemplate:
               '```mermaid\nflowchart TD\n    A[Início] --> B{Decisão?}\n    B -->|Sim| C[Ação]\n    B -->|Não| D[Outra ação]\n```',
@@ -338,8 +339,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'sequencia',
-          title: 'Diagrama de Sequência',
-          description: 'Diagrama de sequência',
+          title: strings.sequenceDiagram,
+          description: strings.sequenceDiagramDescription,
           icon: PhosphorIcons.arrowsHorizontal(),
           markdownTemplate:
               '```mermaid\nsequenceDiagram\n    participant A as Usuário\n    participant B as Sistema\n    A->>B: Requisição\n    B->>A: Resposta\n```',
@@ -348,8 +349,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'classe',
-          title: 'Diagrama de Classe',
-          description: 'Diagrama de classe UML',
+          title: strings.classDiagram,
+          description: strings.umlClassDiagram,
           icon: PhosphorIcons.squaresFour(),
           markdownTemplate:
               '```mermaid\nclassDiagram\n    class Classe {\n        +atributo\n        +metodo()\n    }\n```',
@@ -358,8 +359,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'er',
-          title: 'Diagrama ER',
-          description: 'Diagrama entidade-relacionamento',
+          title: strings.erDiagram,
+          description: strings.erDiagramDescription,
           icon: PhosphorIcons.database(),
           markdownTemplate:
               '```mermaid\nerDiagram\n    USUARIO ||--o{ POST : cria\n    POST ||--o{ COMENTARIO : tem\n```',
@@ -368,8 +369,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'gantt',
-          title: 'Gráfico de Gantt',
-          description: 'Gráfico de Gantt',
+          title: strings.ganttChart,
+          description: strings.ganttChartDescription,
           icon: PhosphorIcons.calendar(),
           markdownTemplate:
               '```mermaid\ngantt\n    title Cronograma do Projeto\n    section Fase 1\n    Tarefa 1 :done, t1, 2024-01-01, 7d\n    Tarefa 2 :active, t2, after t1, 5d\n```',
@@ -380,8 +381,8 @@ class BloquinhoSlashCommand {
         // ===== TABELAS =====
         BloquinhoSlashCommand(
           trigger: 'tabela',
-          title: 'Tabela',
-          description: 'Tabela simples',
+          title: strings.table,
+          description: strings.simpleTable,
           icon: PhosphorIcons.table(),
           markdownTemplate:
               '| Coluna 1 | Coluna 2 | Coluna 3 |\n| --- | --- | --- |\n|  |  |  |',
@@ -391,8 +392,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'tabela2',
-          title: 'Tabela 2x2',
-          description: 'Tabela 2 colunas',
+          title: strings.table2x2,
+          description: strings.table2Columns,
           icon: PhosphorIcons.table(),
           markdownTemplate: '| Coluna 1 | Coluna 2 |\n| --- | --- |\n|  |  |',
           category: 'tabelas',
@@ -400,8 +401,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'tabela3',
-          title: 'Tabela 3x3',
-          description: 'Tabela 3 colunas',
+          title: strings.table3x3,
+          description: strings.table3Columns,
           icon: PhosphorIcons.table(),
           markdownTemplate:
               '| Coluna 1 | Coluna 2 | Coluna 3 |\n| --- | --- | --- |\n|  |  |  |',
@@ -410,8 +411,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'tabela4',
-          title: 'Tabela 4x4',
-          description: 'Tabela 4 colunas',
+          title: strings.table4x4,
+          description: strings.table4Columns,
           icon: PhosphorIcons.table(),
           markdownTemplate:
               '| Coluna 1 | Coluna 2 | Coluna 3 | Coluna 4 |\n| --- | --- | --- | --- |\n|  |  |  |  |',
@@ -422,8 +423,8 @@ class BloquinhoSlashCommand {
         // ===== MÍDIA =====
         BloquinhoSlashCommand(
           trigger: 'imagem',
-          title: 'Imagem',
-          description: 'Inserir imagem',
+          title: strings.image,
+          description: strings.insertImage,
           icon: PhosphorIcons.image(),
           markdownTemplate: '![Descrição](url_da_imagem)',
           isPopular: true,
@@ -432,8 +433,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'video',
-          title: 'Vídeo',
-          description: 'Inserir vídeo',
+          title: strings.video,
+          description: strings.insertVideo,
           icon: PhosphorIcons.video(),
           markdownTemplate: '![Vídeo](url_do_video)',
           category: 'midia',
@@ -441,8 +442,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'audio',
-          title: 'Áudio',
-          description: 'Inserir áudio',
+          title: strings.audio,
+          description: strings.insertAudio,
           icon: PhosphorIcons.speakerHigh(),
           markdownTemplate: '![Áudio](url_do_audio)',
           category: 'midia',
@@ -450,8 +451,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'arquivo',
-          title: 'Arquivo',
-          description: 'Link para arquivo',
+          title: strings.file,
+          description: strings.linkToFile,
           icon: PhosphorIcons.file(),
           markdownTemplate: '[Nome do arquivo](url_do_arquivo)',
           category: 'midia',
@@ -461,8 +462,8 @@ class BloquinhoSlashCommand {
         // ===== LINKS =====
         BloquinhoSlashCommand(
           trigger: 'link',
-          title: 'Link',
-          description: 'Link externo',
+          title: strings.link,
+          description: strings.externalLink,
           icon: PhosphorIcons.link(),
           markdownTemplate: '[Texto do link](url)',
           isPopular: true,
@@ -471,8 +472,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'pagina',
-          title: 'Link de página',
-          description: 'Link para outra página',
+          title: strings.pageLink,
+          description: strings.linkToAnotherPage,
           icon: PhosphorIcons.fileText(),
           markdownTemplate: '[[Nome da página]]',
           category: 'links',
@@ -480,8 +481,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'email',
-          title: 'Email',
-          description: 'Link de email',
+          title: strings.email,
+          description: strings.emailLink,
           icon: PhosphorIcons.envelope(),
           markdownTemplate: '[email@exemplo.com](mailto:email@exemplo.com)',
           category: 'links',
@@ -491,8 +492,8 @@ class BloquinhoSlashCommand {
         // ===== LAYOUT =====
         BloquinhoSlashCommand(
           trigger: 'divisor',
-          title: 'Divisor',
-          description: 'Linha divisória',
+          title: strings.divider,
+          description: strings.dividerLine,
           icon: PhosphorIcons.minus(),
           markdownTemplate: '---',
           category: 'layout',
@@ -500,8 +501,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'espaco',
-          title: 'Espaço',
-          description: 'Espaço vertical',
+          title: strings.space,
+          description: strings.verticalSpace,
           icon: PhosphorIcons.arrowsVertical(),
           markdownTemplate: '\n\n',
           category: 'layout',
@@ -509,8 +510,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'coluna',
-          title: 'Colunas',
-          description: 'Layout em colunas',
+          title: strings.columns,
+          description: strings.columnLayout,
           icon: PhosphorIcons.columns(),
           markdownTemplate:
               '<div style="display: flex;">\n<div style="flex: 1;">\n\n</div>\n<div style="flex: 1;">\n\n</div>\n</div>',
@@ -521,8 +522,8 @@ class BloquinhoSlashCommand {
         // ===== AVANÇADOS =====
         BloquinhoSlashCommand(
           trigger: 'embed',
-          title: 'Embed',
-          description: 'Incorporar conteúdo',
+          title: strings.embed,
+          description: strings.embedContent,
           icon: PhosphorIcons.browser(),
           markdownTemplate:
               '<iframe src="url" width="100%" height="400"></iframe>',
@@ -531,8 +532,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'bookmark',
-          title: 'Bookmark',
-          description: 'Salvar link',
+          title: strings.bookmark,
+          description: strings.saveLink,
           icon: PhosphorIcons.bookmark(),
           markdownTemplate:
               '> 🔖 **Bookmark**\n> [Título](url)\n> Descrição do link',
@@ -541,8 +542,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'indice',
-          title: 'Índice',
-          description: 'Criar índice',
+          title: strings.tableOfContents,
+          description: strings.createTableOfContents,
           icon: PhosphorIcons.listChecks(),
           markdownTemplate:
               '## Índice\n\n- [Seção 1](#secao-1)\n- [Seção 2](#secao-2)\n- [Seção 3](#secao-3)',
@@ -551,8 +552,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'nota',
-          title: 'Nota',
-          description: 'Bloco de nota',
+          title: strings.note,
+          description: strings.noteBlock,
           icon: PhosphorIcons.note(),
           markdownTemplate: '> 📝 **Nota**\n> ',
           category: 'avancado',
@@ -560,8 +561,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'aviso',
-          title: 'Aviso',
-          description: 'Bloco de aviso',
+          title: strings.warning,
+          description: strings.warningBlock,
           icon: PhosphorIcons.warning(),
           markdownTemplate: '> ⚠️ **Aviso**\n> ',
           category: 'avancado',
@@ -569,8 +570,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'erro',
-          title: 'Erro',
-          description: 'Bloco de erro',
+          title: strings.error,
+          description: strings.errorBlock,
           icon: PhosphorIcons.xCircle(),
           markdownTemplate: '> ❌ **Erro**\n> ',
           category: 'avancado',
@@ -578,8 +579,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'sucesso',
-          title: 'Sucesso',
-          description: 'Bloco de sucesso',
+          title: strings.success,
+          description: strings.successBlock,
           icon: PhosphorIcons.checkCircle(),
           markdownTemplate: '> ✅ **Sucesso**\n> ',
           category: 'avancado',
@@ -587,8 +588,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'info',
-          title: 'Informação',
-          description: 'Bloco de informação',
+          title: strings.information,
+          description: strings.informationBlock,
           icon: PhosphorIcons.info(),
           markdownTemplate: '> ℹ️ **Informação**\n> ',
           category: 'avancado',
@@ -596,8 +597,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'dica',
-          title: 'Dica',
-          description: 'Bloco de dica',
+          title: strings.tip,
+          description: strings.tipBlock,
           icon: PhosphorIcons.lightbulb(),
           markdownTemplate: '> 💡 **Dica**\n> ',
           category: 'avancado',
@@ -605,8 +606,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'spoiler',
-          title: 'Spoiler',
-          description: 'Conteúdo oculto',
+          title: strings.spoiler,
+          description: strings.hiddenContent,
           icon: PhosphorIcons.eyeSlash(),
           markdownTemplate:
               '<details>\n<summary>Clique para revelar</summary>\n\nConteúdo oculto aqui\n\n</details>',
@@ -615,8 +616,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'collapsible',
-          title: 'Colapsível',
-          description: 'Seção colapsível',
+          title: strings.collapsible,
+          description: strings.collapsibleSection,
           icon: PhosphorIcons.caretDown(),
           markdownTemplate:
               '<details>\n<summary>Título da seção</summary>\n\nConteúdo da seção\n\n</details>',
@@ -625,8 +626,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'badge',
-          title: 'Badge',
-          description: 'Insere um badge colorido',
+          title: strings.badge,
+          description: strings.insertColoredBadge,
           icon: PhosphorIcons.tag(),
           markdownTemplate:
               '<span style="background: #FFD700; color: #222; border-radius: 6px; padding: 2px 8px; font-size: 0.9em;">Badge</span>',
@@ -635,8 +636,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'mark',
-          title: 'Texto destacado',
-          description: 'Destaca texto com cor',
+          title: strings.highlightedText,
+          description: strings.highlightTextWithColor,
           icon: PhosphorIcons.highlighterCircle(),
           markdownTemplate: '<mark>Texto destacado</mark>',
           category: 'avancado',
@@ -644,8 +645,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'kbd',
-          title: 'Tecla (kbd)',
-          description: 'Representa uma tecla de atalho',
+          title: strings.keyboardKey,
+          description: strings.representShortcutKey,
           icon: PhosphorIcons.keyboard(),
           markdownTemplate: '<kbd>Ctrl+C</kbd>',
           category: 'avancado',
@@ -653,8 +654,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'sub',
-          title: 'Subscrito',
-          description: 'Texto subscrito',
+          title: strings.subscript,
+          description: strings.subscriptText,
           icon: PhosphorIcons.arrowDownLeft(),
           markdownTemplate: 'Texto<sub>sub</sub>',
           category: 'avancado',
@@ -662,8 +663,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'sup',
-          title: 'Sobrescrito',
-          description: 'Texto sobrescrito',
+          title: strings.superscript,
+          description: strings.superscriptText,
           icon: PhosphorIcons.arrowUpRight(),
           markdownTemplate: 'Texto<sup>sup</sup>',
           category: 'avancado',
@@ -671,8 +672,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'progresso',
-          title: 'Barra de progresso',
-          description: 'Insere uma barra de progresso',
+          title: strings.progressBar,
+          description: strings.insertProgressBar,
           icon: PhosphorIcons.slidersHorizontal(),
           markdownTemplate: '<progress value="50" max="100">50%</progress>',
           category: 'avancado',
@@ -680,8 +681,8 @@ class BloquinhoSlashCommand {
         ),
         BloquinhoSlashCommand(
           trigger: 'detalhes',
-          title: 'Detalhes',
-          description: 'Bloco de detalhes expansível',
+          title: strings.details,
+          description: strings.expandableDetailsBlock,
           icon: PhosphorIcons.caretDown(),
           markdownTemplate:
               '<details>\n<summary>Resumo</summary>\n\nConteúdo detalhado aqui\n\n</details>',
@@ -692,8 +693,8 @@ class BloquinhoSlashCommand {
         // ===== IA =====
         BloquinhoSlashCommand(
           trigger: 'ia',
-          title: 'Nota via IA',
-          description: 'Gerar conteúdo com inteligência artificial',
+          title: strings.noteViaAI,
+          description: strings.generateContentWithAI,
           icon: PhosphorIcons.robot(),
           markdownTemplate: '🤖 **Nota Gerada por IA**\n\n',
           isPopular: true,
@@ -703,21 +704,24 @@ class BloquinhoSlashCommand {
       ];
 
   /// Filtrar comandos por categoria
-  static List<BloquinhoSlashCommand> getByCategory(String category) {
-    return allCommands.where((cmd) => cmd.category == category).toList();
+  static List<BloquinhoSlashCommand> getByCategory(
+      String category, AppStrings strings) {
+    return allCommands(strings)
+        .where((cmd) => cmd.category == category)
+        .toList();
   }
 
   /// Obter comandos populares
-  static List<BloquinhoSlashCommand> get popularCommands {
-    return allCommands.where((cmd) => cmd.isPopular).toList();
+  static List<BloquinhoSlashCommand> popularCommands(AppStrings strings) {
+    return allCommands(strings).where((cmd) => cmd.isPopular).toList();
   }
 
   /// Buscar comandos por texto
-  static List<BloquinhoSlashCommand> search(String query) {
-    if (query.isEmpty) return popularCommands;
+  static List<BloquinhoSlashCommand> search(String query, AppStrings strings) {
+    if (query.isEmpty) return popularCommands(strings);
 
     final lowerQuery = query.toLowerCase();
-    return allCommands.where((cmd) {
+    return allCommands(strings).where((cmd) {
       return cmd.trigger.toLowerCase().contains(lowerQuery) ||
           cmd.title.toLowerCase().contains(lowerQuery) ||
           cmd.description.toLowerCase().contains(lowerQuery);
@@ -725,17 +729,18 @@ class BloquinhoSlashCommand {
   }
 
   /// Obter comando por trigger
-  static BloquinhoSlashCommand? getByTrigger(String trigger) {
+  static BloquinhoSlashCommand? getByTrigger(
+      String trigger, AppStrings strings) {
     try {
-      return allCommands.firstWhere((cmd) => cmd.trigger == trigger);
+      return allCommands(strings).firstWhere((cmd) => cmd.trigger == trigger);
     } catch (e) {
       return null;
     }
   }
 
   /// Categorias disponíveis
-  static List<String> get categories {
-    return allCommands
+  static List<String> categories(AppStrings strings) {
+    return allCommands(strings)
         .map((cmd) => cmd.category)
         .where((cat) => cat != null)
         .cast<String>()
@@ -744,36 +749,36 @@ class BloquinhoSlashCommand {
   }
 
   /// Nome da categoria
-  String get categoryName {
+  String getCategoryName(AppStrings strings) {
     switch (category) {
       case 'titulos':
-        return 'Títulos';
+        return strings.titles;
       case 'listas':
-        return 'Listas';
+        return strings.lists;
       case 'texto':
-        return 'Texto';
+        return strings.text;
       case 'citacoes':
-        return 'Citações';
+        return strings.quotes;
       case 'codigo':
-        return 'Código';
+        return strings.code;
       case 'matematica':
-        return 'Matemática';
+        return strings.math;
       case 'diagramas':
-        return 'Diagramas';
+        return strings.diagrams;
       case 'tabelas':
-        return 'Tabelas';
+        return strings.tables;
       case 'midia':
-        return 'Mídia';
+        return strings.media;
       case 'links':
-        return 'Links';
+        return strings.links;
       case 'layout':
-        return 'Layout';
+        return strings.layout;
       case 'avancado':
-        return 'Avançado';
+        return strings.advanced;
       case 'ia':
-        return 'Inteligência Artificial';
+        return strings.artificialIntelligence;
       default:
-        return 'Outros';
+        return strings.others;
     }
   }
 

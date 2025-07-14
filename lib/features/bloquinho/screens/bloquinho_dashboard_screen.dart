@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/workspace_provider.dart';
@@ -10,6 +11,8 @@ import '../../../core/theme/app_colors.dart';
 import '../providers/pages_provider.dart';
 import '../models/page_model.dart';
 import '../widgets/page_tree_widget.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 class BloquinhoDashboardScreen extends ConsumerStatefulWidget {
   const BloquinhoDashboardScreen({super.key});
@@ -28,9 +31,10 @@ class _BloquinhoDashboardScreenState
     final isDarkMode = ref.watch(isDarkModeProvider);
     final currentProfile = ref.watch(currentProfileProvider);
     final currentWorkspace = ref.watch(currentWorkspaceProvider);
+    final strings = ref.watch(appStringsProvider);
 
     if (currentProfile == null || currentWorkspace == null) {
-      return _buildErrorView('Perfil ou workspace não disponível');
+      return _buildErrorView(strings.profileOrWorkspaceNotAvailable);
     }
 
     final pages = ref.watch(pagesProvider((
@@ -43,13 +47,13 @@ class _BloquinhoDashboardScreenState
       child: Scaffold(
         backgroundColor:
             isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
-        appBar: _buildAppBar(isDarkMode),
-        body: _buildBody(isDarkMode, pages),
+        appBar: _buildAppBar(isDarkMode, strings),
+        body: _buildBody(isDarkMode, pages, strings),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(bool isDarkMode) {
+  PreferredSizeWidget _buildAppBar(bool isDarkMode, AppStrings strings) {
     return AppBar(
       elevation: 0,
       backgroundColor:
@@ -59,13 +63,13 @@ class _BloquinhoDashboardScreenState
       leading: IconButton(
         icon: Icon(Icons.arrow_back),
         onPressed: () => Navigator.of(context).pop(),
-        tooltip: 'Voltar',
+        tooltip: strings.back,
       ),
       title: Row(
         children: [
           Text('📚', style: const TextStyle(fontSize: 24)),
           const SizedBox(width: 12),
-          const Text('Bloquinho'),
+          Text(strings.bloquinho),
         ],
       ),
       actions: [
@@ -74,13 +78,14 @@ class _BloquinhoDashboardScreenState
           icon: Icon(_isExpanded
               ? PhosphorIcons.caretUp()
               : PhosphorIcons.caretDown()),
-          tooltip: _isExpanded ? 'Recolher' : 'Expandir',
+          tooltip: _isExpanded ? strings.collapse : strings.expand,
         ),
       ],
     );
   }
 
-  Widget _buildBody(bool isDarkMode, List<PageModel> pages) {
+  Widget _buildBody(
+      bool isDarkMode, List<PageModel> pages, AppStrings strings) {
     return Column(
       children: [
         // Dashboard principal
@@ -90,13 +95,13 @@ class _BloquinhoDashboardScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildOverviewCards(isDarkMode, pages),
+                _buildOverviewCards(isDarkMode, pages, strings),
                 const SizedBox(height: 24),
-                _buildRecentActivity(isDarkMode, pages),
+                _buildRecentActivity(isDarkMode, pages, strings),
                 const SizedBox(height: 24),
-                _buildStorageInfo(isDarkMode, pages),
+                _buildStorageInfo(isDarkMode, pages, strings),
                 const SizedBox(height: 24),
-                _buildQuickActions(isDarkMode),
+                _buildQuickActions(isDarkMode, strings),
               ],
             ),
           ),
@@ -128,7 +133,8 @@ class _BloquinhoDashboardScreenState
     );
   }
 
-  Widget _buildOverviewCards(bool isDarkMode, List<PageModel> pages) {
+  Widget _buildOverviewCards(
+      bool isDarkMode, List<PageModel> pages, AppStrings strings) {
     final totalPages = pages.length;
     final rootPages = pages.where((p) => p.isRoot).length;
     final subPages = totalPages - rootPages;
@@ -140,7 +146,7 @@ class _BloquinhoDashboardScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Visão Geral',
+          strings.overview,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -152,7 +158,7 @@ class _BloquinhoDashboardScreenState
               child: _buildStatCard(
                 isDarkMode,
                 '📄',
-                'Total de Páginas',
+                strings.totalPages,
                 totalPages.toString(),
                 Colors.blue,
               ),
@@ -162,7 +168,7 @@ class _BloquinhoDashboardScreenState
               child: _buildStatCard(
                 isDarkMode,
                 '📁',
-                'Páginas Raiz',
+                strings.rootPages,
                 rootPages.toString(),
                 Colors.green,
               ),
@@ -172,7 +178,7 @@ class _BloquinhoDashboardScreenState
               child: _buildStatCard(
                 isDarkMode,
                 '📂',
-                'Subpáginas',
+                strings.subpages,
                 subPages.toString(),
                 Colors.orange,
               ),
@@ -186,7 +192,7 @@ class _BloquinhoDashboardScreenState
               child: _buildStatCard(
                 isDarkMode,
                 '📝',
-                'Conteúdo Total',
+                strings.totalContent,
                 '${(totalContent / 1024).toStringAsFixed(1)} KB',
                 Colors.purple,
               ),
@@ -196,7 +202,7 @@ class _BloquinhoDashboardScreenState
               child: _buildStatCard(
                 isDarkMode,
                 '📊',
-                'Média por Página',
+                strings.averagePerPage,
                 '${avgContentPerPage.toStringAsFixed(0)} chars',
                 Colors.teal,
               ),
@@ -257,7 +263,8 @@ class _BloquinhoDashboardScreenState
     );
   }
 
-  Widget _buildRecentActivity(bool isDarkMode, List<PageModel> pages) {
+  Widget _buildRecentActivity(
+      bool isDarkMode, List<PageModel> pages, AppStrings strings) {
     final recentPages = pages
         .where((p) => p.updatedAt
             .isAfter(DateTime.now().subtract(const Duration(days: 7))))
@@ -268,7 +275,7 @@ class _BloquinhoDashboardScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Atividade Recente',
+          strings.recentActivity,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -296,7 +303,7 @@ class _BloquinhoDashboardScreenState
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Nenhuma atividade recente',
+                          strings.noRecentActivity,
                           style:
                               Theme.of(context).textTheme.bodyLarge?.copyWith(
                                     color: Colors.grey[400],
@@ -325,7 +332,7 @@ class _BloquinhoDashboardScreenState
                       ),
                       title: Text(page.title),
                       subtitle: Text(
-                        'Atualizado em ${_formatDate(page.updatedAt)}',
+                        '${strings.updatedAt} ${_formatDate(page.updatedAt, strings)}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.grey[600],
                             ),
@@ -346,7 +353,8 @@ class _BloquinhoDashboardScreenState
     );
   }
 
-  Widget _buildStorageInfo(bool isDarkMode, List<PageModel> pages) {
+  Widget _buildStorageInfo(
+      bool isDarkMode, List<PageModel> pages, AppStrings strings) {
     final totalContent =
         pages.fold<int>(0, (sum, page) => sum + page.content.length);
     final totalSizeKB = totalContent / 1024;
@@ -356,7 +364,7 @@ class _BloquinhoDashboardScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Informações de Armazenamento',
+          strings.storageInfo,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -374,15 +382,16 @@ class _BloquinhoDashboardScreenState
           ),
           child: Column(
             children: [
-              _buildStorageRow('📄 Páginas', pages.length.toString()),
-              const SizedBox(height: 8),
-              _buildStorageRow('📝 Caracteres', totalContent.toString()),
+              _buildStorageRow('📄 ${strings.pages}', pages.length.toString()),
               const SizedBox(height: 8),
               _buildStorageRow(
-                  '💾 Tamanho', '${totalSizeMB.toStringAsFixed(2)} MB'),
+                  '📝 ${strings.characters}', totalContent.toString()),
               const SizedBox(height: 8),
               _buildStorageRow(
-                  '📅 Última atualização', _formatDate(DateTime.now())),
+                  '💾 ${strings.size}', '${totalSizeMB.toStringAsFixed(2)} MB'),
+              const SizedBox(height: 8),
+              _buildStorageRow('📅 ${strings.lastUpdate}',
+                  _formatDate(DateTime.now(), strings)),
             ],
           ),
         ),
@@ -408,12 +417,12 @@ class _BloquinhoDashboardScreenState
     );
   }
 
-  Widget _buildQuickActions(bool isDarkMode) {
+  Widget _buildQuickActions(bool isDarkMode, AppStrings strings) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Ações Rápidas',
+          strings.quickActions,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -425,8 +434,8 @@ class _BloquinhoDashboardScreenState
               child: _buildActionCard(
                 isDarkMode,
                 PhosphorIcons.plus(),
-                'Nova Página',
-                'Criar uma nova página',
+                strings.newPage,
+                strings.createNewPage,
                 () => context.push('/workspace/bloquinho/editor'),
               ),
             ),
@@ -435,8 +444,8 @@ class _BloquinhoDashboardScreenState
               child: _buildActionCard(
                 isDarkMode,
                 PhosphorIcons.folderPlus(),
-                'Nova Subpágina',
-                'Criar uma subpágina',
+                strings.newSubpage,
+                strings.createSubpage,
                 () => _showSubPageDialog(),
               ),
             ),
@@ -449,8 +458,8 @@ class _BloquinhoDashboardScreenState
               child: _buildActionCard(
                 isDarkMode,
                 PhosphorIcons.upload(),
-                'Importar',
-                'Importar páginas do Notion',
+                strings.import,
+                strings.importFromNotion,
                 () => _showImportDialog(),
               ),
             ),
@@ -459,8 +468,8 @@ class _BloquinhoDashboardScreenState
               child: _buildActionCard(
                 isDarkMode,
                 PhosphorIcons.download(),
-                'Exportar',
-                'Exportar todas as páginas',
+                strings.export,
+                strings.exportAllPages,
                 () => _showExportDialog(),
               ),
             ),
@@ -515,8 +524,9 @@ class _BloquinhoDashboardScreenState
   }
 
   Widget _buildErrorView(String message) {
+    final strings = ref.read(appStringsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Erro')),
+      appBar: AppBar(title: Text(strings.error)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -528,7 +538,7 @@ class _BloquinhoDashboardScreenState
             ),
             const SizedBox(height: 16),
             Text(
-              'Erro no Dashboard',
+              strings.dashboardError,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
@@ -550,13 +560,13 @@ class _BloquinhoDashboardScreenState
   }
 
   void _showSubPageDialog() {
+    final strings = ref.read(appStringsProvider);
     final currentProfile = ref.read(currentProfileProvider);
     final currentWorkspace = ref.read(currentWorkspaceProvider);
 
     if (currentProfile == null || currentWorkspace == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Erro: Perfil ou workspace não disponível')),
+        SnackBar(content: Text(strings.errorProfileOrWorkspaceNotAvailable)),
       );
       return;
     }
@@ -568,7 +578,7 @@ class _BloquinhoDashboardScreenState
 
     if (pages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhuma página disponível para ser pai')),
+        SnackBar(content: Text(strings.noParentPageAvailable)),
       );
       return;
     }
@@ -585,7 +595,7 @@ class _BloquinhoDashboardScreenState
           )));
 
           final newPage = PageModel.create(
-            title: 'Nova Subpágina',
+            title: strings.newSubpage,
             parentId: parentId,
           );
 
@@ -601,40 +611,42 @@ class _BloquinhoDashboardScreenState
   }
 
   void _showImportDialog() {
+    final strings = ref.read(appStringsProvider);
     // TODO: Implementar importação
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funcionalidade em desenvolvimento')),
+      SnackBar(content: Text(strings.featureInDevelopment)),
     );
   }
 
   void _showExportDialog() {
+    final strings = ref.read(appStringsProvider);
     // TODO: Implementar exportação
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funcionalidade em desenvolvimento')),
+      SnackBar(content: Text(strings.featureInDevelopment)),
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(DateTime date, AppStrings strings) {
     final now = DateTime.now();
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
-        return '${difference.inMinutes} minutos atrás';
+        return strings.minutesAgo(difference.inMinutes);
       }
-      return '${difference.inHours} horas atrás';
+      return strings.hoursAgo(difference.inHours);
     } else if (difference.inDays == 1) {
-      return 'Ontem';
+      return '${strings.yesterday} ${DateFormat('HH:mm').format(date)}';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays} dias atrás';
+      return strings.daysAgo(difference.inDays);
     } else {
-      return '${date.day}/${date.month}/${date.year}';
+      return DateFormat('dd/MM/yyyy').format(date);
     }
   }
 }
 
 // Dialog para selecionar página pai
-class _ParentPageSelectorDialog extends StatefulWidget {
+class _ParentPageSelectorDialog extends ConsumerStatefulWidget {
   final List<PageModel> pages;
   final Function(String parentId) onParentSelected;
 
@@ -644,11 +656,12 @@ class _ParentPageSelectorDialog extends StatefulWidget {
   });
 
   @override
-  State<_ParentPageSelectorDialog> createState() =>
+  ConsumerState<_ParentPageSelectorDialog> createState() =>
       _ParentPageSelectorDialogState();
 }
 
-class _ParentPageSelectorDialogState extends State<_ParentPageSelectorDialog> {
+class _ParentPageSelectorDialogState
+    extends ConsumerState<_ParentPageSelectorDialog> {
   String _searchQuery = '';
   List<PageModel> _filteredPages = [];
 
@@ -674,8 +687,9 @@ class _ParentPageSelectorDialogState extends State<_ParentPageSelectorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = ref.watch(appStringsProvider);
     return AlertDialog(
-      title: const Text('Selecionar Página Pai'),
+      title: Text(strings.selectParentPage),
       content: Container(
         width: 400,
         height: 300,
@@ -685,7 +699,7 @@ class _ParentPageSelectorDialogState extends State<_ParentPageSelectorDialog> {
             TextField(
               onChanged: _filterPages,
               decoration: InputDecoration(
-                hintText: 'Buscar páginas...',
+                hintText: strings.searchPages,
                 prefixIcon: Icon(PhosphorIcons.magnifyingGlass()),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -702,8 +716,8 @@ class _ParentPageSelectorDialogState extends State<_ParentPageSelectorDialog> {
                   ? Center(
                       child: Text(
                         _searchQuery.isEmpty
-                            ? 'Nenhuma página disponível'
-                            : 'Nenhuma página encontrada para "$_searchQuery"',
+                            ? strings.noPagesAvailable
+                            : strings.noPagesFoundFor(_searchQuery),
                         style: TextStyle(color: Colors.grey[600]),
                       ),
                     )
@@ -718,9 +732,9 @@ class _ParentPageSelectorDialogState extends State<_ParentPageSelectorDialog> {
                           ),
                           title: Text(page.title),
                           subtitle: page.parentId != null
-                              ? Text(
-                                  'Subpágina de: ${_getParentTitle(page.parentId!)}')
-                              : const Text('Página raiz'),
+                              ? Text(strings
+                                  .subpageOf(_getParentTitle(page.parentId!)))
+                              : Text(strings.rootPage),
                           onTap: () {
                             widget.onParentSelected(page.id);
                           },
@@ -734,16 +748,17 @@ class _ParentPageSelectorDialogState extends State<_ParentPageSelectorDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: Text(strings.cancel),
         ),
       ],
     );
   }
 
   String _getParentTitle(String parentId) {
+    final strings = ref.read(appStringsProvider);
     final parent = widget.pages.firstWhere(
       (p) => p.id == parentId,
-      orElse: () => PageModel.create(title: 'Página não encontrada'),
+      orElse: () => PageModel.create(title: strings.pageNotFound),
     );
     return parent.title;
   }

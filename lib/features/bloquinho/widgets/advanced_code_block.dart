@@ -32,9 +32,13 @@ class _AdvancedCodeBlockState extends State<AdvancedCodeBlock> {
     final maxLineNumber = lines.length;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final codeBg = const Color(0xFF23272E);
-    final lineNumberColor = Colors.white;
-    final borderColor = Colors.white;
+    final containerBg = isDark
+        ? const Color(0xFF2D3748)
+        : const Color(0xFFF7FAFC); // Cinza claro
+    final lineNumberColor = isDark
+        ? const Color(0xFFA0AEC0)
+        : const Color(0xFF718096); // Cinza claro
+    final codeBg = Colors.transparent; // Fundo transparente
 
     return Center(
       child: Container(
@@ -42,7 +46,7 @@ class _AdvancedCodeBlockState extends State<AdvancedCodeBlock> {
         constraints: const BoxConstraints(maxWidth: 1100),
         margin: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: codeBg,
+          color: containerBg,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
@@ -57,17 +61,6 @@ class _AdvancedCodeBlockState extends State<AdvancedCodeBlock> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Linha vertical branca
-                Container(
-                  width: 4,
-                  decoration: BoxDecoration(
-                    color: borderColor,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(14),
-                      bottomLeft: Radius.circular(14),
-                    ),
-                  ),
-                ),
                 // Números de linha
                 if (widget.showLineNumbers)
                   Container(
@@ -103,7 +96,7 @@ class _AdvancedCodeBlockState extends State<AdvancedCodeBlock> {
                           fontFamily: 'monospace',
                           fontSize: widget.fontSize,
                           height: 1.5,
-                          color: Colors.white,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
                     ),
@@ -119,7 +112,7 @@ class _AdvancedCodeBlockState extends State<AdvancedCodeBlock> {
                 message: _copied ? 'Copiado!' : 'Copiar código',
                 child: IconButton(
                   icon: Icon(_copied ? Icons.check : Icons.copy_rounded,
-                      size: 18, color: Colors.white),
+                      size: 18, color: lineNumberColor),
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: widget.code));
                     setState(() => _copied = true);

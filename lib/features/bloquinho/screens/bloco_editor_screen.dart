@@ -24,6 +24,8 @@ import '../providers/pages_provider.dart';
 import '../models/page_model.dart';
 import '../../../core/services/bloquinho_storage_service.dart';
 import '../../../core/constants/page_icons.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 class BlocoEditorScreen extends ConsumerStatefulWidget {
   final String? documentId;
@@ -95,6 +97,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   }
 
   Future<void> savePageContent(String pageId, String content) async {
+    final strings = ref.read(appStringsProvider);
     try {
       final currentProfile = ref.read(currentProfileProvider);
       final currentWorkspace = ref.read(currentWorkspaceProvider);
@@ -109,7 +112,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
       )));
       final page = pages.firstWhere(
         (p) => p.id == pageId,
-        orElse: () => PageModel.create(title: 'Página não encontrada'),
+        orElse: () => PageModel.create(title: strings.pageNotFound),
       );
 
       final updatedPage = page.copyWith(
@@ -136,6 +139,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   }
 
   Future<void> _initializeEditor() async {
+    final strings = ref.read(appStringsProvider);
     try {
       // Se não tem documentId, criar página raiz
       if (widget.documentId == null) {
@@ -148,7 +152,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
             workspaceName: currentWorkspace.name
           )));
           final newPage = PageModel.create(
-            title: widget.documentTitle ?? 'Nova Página',
+            title: widget.documentTitle ?? strings.newPage,
           );
           pagesNotifier.state = [...pagesNotifier.state, newPage];
           _currentPageId = newPage.id;
@@ -160,16 +164,17 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
       }
 
       await ref.read(editorControllerProvider.notifier).initialize(
-        documentId: _currentPageId,
-        documentTitle: widget.documentTitle ?? 'Nova Página',
-        isReadOnly: widget.isReadOnly,
-        settings: {
-          'showLineNumbers': _showLineNumbers,
-          'zoomLevel': _zoomLevel,
-        },
-      );
+            documentId: _currentPageId,
+            documentTitle: widget.documentTitle ?? strings.newPage,
+            isReadOnly: widget.isReadOnly,
+            settings: {
+              'showLineNumbers': _showLineNumbers,
+              'zoomLevel': _zoomLevel,
+            },
+            strings: strings,
+          );
     } catch (e) {
-      _showErrorSnackBar('Erro ao inicializar editor: $e');
+      _showErrorSnackBar('${strings.errorInitializingEditor}: ${e.toString()}');
     }
   }
 
@@ -192,6 +197,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   }
 
   void _createSubPage(String parentId) {
+    final strings = ref.read(appStringsProvider);
     final currentProfile = ref.read(currentProfileProvider);
     final currentWorkspace = ref.read(currentWorkspaceProvider);
 
@@ -201,7 +207,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         workspaceName: currentWorkspace.name
       )));
       final newPage = PageModel.create(
-        title: 'Nova Subpágina',
+        title: strings.newSubpage,
         parentId: parentId,
       );
       pagesNotifier.state = [...pagesNotifier.state, newPage];
@@ -215,6 +221,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     final editorState = ref.watch(editorControllerProvider);
     final currentWorkspace = ref.watch(currentWorkspaceProvider);
     final currentProfile = ref.watch(currentProfileProvider);
+    final strings = ref.watch(appStringsProvider);
 
     if (currentProfile != null && currentWorkspace != null) {
       final pages = ref.watch(pagesProvider((
@@ -223,7 +230,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
       )));
       final currentPage = pages.firstWhere(
         (p) => p.id == _currentPageId,
-        orElse: () => PageModel.create(title: 'Página não encontrada'),
+        orElse: () => PageModel.create(title: strings.pageNotFound),
       );
 
       return Theme(
@@ -233,10 +240,12 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
               isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
           appBar: _isFullscreen
               ? null
-              : _buildAppBar(isDarkMode, editorState, currentPage),
-          body: _buildBody(isDarkMode, editorState, currentPage),
-          floatingActionButton: _buildFloatingActionButton(editorState),
-          bottomNavigationBar: _buildBottomBar(isDarkMode, editorState),
+              : _buildAppBar(isDarkMode, editorState, currentPage, strings),
+          body: _buildBody(isDarkMode, editorState, currentPage, strings),
+          floatingActionButton:
+              _buildFloatingActionButton(editorState, strings),
+          bottomNavigationBar:
+              _buildBottomBar(isDarkMode, editorState, strings),
         ),
       );
     }
@@ -247,15 +256,17 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
       child: Scaffold(
         backgroundColor:
             isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
-        appBar: AppBar(title: const Text('Erro: Contexto não disponível')),
-        body: const Center(
-            child: Text('Erro: Perfil ou workspace não disponível')),
+        appBar: AppBar(title: Text(strings.errorNoContext)),
+        body: Center(child: Text(strings.errorProfileOrWorkspaceNotAvailable)),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(bool isDarkMode,
-      EditorControllerState editorState, PageModel? currentPage) {
+  PreferredSizeWidget _buildAppBar(
+      bool isDarkMode,
+      EditorControllerState editorState,
+      PageModel? currentPage,
+      AppStrings strings) {
     return AppBar(
       elevation: 0,
       backgroundColor:
@@ -265,18 +276,18 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
       leading: IconButton(
         icon: Icon(Icons.arrow_back),
         onPressed: () => Navigator.of(context).pop(),
-        tooltip: 'Voltar',
+        tooltip: strings.back,
       ),
       titleSpacing: 0,
-      title: _buildTitleSection(editorState, currentPage),
-      actions: _buildAppBarActions(isDarkMode, editorState),
-      bottom: _isSearchVisible ? _buildSearchBar() : null,
+      title: _buildTitleSection(editorState, currentPage, strings),
+      actions: _buildAppBarActions(isDarkMode, editorState, strings),
+      bottom: _isSearchVisible ? _buildSearchBar(strings) : null,
       toolbarHeight: 80, // Aumentar altura do header
     );
   }
 
-  Widget _buildTitleSection(
-      EditorControllerState editorState, PageModel? currentPage) {
+  Widget _buildTitleSection(EditorControllerState editorState,
+      PageModel? currentPage, AppStrings strings) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -292,7 +303,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
                   IconButton(
                     onPressed: _navigateBack,
                     icon: Icon(PhosphorIcons.arrowLeft(), size: 16),
-                    tooltip: 'Voltar',
+                    tooltip: strings.back,
                     padding: EdgeInsets.zero,
                     constraints:
                         const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -340,7 +351,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
                                         : Colors.transparent,
                                   ),
                                   child: Text(
-                                    page?.title ?? 'Página',
+                                    page?.title ?? strings.page,
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: pageId == _currentPageId
@@ -368,7 +379,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
                 // Seletor de ícone
                 if (currentPage != null)
                   GestureDetector(
-                    onTap: () => _showIconSelector(currentPage),
+                    onTap: () => _showIconSelector(currentPage, strings),
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -389,9 +400,9 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
                 // Título editável
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => _editPageTitle(currentPage),
+                    onTap: () => _editPageTitle(currentPage, strings),
                     child: Text(
-                      currentPage?.title ?? 'Página sem título',
+                      currentPage?.title ?? strings.untitledPage,
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
@@ -424,7 +435,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Salvando...',
+                          strings.saving,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.orange,
@@ -451,7 +462,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Salvo',
+                          strings.saved,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.green,
@@ -468,13 +479,13 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     );
   }
 
-  void _showIconSelector(PageModel page) {
+  void _showIconSelector(PageModel page, AppStrings strings) {
     final icons = PageIcons.availableIcons;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Escolher Ícone'),
+        title: Text(strings.chooseIcon),
         content: Container(
           width: 300,
           height: 400, // Aumentar altura para acomodar mais ícones
@@ -536,14 +547,14 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+            child: Text(strings.cancel),
           ),
         ],
       ),
     );
   }
 
-  void _editPageTitle(PageModel? page) {
+  void _editPageTitle(PageModel? page, AppStrings strings) {
     if (page == null) return;
 
     final titleController = TextEditingController(text: page.title);
@@ -551,19 +562,19 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Editar Título'),
+        title: Text(strings.editTitle),
         content: TextField(
           controller: titleController,
-          decoration: const InputDecoration(
-            labelText: 'Título da página',
-            hintText: 'Digite o título...',
+          decoration: InputDecoration(
+            labelText: strings.pageTitle,
+            hintText: strings.typeTitle,
           ),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+            child: Text(strings.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -584,7 +595,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
                 Navigator.of(context).pop();
               }
             },
-            child: const Text('Salvar'),
+            child: Text(strings.save),
           ),
         ],
       ),
@@ -592,7 +603,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   }
 
   Widget _buildBody(bool isDarkMode, EditorControllerState editorState,
-      PageModel? currentPage) {
+      PageModel? currentPage, AppStrings strings) {
     if (editorState.isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
@@ -600,12 +611,12 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     }
 
     if (editorState.error != null) {
-      return _buildErrorView(editorState.error!);
+      return _buildErrorView(editorState.error!, strings);
     }
 
     if (!editorState.isInitialized) {
-      return const Center(
-        child: Text('Editor não inicializado'),
+      return Center(
+        child: Text(strings.editorNotInitialized),
       );
     }
 
@@ -638,7 +649,8 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     );
   }
 
-  Widget _buildEditor(bool isDarkMode, EditorControllerState editorState) {
+  Widget _buildEditor(
+      bool isDarkMode, EditorControllerState editorState, AppStrings strings) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Transform.scale(
@@ -658,7 +670,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
           ),
           decoration: InputDecoration(
             border: InputBorder.none,
-            hintText: 'Comece a escrever...',
+            hintText: strings.startWriting,
             hintStyle: TextStyle(
               color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
             ),
@@ -676,7 +688,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     );
   }
 
-  Widget _buildErrorView(String error) {
+  Widget _buildErrorView(String error, AppStrings strings) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -688,7 +700,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Erro no Editor',
+            strings.editorError,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
@@ -701,24 +713,26 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
           ElevatedButton(
             onPressed: () =>
                 ref.read(editorControllerProvider.notifier).clearError(),
-            child: const Text('Tentar Novamente'),
+            child: Text(strings.tryAgain),
           ),
         ],
       ),
     );
   }
 
-  Widget? _buildFloatingActionButton(EditorControllerState editorState) {
+  Widget? _buildFloatingActionButton(
+      EditorControllerState editorState, AppStrings strings) {
     if (_isFullscreen || !editorState.canEdit) return null;
 
     return FloatingActionButton(
       onPressed: _showBlockMenu,
-      tooltip: 'Inserir bloco',
+      tooltip: strings.insertBlock,
       child: Icon(PhosphorIcons.plus()),
     );
   }
 
-  Widget? _buildBottomBar(bool isDarkMode, EditorControllerState editorState) {
+  Widget? _buildBottomBar(
+      bool isDarkMode, EditorControllerState editorState, AppStrings strings) {
     if (_isFullscreen) return null;
 
     return Container(
@@ -737,7 +751,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         children: [
           // Estatísticas do documento
           Text(
-            _buildStatsText(editorState),
+            _buildStatsText(editorState, strings),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey[600],
                 ),
@@ -746,7 +760,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
           // Posição do cursor
           if (editorState.selection != null)
             Text(
-              'Linha ${editorState.selection!.start + 1}',
+              strings.lineAndColumn(editorState.selection!.start + 1, 0),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.grey[600],
                   ),
@@ -756,13 +770,14 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     );
   }
 
-  String _buildStatsText(EditorControllerState editorState) {
+  String _buildStatsText(
+      EditorControllerState editorState, AppStrings strings) {
     final stats =
         ref.read(editorControllerProvider.notifier).getDocumentStats();
     final wordCount = stats['wordCount'] ?? 0;
     final charCount = stats['characterCount'] ?? 0;
 
-    return '$wordCount palavras • $charCount caracteres';
+    return strings.wordAndCharCount(wordCount, charCount);
   }
 
   // Event Handlers
@@ -805,12 +820,13 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     // Implementar busca
   }
 
-  void _showSearchResults(List<Map<String, dynamic>> results) {
+  void _showSearchResults(
+      List<Map<String, dynamic>> results, AppStrings strings) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${results.length} resultados encontrados'),
+        content: Text(strings.resultsFound(results.length)),
         action: SnackBarAction(
-          label: 'Fechar',
+          label: strings.closeButton,
           onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
         ),
       ),
@@ -867,15 +883,17 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   }
 
   Future<void> _saveDocument() async {
+    final strings = ref.read(appStringsProvider);
     try {
       await ref.read(editorControllerProvider.notifier).saveDocument();
-      _showSuccessSnackBar('Documento salvo com sucesso');
+      _showSuccessSnackBar(strings.documentSavedSuccessfully);
     } catch (e) {
-      _showErrorSnackBar('Erro ao salvar documento: $e');
+      _showErrorSnackBar(strings.errorSavingDocument(e.toString()));
     }
   }
 
   void _exportDocument() {
+    final strings = ref.read(appStringsProvider);
     showDialog(
       context: context,
       builder: (context) => _ExportDialog(
@@ -884,9 +902,10 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
             final data = await ref
                 .read(editorControllerProvider.notifier)
                 .exportDocument(format: format);
-            _showSuccessSnackBar('Documento exportado com sucesso');
+            _showSuccessSnackBar(strings.documentExportedSuccessfully);
           } catch (e) {
-            _showErrorSnackBar('Erro ao exportar: $e');
+            _showErrorSnackBar(
+                '${strings.errorExportingDocument}: ${e.toString()}');
           }
         },
       ),
@@ -894,28 +913,32 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   }
 
   void _importDocument() {
+    final strings = ref.read(appStringsProvider);
     // TODO: Implementar importação de documento
-    _showInfoSnackBar('Funcionalidade em desenvolvimento');
+    _showInfoSnackBar(strings.featureInDevelopment);
   }
 
   void _shareDocument() {
+    final strings = ref.read(appStringsProvider);
     // TODO: Implementar compartilhamento
-    _showInfoSnackBar('Funcionalidade em desenvolvimento');
+    _showInfoSnackBar(strings.featureInDevelopment);
   }
 
   void _showSettings() {
+    final strings = ref.read(appStringsProvider);
     // TODO: Implementar configurações do editor
-    _showInfoSnackBar('Funcionalidade em desenvolvimento');
+    _showInfoSnackBar(strings.featureInDevelopment);
   }
 
-  void _editDocumentTitle(EditorControllerState editorState) {
+  void _editDocumentTitle(
+      EditorControllerState editorState, AppStrings strings) {
     showDialog(
       context: context,
       builder: (context) => _TitleEditDialog(
         currentTitle: editorState.documentTitle ?? '',
         onSave: (newTitle) {
           // TODO: Implementar atualização do título
-          _showSuccessSnackBar('Título atualizado');
+          _showSuccessSnackBar(strings.titleUpdatedSuccessfully);
         },
       ),
     );
@@ -937,12 +960,13 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   // Utility methods
 
   void _showErrorSnackBar(String message) {
+    final strings = ref.read(appStringsProvider);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.red,
         action: SnackBarAction(
-          label: 'Fechar',
+          label: strings.closeButton,
           textColor: Colors.white,
           onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
         ),
@@ -951,12 +975,13 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   }
 
   void _showSuccessSnackBar(String message) {
+    final strings = ref.read(appStringsProvider);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.green,
         action: SnackBarAction(
-          label: 'Fechar',
+          label: strings.closeButton,
           textColor: Colors.white,
           onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
         ),
@@ -965,11 +990,12 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   }
 
   void _showInfoSnackBar(String message) {
+    final strings = ref.read(appStringsProvider);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         action: SnackBarAction(
-          label: 'Fechar',
+          label: strings.closeButton,
           onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
         ),
       ),
@@ -977,13 +1003,13 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   }
 
   List<Widget> _buildAppBarActions(
-      bool isDarkMode, EditorControllerState editorState) {
+      bool isDarkMode, EditorControllerState editorState, AppStrings strings) {
     return [
       // Buscar
       IconButton(
         onPressed: () => _toggleSearch(),
         icon: Icon(PhosphorIcons.magnifyingGlass()),
-        tooltip: 'Buscar',
+        tooltip: strings.search,
       ),
 
       // Desfazer/Refazer
@@ -992,21 +1018,21 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
             ? () => ref.read(editorControllerProvider.notifier).undo()
             : null,
         icon: Icon(PhosphorIcons.arrowCounterClockwise()),
-        tooltip: 'Desfazer',
+        tooltip: strings.undo,
       ),
       IconButton(
         onPressed: editorState.canRedo
             ? () => ref.read(editorControllerProvider.notifier).redo()
             : null,
         icon: Icon(PhosphorIcons.arrowClockwise()),
-        tooltip: 'Refazer',
+        tooltip: strings.redo,
       ),
 
       // Zoom
       PopupMenuButton<double>(
         onSelected: (zoom) => _setZoomLevel(zoom),
         icon: Icon(PhosphorIcons.magnifyingGlassPlus()),
-        tooltip: 'Zoom',
+        tooltip: strings.zoom,
         itemBuilder: (context) => [
           const PopupMenuItem(value: 0.75, child: Text('75%')),
           const PopupMenuItem(value: 1.0, child: Text('100%')),
@@ -1026,7 +1052,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
               children: [
                 Icon(PhosphorIcons.floppyDisk()),
                 const SizedBox(width: 8),
-                const Text('Salvar'),
+                Text(strings.save),
               ],
             ),
           ),
@@ -1036,7 +1062,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
               children: [
                 Icon(PhosphorIcons.export()),
                 const SizedBox(width: 8),
-                const Text('Exportar'),
+                Text(strings.export),
               ],
             ),
           ),
@@ -1045,7 +1071,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     ];
   }
 
-  PreferredSize _buildSearchBar() {
+  PreferredSize _buildSearchBar(AppStrings strings) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
       child: Container(
@@ -1055,7 +1081,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
           onChanged: (query) => setState(() => _searchQuery = query),
           onSubmitted: _performSearch,
           decoration: InputDecoration(
-            hintText: 'Buscar no documento...',
+            hintText: strings.searchInDocument,
             prefixIcon: Icon(PhosphorIcons.magnifyingGlass()),
             suffixIcon: IconButton(
               onPressed: _toggleSearch,
@@ -1074,22 +1100,23 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
 // Dialog Widgets
 
-class _ExportDialog extends StatelessWidget {
+class _ExportDialog extends ConsumerWidget {
   final Function(String format) onExport;
 
   const _ExportDialog({required this.onExport});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(appStringsProvider);
     return AlertDialog(
-      title: const Text('Exportar Documento'),
+      title: Text(strings.exportDocument),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
             leading: Icon(PhosphorIcons.fileText()),
-            title: const Text('Markdown'),
-            subtitle: const Text('Formato de texto simples'),
+            title: Text(strings.markdown),
+            subtitle: Text(strings.plainTextFormat),
             onTap: () {
               onExport('markdown');
               Navigator.of(context).pop();
@@ -1097,8 +1124,8 @@ class _ExportDialog extends StatelessWidget {
           ),
           ListTile(
             leading: Icon(PhosphorIcons.filePdf()),
-            title: const Text('PDF'),
-            subtitle: const Text('Documento portátil'),
+            title: Text(strings.pdf),
+            subtitle: Text(strings.portableDocument),
             onTap: () {
               onExport('pdf');
               Navigator.of(context).pop();
@@ -1106,8 +1133,8 @@ class _ExportDialog extends StatelessWidget {
           ),
           ListTile(
             leading: Icon(PhosphorIcons.fileHtml()),
-            title: const Text('HTML'),
-            subtitle: const Text('Página web'),
+            title: Text(strings.html),
+            subtitle: Text(strings.webPage),
             onTap: () {
               onExport('html');
               Navigator.of(context).pop();
@@ -1118,14 +1145,14 @@ class _ExportDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: Text(strings.cancel),
         ),
       ],
     );
   }
 }
 
-class _TitleEditDialog extends StatefulWidget {
+class _TitleEditDialog extends ConsumerStatefulWidget {
   final String currentTitle;
   final Function(String title) onSave;
 
@@ -1135,10 +1162,10 @@ class _TitleEditDialog extends StatefulWidget {
   });
 
   @override
-  State<_TitleEditDialog> createState() => _TitleEditDialogState();
+  ConsumerState<_TitleEditDialog> createState() => _TitleEditDialogState();
 }
 
-class _TitleEditDialogState extends State<_TitleEditDialog> {
+class _TitleEditDialogState extends ConsumerState<_TitleEditDialog> {
   late final TextEditingController _controller;
 
   @override
@@ -1155,13 +1182,14 @@ class _TitleEditDialogState extends State<_TitleEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = ref.watch(appStringsProvider);
     return AlertDialog(
-      title: const Text('Editar Título'),
+      title: Text(strings.editTitle),
       content: TextField(
         controller: _controller,
         autofocus: true,
-        decoration: const InputDecoration(
-          labelText: 'Título do documento',
+        decoration: InputDecoration(
+          labelText: strings.documentTitle,
           border: OutlineInputBorder(),
         ),
         onSubmitted: (value) {
@@ -1174,7 +1202,7 @@ class _TitleEditDialogState extends State<_TitleEditDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: Text(strings.cancel),
         ),
         ElevatedButton(
           onPressed: () {
@@ -1184,23 +1212,23 @@ class _TitleEditDialogState extends State<_TitleEditDialog> {
               Navigator.of(context).pop();
             }
           },
-          child: const Text('Salvar'),
+          child: Text(strings.save),
         ),
       ],
     );
   }
 }
 
-class _LinkDialog extends StatefulWidget {
+class _LinkDialog extends ConsumerStatefulWidget {
   final Function(String url, String text) onInsert;
 
   const _LinkDialog({required this.onInsert});
 
   @override
-  State<_LinkDialog> createState() => _LinkDialogState();
+  ConsumerState<_LinkDialog> createState() => _LinkDialogState();
 }
 
-class _LinkDialogState extends State<_LinkDialog> {
+class _LinkDialogState extends ConsumerState<_LinkDialog> {
   final _urlController = TextEditingController();
   final _textController = TextEditingController();
 
@@ -1213,15 +1241,16 @@ class _LinkDialogState extends State<_LinkDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = ref.watch(appStringsProvider);
     return AlertDialog(
-      title: const Text('Inserir Link'),
+      title: Text(strings.insertLink),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _urlController,
             autofocus: true,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'URL',
               hintText: 'https://exemplo.com',
               border: OutlineInputBorder(),
@@ -1230,8 +1259,8 @@ class _LinkDialogState extends State<_LinkDialog> {
           const SizedBox(height: 16),
           TextField(
             controller: _textController,
-            decoration: const InputDecoration(
-              labelText: 'Texto do link (opcional)',
+            decoration: InputDecoration(
+              labelText: strings.linkTextOptional,
               border: OutlineInputBorder(),
             ),
           ),
@@ -1240,7 +1269,7 @@ class _LinkDialogState extends State<_LinkDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: Text(strings.cancel),
         ),
         ElevatedButton(
           onPressed: () {
@@ -1252,7 +1281,7 @@ class _LinkDialogState extends State<_LinkDialog> {
               Navigator.of(context).pop();
             }
           },
-          child: const Text('Inserir'),
+          child: Text(strings.insert),
         ),
       ],
     );
@@ -1275,6 +1304,7 @@ class _SubPagesBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentProfile = ref.watch(currentProfileProvider);
     final currentWorkspace = ref.watch(currentWorkspaceProvider);
+    final strings = ref.watch(appStringsProvider);
 
     List<PageModel> pages = [];
     if (currentProfile != null && currentWorkspace != null) {
@@ -1310,7 +1340,7 @@ class _SubPagesBar extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: 'Nova subpágina',
+            tooltip: strings.newSubpage,
             onPressed: () => onCreateSubPage(parentPage.id),
           ),
         ],

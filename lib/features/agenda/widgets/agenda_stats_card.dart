@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 class AgendaStatsCard extends ConsumerWidget {
   final Map<String, dynamic> stats;
@@ -15,6 +17,7 @@ class AgendaStatsCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDarkMode = ref.watch(isDarkModeProvider);
+    final strings = ref.watch(appStringsProvider);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -29,7 +32,7 @@ class AgendaStatsCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Estatísticas da Agenda',
+            strings.agendaStats,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -47,7 +50,7 @@ class AgendaStatsCard extends ConsumerWidget {
             children: [
               _buildStatCard(
                 context,
-                'Total',
+                strings.total,
                 '${stats['total'] ?? 0}',
                 Icons.calendar_month,
                 Colors.blue,
@@ -55,7 +58,7 @@ class AgendaStatsCard extends ConsumerWidget {
               ),
               _buildStatCard(
                 context,
-                'Eventos',
+                strings.events,
                 '${stats['events'] ?? 0}',
                 Icons.event,
                 Colors.green,
@@ -63,7 +66,7 @@ class AgendaStatsCard extends ConsumerWidget {
               ),
               _buildStatCard(
                 context,
-                'Tarefas',
+                strings.tasks,
                 '${stats['tasks'] ?? 0}',
                 Icons.task,
                 Colors.orange,
@@ -71,7 +74,7 @@ class AgendaStatsCard extends ConsumerWidget {
               ),
               _buildStatCard(
                 context,
-                'Reuniões',
+                strings.meetings,
                 '${stats['meetings'] ?? 0}',
                 Icons.meeting_room,
                 Colors.purple,
@@ -79,7 +82,7 @@ class AgendaStatsCard extends ConsumerWidget {
               ),
               _buildStatCard(
                 context,
-                'Lembretes',
+                strings.reminders,
                 '${stats['reminders'] ?? 0}',
                 Icons.alarm,
                 Colors.red,
@@ -87,7 +90,7 @@ class AgendaStatsCard extends ConsumerWidget {
               ),
               _buildStatCard(
                 context,
-                'Concluídas',
+                strings.completed,
                 '${stats['completed'] ?? 0}',
                 Icons.check_circle,
                 Colors.green,
@@ -95,7 +98,7 @@ class AgendaStatsCard extends ConsumerWidget {
               ),
               _buildStatCard(
                 context,
-                'Atrasadas',
+                strings.overdue,
                 '${stats['overdue'] ?? 0}',
                 Icons.warning,
                 Colors.red,
@@ -103,7 +106,7 @@ class AgendaStatsCard extends ConsumerWidget {
               ),
               _buildStatCard(
                 context,
-                'Hoje',
+                strings.today,
                 '${stats['dueToday'] ?? 0}',
                 Icons.today,
                 Colors.blue,
@@ -135,7 +138,7 @@ class AgendaStatsCard extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${stats['fromDatabase']} itens sincronizados com a base de dados',
+                      strings.itemsSyncedWithDatabase(stats['fromDatabase']),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Colors.blue,
                           ),

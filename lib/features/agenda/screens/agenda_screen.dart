@@ -12,6 +12,8 @@ import '../widgets/agenda_list_view.dart';
 import '../widgets/add_agenda_item_dialog.dart';
 import '../widgets/agenda_stats_card.dart';
 import '../widgets/agenda_dashboard.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 class AgendaScreen extends ConsumerStatefulWidget {
   const AgendaScreen({super.key});
@@ -49,6 +51,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
     final stats = ref.watch(agendaStatsProvider);
     final isLoading = ref.watch(agendaIsLoadingProvider);
     final error = ref.watch(agendaErrorProvider);
+    final strings = ref.watch(appStringsProvider);
 
     return Scaffold(
       backgroundColor:
@@ -62,7 +65,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
-          tooltip: 'Voltar',
+          tooltip: strings.back,
         ),
         title: Row(
           children: [
@@ -72,19 +75,19 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
               color: AppColors.primary,
             ),
             const SizedBox(width: 12),
-            const Text('Agenda'),
+            Text(strings.agenda),
           ],
         ),
         actions: [
           IconButton(
-            onPressed: () => _showSyncDialog(context),
+            onPressed: () => _showSyncDialog(context, strings),
             icon: Icon(Icons.sync),
-            tooltip: 'Sincronizar com Base de Dados',
+            tooltip: strings.syncWithDatabase,
           ),
           IconButton(
-            onPressed: () => _showStatsDialog(context),
+            onPressed: () => _showStatsDialog(context, strings),
             icon: Icon(Icons.analytics),
-            tooltip: 'Estatísticas',
+            tooltip: strings.statistics,
           ),
         ],
       ),
@@ -94,19 +97,21 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
           const AgendaDashboard(),
 
           // Filtros
-          _buildFilters(isDarkMode),
+          _buildFilters(isDarkMode, strings),
 
           // Conteúdo principal
           Expanded(
-            child: _buildContent(isDarkMode, currentView, isLoading, error),
+            child: _buildContent(
+                isDarkMode, currentView, isLoading, error, strings),
           ),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButton(isDarkMode),
+      floatingActionButton: _buildFloatingActionButton(isDarkMode, strings),
     );
   }
 
-  Widget _buildHeader(bool isDarkMode, Map<String, dynamic> stats) {
+  Widget _buildHeader(
+      bool isDarkMode, Map<String, dynamic> stats, AppStrings strings) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -134,7 +139,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Agenda',
+                      strings.agenda,
                       style: Theme.of(context)
                           .textTheme
                           .headlineSmall
@@ -144,7 +149,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
                           ),
                     ),
                     Text(
-                      '${stats['total'] ?? 0} itens na agenda',
+                      '${stats['total'] ?? 0} ${strings.itemsOnAgenda}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.grey[600],
                           ),
@@ -153,14 +158,14 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
                 ),
               ),
               IconButton(
-                onPressed: () => _showSyncDialog(context),
+                onPressed: () => _showSyncDialog(context, strings),
                 icon: Icon(Icons.sync),
-                tooltip: 'Sincronizar com Base de Dados',
+                tooltip: strings.syncWithDatabase,
               ),
               IconButton(
-                onPressed: () => _showStatsDialog(context),
+                onPressed: () => _showStatsDialog(context, strings),
                 icon: Icon(Icons.analytics),
-                tooltip: 'Estatísticas',
+                tooltip: strings.statistics,
               ),
             ],
           ),
@@ -170,7 +175,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'Pesquisar na agenda...',
+              hintText: strings.searchInAgenda,
               prefixIcon: Icon(Icons.search),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
@@ -201,7 +206,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
     );
   }
 
-  Widget _buildFilters(bool isDarkMode) {
+  Widget _buildFilters(bool isDarkMode, AppStrings strings) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -219,31 +224,33 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
           children: [
             // Botões de vista
             _buildViewButton(
-                'calendar', 'Calendário', Icons.calendar_month, isDarkMode),
+                'calendar', strings.calendar, Icons.calendar_month, isDarkMode),
             const SizedBox(width: 8),
-            _buildViewButton('kanban', 'Kanban', Icons.view_column, isDarkMode),
+            _buildViewButton(
+                'kanban', strings.kanban, Icons.view_column, isDarkMode),
             const SizedBox(width: 8),
-            _buildViewButton('list', 'Lista', Icons.list, isDarkMode),
+            _buildViewButton('list', strings.list, Icons.list, isDarkMode),
 
             const SizedBox(width: 16),
 
             // Filtros
-            _buildFilterChip('Atrasados', Icons.warning, Colors.red, isDarkMode,
-                () {
+            _buildFilterChip(
+                strings.overdue, Icons.warning, Colors.red, isDarkMode, () {
               ref.read(agendaProvider.notifier).toggleOverdueOnly();
             }),
             const SizedBox(width: 8),
-            _buildFilterChip('Hoje', Icons.today, Colors.blue, isDarkMode, () {
+            _buildFilterChip(
+                strings.today, Icons.today, Colors.blue, isDarkMode, () {
               ref.read(agendaProvider.notifier).toggleDueTodayOnly();
             }),
             const SizedBox(width: 8),
             _buildFilterChip(
-                'Em breve', Icons.schedule, Colors.orange, isDarkMode, () {
+                strings.dueSoon, Icons.schedule, Colors.orange, isDarkMode, () {
               ref.read(agendaProvider.notifier).toggleDueSoonOnly();
             }),
             const SizedBox(width: 8),
-            _buildFilterChip('Limpar', Icons.clear, Colors.grey, isDarkMode,
-                () {
+            _buildFilterChip(
+                strings.clear, Icons.clear, Colors.grey, isDarkMode, () {
               ref.read(agendaProvider.notifier).clearFilters();
             }),
           ],
@@ -334,8 +341,8 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
     );
   }
 
-  Widget _buildContent(
-      bool isDarkMode, String currentView, bool isLoading, String? error) {
+  Widget _buildContent(bool isDarkMode, String currentView, bool isLoading,
+      String? error, AppStrings strings) {
     if (isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
@@ -354,7 +361,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Erro ao carregar agenda',
+              strings.errorLoadingAgenda,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
@@ -368,7 +375,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => ref.read(agendaProvider.notifier).refresh(),
-              child: const Text('Tentar Novamente'),
+              child: Text(strings.tryAgain),
             ),
           ],
         ),
@@ -401,11 +408,11 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
     }
   }
 
-  Widget _buildFloatingActionButton(bool isDarkMode) {
+  Widget _buildFloatingActionButton(bool isDarkMode, AppStrings strings) {
     return FloatingActionButton.extended(
       onPressed: () => _showAddItemDialog(context),
       icon: Icon(Icons.add),
-      label: const Text('Novo Item'),
+      label: Text(strings.newItem),
       backgroundColor: AppColors.primary,
       foregroundColor: Colors.white,
     );
@@ -419,32 +426,32 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
     );
   }
 
-  void _showSyncDialog(BuildContext context) {
+  void _showSyncDialog(BuildContext context, AppStrings strings) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sincronizar com Base de Dados'),
-        content: const Text(
-          'Isso irá buscar itens da base de dados que têm deadline e adicioná-los à agenda.',
+        title: Text(strings.syncWithDatabase),
+        content: Text(
+          strings.syncWithDatabaseDescription,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+            child: Text(strings.cancel),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               ref.read(agendaProvider.notifier).syncWithDatabase();
             },
-            child: const Text('Sincronizar'),
+            child: Text(strings.syncButton),
           ),
         ],
       ),
     );
   }
 
-  void _showStatsDialog(BuildContext context) {
+  void _showStatsDialog(BuildContext context, AppStrings strings) {
     final stats = ref.watch(agendaStatsProvider);
 
     showDialog(
@@ -456,7 +463,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Estatísticas da Agenda',
+                strings.agendaStats,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -466,7 +473,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Fechar'),
+                child: Text(strings.closeButton),
               ),
             ],
           ),

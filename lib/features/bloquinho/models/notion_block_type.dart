@@ -1,3 +1,5 @@
+import '../../../core/l10n/app_strings.dart';
+
 /// Enum para tipos de blocos do Notion
 /// Baseado na especificação oficial do Notion com 37 tipos de blocos
 enum NotionBlockType {
@@ -74,192 +76,192 @@ enum NotionBlockType {
 /// Extensões para facilitar uso do NotionBlockType
 extension NotionBlockTypeExtension on NotionBlockType {
   /// Nome legível do tipo
-  String get displayName {
+  String displayName(AppStrings strings) {
     switch (this) {
       case NotionBlockType.text:
       case NotionBlockType.paragraph:
-        return 'Texto';
+        return strings.text;
       case NotionBlockType.heading1:
-        return 'Título 1';
+        return strings.title1;
       case NotionBlockType.heading2:
-        return 'Título 2';
+        return strings.title2;
       case NotionBlockType.heading3:
-        return 'Título 3';
+        return strings.title3;
       case NotionBlockType.bulletList:
-        return 'Lista';
+        return strings.list;
       case NotionBlockType.numberedList:
-        return 'Lista numerada';
+        return strings.numberedList;
       case NotionBlockType.todoList:
-        return 'Lista de tarefas';
+        return strings.todoList;
       case NotionBlockType.toggle:
-        return 'Lista expansível';
+        return strings.expandableList;
       case NotionBlockType.quote:
-        return 'Citação';
+        return strings.quote;
       case NotionBlockType.callout:
-        return 'Callout';
+        return strings.callout;
       case NotionBlockType.code:
-        return 'Código';
+        return strings.code;
       case NotionBlockType.codeBlock:
-        return 'Bloco de código';
+        return strings.codeBlock;
       case NotionBlockType.equation:
-        return 'Equação';
+        return strings.equation;
       case NotionBlockType.image:
-        return 'Imagem';
+        return strings.image;
       case NotionBlockType.video:
-        return 'Vídeo';
+        return strings.video;
       case NotionBlockType.audio:
-        return 'Áudio';
+        return strings.audio;
       case NotionBlockType.file:
-        return 'Arquivo';
+        return strings.file;
       case NotionBlockType.pdf:
-        return 'PDF';
+        return strings.pdf;
       case NotionBlockType.divider:
-        return 'Divisor';
+        return strings.divider;
       case NotionBlockType.spacer:
-        return 'Espaçador';
+        return strings.spacer;
       case NotionBlockType.columnList:
-        return 'Colunas';
+        return strings.columns;
       case NotionBlockType.column:
-        return 'Coluna';
+        return strings.column;
       case NotionBlockType.table:
-        return 'Tabela';
+        return strings.table;
       case NotionBlockType.database:
-        return 'Base de dados';
+        return strings.database;
       case NotionBlockType.databaseView:
-        return 'Visualização';
+        return strings.databaseView;
       case NotionBlockType.pageLink:
-        return 'Link de página';
+        return strings.pageLink;
       case NotionBlockType.webLink:
-        return 'Link web';
+        return strings.webLink;
       case NotionBlockType.mention:
-        return 'Menção';
+        return strings.mention;
       case NotionBlockType.syncedBlock:
-        return 'Bloco sincronizado';
+        return strings.syncedBlock;
       case NotionBlockType.embed:
-        return 'Embed';
+        return strings.embed;
       case NotionBlockType.bookmark:
-        return 'Bookmark';
+        return strings.bookmark;
       case NotionBlockType.breadcrumb:
-        return 'Breadcrumb';
+        return strings.breadcrumb;
       case NotionBlockType.tableOfContents:
-        return 'Índice';
+        return strings.tableOfContents;
       case NotionBlockType.template:
-        return 'Template';
+        return strings.template;
       case NotionBlockType.map:
-        return 'Mapa';
+        return strings.map;
       case NotionBlockType.chart:
-        return 'Gráfico';
+        return strings.chart;
       case NotionBlockType.calendar:
-        return 'Calendário';
+        return strings.calendar;
       case NotionBlockType.timeline:
-        return 'Timeline';
+        return strings.timeline;
       case NotionBlockType.form:
-        return 'Formulário';
+        return strings.form;
       case NotionBlockType.poll:
-        return 'Enquete';
+        return strings.poll;
       case NotionBlockType.vote:
-        return 'Votação';
+        return strings.vote;
       case NotionBlockType.comment:
-        return 'Comentário';
+        return strings.comment;
       case NotionBlockType.annotation:
-        return 'Anotação';
+        return strings.annotation;
       case NotionBlockType.version:
-        return 'Versão';
+        return strings.version;
     }
   }
 
   /// Descrição do tipo
-  String get description {
+  String description(AppStrings strings) {
     switch (this) {
       case NotionBlockType.text:
       case NotionBlockType.paragraph:
-        return 'Parágrafo simples';
+        return strings.simpleParagraph;
       case NotionBlockType.heading1:
-        return 'Cabeçalho grande';
+        return strings.largeHeader;
       case NotionBlockType.heading2:
-        return 'Cabeçalho médio';
+        return strings.mediumHeader;
       case NotionBlockType.heading3:
-        return 'Cabeçalho pequeno';
+        return strings.smallHeader;
       case NotionBlockType.bulletList:
-        return 'Lista com marcadores';
+        return strings.bulletList;
       case NotionBlockType.numberedList:
-        return 'Lista com números';
+        return strings.numberedListDescription;
       case NotionBlockType.todoList:
-        return 'Lista com checkboxes';
+        return strings.todoListWithCheckboxes;
       case NotionBlockType.toggle:
-        return 'Lista expansível';
+        return strings.expandableList;
       case NotionBlockType.quote:
-        return 'Bloco de citação';
+        return strings.quoteBlock;
       case NotionBlockType.callout:
-        return 'Callout com ícone';
+        return strings.calloutWithIcon;
       case NotionBlockType.code:
-        return 'Código inline';
+        return strings.inlineCode;
       case NotionBlockType.codeBlock:
-        return 'Bloco de código';
+        return strings.codeBlock;
       case NotionBlockType.equation:
-        return 'Equação matemática';
+        return strings.mathEquation;
       case NotionBlockType.image:
-        return 'Imagem';
+        return strings.image;
       case NotionBlockType.video:
-        return 'Vídeo';
+        return strings.video;
       case NotionBlockType.audio:
-        return 'Áudio';
+        return strings.audio;
       case NotionBlockType.file:
-        return 'Arquivo';
+        return strings.file;
       case NotionBlockType.pdf:
-        return 'PDF';
+        return strings.pdf;
       case NotionBlockType.divider:
-        return 'Linha divisória';
+        return strings.dividerLine;
       case NotionBlockType.spacer:
-        return 'Espaçador';
+        return strings.spacer;
       case NotionBlockType.columnList:
-        return 'Lista de colunas';
+        return strings.columnList;
       case NotionBlockType.column:
-        return 'Coluna individual';
+        return strings.individualColumn;
       case NotionBlockType.table:
-        return 'Tabela';
+        return strings.table;
       case NotionBlockType.database:
-        return 'Base de dados';
+        return strings.database;
       case NotionBlockType.databaseView:
-        return 'Visualização de BD';
+        return strings.databaseViewDescription;
       case NotionBlockType.pageLink:
-        return 'Link para outra página';
+        return strings.linkToAnotherPage;
       case NotionBlockType.webLink:
-        return 'Link para site externo';
+        return strings.linkToExternalSite;
       case NotionBlockType.mention:
-        return 'Menção';
+        return strings.mention;
       case NotionBlockType.syncedBlock:
-        return 'Bloco sincronizado';
+        return strings.syncedBlock;
       case NotionBlockType.embed:
-        return 'Embed externo';
+        return strings.externalEmbed;
       case NotionBlockType.bookmark:
-        return 'Bookmark';
+        return strings.bookmark;
       case NotionBlockType.breadcrumb:
-        return 'Breadcrumb';
+        return strings.breadcrumb;
       case NotionBlockType.tableOfContents:
-        return 'Índice';
+        return strings.tableOfContents;
       case NotionBlockType.template:
-        return 'Template';
+        return strings.template;
       case NotionBlockType.map:
-        return 'Mapa';
+        return strings.map;
       case NotionBlockType.chart:
-        return 'Gráfico';
+        return strings.chart;
       case NotionBlockType.calendar:
-        return 'Calendário';
+        return strings.calendar;
       case NotionBlockType.timeline:
-        return 'Timeline';
+        return strings.timeline;
       case NotionBlockType.form:
-        return 'Formulário';
+        return strings.form;
       case NotionBlockType.poll:
-        return 'Enquete';
+        return strings.poll;
       case NotionBlockType.vote:
-        return 'Votação';
+        return strings.vote;
       case NotionBlockType.comment:
-        return 'Comentário';
+        return strings.comment;
       case NotionBlockType.annotation:
-        return 'Anotação';
+        return strings.annotation;
       case NotionBlockType.version:
-        return 'Versão';
+        return strings.version;
     }
   }
 

@@ -36,6 +36,7 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
   Timer? _autoSaveTimer;
   bool _isSaving = false;
   bool _editing = false;
+  bool _showLivePreview = true; // Novo: controla se mostra live preview
   OverlayEntry? _slashMenuOverlay;
   OverlayEntry? _formatMenuOverlay;
   final FocusNode _editorFocusNode = FocusNode();
@@ -419,76 +420,55 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final currentProfile = ref.watch(currentProfileProvider);
-    final currentWorkspace = ref.watch(currentWorkspaceProvider);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    PageModel page;
-    if (currentProfile != null && currentWorkspace != null) {
-      final pages = ref.watch(pagesProvider((
-        profileName: currentProfile.name,
-        workspaceName: currentWorkspace.name
-      )));
-      page = pages.firstWhere(
-        (p) => p.id == widget.pageId,
-        orElse: () => PageModel.create(title: 'Página não encontrada'),
+    if (_showLivePreview) {
+      // Modo com live preview (60-40)
+      return Row(
+        children: [
+          // Editor (60%)
+          Expanded(
+            flex: 6,
+            child: _buildEditor(isDarkMode),
+          ),
+          // Separador vertical
+          Container(
+            width: 1,
+            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+          ),
+          // Live Preview (40%)
+          Expanded(
+            flex: 4,
+            child: _buildLivePreview(isDarkMode),
+          ),
+        ],
       );
     } else {
-      page = PageModel.create(title: 'Página não encontrada');
+      // Modo apenas editor (100%)
+      return _buildEditor(isDarkMode);
     }
+  }
 
-    return Column(
-      children: [
-        // Header com controles
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-            border: Border(
-              bottom: BorderSide(
-                color:
-                    isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
-                width: 1,
-              ),
-            ),
-          ),
-          child: Row(
+  Widget _buildEditor(bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Barra de ferramentas
+          Row(
             children: [
-              // Botão de editar/salvar
               IconButton(
-                icon: Icon(_editing
-                    ? PhosphorIcons.floppyDisk()
-                    : PhosphorIcons.pencil()),
-                tooltip: _editing ? 'Salvar' : 'Editar',
+                icon: Icon(
+                    _showLivePreview ? Icons.visibility_off : Icons.visibility),
                 onPressed: () {
-                  if (_editing) {
-                    _saveContent(_textController.text);
-                  } else {
-                    setState(() {
-                      _editing = true;
-                    });
-                  }
+                  setState(() {
+                    _showLivePreview = !_showLivePreview;
+                  });
                 },
+                tooltip:
+                    _showLivePreview ? 'Ocultar Preview' : 'Mostrar Preview',
               ),
-
-              const SizedBox(width: 8),
-
-              // Título da página
-              Expanded(
-                child: Text(
-                  page.title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDarkMode
-                        ? AppColors.darkTextPrimary
-                        : AppColors.lightTextPrimary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-
-              // Status de salvamento
+              const Spacer(),
               if (_isSaving)
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -498,8 +478,9 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.orange),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          isDarkMode ? Colors.white70 : Colors.grey[600]!,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -507,103 +488,84 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
                       'Salvando...',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.orange,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                )
-              else
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      PhosphorIcons.checkCircle(),
-                      size: 16,
-                      color: Colors.green,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Salvo',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.green,
-                        fontWeight: FontWeight.w500,
+                        color: isDarkMode ? Colors.white70 : Colors.grey[600],
                       ),
                     ),
                   ],
                 ),
             ],
           ),
-        ),
-
-        // Conteúdo
-        Expanded(
-          child:
-              _editing ? _buildEditor(isDarkMode) : _buildPreview(isDarkMode),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEditor(bool isDarkMode) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: TextField(
-        controller: _textController,
-        focusNode: _editorFocusNode,
-        onChanged: _onTextChanged,
-        onTap: () {
-          // Garantir foco ao tocar no editor
-          if (!_editorFocusNode.hasFocus) {
-            _editorFocusNode.requestFocus();
-          }
-        },
-        maxLines: null,
-        expands: true,
-        style: TextStyle(
-          fontSize: 16,
-          height: 1.6,
-          color: isDarkMode
-              ? AppColors.darkTextPrimary
-              : AppColors.lightTextPrimary,
-          fontFamily: 'monospace',
-        ),
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          hintText: 'Digite / para ver comandos disponíveis...',
-          hintStyle: TextStyle(
-            color: isDarkMode
-                ? AppColors.darkTextSecondary
-                : AppColors.lightTextSecondary,
-            fontSize: 16,
-            height: 1.6,
+          // Editor de texto
+          Expanded(
+            child: TextField(
+              controller: _textController,
+              focusNode: _editorFocusNode,
+              maxLines: null,
+              expands: true,
+              style: TextStyle(
+                fontSize: 16,
+                color: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
+                fontFamily: 'monospace',
+              ),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: 'Digite seu markdown aqui...',
+                hintStyle: TextStyle(
+                  color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+                ),
+              ),
+              onChanged: _onTextChanged,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildPreview(bool isDarkMode) {
-    return Center(
-      child: Container(
-        constraints: const BoxConstraints(
-          maxWidth: 1400, // Muito mais larga - tipo folha A3
-        ),
-        child: EnhancedMarkdownPreviewWidget(
-          markdown: _textController.text,
-          enableHtmlEnhancements: true,
-          backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          padding: const EdgeInsets.all(32),
-          baseTextStyle: TextStyle(
-            fontSize: 16,
-            height: 1.6,
-            color: isDarkMode
-                ? AppColors.darkTextPrimary
-                : AppColors.lightTextPrimary,
-            fontFamily: 'monospace',
+  Widget _buildLivePreview(bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.transparent : AppColors.lightSurface,
+        border: Border(
+          left: BorderSide(
+            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
           ),
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Cabeçalho da preview
+          Row(
+            children: [
+              Icon(Icons.preview, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                'Preview',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDarkMode
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Conteúdo da preview
+          Expanded(
+            child: EnhancedMarkdownPreviewWidget(
+              markdown: _textController.text,
+              enableHtmlEnhancements: true,
+              backgroundColor: Colors.transparent,
+            ),
+          ),
+        ],
       ),
     );
   }

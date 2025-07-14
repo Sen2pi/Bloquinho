@@ -6,6 +6,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/services/oauth2_service.dart';
 import '../../../shared/providers/user_profile_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 /// Exemplo de integração OAuth2 no onboarding
 /// Este exemplo mostra como integrar autenticação OAuth2 diretamente no onboarding
@@ -25,6 +27,7 @@ class _OnboardingOAuth2ExampleState
 
   /// Autenticar com Google e criar perfil
   Future<void> _authenticateWithGoogle() async {
+    final strings = ref.read(appStringsProvider);
     setState(() {
       _isAuthenticating = true;
       _error = null;
@@ -37,7 +40,7 @@ class _OnboardingOAuth2ExampleState
       if (result.success) {
         // Criar perfil com dados do OAuth2
         await ref.read(userProfileProvider.notifier).createProfileFromOAuth(
-              name: result.userName ?? 'Usuário',
+              name: result.userName ?? strings.user,
               email: result.userEmail ?? '',
               avatarPath: result.avatarPath,
               avatarUrl: result.avatarUrl,
@@ -46,8 +49,8 @@ class _OnboardingOAuth2ExampleState
         // Mostrar sucesso
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Perfil criado com sucesso!'),
+            SnackBar(
+              content: Text(strings.profileCreatedSuccessfully),
               backgroundColor: Colors.green,
             ),
           );
@@ -62,7 +65,7 @@ class _OnboardingOAuth2ExampleState
       }
     } catch (e) {
       setState(() {
-        _error = 'Erro ao autenticar: $e';
+        _error = strings.errorAuthenticating.replaceAll('%s', e.toString());
       });
     } finally {
       setState(() {
@@ -73,6 +76,7 @@ class _OnboardingOAuth2ExampleState
 
   /// Autenticar com Microsoft e criar perfil
   Future<void> _authenticateWithMicrosoft() async {
+    final strings = ref.read(appStringsProvider);
     setState(() {
       _isAuthenticating = true;
       _error = null;
@@ -85,7 +89,7 @@ class _OnboardingOAuth2ExampleState
       if (result.success) {
         // Criar perfil com dados do OAuth2
         await ref.read(userProfileProvider.notifier).createProfileFromOAuth(
-              name: result.userName ?? 'Usuário',
+              name: result.userName ?? strings.user,
               email: result.userEmail ?? '',
               avatarPath: result.avatarPath,
               avatarUrl: result.avatarUrl,
@@ -94,8 +98,8 @@ class _OnboardingOAuth2ExampleState
         // Mostrar sucesso
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Perfil criado com sucesso!'),
+            SnackBar(
+              content: Text(strings.profileCreatedSuccessfully),
               backgroundColor: Colors.green,
             ),
           );
@@ -110,7 +114,7 @@ class _OnboardingOAuth2ExampleState
       }
     } catch (e) {
       setState(() {
-        _error = 'Erro ao autenticar: $e';
+        _error = strings.errorAuthenticating.replaceAll('%s', e.toString());
       });
     } finally {
       setState(() {
@@ -121,6 +125,7 @@ class _OnboardingOAuth2ExampleState
 
   @override
   Widget build(BuildContext context) {
+    final strings = ref.watch(appStringsProvider);
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -150,7 +155,7 @@ class _OnboardingOAuth2ExampleState
                 const SizedBox(height: 24),
 
                 Text(
-                  'Bem-vindo ao Bloquinho',
+                  strings.welcomeToBloquinhoOAuth,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -159,7 +164,7 @@ class _OnboardingOAuth2ExampleState
                 const SizedBox(height: 16),
 
                 Text(
-                  'Faça login com sua conta para começar\nSeu perfil e foto serão configurados automaticamente',
+                  strings.oauthLoginPrompt,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Colors.grey[600],
                       ),
@@ -169,11 +174,11 @@ class _OnboardingOAuth2ExampleState
 
                 // Botões OAuth2
                 if (_isAuthenticating)
-                  const Column(
+                  Column(
                     children: [
                       CircularProgressIndicator(),
                       SizedBox(height: 16),
-                      Text('Autenticando...'),
+                      Text(strings.authenticating),
                     ],
                   )
                 else ...[
@@ -184,7 +189,7 @@ class _OnboardingOAuth2ExampleState
                     child: ElevatedButton.icon(
                       onPressed: _authenticateWithGoogle,
                       icon: Icon(PhosphorIcons.googleLogo()),
-                      label: const Text('Continuar com Google'),
+                      label: Text(strings.continueWithGoogle),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.grey[700],
@@ -204,7 +209,7 @@ class _OnboardingOAuth2ExampleState
                     child: ElevatedButton.icon(
                       onPressed: _authenticateWithMicrosoft,
                       icon: Icon(PhosphorIcons.microsoftOutlookLogo()),
-                      label: const Text('Continuar com Microsoft'),
+                      label: Text(strings.continueWithMicrosoft),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0078D4),
                         foregroundColor: Colors.white,
@@ -223,7 +228,7 @@ class _OnboardingOAuth2ExampleState
                       context.goNamed('onboarding');
                     },
                     child: Text(
-                      'Ou criar perfil manualmente',
+                      strings.createProfileManually,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.primary,
                         decoration: TextDecoration.underline,
@@ -280,6 +285,7 @@ class ProfilePreviewWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(currentProfileProvider);
+    final strings = ref.watch(appStringsProvider);
 
     if (profile == null) {
       return const SizedBox.shrink();
@@ -351,7 +357,7 @@ class ProfilePreviewWidget extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    '✅ Perfil configurado',
+                    strings.profileConfigured,
                     style: TextStyle(
                       color: Colors.green[700],
                       fontSize: 12,

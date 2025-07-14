@@ -7,6 +7,8 @@ import '../models/bloco_tipo_enum.dart';
 import '../services/clipboard_parser_service.dart';
 import '../services/blocos_converter_service.dart';
 import 'blocos_provider.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
 
 /// Estado do editor
 class EditorControllerState {
@@ -92,6 +94,7 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
     String? initialContent,
     bool isReadOnly = false,
     Map<String, dynamic>? settings,
+    required AppStrings strings,
   }) async {
     if (state.isLoading) return;
 
@@ -100,7 +103,7 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
     try {
       state = state.copyWith(
         documentId: documentId ?? _uuid.v4(),
-        documentTitle: documentTitle ?? 'Documento sem título',
+        documentTitle: documentTitle ?? strings.untitledDocument,
         isLoading: false,
         isReadOnly: isReadOnly,
         lastModified: DateTime.now(),
@@ -111,7 +114,7 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Erro ao inicializar editor: $e',
+        error: '${strings.errorInitializingEditor}: ${e.toString()}',
       );
       debugPrint('❌ Erro ao inicializar editor: $e');
     }
@@ -130,8 +133,9 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         lastModified: DateTime.now(),
       );
     } catch (e) {
+      final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
-        error: 'Erro ao inserir bloco: $e',
+        error: '${strings.errorInsertingBlock}: ${e.toString()}',
       );
     }
   }
@@ -149,8 +153,9 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         lastModified: DateTime.now(),
       );
     } catch (e) {
+      final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
-        error: 'Erro ao formatar texto: $e',
+        error: '${strings.errorFormattingText}: ${e.toString()}',
       );
     }
   }
@@ -168,8 +173,9 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         lastModified: DateTime.now(),
       );
     } catch (e) {
+      final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
-        error: 'Erro ao inserir link: $e',
+        error: '${strings.errorInsertingLink}: ${e.toString()}',
       );
     }
   }
@@ -187,8 +193,9 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         lastModified: DateTime.now(),
       );
     } catch (e) {
+      final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
-        error: 'Erro ao inserir título: $e',
+        error: '${strings.errorInsertingTitle}: ${e.toString()}',
       );
     }
   }
@@ -206,8 +213,9 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         lastModified: DateTime.now(),
       );
     } catch (e) {
+      final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
-        error: 'Erro ao inserir lista: $e',
+        error: '${strings.errorInsertingList}: ${e.toString()}',
       );
     }
   }
@@ -225,8 +233,9 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         lastModified: DateTime.now(),
       );
     } catch (e) {
+      final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
-        error: 'Erro ao inserir lista numerada: $e',
+        error: '${strings.errorInsertingNumberedList}: ${e.toString()}',
       );
     }
   }
@@ -244,8 +253,9 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         lastModified: DateTime.now(),
       );
     } catch (e) {
+      final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
-        error: 'Erro ao inserir tarefa: $e',
+        error: '${strings.errorInsertingTask}: ${e.toString()}',
       );
     }
   }
@@ -263,8 +273,9 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         lastModified: DateTime.now(),
       );
     } catch (e) {
+      final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
-        error: 'Erro ao desfazer: $e',
+        error: '${strings.errorUndoing}: ${e.toString()}',
       );
     }
   }
@@ -282,8 +293,9 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         lastModified: DateTime.now(),
       );
     } catch (e) {
+      final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
-        error: 'Erro ao refazer: $e',
+        error: '${strings.errorRedoing}: ${e.toString()}',
       );
     }
   }
@@ -301,8 +313,9 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         }
       }
     } catch (e) {
+      final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
-        error: 'Erro ao colar do clipboard: $e',
+        error: '${strings.errorPastingFromClipboard}: ${e.toString()}',
       );
     }
   }
@@ -323,9 +336,10 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         lastSaved: DateTime.now(),
       );
     } catch (e) {
+      final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
         isSaving: false,
-        error: 'Erro ao salvar: $e',
+        error: '${strings.errorSaving}: ${e.toString()}',
       );
     }
   }
@@ -343,8 +357,9 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         'exportedAt': DateTime.now().toIso8601String(),
       };
     } catch (e) {
+      final strings = _ref.read(appStringsProvider);
       state = state.copyWith(
-        error: 'Erro ao exportar: $e',
+        error: '${strings.errorExportingDocument}: ${e.toString()}',
       );
       rethrow;
     }

@@ -41,12 +41,42 @@ class EnhancedMarkdownPreviewWidget extends StatelessWidget {
 
     return Container(
       color: containerColor,
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: padding,
-          child: _buildEnhancedMarkdown(context, textStyle),
-        ),
+      child: Stack(
+        children: [
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: padding,
+              child: _buildEnhancedMarkdown(context, textStyle),
+            ),
+          ),
+          // Botão de exportação PDF
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Tooltip(
+              message: 'Exportar como PDF',
+              child: IconButton(
+                icon: Icon(
+                  Icons.picture_as_pdf,
+                  size: 20,
+                  color: isDark ? Colors.white70 : Colors.grey[600],
+                ),
+                onPressed: () => _exportToPdf(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _exportToPdf(BuildContext context) {
+    // TODO: Implementar exportação PDF
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Exportação PDF em desenvolvimento...'),
+        duration: Duration(seconds: 2),
       ),
     );
   }
