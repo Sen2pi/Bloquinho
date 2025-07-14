@@ -1,6 +1,6 @@
 <div align="center">
   <img src="assets/images/logo.png" alt="Bloquinho Logo" width="120"/>
-  
+  <img src="assets/images/BloquinhoAi.png" alt="Bloquinho Logo" width="120"/>
   <h1>Bloquinho</h1>
   <h3>Professional Self-Hosted Workspace — 100% Flutter</h3>
   <p>Your private, offline, cross-platform Notion alternative with no limits.</p>
@@ -24,6 +24,134 @@
 **Bloquinho** is a professional workspace inspired by Notion, built with Flutter, offering a complete self-hosted solution for personal and professional organization. It provides rich text editing, database management, agenda integration, cloud synchronization, and complete privacy control.
 
 > **No paid plans. No limits on blocks, pages, or users. 100% offline and private.**
+
+## 🚀 Future Features
+
+We have an exciting roadmap planned for Bloquinho! Here are the upcoming features that will transform it into a comprehensive productivity platform:
+
+### 📊 Database Integration & Note Management
+
+#### **Smart Note Database**
+- **Cloud Synchronization**: Seamless sync across all devices with real-time collaboration
+- **Advanced Search**: Full-text search with filters by date, tags, and content type
+- **Version History**: Complete revision tracking with diff visualization
+- **Backup & Recovery**: Automated backups with point-in-time recovery
+- **Import/Export**: Support for popular formats (Notion, Obsidian, OneNote, etc.)
+
+#### **Intelligent Note Linking**
+- **Bi-directional Links**: Automatic relationship mapping between related notes
+- **Graph Visualization**: Interactive knowledge graph showing note connections
+- **Backlinks Panel**: See all notes that reference the current document
+- **Smart Suggestions**: AI-powered recommendations for related content
+- **Tag Hierarchies**: Nested tagging system with auto-completion
+
+### 📅 Calendar & Agenda Integration
+
+#### **Unified Calendar System**
+- **Multi-Calendar Support**: Google Calendar, Outlook, Apple Calendar integration
+- **Note-to-Event Linking**: Connect meeting notes directly to calendar events
+- **Smart Scheduling**: AI-assisted time blocking and scheduling suggestions
+- **Deadline Tracking**: Automatic reminders and progress tracking
+- **Time Analytics**: Detailed insights into time allocation and productivity patterns
+
+#### **Task Management**
+- **GTD Methodology**: Complete Getting Things Done workflow implementation
+- **Kanban Boards**: Visual project management with drag-and-drop functionality
+- **Recurring Tasks**: Flexible scheduling for habits and regular activities
+- **Priority Matrix**: Eisenhower matrix for task prioritization
+- **Team Collaboration**: Shared projects and task assignment
+
+### 🎓 Academic Management System
+
+#### **Student Information System**
+- **Course Management**: Semester planning, credit tracking, and GPA calculation
+- **Assignment Tracker**: Deadline management with automatic reminders
+- **Grade Book**: Comprehensive gradebook with statistical analysis
+- **Study Planner**: Intelligent study scheduling based on course load
+- **Research Tools**: Citation management and bibliography generation
+
+#### **Educational Features**
+- **Flashcard System**: Spaced repetition algorithm for optimal learning
+- **Note Templates**: Pre-designed templates for different subjects
+- **Collaboration Tools**: Study groups and peer review functionality
+- **Progress Analytics**: Learning analytics and performance insights
+- **Integration Hub**: Canvas, Moodle, and other LMS integrations
+
+### 💰 Financial Management System
+
+#### **Personal Finance Dashboard**
+- **Expense Tracking**: Automated categorization and budget monitoring
+- **Income Management**: Multiple income streams tracking
+- **Investment Portfolio**: Real-time portfolio tracking and analysis
+- **Financial Goals**: SMART goal setting with progress visualization
+- **Reporting Suite**: Comprehensive financial reports and insights
+
+#### **Advanced Financial Tools**
+- **Cash Flow Forecasting**: Predictive financial planning
+- **Tax Management**: Document organization and deduction tracking
+- **Bill Reminders**: Automatic bill scheduling and payment alerts
+- **Financial Analytics**: Spending patterns and optimization recommendations
+- **Multi-Currency Support**: Global currency tracking and conversion
+
+### 🔗 Cross-Platform Integration
+
+#### **Seamless Ecosystem**
+- **Mobile Applications**: Native iOS and Android apps with offline support
+- **Web Platform**: Full-featured web application with PWA capabilities
+- **Desktop Sync**: Real-time synchronization across Windows, macOS, and Linux
+- **API Ecosystem**: RESTful API for third-party integrations
+- **Plugin Architecture**: Extensible system for community-developed features
+
+#### **Smart Automation**
+- **Workflow Engine**: Visual automation builder for complex workflows
+- **AI Assistant**: Intelligent assistant for note organization and suggestions
+- **Template Engine**: Dynamic templates with conditional logic
+- **Integration Marketplace**: Pre-built integrations with popular tools
+- **Custom Scripting**: Advanced automation with custom scripts
+
+### 📈 Analytics & Insights
+
+#### **Productivity Intelligence**
+- **Usage Analytics**: Detailed insights into writing patterns and productivity
+- **Goal Tracking**: Progress monitoring with visual dashboards
+- **Time Investment**: Analysis of time spent on different projects
+- **Content Analytics**: Word count, reading time, and complexity metrics
+- **Habit Formation**: Behavioral insights for building better habits
+
+#### **Collaboration Analytics**
+- **Team Performance**: Collaboration metrics and team productivity insights
+- **Knowledge Sharing**: Track knowledge distribution and expertise mapping
+- **Communication Patterns**: Analysis of collaboration effectiveness
+- **Project Insights**: Timeline analysis and milestone tracking
+- **Resource Optimization**: Recommendations for improved efficiency
+
+---
+
+### 🗓️ Development Timeline
+
+| Phase | Features | Target Quarter |
+|-------|----------|----------------|
+| **Phase 1** | Database Integration, Note Linking | Q3 2025 |
+| **Phase 2** | Calendar Integration, Basic Task Management | Q4 2025 |
+| **Phase 3** | Academic Management System | Q1 2026 |
+| **Phase 4** | Financial Management System | Q2 2026 |
+| **Phase 5** | Advanced Analytics, AI Features | Q3 2026 |
+
+### 🤝 Get Involved
+
+We believe in community-driven development! Here's how you can contribute to these future features:
+
+- **Feature Requests**: Submit ideas via GitHub Issues
+- **Beta Testing**: Join our early access program
+- **Community Feedback**: Participate in feature discussions
+- **Development**: Contribute code for priority features
+- **Documentation**: Help improve our documentation
+
+---
+
+**Stay Updated**: Follow our [GitHub repository](https://github.com/Sen2pi/Bloquinho) for the latest development updates and feature announcements.
+
+*Have a feature idea not listed here? We'd love to hear from you! Open an issue and let's discuss how to make Bloquinho even better.*
 
 ## 🚀 Key Features
 
