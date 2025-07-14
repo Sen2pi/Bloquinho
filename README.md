@@ -408,7 +408,14 @@ flutter run -d windows  # or your preferred platform
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under **CC BY-NC-SA 4.0** - see the [LICENSE](LICENSE) file for details.
+
+- ✅ **Non-commercial use**: Free for personal, educational, and research purposes
+- ❌ **Commercial use**: Prohibited without permission
+- 📧 **Commercial licensing**: Contact [seu-email] for commercial rights
+
+**Note**: This license change protects the project from unauthorized commercial use while keeping it accessible for the community.
+
 
 ## 💝 Support & Donate
 
