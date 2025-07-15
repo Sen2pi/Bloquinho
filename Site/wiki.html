@@ -71,22 +71,43 @@
       padding: 20px;
       font-style: italic;
     }
-    /* Wiki select dropdown styles */
-    .wiki-folder-select:focus {
-      border-color: #7c5a2a !important;
-      box-shadow: 0 0 0 2px rgba(124, 90, 42, 0.2);
+    /* Wiki tree structure styles */
+    .wiki-folder-item {
+      margin-bottom: 8px;
+      list-style: none;
     }
-    .wiki-folder-select option {
-      padding: 8px;
-      background: #fff8ef;
-      color: #4e3b23;
+    
+    .wiki-folder-header:hover {
+      background: #e9dcc7 !important;
     }
-    .wiki-folder-select option:hover {
-      background: #e9dcc7;
+    
+    .wiki-files-container {
+      border-left: 2px solid #e9dcc7;
+      margin-left: 12px;
+      padding-left: 8px;
     }
+    
     .wiki-list li {
       margin-bottom: 0;
       list-style: none;
+    }
+    
+    /* Scrollbar styling for wiki menu */
+    .wiki-menu::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .wiki-menu::-webkit-scrollbar-track {
+      background: #f3e7d8;
+    }
+    
+    .wiki-menu::-webkit-scrollbar-thumb {
+      background: #d2bfa3;
+      border-radius: 3px;
+    }
+    
+    .wiki-menu::-webkit-scrollbar-thumb:hover {
+      background: #c2af93;
     }
   </style>
 </head>

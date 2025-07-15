@@ -9,63 +9,85 @@ document.addEventListener('DOMContentLoaded', function() {
   const noResults = document.getElementById('no-results');
   const wikiContent = document.getElementById('wiki-content');
 
-  // Auto-detect and load wiki pages with hierarchical structure
+  // Auto-detect and load wiki pages from actual folder structure
   async function loadWikiPages() {
     try {
-      // Generate potential file patterns (1.html, 1.1.html, 1.1.1.html, etc.)
-      const potentialFiles = [];
-      
-      // Generate patterns up to 3 levels deep
-      for (let i = 1; i <= 10; i++) {
-        potentialFiles.push(`${i}.html`);
-        for (let j = 1; j <= 10; j++) {
-          potentialFiles.push(`${i}.${j}.html`);
-          for (let k = 1; k <= 10; k++) {
-            potentialFiles.push(`${i}.${j}.${k}.html`);
-          }
-        }
-      }
-      
-      // Also check for files with titles like "001 - security.html"
-      const namedFiles = [
-        '001 - security.html',
-        '002 - installation.html', 
-        '003 - configuration.html',
-        '004 - features.html',
-        '005 - troubleshooting.html'
+      // Known folders in the wiki directory
+      const knownFolders = [
+        '1 Guide',
+        '2 Security', 
+        '3 Configurations',
+        '4 Tutorials'
       ];
       
       allWikiPages = [];
       
-      // Check each potential file
-      for (const file of [...potentialFiles, ...namedFiles]) {
+      // Scan each folder for HTML files
+      for (const folder of knownFolders) {
         try {
-          const response = await fetch(`wiki/${file}`, { method: 'HEAD' });
-          if (response.ok) {
-            const pageData = createPageData(file);
-            allWikiPages.push(pageData);
+          // Try to find HTML files in this folder
+          const potentialFiles = [
+            'index.html',
+            'faq.html',
+            '001 - security.html',
+            'configuration.html',
+            'tutorial.html',
+            'guide.html',
+            'setup.html',
+            'introduction.html',
+            'overview.html'
+          ];
+          
+          for (const fileName of potentialFiles) {
+            try {
+              const filePath = `${folder}/${fileName}`;
+              const response = await fetch(`wiki/${filePath}`, { method: 'HEAD' });
+              if (response.ok) {
+                const pageData = {
+                  file: filePath,
+                  fileName: fileName,
+                  folder: folder,
+                  title: extractTitleFromFileName(fileName),
+                  keywords: generateKeywords(fileName, folder)
+                };
+                allWikiPages.push(pageData);
+              }
+            } catch (error) {
+              // File doesn't exist in this folder, continue
+              continue;
+            }
           }
         } catch (error) {
-          // File doesn't exist, skip it
-          continue;
+          console.log(`Folder ${folder} not accessible or empty`);
         }
       }
       
-      // Sort pages by hierarchy
-      allWikiPages.sort((a, b) => {
-        // First sort by hierarchy level, then by number
-        if (a.level !== b.level) {
-          return a.level - b.level;
+      // Also try to find files directly in wiki root (for backwards compatibility)
+      const rootFiles = ['001 - security.html'];
+      for (const fileName of rootFiles) {
+        try {
+          const response = await fetch(`wiki/${fileName}`, { method: 'HEAD' });
+          if (response.ok) {
+            const pageData = {
+              file: fileName,
+              fileName: fileName, 
+              folder: 'Root',
+              title: extractTitleFromFileName(fileName),
+              keywords: generateKeywords(fileName, 'root')
+            };
+            allWikiPages.push(pageData);
+          }
+        } catch (error) {
+          continue;
         }
-        return a.sortKey.localeCompare(b.sortKey, undefined, { numeric: true });
-      });
+      }
       
       filteredPages = [...allWikiPages];
       renderWikiList();
       
       // If no pages found, show a helpful message
       if (allWikiPages.length === 0) {
-        showError('No wiki pages found. Add HTML files to the wiki/ directory.');
+        showError('No wiki pages found. Add HTML files to the wiki folders.');
       }
     } catch (error) {
       console.error('Error loading wiki pages:', error);
@@ -73,94 +95,39 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // Create page data with hierarchy information
-  function createPageData(filename) {
-    const title = extractTitleFromFilename(filename);
-    const keywords = generateKeywords(title, filename);
-    const hierarchy = parseHierarchy(filename);
-    
-    return {
-      file: filename,
-      title: title,
-      keywords: keywords,
-      level: hierarchy.level,
-      numbers: hierarchy.numbers,
-      sortKey: hierarchy.sortKey,
-      isFolder: hierarchy.level < 3 // Consider it a folder if it's not at the deepest level
-    };
-  }
-  
-  // Parse hierarchy from filename
-  function parseHierarchy(filename) {
-    // Extract number pattern (1, 1.1, 1.1.1, etc.)
-    const numberMatch = filename.match(/^(\d+(?:\.\d+)*)/); 
-    
-    if (numberMatch) {
-      const numberPart = numberMatch[1];
-      const numbers = numberPart.split('.').map(n => parseInt(n));
-      return {
-        level: numbers.length,
-        numbers: numbers,
-        sortKey: numberPart
-      };
-    }
-    
-    // For named files like "001 - security.html", use a simple numbering
-    const namedMatch = filename.match(/^(\d+)/); 
-    if (namedMatch) {
-      const num = parseInt(namedMatch[1]);
-      return {
-        level: 1,
-        numbers: [num],
-        sortKey: String(num).padStart(3, '0')
-      };
-    }
-    
-    return {
-      level: 1,
-      numbers: [999],
-      sortKey: '999'
-    };
-  }
   
   // Extract title from filename
-  function extractTitleFromFilename(filename) {
-    // Handle numbered files (1.html, 1.1.html, etc.)
-    const numberMatch = filename.match(/^(\d+(?:\.\d+)*)\.html$/);
-    if (numberMatch) {
-      const numbers = numberMatch[1];
-      const level = numbers.split('.').length;
-      
-      // Generate titles based on hierarchy level
-      if (level === 1) {
-        const sectionTitles = {
-          '1': '🔒 Security',
-          '2': '📦 Installation', 
-          '3': '⚙️ Configuration',
-          '4': '✨ Features',
-          '5': '🔧 Troubleshooting'
-        };
-        return sectionTitles[numbers] || `📝 Section ${numbers}`;
-      } else if (level === 2) {
-        return `📎 Subsection ${numbers}`;
-      } else {
-        return `📄 Page ${numbers}`;
-      }
+  function extractTitleFromFileName(filename) {
+    // Handle specific known files
+    const fileMap = {
+      'faq.html': '❓ FAQ',
+      'index.html': '📋 Overview',
+      '001 - security.html': '🔒 Security & Privacy',
+      'configuration.html': '⚙️ Configuration',
+      'tutorial.html': '📚 Tutorial',
+      'guide.html': '📖 Guide', 
+      'setup.html': '🔧 Setup',
+      'introduction.html': '👋 Introduction',
+      'overview.html': '📋 Overview'
+    };
+    
+    if (fileMap[filename]) {
+      return fileMap[filename];
     }
     
-    // Handle named files like "001 - security.html"
+    // Handle numbered files like "001 - security.html"
     let title = filename.replace(/\d+\s*-\s*/, '').replace('.html', '');
-    // Capitalize first letter of each word
     title = title.split(' ').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
     ).join(' ');
     
     // Add appropriate emoji based on content
     if (title.toLowerCase().includes('security')) return '🔒 ' + title;
-    if (title.toLowerCase().includes('installation')) return '📦 ' + title;
+    if (title.toLowerCase().includes('faq')) return '❓ ' + title;
+    if (title.toLowerCase().includes('guide')) return '📖 ' + title;
+    if (title.toLowerCase().includes('tutorial')) return '📚 ' + title;
     if (title.toLowerCase().includes('configuration')) return '⚙️ ' + title;
-    if (title.toLowerCase().includes('features')) return '✨ ' + title;
-    if (title.toLowerCase().includes('troubleshooting')) return '🔧 ' + title;
+    if (title.toLowerCase().includes('setup')) return '🔧 ' + title;
     
     return '📝 ' + title;
   }
@@ -190,136 +157,228 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Group pages by folders
     const folders = groupPagesByFolders(filteredPages);
-    renderSelectDropdowns(folders, wikiList);
+    renderFolderTree(folders, wikiList);
   }
   
-  // Group pages by their folder structure
+  // Group pages by their actual folder structure
   function groupPagesByFolders(pages) {
     const folders = {};
     
     pages.forEach(page => {
-      let folderName;
+      const folderName = page.folder;
       
-      if (page.numbers.length === 1) {
-        // Top level file (1.html) - create its own folder
-        folderName = `${page.numbers[0]} - ${page.title}`;
-        if (!folders[folderName]) {
-          folders[folderName] = [];
-        }
-        folders[folderName].push(page);
-      } else if (page.numbers.length === 2) {
-        // Second level (1.1.html) - group under main section
-        folderName = `${page.numbers[0]} - Section ${page.numbers[0]}`;
-        if (!folders[folderName]) {
-          folders[folderName] = [];
-        }
-        folders[folderName].push(page);
-      } else if (page.numbers.length >= 3) {
-        // Third level+ (1.1.1.html) - group under subsection
-        folderName = `${page.numbers[0]}.${page.numbers[1]} - Subsection ${page.numbers[0]}.${page.numbers[1]}`;
-        if (!folders[folderName]) {
-          folders[folderName] = [];
-        }
-        folders[folderName].push(page);
-      } else {
-        // Named files (001 - security.html) - use their own category
-        folderName = 'Documentation';
-        if (!folders[folderName]) {
-          folders[folderName] = [];
-        }
-        folders[folderName].push(page);
+      if (!folders[folderName]) {
+        folders[folderName] = [];
       }
+      folders[folderName].push(page);
     });
     
     return folders;
   }
   
-  // Render select dropdowns for each folder
-  function renderSelectDropdowns(folders, container) {
+  // Render expandable folder tree structure
+  function renderFolderTree(folders, container) {
+    // Sort folders by name (this will put them in order: 1 Guide, 2 Security, etc.)
     Object.keys(folders).sort().forEach(folderName => {
       const files = folders[folderName];
       
-      // Create folder label
-      const folderLabel = document.createElement('div');
-      folderLabel.className = 'wiki-folder-label';
-      folderLabel.textContent = folderName;
-      folderLabel.style.cssText = `
-        font-weight: bold;
-        color: #7c5a2a;
-        margin: 16px 0 8px 0;
-        padding: 0 16px;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      `;
+      // Skip if no files in folder
+      if (files.length === 0) return;
       
-      // Create select dropdown
-      const select = document.createElement('select');
-      select.className = 'wiki-folder-select';
-      select.style.cssText = `
-        width: calc(100% - 32px);
-        margin: 0 16px 12px 16px;
-        padding: 8px 12px;
-        border: 2px solid #e9dcc7;
-        border-radius: 6px;
-        background: #fff8ef;
-        color: #4e3b23;
-        font-size: 14px;
+      // Create folder container
+      const folderLi = document.createElement('li');
+      folderLi.className = 'wiki-folder-item';
+      
+      // Create folder header (clickable to expand/collapse)
+      const folderHeader = document.createElement('div');
+      folderHeader.className = 'wiki-folder-header';
+      folderHeader.style.cssText = `
+        display: flex;
+        align-items: center;
+        padding: 10px 16px;
         cursor: pointer;
-        outline: none;
+        font-weight: 600;
+        color: #7c5a2a;
+        background: #f3e7d8;
+        border-radius: 8px;
+        margin-bottom: 6px;
+        transition: all 0.2s ease;
+        user-select: none;
+        border: 1px solid #e9dcc7;
       `;
       
-      // Add default option
-      const defaultOption = document.createElement('option');
-      defaultOption.value = '';
-      defaultOption.textContent = `Select from ${folderName}...`;
-      defaultOption.disabled = true;
-      defaultOption.selected = true;
-      select.appendChild(defaultOption);
+      // Create expand/collapse arrow
+      const arrow = document.createElement('span');
+      arrow.className = 'wiki-folder-arrow';
+      arrow.textContent = '▶';
+      arrow.style.cssText = `
+        margin-right: 10px;
+        font-size: 12px;
+        transition: transform 0.3s ease;
+        color: #7c5a2a;
+        font-weight: bold;
+      `;
       
-      // Add file options
-      files.forEach(file => {
-        const option = document.createElement('option');
-        option.value = file.file;
-        option.textContent = file.title;
-        select.appendChild(option);
-      });
+      // Create folder icon and name
+      const folderIcon = document.createElement('span');
+      folderIcon.textContent = getFolderIcon(folderName);
+      folderIcon.style.cssText = `
+        margin-right: 10px;
+        font-size: 18px;
+      `;
       
-      // Handle selection
-      select.addEventListener('change', function() {
-        if (this.value) {
-          // Reset other selects
-          document.querySelectorAll('.wiki-folder-select').forEach(s => {
-            if (s !== this) {
-              s.selectedIndex = 0;
-            }
+      const folderNameSpan = document.createElement('span');
+      folderNameSpan.textContent = folderName;
+      folderNameSpan.style.fontSize = '15px';
+      
+      folderHeader.appendChild(arrow);
+      folderHeader.appendChild(folderIcon);
+      folderHeader.appendChild(folderNameSpan);
+      
+      // Create files container (initially hidden)
+      const filesContainer = document.createElement('div');
+      filesContainer.className = 'wiki-files-container';
+      filesContainer.style.cssText = `
+        display: none;
+        margin-left: 24px;
+        margin-bottom: 8px;
+        border-left: 3px solid #e9dcc7;
+        padding-left: 12px;
+      `;
+      
+      // Create file list
+      const filesList = document.createElement('ul');
+      filesList.style.cssText = `
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      `;
+      
+      // Add files to the list
+      files.forEach((file, index) => {
+        const fileLi = document.createElement('li');
+        fileLi.style.marginBottom = '3px';
+        
+        const fileLink = document.createElement('a');
+        fileLink.href = '#';
+        fileLink.dataset.filename = file.file;
+        fileLink.style.cssText = `
+          display: flex;
+          align-items: center;
+          text-decoration: none;
+          color: #6b4423;
+          font-size: 14px;
+          padding: 8px 12px;
+          border-radius: 6px;
+          transition: all 0.2s ease;
+          border: 1px solid transparent;
+        `;
+        
+        // Add file icon
+        const fileIcon = document.createElement('span');
+        fileIcon.textContent = '📝';
+        fileIcon.style.cssText = `
+          margin-right: 8px;
+          font-size: 14px;
+        `;
+        
+        fileLink.appendChild(fileIcon);
+        fileLink.appendChild(document.createTextNode(file.title));
+        
+        // Add click handler
+        fileLink.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          // Remove active class from all links
+          document.querySelectorAll('.wiki-files-container a').forEach(a => {
+            a.style.background = 'transparent';
+            a.style.color = '#6b4423';
+            a.style.borderColor = 'transparent';
           });
           
-          // Load the selected page
-          const fakeLink = {
-            dataset: { filename: this.value },
-            classList: { add: () => {}, remove: () => {} }
-          };
-          loadWikiPage(fakeLink);
+          // Add active state to clicked link
+          this.style.background = '#e9dcc7';
+          this.style.color = '#4e3b23';
+          this.style.borderColor = '#d2bfa3';
+          
+          loadWikiPage(this);
+        });
+        
+        // Add hover effect
+        fileLink.addEventListener('mouseenter', function() {
+          if (this.style.background !== 'rgb(233, 220, 199)') {
+            this.style.background = '#f8f5f1';
+            this.style.borderColor = '#e9dcc7';
+          }
+        });
+        
+        fileLink.addEventListener('mouseleave', function() {
+          if (this.style.background !== 'rgb(233, 220, 199)') {
+            this.style.background = 'transparent';
+            this.style.borderColor = 'transparent';
+          }
+        });
+        
+        fileLi.appendChild(fileLink);
+        filesList.appendChild(fileLi);
+      });
+      
+      filesContainer.appendChild(filesList);
+      
+      // Add expand/collapse functionality
+      let isExpanded = false;
+      folderHeader.addEventListener('click', function() {
+        isExpanded = !isExpanded;
+        
+        if (isExpanded) {
+          arrow.style.transform = 'rotate(90deg)';
+          folderIcon.textContent = getFolderIcon(folderName, true);
+          filesContainer.style.display = 'block';
+          folderHeader.style.background = '#e9dcc7';
+          folderHeader.style.borderColor = '#d2bfa3';
+        } else {
+          arrow.style.transform = 'rotate(0deg)';
+          folderIcon.textContent = getFolderIcon(folderName, false);
+          filesContainer.style.display = 'none';
+          folderHeader.style.background = '#f3e7d8';
+          folderHeader.style.borderColor = '#e9dcc7';
         }
       });
       
-      // Add hover effect
-      select.addEventListener('mouseenter', function() {
-        this.style.borderColor = '#7c5a2a';
+      // Add hover effect to folder header
+      folderHeader.addEventListener('mouseenter', function() {
+        if (!isExpanded) {
+          this.style.background = '#e9dcc7';
+          this.style.transform = 'translateY(-1px)';
+          this.style.boxShadow = '0 2px 8px rgba(139, 69, 19, 0.1)';
+        }
       });
       
-      select.addEventListener('mouseleave', function() {
-        this.style.borderColor = '#e9dcc7';
+      folderHeader.addEventListener('mouseleave', function() {
+        if (!isExpanded) {
+          this.style.background = '#f3e7d8';
+          this.style.transform = 'translateY(0)';
+          this.style.boxShadow = 'none';
+        }
       });
       
-      // Create container for this folder
-      const folderContainer = document.createElement('li');
-      folderContainer.appendChild(folderLabel);
-      folderContainer.appendChild(select);
-      
-      container.appendChild(folderContainer);
+      // Assemble the folder
+      folderLi.appendChild(folderHeader);
+      folderLi.appendChild(filesContainer);
+      container.appendChild(folderLi);
     });
+  }
+  
+  // Get appropriate icon for folder
+  function getFolderIcon(folderName, isOpen = false) {
+    const baseIcon = isOpen ? '📂' : '📁';
+    
+    if (folderName.includes('Guide')) return isOpen ? '📚' : '📖';
+    if (folderName.includes('Security')) return '🔒';
+    if (folderName.includes('Configuration')) return '⚙️';
+    if (folderName.includes('Tutorial')) return '🎯';
+    
+    return baseIcon;
   }
   
 
