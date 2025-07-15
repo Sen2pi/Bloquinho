@@ -15,6 +15,8 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+// Se quiser suporte avançado, pode trocar para:
+// import 'package:flutter_markdown_selectionarea/flutter_markdown.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'dynamic_colored_text.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,34 +64,55 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     final containerColor =
         backgroundColor ?? (isDark ? Colors.transparent : Colors.white);
 
-    return Container(
-      color: containerColor,
-      child: Stack(
-        children: [
-          SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Padding(
-              padding: padding,
-              child: _buildEnhancedMarkdown(context, textStyle, ref),
-            ),
-          ),
-          // Botão de exportação PDF
-          Positioned(
-            top: 8,
-            right: 8,
-            child: Tooltip(
-              message: 'Exportar como PDF',
-              child: IconButton(
-                icon: Icon(
-                  Icons.picture_as_pdf,
-                  size: 20,
-                  color: isDark ? Colors.white70 : Colors.grey[600],
+    return RepaintBoundary(
+      child: Container(
+        color: containerColor,
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: padding,
+                child: SelectionArea(
+                  child: _buildEnhancedMarkdown(context, textStyle, ref),
                 ),
-                onPressed: () => _exportToPdf(context),
               ),
             ),
-          ),
-        ],
+            // Botão de exportação PDF
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Row(
+                children: [
+                  // Botão de cópia formatada
+                  Tooltip(
+                    message: 'Copiar texto formatado',
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.copy,
+                        size: 20,
+                        color: isDark ? Colors.white70 : Colors.grey[600],
+                      ),
+                      onPressed: () => _copyFormattedText(context),
+                    ),
+                  ),
+                  // Botão de exportação PDF
+                  Tooltip(
+                    message: 'Exportar como PDF',
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.picture_as_pdf,
+                        size: 20,
+                        color: isDark ? Colors.white70 : Colors.grey[600],
+                      ),
+                      onPressed: () => _exportToPdf(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -144,6 +167,69 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         ),
       );
     }
+  }
+
+  void _copyFormattedText(BuildContext context) {
+    // Converter markdown para texto formatado limpo
+    String formattedText = _convertMarkdownToFormattedText(markdown);
+
+    Clipboard.setData(ClipboardData(text: formattedText));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Texto formatado copiado para a área de transferência'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  String _convertMarkdownToFormattedText(String markdown) {
+    String formatted = markdown;
+
+    // Remover cabeçalhos markdown (# ## ### etc)
+    formatted =
+        formatted.replaceAll(RegExp(r'^#{1,6}\s+', multiLine: true), '');
+
+    // Converter **texto** para texto normal (sem markdown)
+    formatted = formatted.replaceAllMapped(
+      RegExp(r'\*\*(.*?)\*\*'),
+      (match) => match.group(1) ?? '',
+    );
+
+    // Converter *texto* para texto normal (sem markdown)
+    formatted = formatted.replaceAllMapped(
+      RegExp(r'\*(.*?)\*'),
+      (match) => match.group(1) ?? '',
+    );
+
+    // Converter `código` para código (sem backticks)
+    formatted = formatted.replaceAllMapped(
+      RegExp(r'`(.*?)`'),
+      (match) => match.group(1) ?? '',
+    );
+
+    // Remover links markdown [texto](url) -> texto
+    formatted = formatted.replaceAllMapped(
+      RegExp(r'\[(.*?)\]\(.*?\)'),
+      (match) => match.group(1) ?? '',
+    );
+
+    // Remover blocos de código markdown
+    formatted =
+        formatted.replaceAll(RegExp(r'```[\s\S]*?```', multiLine: true), '');
+
+    // Remover listas markdown (- * +)
+    formatted =
+        formatted.replaceAll(RegExp(r'^[\s]*[-*+]\s+', multiLine: true), '');
+
+    // Remover listas numeradas
+    formatted =
+        formatted.replaceAll(RegExp(r'^[\s]*\d+\.\s+', multiLine: true), '');
+
+    // Limpar linhas em branco extras
+    formatted = formatted.replaceAll(RegExp(r'\n\s*\n\s*\n'), '\n\n');
+
+    return formatted.trim();
   }
 
   Widget _buildCustomCodeBlock(md.Element element) {
@@ -204,10 +290,15 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
           ColorSyntax(),
           BgSyntax(),
           BadgeSyntax(),
+          KbdInlineSyntax(), // Para <kbd>...</kbd>
+          MarkInlineSyntax(), // Para <mark>...</mark>
+          SubInlineSyntax(), // Para <sub>...</sub>
+          SupInlineSyntax(), // Para <sup>...</sup>
         ],
         blockSyntaxes: [
           LatexBlockSyntax(),
         ],
+        selectable: true,
       );
     }
 
@@ -235,7 +326,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         'summary': SummaryBuilder(),
         'latex-inline': LatexBuilder(),
         'latex-block': LatexBuilder(),
-        'span': DynamicColoredSpanBuilder(ref: ref),
+        'span': SpanBuilder(ref: ref),
         'div': DynamicColoredDivBuilder(ref: ref),
         'progress': ProgressBuilder(),
         'mermaid': MermaidBuilder(),
@@ -251,12 +342,17 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         BgSyntax(),
         BadgeSyntax(),
         BloquinhoColorSyntax(),
-        SpanInlineSyntax(), // Novo para <span style="...">...</span>
+        SpanInlineSyntax(), // Para <span style="...">...</span>
+        KbdInlineSyntax(), // Para <kbd>...</kbd>
+        MarkInlineSyntax(), // Para <mark>...</mark>
+        SubInlineSyntax(), // Para <sub>...</sub>
+        SupInlineSyntax(), // Para <sup>...</sup>
       ],
       blockSyntaxes: [
         LatexBlockSyntax(),
         MermaidBlockSyntax(),
       ],
+      selectable: true,
     );
   }
 
@@ -871,16 +967,33 @@ class AdvancedCodeBlockBuilder extends MarkdownElementBuilder {
 class MarkBuilder extends MarkdownElementBuilder {
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.yellow[300],
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        element.textContent,
-        style: preferredStyle?.copyWith(backgroundColor: Colors.transparent),
-      ),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.yellow[600]?.withOpacity(0.3)
+                : Colors.yellow[200],
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: isDark
+                  ? Colors.yellow[500]!.withOpacity(0.4)
+                  : Colors.yellow[400]!.withOpacity(0.6),
+              width: 0.5,
+            ),
+          ),
+          child: Text(
+            element.textContent,
+            style: (preferredStyle ?? const TextStyle()).copyWith(
+              backgroundColor: Colors.transparent,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -888,22 +1001,38 @@ class MarkBuilder extends MarkdownElementBuilder {
 class KbdBuilder extends MarkdownElementBuilder {
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.grey[400]!),
-      ),
-      child: Text(
-        element.textContent,
-        style: preferredStyle?.copyWith(
-          fontFamily: 'monospace',
-          fontSize: 13,
-          color: Colors.black,
-        ),
-      ),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[800] : Colors.grey[200],
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.3),
+                offset: const Offset(0, 2),
+                blurRadius: 2,
+              ),
+            ],
+          ),
+          child: Text(
+            element.textContent,
+            style: (preferredStyle ?? const TextStyle()).copyWith(
+              fontFamily: 'monospace',
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -911,24 +1040,35 @@ class KbdBuilder extends MarkdownElementBuilder {
 class SubBuilder extends MarkdownElementBuilder {
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    return RichText(
-      text: TextSpan(
-        children: [
-          WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
-            child: Transform.translate(
-              offset: const Offset(0.0, 4.0),
-              child: Text(
-                element.textContent,
-                style: (preferredStyle ?? const TextStyle()).copyWith(
-                  fontSize: (preferredStyle?.fontSize ?? 16) * 0.75,
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final baseStyle = preferredStyle ??
+            Theme.of(context).textTheme.bodyMedium ??
+            const TextStyle();
+
+        return RichText(
+          text: TextSpan(
+            children: [
+              WidgetSpan(
+                alignment: PlaceholderAlignment.baseline,
+                baseline: TextBaseline.alphabetic,
+                child: Transform.translate(
+                  offset: const Offset(0.0, 3.0),
+                  child: Text(
+                    element.textContent,
+                    style: baseStyle.copyWith(
+                      fontSize: (baseStyle.fontSize ?? 16) * 0.7,
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -936,24 +1076,35 @@ class SubBuilder extends MarkdownElementBuilder {
 class SupBuilder extends MarkdownElementBuilder {
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    return RichText(
-      text: TextSpan(
-        children: [
-          WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
-            child: Transform.translate(
-              offset: const Offset(0.0, -6.0),
-              child: Text(
-                element.textContent,
-                style: (preferredStyle ?? const TextStyle()).copyWith(
-                  fontSize: (preferredStyle?.fontSize ?? 16) * 0.75,
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final baseStyle = preferredStyle ??
+            Theme.of(context).textTheme.bodyMedium ??
+            const TextStyle();
+
+        return RichText(
+          text: TextSpan(
+            children: [
+              WidgetSpan(
+                alignment: PlaceholderAlignment.baseline,
+                baseline: TextBaseline.alphabetic,
+                child: Transform.translate(
+                  offset: const Offset(0.0, -5.0),
+                  child: Text(
+                    element.textContent,
+                    style: baseStyle.copyWith(
+                      fontSize: (baseStyle.fontSize ?? 16) * 0.7,
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -995,27 +1146,55 @@ class SummaryBuilder extends MarkdownElementBuilder {
 
 // Suporte a LaTeX inline e bloco
 class LatexInlineSyntax extends md.InlineSyntax {
-  LatexInlineSyntax() : super(r'\$(.+?)\$');
+  LatexInlineSyntax() : super(r'\$(?!\$)([^$]+)\$');
+
   @override
   bool onMatch(md.InlineParser parser, Match match) {
-    parser.addNode(md.Element.text('latex-inline', match.group(1)!));
-    return true;
+    final content = match.group(1)?.trim() ?? '';
+    if (content.isNotEmpty) {
+      parser.addNode(md.Element.text('latex-inline', content));
+      return true;
+    }
+    return false;
   }
 }
 
 class LatexBlockSyntax extends md.BlockSyntax {
   @override
-  RegExp get pattern => RegExp(r'^\${2}([\s\S]+?)\${2}', multiLine: true);
+  RegExp get pattern => RegExp(r'^\${2}([\s\S]*?)\${2}', multiLine: true);
+
   @override
   md.Node parse(md.BlockParser parser) {
-    final currentLine = parser.current.toString();
-    final match = pattern.firstMatch(currentLine);
-    if (match != null) {
+    final lines = <String>[];
+    var line = parser.current;
+
+    // Procurar por $$
+    if (line.content.startsWith('\$\$')) {
+      lines.add(line.content);
       parser.advance();
-      final content = match.group(1)?.toString() ?? '';
-      return md.Element.text('latex-block', content);
+
+      // Continuar lendo até encontrar $$
+      while (!parser.isDone) {
+        line = parser.current;
+        lines.add(line.content);
+        parser.advance();
+
+        if (line.content.contains('\$\$')) {
+          break;
+        }
+      }
+
+      // Extrair o conteúdo LaTeX
+      final fullContent = lines.join('\n');
+      final match = RegExp(r'\\\${2}([\s\S]*?)\\\${2}').firstMatch(fullContent);
+
+      if (match != null) {
+        final content = match.group(1)?.trim() ?? '';
+        return md.Element.text('latex-block', content);
+      }
     }
-    // Se não houver match, retornar um elemento vazio
+
+    // Fallback
     return md.Element.text('p', parser.current.content);
   }
 }
@@ -1036,10 +1215,10 @@ class LatexBuilder extends MarkdownElementBuilder {
   }
 }
 
-class DynamicColoredSpanBuilder extends MarkdownElementBuilder {
+class SpanBuilder extends MarkdownElementBuilder {
   final WidgetRef ref;
 
-  DynamicColoredSpanBuilder({required this.ref});
+  SpanBuilder({required this.ref});
 
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
@@ -1047,24 +1226,69 @@ class DynamicColoredSpanBuilder extends MarkdownElementBuilder {
     final style = element.attributes['style'] ?? '';
     final styleMap = _parseStyle(style);
 
+    // Processar markdown dentro do texto (para **bold**, *italic*, etc.)
+    final processedText = _processMarkdownInText(text);
+
     // Gerar ID único para este texto
     final textId = 'preview_${element.hashCode}';
 
-    // Usar o sistema DynamicColoredText
-    return DynamicColoredTextWithProvider(
-      text: text,
+    // Aplicar padding/margin se especificado
+    final widget = DynamicColoredTextWithProvider(
+      text: processedText.text,
       textId: textId,
       baseStyle: (preferredStyle ?? const TextStyle()).copyWith(
         color: styleMap['color'],
         backgroundColor: styleMap['backgroundColor'],
-        fontWeight: styleMap['fontWeight'],
-        fontStyle: styleMap['fontStyle'],
+        fontWeight: processedText.isBold
+            ? FontWeight.bold
+            : (styleMap['fontWeight'] ?? FontWeight.normal),
+        fontStyle: processedText.isItalic
+            ? FontStyle.italic
+            : (styleMap['fontStyle'] ?? FontStyle.normal),
         decoration: styleMap['decoration'],
         fontFamily: styleMap['fontFamily'],
         fontSize: styleMap['fontSize'],
       ),
       showControls: false, // Não mostrar controles no preview
     );
+
+    // Aplicar container se há padding/margin/border
+    if (styleMap['padding'] != null ||
+        styleMap['margin'] != null ||
+        styleMap['borderRadius'] != null) {
+      return Container(
+        padding: styleMap['padding'] as EdgeInsets?,
+        margin: styleMap['margin'] as EdgeInsets?,
+        decoration: BoxDecoration(
+          color: styleMap['backgroundColor'],
+          borderRadius: styleMap['borderRadius'] as BorderRadius?,
+          border: styleMap['border'] as Border?,
+        ),
+        child: widget,
+      );
+    }
+
+    return widget;
+  }
+
+  _ProcessedText _processMarkdownInText(String text) {
+    bool isBold = false;
+    bool isItalic = false;
+    String processedText = text;
+
+    // Processar **bold**
+    if (text.contains('**')) {
+      isBold = true;
+      processedText = processedText.replaceAll('**', '');
+    }
+
+    // Processar *italic*
+    if (text.contains('*') && !text.contains('**')) {
+      isItalic = true;
+      processedText = processedText.replaceAll('*', '');
+    }
+
+    return _ProcessedText(processedText, isBold, isItalic);
   }
 
   Map<String, dynamic> _parseStyle(String style) {
@@ -1772,14 +1996,50 @@ class BgBuilder extends MarkdownElementBuilder {
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
     // Corrigir: ler o atributo 'color' da tag <bg>
     final bg = element.attributes['color'] ?? element.attributes['background'];
-    return DynamicColoredTextWithProvider(
-      text: element.textContent,
-      textId: 'preview_bg_${element.hashCode}',
-      baseStyle: (preferredStyle ?? const TextStyle()).copyWith(
-        backgroundColor: _parseColor(bg),
+
+    // Processar markdown dentro do texto (para **bold**, *italic*, etc.)
+    final text = element.textContent;
+    final processedText = _processMarkdownInText(text);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: _parseColor(bg),
+        borderRadius: BorderRadius.circular(4),
       ),
-      showControls: false,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      child: DynamicColoredTextWithProvider(
+        text: processedText.text,
+        textId: 'preview_bg_${element.hashCode}',
+        baseStyle: (preferredStyle ?? const TextStyle()).copyWith(
+          backgroundColor: Colors.transparent,
+          fontWeight:
+              processedText.isBold ? FontWeight.bold : FontWeight.normal,
+          fontStyle:
+              processedText.isItalic ? FontStyle.italic : FontStyle.normal,
+        ),
+        showControls: false,
+      ),
     );
+  }
+
+  _ProcessedText _processMarkdownInText(String text) {
+    bool isBold = false;
+    bool isItalic = false;
+    String processedText = text;
+
+    // Processar **bold**
+    if (text.contains('**')) {
+      isBold = true;
+      processedText = processedText.replaceAll('**', '');
+    }
+
+    // Processar *italic*
+    if (text.contains('*') && !text.contains('**')) {
+      isItalic = true;
+      processedText = processedText.replaceAll('*', '');
+    }
+
+    return _ProcessedText(processedText, isBold, isItalic);
   }
 
   Color? _parseColor(String? value) {
@@ -1938,6 +2198,23 @@ class _MermaidSvgWidgetState extends State<MermaidSvgWidget> {
     }
   }
 
+  /// Remove elementos problemáticos do SVG para evitar erros no flutter_svg
+  String _sanitizeSvg(String svg) {
+    svg = svg.replaceAll(
+        RegExp(r'<style[\s\S]*?>[\s\S]*?<\/style>',
+            multiLine: true, caseSensitive: false),
+        '');
+    svg = svg.replaceAll(
+        RegExp(r'<marker[\s\S]*?>[\s\S]*?<\/marker>',
+            multiLine: true, caseSensitive: false),
+        '');
+    svg = svg.replaceAll(
+        RegExp(r'<foreignObject[\s\S]*?>[\s\S]*?<\/foreignObject>',
+            multiLine: true, caseSensitive: false),
+        '');
+    return svg;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -1947,7 +2224,7 @@ class _MermaidSvgWidgetState extends State<MermaidSvgWidget> {
     if (svgData != null) {
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 16),
-        child: SvgPicture.string(svgData!),
+        child: SvgPicture.string(_sanitizeSvg(svgData!)),
       );
     }
 
@@ -2014,6 +2291,63 @@ class SpanInlineSyntax extends md.InlineSyntax {
     final element = md.Element.text('span', text);
     element.attributes['style'] = style;
     parser.addNode(element);
+    return true;
+  }
+}
+
+// Classe auxiliar para processar texto com markdown
+class _ProcessedText {
+  final String text;
+  final bool isBold;
+  final bool isItalic;
+
+  _ProcessedText(this.text, this.isBold, this.isItalic);
+}
+
+// InlineSyntax para <kbd>...</kbd>
+class KbdInlineSyntax extends md.InlineSyntax {
+  KbdInlineSyntax() : super(r'<kbd>(.*?)<\/kbd>');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final content = match.group(1) ?? '';
+    parser.addNode(md.Element.text('kbd', content));
+    return true;
+  }
+}
+
+// InlineSyntax para <mark>...</mark>
+class MarkInlineSyntax extends md.InlineSyntax {
+  MarkInlineSyntax() : super(r'<mark>(.*?)<\/mark>');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final content = match.group(1) ?? '';
+    parser.addNode(md.Element.text('mark', content));
+    return true;
+  }
+}
+
+// InlineSyntax para <sub>...</sub>
+class SubInlineSyntax extends md.InlineSyntax {
+  SubInlineSyntax() : super(r'<sub>(.*?)<\/sub>');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final content = match.group(1) ?? '';
+    parser.addNode(md.Element.text('sub', content));
+    return true;
+  }
+}
+
+// InlineSyntax para <sup>...</sup>
+class SupInlineSyntax extends md.InlineSyntax {
+  SupInlineSyntax() : super(r'<sup>(.*?)<\/sup>');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final content = match.group(1) ?? '';
+    parser.addNode(md.Element.text('sup', content));
     return true;
   }
 }

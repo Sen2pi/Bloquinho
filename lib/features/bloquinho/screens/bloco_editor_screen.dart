@@ -667,9 +667,11 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         Expanded(
           child: Consumer(
             builder: (context, ref, _) {
-              return PageContentWidget(
-                pageId: currentPage?.id ?? '',
-                isEditing: false,
+              return RepaintBoundary(
+                child: PageContentWidget(
+                  pageId: currentPage?.id ?? '',
+                  isEditing: false,
+                ),
               );
             },
           ),
@@ -931,10 +933,12 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         child: Container(
           width: 800,
           padding: const EdgeInsets.all(20),
-          child: PageContentWidget(
+          child: RepaintBoundary(
             key: key,
-            pageId: currentPage.id,
-            isEditing: false,
+            child: PageContentWidget(
+              pageId: currentPage.id,
+              isEditing: false,
+            ),
           ),
         ),
       );
@@ -1015,9 +1019,11 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     return Container(
       width: 800, // Largura fixa para PDF
       padding: const EdgeInsets.all(20),
-      child: PageContentWidget(
-        pageId: page.id,
-        isEditing: false,
+      child: RepaintBoundary(
+        child: PageContentWidget(
+          pageId: page.id,
+          isEditing: false,
+        ),
       ),
     );
   }

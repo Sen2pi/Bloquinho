@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/animated_action_button.dart';
 import '../providers/agenda_provider.dart';
 import '../models/agenda_item.dart';
 import '../../../core/l10n/app_strings.dart';
@@ -398,22 +399,21 @@ class _AddAgendaItemDialogState extends ConsumerState<AddAgendaItemDialog> {
               child: Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
+                    child: AnimatedActionButton(
+                      text: strings.cancel,
                       onPressed: () => Navigator.of(context).pop(),
-                      child: Text(strings.cancel),
+                      type: ButtonType.secondary,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: (isCreating || isUpdating) ? null : _saveItem,
-                      child: (isCreating || isUpdating)
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(widget.item != null ? strings.update : strings.create),
+                    child: AnimatedActionButton(
+                      text: widget.item != null ? strings.update : strings.create,
+                      onPressed: _saveItem,
+                      isLoading: isCreating || isUpdating,
+                      isEnabled: !(isCreating || isUpdating),
+                      icon: widget.item != null ? Icons.update : Icons.add_circle_outline,
+                      type: ButtonType.primary,
                     ),
                   ),
                 ],

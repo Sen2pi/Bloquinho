@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../models/cartao_credito.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/animated_action_button.dart';
 
 class AddCartaoCreditoDialog extends StatefulWidget {
   final void Function(CartaoCredito) onAdd;
@@ -415,12 +416,14 @@ class _AddCartaoCreditoDialogState extends State<AddCartaoCreditoDialog> {
                     child: const Text('Cancelar'),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton.icon(
+                  AnimatedActionButton(
+                    text: isEditing ? 'Salvar' : 'Adicionar',
                     onPressed: _salvar,
-                    icon: Icon(isEditing
+                    isLoading: false,
+                    isEnabled: true,
+                    icon: isEditing
                         ? PhosphorIcons.check()
-                        : PhosphorIcons.plus()),
-                    label: Text(isEditing ? 'Salvar' : 'Adicionar'),
+                        : PhosphorIcons.plus(),
                   ),
                 ],
               ),

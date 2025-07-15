@@ -397,85 +397,97 @@ class _BlocoRenderWidgetState extends ConsumerState<BlocoRenderWidget> {
   // Event Handlers
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    try {
+      if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
-    // Atalhos globais
-    if (HardwareKeyboard.instance.isControlPressed ||
-        HardwareKeyboard.instance.isMetaPressed) {
+      // Atalhos globais
+      final keyboard = HardwareKeyboard.instance;
+      if (keyboard.isControlPressed || keyboard.isMetaPressed) {
+        switch (event.logicalKey) {
+          case LogicalKeyboardKey.keyA:
+            _selectAllBlocks();
+            return KeyEventResult.handled;
+
+          case LogicalKeyboardKey.keyC:
+            _copySelectedBlocks();
+            return KeyEventResult.handled;
+
+          case LogicalKeyboardKey.keyV:
+            _pasteBlocks();
+            return KeyEventResult.handled;
+
+          case LogicalKeyboardKey.keyZ:
+            if (keyboard.isShiftPressed) {
+              _redo();
+            } else {
+              _undo();
+            }
+            return KeyEventResult.handled;
+        }
+      }
+
+      // Navegação entre blocos
       switch (event.logicalKey) {
-        case LogicalKeyboardKey.keyA:
-          _selectAllBlocks();
+        case LogicalKeyboardKey.arrowUp:
+          _navigateToBlock(-1);
           return KeyEventResult.handled;
 
-        case LogicalKeyboardKey.keyC:
-          _copySelectedBlocks();
+        case LogicalKeyboardKey.arrowDown:
+          _navigateToBlock(1);
           return KeyEventResult.handled;
 
-        case LogicalKeyboardKey.keyV:
-          _pasteBlocks();
-          return KeyEventResult.handled;
-
-        case LogicalKeyboardKey.keyZ:
-          if (HardwareKeyboard.instance.isShiftPressed) {
-            _redo();
-          } else {
-            _undo();
+        case LogicalKeyboardKey.enter:
+          if (_focusedBlockId != null) {
+            _insertBlockAfter(_focusedBlockId!);
           }
           return KeyEventResult.handled;
+
+        case LogicalKeyboardKey.delete:
+        case LogicalKeyboardKey.backspace:
+          if (_selectedBlockIds.isNotEmpty) {
+            _deleteSelectedBlocks();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+
+        case LogicalKeyboardKey.slash:
+          if (_focusedBlockId != null) {
+            _showSlashMenuForBlock(_focusedBlockId!);
+            return KeyEventResult.handled;
+          }
+          break;
+
+        case LogicalKeyboardKey.escape:
+          _clearSelection();
+          _hideSlashMenu();
+          return KeyEventResult.handled;
       }
+
+      return KeyEventResult.ignored;
+    } catch (e) {
+      debugPrint('Error handling key event in bloco_render_widget: $e');
+      return KeyEventResult.ignored;
     }
-
-    // Navegação entre blocos
-    switch (event.logicalKey) {
-      case LogicalKeyboardKey.arrowUp:
-        _navigateToBlock(-1);
-        return KeyEventResult.handled;
-
-      case LogicalKeyboardKey.arrowDown:
-        _navigateToBlock(1);
-        return KeyEventResult.handled;
-
-      case LogicalKeyboardKey.enter:
-        if (_focusedBlockId != null) {
-          _insertBlockAfter(_focusedBlockId!);
-        }
-        return KeyEventResult.handled;
-
-      case LogicalKeyboardKey.delete:
-      case LogicalKeyboardKey.backspace:
-        if (_selectedBlockIds.isNotEmpty) {
-          _deleteSelectedBlocks();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-
-      case LogicalKeyboardKey.slash:
-        if (_focusedBlockId != null) {
-          _showSlashMenuForBlock(_focusedBlockId!);
-          return KeyEventResult.handled;
-        }
-        break;
-
-      case LogicalKeyboardKey.escape:
-        _clearSelection();
-        _hideSlashMenu();
-        return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
   }
 
   void _handleBlockTap(String blockId, int index) {
-    if (HardwareKeyboard.instance.isShiftPressed) {
-      _handleShiftClick(blockId);
-    } else if (HardwareKeyboard.instance.isControlPressed ||
-        HardwareKeyboard.instance.isMetaPressed) {
-      _toggleBlockSelection(blockId);
-    } else {
-      _selectSingleBlock(blockId);
-    }
+    try {
+      final keyboard = HardwareKeyboard.instance;
+      if (keyboard.isShiftPressed) {
+        _handleShiftClick(blockId);
+      } else if (keyboard.isControlPressed || keyboard.isMetaPressed) {
+        _toggleBlockSelection(blockId);
+      } else {
+        _selectSingleBlock(blockId);
+      }
 
-    _setFocusedBlock(blockId);
+      _setFocusedBlock(blockId);
+    } catch (e) {
+      debugPrint('Error in _handleBlockTap: $e');
+      // Fallback: just select the block
+      _selectSingleBlock(blockId);
+      _setFocusedBlock(blockId);
+    }
   }
 
   void _handleBlockLongPress(String blockId) {

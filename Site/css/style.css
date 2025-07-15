@@ -81,10 +81,10 @@ body.dark-theme {
   display: inline-block;
   font-size: 13px;
   padding: 8px 16px;
-  color: #513A50;
+  color: #7c5a2a;
   text-decoration: none;
-  border: solid 3px #5f4012;
-  box-shadow: 6px 6px 0 -3px #5a472c;
+  border: solid 3px #7c5a2a;
+  box-shadow: 6px 6px 0 -3px #b8843d;
   transition: .3s;
   overflow: hidden;
   text-transform: uppercase;
@@ -99,7 +99,7 @@ body.dark-theme {
   transform: skew(-50deg);
   top: 0px;
   left: 120px;
-  background-color: #4e3f28;
+  background-color: #685333;
   content: "　";
   width: 100px;
   height: 60px;
@@ -107,7 +107,7 @@ body.dark-theme {
 }
 
 .nav-links li a:hover {
-  box-shadow: 0px 0px 0  0px #7e643d;
+  box-shadow: 0px 0px 0  0px #a07e4c;
   
 }
 
@@ -129,7 +129,7 @@ body.dark-theme {
     font-size: 11px;
     padding: 6px 10px;
     border-width: 2px;
-    box-shadow: 3px 3px 0 -2px #5a472c;
+    box-shadow: 3px 3px 0 -2px #9e7b4b;
     letter-spacing: 0.5px;
   }
   .nav-links li a:before {
@@ -510,7 +510,7 @@ body.dark-theme {
 }
 .wiki-menu a.active, .wiki-menu a:hover {
   background: #e9dcc7;
-  color: #4e3b23;
+  color: #77552b;
 }
 .wiki-content {
   flex: 1;
@@ -547,11 +547,11 @@ body.dark-theme {
   margin-bottom: 18px;
 }
 .faq-item h3 {
-  color: #7c5a2a;
+  color: #a77735;
   margin: 0 0 8px 0;
 }
 .faq-item p {
-  color: #4e3b23;
+  color: #836035;
   margin: 0;
 }
 

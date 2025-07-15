@@ -1,0 +1,26 @@
+[
+  {
+    "name": "1 Guide",
+    "type": "folder",
+    "children": [
+      {
+        "name": "onboarding_tutorial.html",
+        "type": "file",
+        "path": "1 Guide/onboarding_tutorial.html",
+        "title": "Complete Onboarding Tutorial for Bloquinho"
+      }
+    ]
+  },
+  {
+    "name": "2 Security",
+    "type": "folder",
+    "children": [
+      {
+        "name": "001 - security.html",
+        "type": "file",
+        "path": "2 Security/001 - security.html",
+        "title": "🛡️ Security and Privacy"
+      }
+    ]
+  }
+]

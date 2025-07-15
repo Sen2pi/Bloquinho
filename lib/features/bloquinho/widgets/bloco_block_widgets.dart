@@ -2155,7 +2155,8 @@ class _BlocoTabelaWidgetState extends State<BlocoTabelaWidget> {
                           Expanded(
                             child: widget.isEditable
                                 ? TextFormField(
-                                    initialValue: _headers[i],
+                                    controller: TextEditingController(
+                                        text: _headers[i]),
                                     onChanged: (value) {
                                       _headers[i] = value;
                                       _saveChanges();
@@ -2198,9 +2199,10 @@ class _BlocoTabelaWidgetState extends State<BlocoTabelaWidget> {
                               Expanded(
                                 child: widget.isEditable
                                     ? TextFormField(
-                                        initialValue: j < _rows[i].length
-                                            ? _rows[i][j]
-                                            : '',
+                                        controller: TextEditingController(
+                                            text: j < _rows[i].length
+                                                ? _rows[i][j]
+                                                : ''),
                                         onChanged: (value) {
                                           if (j < _rows[i].length) {
                                             _rows[i][j] = value;

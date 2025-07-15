@@ -74,7 +74,7 @@ class TextCellWidget extends DatabaseCellWidget {
   @override
   Widget buildEditWidget(BuildContext context) {
     return TextFormField(
-      initialValue: value?.value?.toString() ?? '',
+      controller: TextEditingController(text: value?.value?.toString() ?? ''),
       decoration: const InputDecoration(
         border: InputBorder.none,
         contentPadding: EdgeInsets.zero,
@@ -119,7 +119,7 @@ class NumberCellWidget extends DatabaseCellWidget {
   @override
   Widget buildEditWidget(BuildContext context) {
     return TextFormField(
-      initialValue: value?.value?.toString() ?? '',
+      controller: TextEditingController(text: value?.value?.toString() ?? ''),
       decoration: const InputDecoration(
         border: InputBorder.none,
         contentPadding: EdgeInsets.zero,

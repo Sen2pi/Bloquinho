@@ -12,6 +12,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../models/cartao_fidelizacao.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/animated_action_button.dart';
 
 class CartaoFidelizacaoListWidget extends StatelessWidget {
   final List<CartaoFidelizacao> cartoes;
@@ -74,10 +75,12 @@ class CartaoFidelizacaoListWidget extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 16),
-          ElevatedButton.icon(
+          AnimatedActionButton(
+            text: 'Adicionar Cartão',
             onPressed: onAdd,
-            icon: Icon(PhosphorIcons.plus(), size: 16),
-            label: const Text('Adicionar Cartão'),
+            isLoading: false,
+            isEnabled: true,
+            icon: PhosphorIcons.plus(),
           ),
         ],
       ),

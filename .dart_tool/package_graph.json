@@ -22,6 +22,7 @@
         "flutter_highlight",
         "flutter_localizations",
         "flutter_markdown",
+        "flutter_markdown_selectionarea",
         "flutter_math_fork",
         "flutter_quill",
         "flutter_reorderable_list",
@@ -537,6 +538,16 @@
         "plugin_platform_interface",
         "web",
         "win32"
+      ]
+    },
+    {
+      "name": "flutter_markdown_selectionarea",
+      "version": "0.6.17+1",
+      "dependencies": [
+        "flutter",
+        "markdown",
+        "meta",
+        "path"
       ]
     },
     {

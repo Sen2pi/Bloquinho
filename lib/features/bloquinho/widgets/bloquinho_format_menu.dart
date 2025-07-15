@@ -17,7 +17,8 @@ class BloquinhoFormatMenu extends StatefulWidget {
   final Function(String formatType,
       {String? color,
       String? backgroundColor,
-      String? alignment}) onFormatApplied;
+      String? alignment,
+      String? content}) onFormatApplied;
   final VoidCallback onDismiss;
 
   const BloquinhoFormatMenu({
@@ -144,7 +145,7 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
         _buildFormatButton(
           icon: Icons.functions,
           tooltip: 'Fórmula LaTeX',
-          onTap: () => _showLaTeXDialog(context),
+          onTap: () => _showLatexDialog(context),
           isDarkMode: isDarkMode,
         ),
         const SizedBox(width: 4),
@@ -244,30 +245,40 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
   void _showColorPicker(BuildContext context, String type) {
     final colors = type == 'text'
         ? [
-            'red',
-            'blue',
-            'green',
-            'yellow',
-            'purple',
-            'orange',
-            'pink',
-            'brown',
-            'grey',
-            'black',
-            'white'
+            '#FF0000', // red
+            '#0000FF', // blue
+            '#00FF00', // green
+            '#FFFF00', // yellow
+            '#800080', // purple
+            '#FFA500', // orange
+            '#FFC0CB', // pink
+            '#A52A2A', // brown
+            '#808080', // grey
+            '#000000', // black
+            '#FFFFFF', // white
+            '#FF69B4', // hotpink
+            '#4B0082', // indigo
+            '#008080', // teal
+            '#FFD700', // gold
+            '#DC143C', // crimson
           ]
         : [
-            'bg-red',
-            'bg-blue',
-            'bg-green',
-            'bg-yellow',
-            'bg-purple',
-            'bg-orange',
-            'bg-pink',
-            'bg-brown',
-            'bg-grey',
-            'bg-black',
-            'bg-white'
+            '#FF0000', // red
+            '#0000FF', // blue
+            '#00FF00', // green
+            '#FFFF00', // yellow
+            '#800080', // purple
+            '#FFA500', // orange
+            '#FFC0CB', // pink
+            '#A52A2A', // brown
+            '#808080', // grey
+            '#000000', // black
+            '#FFFFFF', // white
+            '#FF69B4', // hotpink
+            '#4B0082', // indigo
+            '#008080', // teal
+            '#FFD700', // gold
+            '#DC143C', // crimson
           ];
 
     showDialog(
@@ -373,6 +384,15 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
   }
 
   Color _getColorFromName(String colorName) {
+    // Se for um código hexadecimal, processar diretamente
+    if (colorName.startsWith('#')) {
+      try {
+        return Color(int.parse(colorName.substring(1), radix: 16) + 0xFF000000);
+      } catch (e) {
+        return Colors.grey;
+      }
+    }
+    
     final colorMap = {
       'red': Colors.red,
       'blue': Colors.blue,
@@ -406,9 +426,14 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
     return luminance > 0.5 ? Colors.black : Colors.white;
   }
 
-  void _showLaTeXDialog(BuildContext context) {
+  /// Converte uma cor em formato hexadecimal
+  String _colorToHex(Color color) {
+    return '#${color.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+  }
+
+  void _showLatexDialog(BuildContext context) {
     final TextEditingController latexController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -428,7 +453,7 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
                 onSubmitted: (value) {
                   Navigator.of(context).pop();
                   if (value.isNotEmpty) {
-                    widget.onFormatApplied('latex', color: value);
+                    widget.onFormatApplied('latex', content: value);
                   }
                 },
               ),
@@ -460,7 +485,7 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
               final latexContent = latexController.text.trim();
               if (latexContent.isNotEmpty) {
                 Navigator.of(context).pop();
-                widget.onFormatApplied('latex', color: latexContent);
+                widget.onFormatApplied('latex', content: latexContent);
               }
             },
             child: const Text('Inserir'),
@@ -532,7 +557,7 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
                   final templateContent =
                       LaTeXWidget.matrixTemplates[templateName];
                   if (templateContent != null) {
-                    widget.onFormatApplied('matrix', color: templateContent);
+                    widget.onFormatApplied('matrix', content: templateContent);
                   }
                 },
                 child: Container(
@@ -571,7 +596,7 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
     return ElevatedButton(
       onPressed: () {
         Navigator.of(context).pop();
-        widget.onFormatApplied('latex', color: formula);
+        widget.onFormatApplied('latex', content: formula);
       },
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -643,7 +668,7 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
                             MermaidTemplates.templates[templateName];
                         if (templateContent != null) {
                           widget.onFormatApplied('mermaid',
-                              color: templateContent);
+                              content: templateContent);
                         }
                       },
                       child: Container(
@@ -684,7 +709,7 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
                 onSubmitted: (value) {
                   Navigator.of(context).pop();
                   if (value.isNotEmpty) {
-                    widget.onFormatApplied('mermaid', color: value);
+                    widget.onFormatApplied('mermaid', content: value);
                   }
                 },
               ),
@@ -701,7 +726,7 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
               final customContent = customMermaidController.text.trim();
               if (customContent.isNotEmpty) {
                 Navigator.of(context).pop();
-                widget.onFormatApplied('mermaid', color: customContent);
+                widget.onFormatApplied('mermaid', content: customContent);
               }
             },
             child: const Text('Inserir'),

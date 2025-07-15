@@ -9,6 +9,7 @@
 
 import 'package:flutter/material.dart';
 import '../models/documento.dart';
+import '../../../shared/widgets/animated_action_button.dart';
 
 class AddDocumentoDialog extends StatefulWidget {
   final void Function(Documento) onAdd;
@@ -126,9 +127,12 @@ class _AddDocumentoDialogState extends State<AddDocumentoDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
-        ElevatedButton(
+        AnimatedActionButton(
+          text: 'Adicionar',
           onPressed: _adicionar,
-          child: const Text('Adicionar'),
+          isLoading: false,
+          isEnabled: true,
+          icon: Icons.add,
         ),
       ],
     );

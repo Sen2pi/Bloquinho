@@ -13,6 +13,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../shared/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/animated_action_button.dart';
 import '../providers/password_provider.dart';
 import '../models/password_entry.dart';
 
@@ -308,24 +309,21 @@ class _AddPasswordDialogState extends ConsumerState<AddPasswordDialog> {
               child: Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
+                    child: AnimatedActionButton(
+                      text: 'Cancelar',
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancelar'),
+                      type: ButtonType.secondary,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed:
-                          (isCreating || isUpdating) ? null : _savePassword,
-                      child: (isCreating || isUpdating)
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(
-                              widget.password != null ? 'Atualizar' : 'Salvar'),
+                    child: AnimatedActionButton(
+                      text: widget.password != null ? 'Atualizar' : 'Salvar',
+                      onPressed: _savePassword,
+                      isLoading: isCreating || isUpdating,
+                      isEnabled: !(isCreating || isUpdating),
+                      icon: widget.password != null ? Icons.update : Icons.save,
+                      type: ButtonType.primary,
                     ),
                   ),
                 ],

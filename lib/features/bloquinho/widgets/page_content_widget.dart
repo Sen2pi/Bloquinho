@@ -367,7 +367,10 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
   }
 
   void _applyTextFormat(String formatType,
-      {String? color, String? backgroundColor, String? alignment}) {
+      {String? color,
+      String? backgroundColor,
+      String? alignment,
+      String? content}) {
     if (_selectedText == null) return;
 
     final text = _textController.text;
@@ -405,12 +408,12 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
         break;
       case 'textColor':
         if (color != null) {
-          formattedText = '<color value="$color">$selectedText</color>';
+          formattedText = '<span style="color:$color">$selectedText</span>';
         }
         break;
       case 'backgroundColor':
         if (backgroundColor != null) {
-          formattedText = '<bg color="$backgroundColor">$selectedText</bg>';
+          formattedText = '<span style="background-color:$backgroundColor">$selectedText</span>';
         }
         break;
       case 'alignment':

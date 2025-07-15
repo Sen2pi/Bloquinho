@@ -2,9 +2,9 @@
 
 ## 🎨 Demonstração de Cores e Formatação
 
-Este documento exemplifica **todas as principais funcionalidades** do Markdown, incluindo <span style="color:red; background-color:#ffeeee; padding:2px 5px; border-radius:3px">**cores personalizadas**</span> e formatação avançada.
+Este documento exemplifica **todas as principais funcionalidades** do Markdown, incluindo <span style="color:red; background-color:#ffeeee; padding:2px 5px; border-radius:3px">**cores personalizadas**</span> e formatação avançada
 
-### Exemplos de Texto Colorido
+### Exemplos de Texto <bg color="bg-red">Colorido</bg>
 
 Aqui temos diferentes estilos de texto:
 

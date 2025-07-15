@@ -1,0 +1,14 @@
+{
+  "name": "bloquinho-wiki-generator",
+  "version": "1.0.0",
+  "description": "Generates the wiki index for the Bloquinho website.",
+  "main": "generate-wiki-index.js",
+  "scripts": {
+    "generate": "node generate-wiki-index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "jsdom": "^26.1.0"
+  }
+}

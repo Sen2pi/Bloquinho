@@ -59,6 +59,7 @@ dependencies:
   flutter_quill: ^11.4.1
   markdown: ^7.1.1
   flutter_markdown: ^0.7.7+1
+  flutter_markdown_selectionarea: ^0.6.17+1
 
   # File Handling
   file_picker: ^10.2.0
@@ -67,7 +68,7 @@ dependencies:
 
   # PDF Generation
   pdf: ^3.10.7
-  printing: ^5.11.1
+  printing: ^5.11.1  # Temporarily disabled due to PDFium build issues
   open_file: ^3.3.2
 
   # Drag & Drop

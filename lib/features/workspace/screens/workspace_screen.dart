@@ -1169,8 +1169,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: AnimatedThemeToggle(
                 isDarkMode: isDarkMode,
-                width: 120,
-                height: 60,
+                width: 60,
+                height: 30,
                 onToggle: () {
                   ref.read(themeProvider.notifier).toggleTheme();
                 },

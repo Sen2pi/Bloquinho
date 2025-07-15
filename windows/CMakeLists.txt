@@ -10,6 +10,11 @@ set(BINARY_NAME "bloquinho")
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)
 
+# Set policy to suppress CMP0175 warning from plugins
+if(POLICY CMP0175)
+  cmake_policy(SET CMP0175 OLD)
+endif()
+
 # Define build configuration option.
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(IS_MULTICONFIG)

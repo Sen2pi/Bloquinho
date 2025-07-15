@@ -63,27 +63,46 @@ class _WindowsMermaidDiagramWidgetState
     });
 
     try {
-      // Múltiplas APIs para redundância
+      // APIs com melhor compatibilidade e codificação
       final apis = [
-        'https://mermaid.ink/svg/',
-        'https://mermaid.ink/img/',
         'https://kroki.io/mermaid/svg/',
+        'https://mermaid-js.github.io/mermaid-live-editor/edit/',
+        'https://mermaid.ink/svg/',
       ];
 
       String? lastError;
 
       for (final api in apis) {
         try {
-          final encodedDiagram = Uri.encodeComponent(widget.diagram);
-          final url = '$api$encodedDiagram';
+          String url;
+          http.Response response;
 
-          final response = await http.get(
-            Uri.parse(url),
-            headers: {
-              'User-Agent': 'Bloquinho/1.0',
-              'Accept': 'image/svg+xml,image/png,*/*',
-            },
-          ).timeout(const Duration(seconds: 10));
+          if (api.contains('kroki.io')) {
+            // Para Kroki, usar POST com JSON payload
+            url = api;
+            response = await http
+                .post(
+                  Uri.parse(url),
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'image/svg+xml',
+                  },
+                  body:
+                      '{"diagram_source": "${widget.diagram.replaceAll('"', '\\"').replaceAll('\n', '\\n')}"}',
+                )
+                .timeout(const Duration(seconds: 15));
+          } else {
+            // Para outras APIs, usar GET com URL encoding
+            final encodedDiagram = Uri.encodeComponent(widget.diagram);
+            url = '$api$encodedDiagram';
+            response = await http.get(
+              Uri.parse(url),
+              headers: {
+                'User-Agent': 'Bloquinho/1.0',
+                'Accept': 'image/svg+xml,image/png,*/*',
+              },
+            ).timeout(const Duration(seconds: 15));
+          }
 
           if (response.statusCode == 200) {
             setState(() {
@@ -113,6 +132,22 @@ class _WindowsMermaidDiagramWidgetState
         isRetrying = false;
       });
     }
+  }
+
+  String _sanitizeSvg(String svg) {
+    svg = svg.replaceAll(
+        RegExp(r'<style[\s\S]*?>[\s\S]*?<\/style>',
+            multiLine: true, caseSensitive: false),
+        '');
+    svg = svg.replaceAll(
+        RegExp(r'<marker[\s\S]*?>[\s\S]*?<\/marker>',
+            multiLine: true, caseSensitive: false),
+        '');
+    svg = svg.replaceAll(
+        RegExp(r'<foreignObject[\s\S]*?>[\s\S]*?<\/foreignObject>',
+            multiLine: true, caseSensitive: false),
+        '');
+    return svg;
   }
 
   @override
@@ -175,7 +210,7 @@ class _WindowsMermaidDiagramWidgetState
           ],
           Expanded(
             child: SvgPicture.string(
-              svgData!,
+              _sanitizeSvg(svgData!),
               fit: BoxFit.contain,
               placeholderBuilder: (context) => const Center(
                 child: CircularProgressIndicator(),

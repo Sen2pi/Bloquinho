@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutorial de Onboarding - Bloquinho</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="icon" href="public/logo.png">
+  <style>
+    .onboarding-img {
+      max-width: 950px;
+      width: 100%;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px #0002;
+      margin: 32px 0;
+      display: block;
+    }
+    .onboarding-step {
+      margin-bottom: 48px;
+    }
+    .onboarding-step h2 {
+      color: #7c5a2a;
+      margin-bottom: 12px;
+    }
+    .onboarding-tip {
+      background: #fff8ef;
+      border-left: 4px solid #7c5a2a;
+      padding: 12px 18px;
+      border-radius: 8px;
+      margin: 18px 0;
+      color: #4e3b23;
+      font-size: 1rem;
+    }
+    .onboarding-code {
+      background: #f3e7d8;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-family: monospace;
+      font-size: 0.98rem;
+      color: #7c5a2a;
+      margin: 10px 0;
+      display: block;
+    }
+    
+    /* Estilos para o seletor de idioma */
+    .header-container {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 16px;
+    }
+    
+    .language-selector {
+      display: flex;
+      background: #f8f4ed;
+      border: 2px solid #7c5a2a;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(124, 90, 42, 0.1);
+    }
+    
+    .language-selector button {
+      background: transparent;
+      border: none;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #7c5a2a;
+      transition: all 0.3s ease;
+      border-right: 1px solid #7c5a2a;
+    }
+    
+    .language-selector button:last-child {
+      border-right: none;
+    }
+    
+    .language-selector button:hover {
+      background: #eee7dc;
+    }
+    
+    .language-selector button.active {
+      background: #7c5a2a;
+      color: white;
+    }
+    
+    .language-content {
+      display: none;
+    }
+    
+    .language-content.active {
+      display: block;
+    }
+    
+    .page-title {
+      color: #7c5a2a;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-left">
+      <img src="public/logo.png" alt="Bloquinho Logo" class="nav-logo">
+      <span class="nav-title">Bloquinho</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="../../index.html">Home</a></li>
+      <li><a href="../../features.html">Features</a></li>
+      <li><a href="../../security.html">Security</a></li>
+      <li><a href="../../architecture.html">Architecture</a></li>
+      <li><a href="../../faq.html">FAQ</a></li>
+      <li><a href="../../downloads_and_donate.html">Downloads & Donate</a></li>
+      <li><a href="../wiki.html" class="active"><img src="../../public/graduation.png" class="wiki-navbar-icon" alt="Wiki">Wiki</a></li>
+    </ul>
+  </nav>
+  
+  <main class="wiki-content" style="max-width: 900px; margin: 0 auto; padding: 32px 16px;">
+    <div class="header-container">
+      <h1 class="page-title">
+        <span class="language-content active" data-lang="en">Complete Onboarding Tutorial for Bloquinho</span>
+      </h1>
+      
+      <div class="language-selector">
+        <button onclick="switchLanguage('pt')" class="active" data-lang="pt">PT</button>
+        <button onclick="switchLanguage('en')" data-lang="en">EN</button>
+        <button onclick="switchLanguage('fr')" data-lang="fr">FR</button>
+      </div>
+    </div>
+
+    <!-- Conteúdo em Português -->
+    <div class="language-content active" data-lang="pt">
+      <p style="font-size:1.15rem; color:#4e3b23; margin-bottom:32px;">Este guia detalhado mostra passo a passo como funciona o processo de onboarding do Bloquinho, explicando cada tela, as escolhas do usuário e como o sistema lida com temas, idiomas, perfil e armazenamento na nuvem. Ideal para novos utilizadores e para quem deseja entender a arquitetura do fluxo inicial do app.</p>
+
+      <div class="onboarding-step">
+        <h2>1. Seleção de Idioma e Tema</h2>
+        <img src="public/screenshots/onboarding1.png" alt="Seleção de idioma e tema" class="onboarding-img">
+        <p>
+          A primeira tela do onboarding permite ao usuário escolher o idioma principal da interface (Português, Inglês ou Francês) e alternar entre o modo claro e escuro.<br>
+          <b>Funcionalidade:</b> O idioma selecionado é salvo imediatamente e afeta toda a navegação. O tema pode ser trocado a qualquer momento, inclusive durante o onboarding.<br>
+          <b>Como funciona:</b> O app utiliza um <code class="onboarding-code">LanguageProvider</code> e <code class="onboarding-code">ThemeProvider</code> reativos, que atualizam a UI em tempo real. O idioma é persistido localmente e pode ser alterado depois nas configurações.
+        </p>
+        <div class="onboarding-tip">
+          <b>Dica:</b> Se você mudar de ideia, pode alterar o idioma e o tema a qualquer momento nas configurações do app.<br>
+          <b>Avançar:</b> Clique em <b>Continuar</b> para prosseguir.
+        </div>
+      </div>
+
+      <div class="onboarding-step">
+        <h2>2. Tela de Boas-vindas</h2>
+        <img src="public/screenshots/onboarding2.png" alt="Tela de boas-vindas" class="onboarding-img">
+        <p>
+          Esta tela apresenta o Bloquinho e explica brevemente o conceito de workspaces e organização pessoal. É uma introdução visual e amigável.<br>
+          <b>Funcionalidade:</b> Não há campos para preencher, apenas um botão <b>Começar</b>.<br>
+          <b>Como funciona:</b> Ao clicar em <b>Começar</b>, o app avança para a criação do perfil.
+        </p>
+        <div class="onboarding-tip">
+          <b>Avançar:</b> Clique em <b>Começar</b> para criar seu perfil.
+        </div>
+      </div>
+
+      <div class="onboarding-step">
+        <h2>3. Criação de Perfil</h2>
+        <img src="public/screenshots/onboarding3.png" alt="Criação de perfil" class="onboarding-img">
+        <p>
+          Aqui o usuário deve criar seu perfil pessoal, fornecendo:
+          <ul>
+            <li><b>Foto de perfil</b> (opcional, mas recomendada para personalização)</li>
+            <li><b>Nome completo</b> (obrigatório)</li>
+            <li><b>Email</b> (obrigatório, usado para identificação e integração cloud)</li>
+          </ul>
+          <b>Funcionalidade:</b> O app valida os campos em tempo real. A foto pode ser escolhida da galeria (com suporte a web, mobile e desktop).<br>
+          <b>Como funciona:</b> O perfil é salvo localmente e, se o usuário escolher armazenamento cloud depois, será sincronizado.<br>
+          <b>Privacidade:</b> Os dados são armazenados localmente e só vão para a nuvem se o usuário optar por sincronização cloud.
+        </p>
+        <div class="onboarding-tip">
+          <b>Dica:</b> Use um email válido para aproveitar recursos de backup e sincronização na nuvem.<br>
+          <b>Avançar:</b> Preencha os campos e clique em <b>Continuar</b>.
+        </div>
+      </div>
+
+      <div class="onboarding-step">
+        <h2>4. Escolha do Tipo de Armazenamento</h2>
+        <img src="public/screenshots/onboarding4.png" alt="Seleção de armazenamento" class="onboarding-img">
+        <p>
+          Nesta etapa, o usuário escolhe onde seus dados serão armazenados e sincronizados:
+          <ul>
+            <li><b>Somente Local</b>: Todos os dados ficam no dispositivo. Mais privacidade, mas sem backup automático.</li>
+            <li><b>Local + Google Drive</b>: Os dados são salvos localmente e sincronizados com o Google Drive, permitindo backup e acesso em múltiplos dispositivos.</li>
+            <li><b>Local + OneDrive</b>: Sincronização com a nuvem da Microsoft, ideal para quem já usa o ecossistema Microsoft.</li>
+          </ul>
+          <b>Funcionalidade:</b> O app verifica automaticamente a disponibilidade dos serviços cloud e pede autenticação OAuth2 se necessário.<br>
+          <b>Como funciona:</b> Ao escolher um serviço cloud, o app cria toda a estrutura de pastas na nuvem (<code class="onboarding-code">CloudFolderService</code>), garantindo isolamento por perfil e workspace. A sincronização é gerenciada por providers reativos e indicadores visuais (<code class="onboarding-code">CloudSyncIndicator</code>), mostrando status em tempo real.<br>
+          <b>Segurança:</b> Tokens de autenticação são armazenados de forma segura e renovados automaticamente.
+        </p>
+        <div class="onboarding-tip">
+          <b>Dica:</b> Você pode mudar o tipo de armazenamento depois nas configurações.<br>
+          <b>Finalizar:</b> Clique em <b>Começar a usar</b> para concluir o onboarding. O app criará automaticamente seus workspaces e pastas na nuvem/local.
+        </div>
+      </div>
+
+      <div class="onboarding-step">
+        <h2>5. O que acontece após o Onboarding?</h2>
+        <p>
+          Após finalizar o onboarding:
+          <ul>
+            <li>O app cria automaticamente três workspaces padrão: <b>Pessoal</b>, <b>Trabalho</b> e <b>Projetos</b>.</li>
+            <li>Se você escolheu nuvem, toda a estrutura de pastas é criada no seu Google Drive ou OneDrive, de forma isolada por perfil.</li>
+            <li>Você pode acessar, editar e sincronizar seus dados em múltiplos dispositivos.</li>
+            <li>O status da sincronização é sempre visível no topo do app, com feedback visual e mensagens detalhadas (<code class="onboarding-code">CloudSyncIndicator</code>).</li>
+          </ul>
+        </p>
+        <div class="onboarding-tip">
+          <b>Saiba mais:</b> Veja também:
+          <ul>
+            <li><a href="../2 Security/security.html">Segurança e Privacidade</a></li>
+            <li><a href="../3 Configurations/configuracoes.html">Configurações Avançadas</a></li>
+            <li><a href="../4 Tutorials/sync_cloud.html">Como funciona a Sincronização Cloud</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <hr style="margin:48px 0 24px 0;">
+      <p style="color:#b8a07a; font-size:0.98rem;">Este tutorial foi gerado automaticamente com base no código-fonte real do Bloquinho e screenshots oficiais. Última atualização: julho de 2025.</p>
+    </div>
+
+    <!-- Conteúdo em Inglês -->
+    <div class="language-content" data-lang="en">
+      <p style="font-size:1.15rem; color:#4e3b23; margin-bottom:32px;">This detailed guide shows step by step how the Bloquinho onboarding process works, explaining each screen, user choices and how the system handles themes, languages, profile and cloud storage. Ideal for new users and those who want to understand the architecture of the app's initial flow.</p>
+
+      <div class="onboarding-step">
+        <h2>1. Language and Theme Selection</h2>
+        <img src="public/screenshots/onboarding1.png" alt="Language and theme selection" class="onboarding-img">
+        <p>
+          The first onboarding screen allows the user to choose the main interface language (Portuguese, English, or French) and switch between light and dark modes.<br>
+          <b>Functionality:</b> The selected language is saved immediately and affects the entire navigation. The theme can be changed at any time, including during onboarding.<br>
+          <b>How it works:</b> The app uses reactive LanguageProvider and ThemeProvider that update the UI in real time. The language is persisted locally and can be changed later in the settings.
+        </p>
+        <div class="onboarding-tip">
+          <b>Tip:</b> If you change your mind, you can change the language and theme at any time in the app settings.<br>
+          <b>Next:</b> Click <b>Continue</b> to proceed.
+        </div>
+      </div>
+
+      <div class="onboarding-step">
+        <h2>2. Welcome Screen</h2>
+        <img src="public/screenshots/onboarding2.png" alt="Welcome screen" class="onboarding-img">
+        <p>
+          This screen presents Bloquinho and briefly explains the concept of workspaces and personal organization. It is a visual and friendly introduction.<br>
+          <b>Functionality:</b> There are no fields to fill, just a <b>Start</b> button.<br>
+          <b>How it works:</b> Clicking Start advances the app to profile creation.
+        </p>
+        <div class="onboarding-tip">
+          <b>Next:</b> Click <b>Start</b> to create your profile.
+        </div>
+      </div>
+
+      <div class="onboarding-step">
+        <h2>3. Profile Creation</h2>
+        <img src="public/screenshots/onboarding3.png" alt="Profile creation" class="onboarding-img">
+        <p>
+          Here the user must create their personal profile, providing:
+          <ul>
+            <li><b>Profile picture</b> (optional but recommended for personalization)</li>
+            <li><b>Full name</b> (mandatory)</li>
+            <li><b>Email</b> (mandatory, used for identification and cloud integration)</li>
+          </ul>
+          <b>Functionality:</b> The app validates the fields in real time. The photo can be chosen from the gallery (with support for web, mobile, and desktop).<br>
+          <b>How it works:</b> The profile is saved locally and, if the user chooses cloud storage later, it will be synchronized.<br>
+          <b>Privacy:</b> Data is stored locally and only goes to the cloud if the user opts for cloud synchronization.
+        </p>
+        <div class="onboarding-tip">
+          <b>Tip:</b> Use a valid email to take advantage of backup and cloud synchronization features.<br>
+          <b>Next:</b> Fill in the fields and click <b>Continue</b>.
+        </div>
+      </div>
+
+      <div class="onboarding-step">
+        <h2>4. Storage Type Selection</h2>
+        <img src="public/screenshots/onboarding4.png" alt="Storage selection" class="onboarding-img">
+        <p>
+          At this stage, the user chooses where their data will be stored and synchronized:
+          <ul>
+            <li><b>Local Only</b>: All data stays on the device. More privacy but no automatic backup.</li>
+            <li><b>Local + Google Drive</b>: Data is saved locally and synchronized with Google Drive, allowing backup and access on multiple devices.</li>
+            <li><b>Local + OneDrive</b>: Synchronization with Microsoft cloud, ideal for those already using the Microsoft ecosystem.</li>
+          </ul>
+          <b>Functionality:</b> The app automatically checks the availability of cloud services and requests OAuth2 authentication if necessary.<br>
+          <b>How it works:</b> When choosing a cloud service, the app creates the entire folder structure in the cloud (<code class="onboarding-code">CloudFolderService</code>), ensuring isolation by profile and workspace. Synchronization is managed by reactive providers and visual indicators (<code class="onboarding-code">CloudSyncIndicator</code>), showing real-time status.<br>
+          <b>Security:</b> Authentication tokens are stored securely and renewed automatically.
+        </p>
+        <div class="onboarding-tip">
+          <b>Tip:</b> You can change the storage type later in the settings.<br>
+          <b>Finish:</b> Click <b>Start Using</b> to complete onboarding. The app will automatically create your workspaces and folders in the cloud/local.
+        </div>
+      </div>
+
+      <div class="onboarding-step">
+        <h2>5. What Happens After Onboarding?</h2>
+        <p>
+          After finishing onboarding:
+          <ul>
+            <li>The app automatically creates three default workspaces: <b>Personal</b>, <b>Work</b>, and <b>Projects</b>.</li>
+            <li>If you chose cloud, the entire folder structure is created in your Google Drive or OneDrive, isolated by profile.</li>
+            <li>You can access, edit, and synchronize your data on multiple devices.</li>
+            <li>The synchronization status is always visible at the top of the app, with visual feedback and detailed messages (<code class="onboarding-code">CloudSyncIndicator</code>).</li>
+          </ul>
+        </p>
+        <div class="onboarding-tip">
+          <b>Learn more:</b> See also:
+          <ul>
+            <li><a href="../2 Security/security.html">Security and Privacy</a></li>
+            <li><a href="../3 Configurations/configuracoes.html">Advanced Settings</a></li>
+            <li><a href="../4 Tutorials/sync_cloud.html">How Cloud Synchronization Works</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <hr style="margin:48px 0 24px 0;">
+      <p style="color:#b8a07a; font-size:0.98rem;">This tutorial was generated automatically based on the actual Bloquinho source code and official screenshots. Last updated: July 2025.</p>
+    </div>
+
+    <!-- Conteúdo em Francês -->
+    <div class="language-content" data-lang="fr">
+      <p style="font-size:1.15rem; color:#4e3b23; margin-bottom:32px;">Ce guide détaillé montre étape par étape comment fonctionne le processus d'onboarding de Bloquinho, expliquant chaque écran, les choix de l'utilisateur et comment le système gère les thèmes, les langues, le profil et le stockage cloud. Idéal pour les nouveaux utilisateurs et ceux qui souhaitent comprendre l'architecture du flux initial de l'app.</p>
+
+      <div class="onboarding-step">
+        <h2>1. Sélection de la Langue et du Thème</h2>
+        <img src="public/screenshots/onboarding1.png" alt="Sélection de la langue et du thème" class="onboarding-img">
+        <p>
+          Le premier écran d'onboarding permet à l'utilisateur de choisir la langue principale de l'interface (portugais, anglais ou français) et de basculer entre les modes clair et sombre.<br>
+          <b>Fonctionnalité :</b> La langue sélectionnée est enregistrée immédiatement et affecte toute la navigation. Le thème peut être changé à tout moment, y compris pendant l'onboarding.<br>
+          <b>Comment ça marche :</b> L'application utilise des LanguageProvider et ThemeProvider réactifs qui mettent à jour l'interface utilisateur en temps réel. La langue est conservée localement et peut être modifiée plus tard dans les paramètres.
+        </p>
+        <div class="onboarding-tip">
+          <b>Conseil :</b> Si vous changez d'avis, vous pouvez changer la langue et le thème à tout moment dans les paramètres de l'application.<br>
+          <b>Suivant :</b> Cliquez sur <b>Continuer</b> pour poursuivre.
+        </div>
+      </div>
+
+      <div class="onboarding-step">
+        <h2>2. Écran de Bienvenue</h2>
+        <img src="public/screenshots/onboarding2.png" alt="Écran de bienvenue" class="onboarding-img">
+        <p>
+          Cet écran présente Bloquinho et explique brièvement le concept des espaces de travail et de l'organisation personnelle. C'est une introduction visuelle et conviviale.<br>
+          <b>Fonctionnalité :</b> Il n'y a pas de champs à remplir, juste un bouton <b>Démarrer</b>.<br>
+          <b>Comment ça marche :</b> En cliquant sur Démarrer, l'application passe à la création du profil.
+        </p>
+        <div class="onboarding-tip">
+          <b>Suivant :</b> Cliquez sur <b>Démarrer</b> pour créer votre profil.
+        </div>
+      </div>
+
+      <div class="onboarding-step">
+        <h2>3. Création de Profil</h2>
+        <img src="public/screenshots/onboarding3.png" alt="Création de profil" class="onboarding-img">
+        <p>
+          Ici, l'utilisateur doit créer son profil personnel en fournissant :
+          <ul>
+            <li><b>Photo de profil</b> (optionnelle mais recommandée pour la personnalisation)</li>
+            <li><b>Nom complet</b> (obligatoire)</li>
+            <li><b>Email</b> (obligatoire, utilisé pour l'identification et l'intégration cloud)</li>
+          </ul>
+          <b>Fonctionnalité :</b> L'application valide les champs en temps réel. La photo peut être choisie dans la galerie (avec prise en charge du web, mobile et desktop).<br>
+          <b>Comment ça marche :</b> Le profil est enregistré localement et, si l'utilisateur choisit le stockage cloud plus tard, il sera synchronisé.<br>
+          <b>Confidentialité :</b> Les données sont stockées localement et ne vont dans le cloud que si l'utilisateur opte pour la synchronisation cloud.
+        </p>
+        <div class="onboarding-tip">
+          <b>Conseil :</b> Utilisez un email valide pour profiter des fonctionnalités de sauvegarde et de synchronisation cloud.<br>
+          <b>Suivant :</b> Remplissez les champs et cliquez sur <b>Continuer</b>.
+        </div>
+      </div>
+
+      <div class="onboarding-step">
+        <h2>4. Choix du Type de Stockage</h2>
+        <img src="public/screenshots/onboarding4.png" alt="Sélection du stockage" class="onboarding-img">
+        <p>
+          À cette étape, l'utilisateur choisit où ses données seront stockées et synchronisées :
+          <ul>
+            <li><b>Local uniquement</b> : Toutes les données restent sur l'appareil. Plus de confidentialité mais pas de sauvegarde automatique.</li>
+            <li><b>Local + Google Drive</b> : Les données sont enregistrées localement et synchronisées avec Google Drive, permettant la sauvegarde et l'accès sur plusieurs appareils.</li>
+            <li><b>Local + OneDrive</b> : Synchronisation avec le cloud Microsoft, idéal pour ceux qui utilisent déjà l'écosystème Microsoft.</li>
+          </ul>
+          <b>Fonctionnalité :</b> L'application vérifie automatiquement la disponibilité des services cloud et demande une authentification OAuth2 si nécessaire.<br>
+          <b>Comment ça marche :</b> En choisissant un service cloud, l'application crée toute la structure de dossiers dans le cloud (<code class="onboarding-code">CloudFolderService</code>), garantissant l'isolement par profil et espace de travail. La synchronisation est gérée par des providers réactifs et des indicateurs visuels (<code class="onboarding-code">CloudSyncIndicator</code>), affichant le statut en temps réel.<br>
+          <b>Sécurité :</b> Les jetons d'authentification sont stockés en toute sécurité et renouvelés automatiquement.
+        </p>
+        <div class="onboarding-tip">
+          <b>Conseil :</b> Vous pouvez changer le type de stockage plus tard dans les paramètres.<br>
+          <b>Terminer :</b> Cliquez sur <b>Commencer à utiliser</b> pour terminer l'onboarding. L'application créera automatiquement vos espaces de travail et dossiers dans le cloud/local.
+        </div>
+      </div>
+
+      <div class="onboarding-step">
+        <h2>5. Que se passe-t-il après l'onboarding ?</h2>
+        <p>
+          Après avoir terminé l'onboarding :
+          <ul>
+            <li>L'application crée automatiquement trois espaces de travail par défaut : <b>Personnel</b>, <b>Travail</b> et <b>Projets</b>.</li>
+            <li>Si vous avez choisi le cloud, toute la structure des dossiers est créée dans votre Google Drive ou OneDrive, isolée par profil.</li>
+            <li>Vous pouvez accéder, modifier et synchroniser vos données sur plusieurs appareils.</li>
+            <li>Le statut de synchronisation est toujours visible en haut de l'application, avec un retour visuel et des messages détaillés (<code class="onboarding-code">CloudSyncIndicator</code>).</li>
+          </ul>
+        </p>
+        <div class="onboarding-tip">
+          <b>En savoir plus :</b> Voir aussi :
+          <ul>
+            <li><a href="../2 Security/security.html">Sécurité et confidentialité</a></li>
+            <li><a href="../3 Configurations/configuracoes.html">Paramètres avancés</a></li>
+            <li><a href="../4 Tutorials/sync_cloud.html">Comment fonctionne la synchronisation cloud</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <hr style="margin:48px 0 24px 0;">
+      <p style="color:#b8a07a; font-size:0.98rem;">Ce tutoriel a été généré automatiquement à partir du code source réel de Bloquinho et des captures d'écran officielles. Dernière mise à jour : juillet 2025.</p>
+    </div>
+
+  </main>
+
+  <script>
+    function switchLanguage(lang) {
+      // Atualizar botões ativos
+      document.querySelectorAll('.language-selector button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`[data-lang="${lang}"]`).classList.add('active');
+      
+      // Mostrar/esconder conteúdo
+      document.querySelectorAll('.language-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.querySelectorAll(`[data-lang="${lang}"]`).forEach(content => {
+        content.classList.add('active');
+      });
+      
+      // Atualizar idioma do HTML
+      document.documentElement.lang = lang;
+      
+      // Salvar preferência no localStorage
+      localStorage.setItem('selectedLanguage', lang);
+    }
+    
+    // Carregar idioma salvo na inicialização
+    document.addEventListener('DOMContentLoaded', function() {
+      const savedLang = localStorage.getItem('selectedLanguage') || 'pt';
+      switchLanguage(savedLang);
+    });
+  </script>
+  
+  <script src="../../js/navbar.js"></script>
+</body>
+</html>

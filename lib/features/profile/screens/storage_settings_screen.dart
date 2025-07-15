@@ -14,6 +14,7 @@ import 'package:bloquinho/core/models/storage_settings.dart';
 import 'package:bloquinho/core/services/cloud_storage_service.dart';
 import 'package:bloquinho/shared/providers/storage_settings_provider.dart';
 import 'package:bloquinho/shared/providers/user_profile_provider.dart';
+import 'package:bloquinho/shared/widgets/animated_action_button.dart';
 
 /// Tela para configurar armazenamento em nuvem
 class StorageSettingsScreen extends ConsumerStatefulWidget {
@@ -327,29 +328,15 @@ class _StorageSettingsScreenState extends ConsumerState<StorageSettingsScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            SizedBox(
+            AnimatedActionButton(
+              text: 'Conectar ao $providerName',
+              onPressed: _connect,
+              isLoading: _isConnecting,
+              isEnabled: !_isConnecting,
+              icon: Icons.cloud_upload_outlined,
+              type: ButtonType.primary,
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isConnecting ? null : _connect,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[600],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: _isConnecting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Text('Conectar ao $providerName'),
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 12),
             ),
           ],
           if (_errorMessage != null) ...[
@@ -414,29 +401,15 @@ class _StorageSettingsScreenState extends ConsumerState<StorageSettingsScreen> {
           if (lastSync != null)
             _buildInfoRow('Última Sincronização', _formatDateTime(lastSync)),
           const SizedBox(height: 16),
-          SizedBox(
+          AnimatedActionButton(
+            text: 'Sincronizar Agora',
+            onPressed: _syncNow,
+            isLoading: _isSyncing,
+            isEnabled: !_isSyncing,
+            icon: Icons.sync,
+            type: ButtonType.secondary,
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isSyncing ? null : _syncNow,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[600],
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: _isSyncing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text('Sincronizar Agora'),
-            ),
+            padding: const EdgeInsets.symmetric(vertical: 12),
           ),
         ],
       ),

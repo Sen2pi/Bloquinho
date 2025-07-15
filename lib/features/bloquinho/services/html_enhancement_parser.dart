@@ -71,6 +71,15 @@ class HtmlEnhancementParser {
 
   /// Processa o conteúdo markdown com enhancements HTML
   static String processWithEnhancements(String content) {
+    // Remover elementos <style> e <svg> (e seus conteúdos)
+    content = content.replaceAll(
+        RegExp(r'<style[\s\S]*?>[\s\S]*?<\/style>',
+            multiLine: true, caseSensitive: false),
+        '');
+    content = content.replaceAll(
+        RegExp(r'<svg[\s\S]*?>[\s\S]*?<\/svg>',
+            multiLine: true, caseSensitive: false),
+        '');
     // Proteger blocos LaTeX ($$ ... $$) e Mermaid (```mermaid ... ```) para não serem processados
     final protectedBlocks = <String>[];
     content = content.replaceAllMapped(
@@ -89,12 +98,15 @@ class HtmlEnhancementParser {
     content = _processBackgroundColors(content);
     // Processar alinhamentos
     content = _processAlignments(content);
+    // Processar elementos HTML matemáticos e especiais
+    content = _processHtmlElements(content);
     // Processar combinações aninhadas
     content = _processNestedTags(content);
 
     // Restaurar blocos protegidos
     for (var i = 0; i < protectedBlocks.length; i++) {
-      content = content.replaceAll('<<PROTECTED_BLOCK_$i>>', protectedBlocks[i]);
+      content =
+          content.replaceAll('<<PROTECTED_BLOCK_$i>>', protectedBlocks[i]);
     }
     return content;
   }
@@ -103,7 +115,8 @@ class HtmlEnhancementParser {
   static String _processComplexSpans(String content) {
     // Processar spans com estilos inline complexos
     return content.replaceAllMapped(
-      RegExp(r'<span\s+style="([^"]+)">((?:(?!</span>).)*)</span>', multiLine: true),
+      RegExp(r'<span\s+style="([^"]+)">((?:(?!</span>).)*)</span>',
+          multiLine: true),
       (match) {
         final style = match.group(1)!;
         final text = match.group(2)!;
@@ -144,6 +157,12 @@ class HtmlEnhancementParser {
       final color = properties['color']!;
       if (color.startsWith('#')) {
         styleAttributes.add('color: $color');
+      } else {
+        // Converter nome de cor para hex se necessário
+        final hexColor = _colorNameToHex(color);
+        if (hexColor != null) {
+          styleAttributes.add('color: $hexColor');
+        }
       }
     }
 
@@ -152,6 +171,12 @@ class HtmlEnhancementParser {
       final bgColor = properties['background-color']!;
       if (bgColor.startsWith('#')) {
         styleAttributes.add('background-color: $bgColor');
+      } else {
+        // Converter nome de cor para hex se necessário
+        final hexColor = _colorNameToHex(bgColor);
+        if (hexColor != null) {
+          styleAttributes.add('background-color: $hexColor');
+        }
       }
     }
 
@@ -320,6 +345,65 @@ class HtmlEnhancementParser {
         return match.group(0)!;
       },
     );
+  }
+
+  /// Processa elementos HTML matemáticos e especiais
+  static String _processHtmlElements(String content) {
+    // Processar elementos sub (subscript) - preservar as tags para o markdown processor
+    content = content.replaceAllMapped(
+      RegExp(r'<sub>(.*?)</sub>', multiLine: true),
+      (match) {
+        final text = match.group(1)!;
+        return '<sub>$text</sub>'; // Manter as tags para o MarkdownBuilder processar
+      },
+    );
+
+    // Processar elementos sup (superscript) - preservar as tags para o markdown processor
+    content = content.replaceAllMapped(
+      RegExp(r'<sup>(.*?)</sup>', multiLine: true),
+      (match) {
+        final text = match.group(1)!;
+        return '<sup>$text</sup>'; // Manter as tags para o MarkdownBuilder processar
+      },
+    );
+
+    // Processar elementos mark (highlight) - preservar as tags para o markdown processor
+    content = content.replaceAllMapped(
+      RegExp(r'<mark>(.*?)</mark>', multiLine: true),
+      (match) {
+        final text = match.group(1)!;
+        return '<mark>$text</mark>'; // Manter as tags para o MarkdownBuilder processar
+      },
+    );
+
+    // Processar elementos kbd (keyboard) - preservar as tags para o markdown processor
+    content = content.replaceAllMapped(
+      RegExp(r'<kbd>(.*?)</kbd>', multiLine: true),
+      (match) {
+        final text = match.group(1)!;
+        return '<kbd>$text</kbd>'; // Manter as tags para o MarkdownBuilder processar
+      },
+    );
+
+    // Processar elementos details - preservar as tags para o markdown processor
+    content = content.replaceAllMapped(
+      RegExp(r'<details>(.*?)</details>', multiLine: true, dotAll: true),
+      (match) {
+        final text = match.group(1)!;
+        return '<details>$text</details>'; // Manter as tags para o MarkdownBuilder processar
+      },
+    );
+
+    // Processar elementos summary - preservar as tags para o markdown processor
+    content = content.replaceAllMapped(
+      RegExp(r'<summary>(.*?)</summary>', multiLine: true),
+      (match) {
+        final text = match.group(1)!;
+        return '<summary>$text</summary>'; // Manter as tags para o MarkdownBuilder processar
+      },
+    );
+
+    return content;
   }
 
   /// Processa tags aninhadas (combinações)

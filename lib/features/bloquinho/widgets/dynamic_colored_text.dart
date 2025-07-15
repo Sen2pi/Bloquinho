@@ -422,7 +422,20 @@ class _DynamicColoredTextState extends ConsumerState<DynamicColoredText> {
     if (color == Colors.grey) return 'Cinza';
     if (color == Colors.blueGrey) return 'Azul-cinza';
 
-    return 'RGB(${color.red}, ${color.green}, ${color.blue})';
+    // Retornar valor hexadecimal para cores personalizadas
+    return '#${color.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+  }
+
+  /// Converte código hexadecimal para Color
+  Color? _parseHexColor(String hexColor) {
+    if (hexColor.startsWith('#')) {
+      try {
+        return Color(int.parse(hexColor.substring(1), radix: 16) + 0xFF000000);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   }
 }
 
@@ -492,10 +505,10 @@ class DynamicColoredTextWithProvider extends ConsumerWidget {
       color: textColor,
       backgroundColor:
           null, // Não usar backgroundColor do TextStyle, só do Container
-      // MANTER formatação original:
-      fontWeight: baseStyle?.fontWeight,
-      fontStyle: baseStyle?.fontStyle,
-      decoration: baseStyle?.decoration,
+      // MANTER formatação original EXPLICITAMENTE:
+      fontWeight: baseStyle?.fontWeight ?? FontWeight.normal,
+      fontStyle: baseStyle?.fontStyle ?? FontStyle.normal,
+      decoration: baseStyle?.decoration ?? TextDecoration.none,
       decorationColor: baseStyle?.decorationColor,
       decorationStyle: baseStyle?.decorationStyle,
       decorationThickness: baseStyle?.decorationThickness,
@@ -507,8 +520,6 @@ class DynamicColoredTextWithProvider extends ConsumerWidget {
       leadingDistribution: baseStyle?.leadingDistribution,
       locale: baseStyle?.locale,
       shadows: baseStyle?.shadows,
-      foreground: baseStyle?.foreground,
-      background: baseStyle?.background,
     );
 
     final textWidget = Text(
@@ -685,6 +696,12 @@ class DynamicColoredTextWithProvider extends ConsumerWidget {
       Colors.purple,
       Colors.pink,
       Colors.teal,
+      const Color(0xFF4B0082), // indigo
+      const Color(0xFFFFD700), // gold
+      const Color(0xFFDC143C), // crimson
+      const Color(0xFFFF69B4), // hotpink
+      const Color(0xFFA52A2A), // brown
+      const Color(0xFF008080), // teal
     ];
 
     showDialog(
@@ -771,6 +788,19 @@ class DynamicColoredTextWithProvider extends ConsumerWidget {
     if (color == Colors.pink) return 'Rosa';
     if (color == Colors.teal) return 'Verde-azulado';
 
-    return 'RGB(${color.red}, ${color.green}, ${color.blue})';
+    // Retornar valor hexadecimal para cores personalizadas
+    return '#${color.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+  }
+
+  /// Converte código hexadecimal para Color
+  Color? _parseHexColor(String hexColor) {
+    if (hexColor.startsWith('#')) {
+      try {
+        return Color(int.parse(hexColor.substring(1), radix: 16) + 0xFF000000);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   }
 }

@@ -93,19 +93,21 @@
     }
     
     /* Scrollbar styling for wiki menu */
-    .wiki-menu::-webkit-scrollbar {
-      width: 6px;
+    .wiki-menu {
+      width: 340px;
+      min-width: 260px;
+      max-width: 400px;
     }
-    
+    .wiki-menu::-webkit-scrollbar {
+      width: 8px;
+    }
     .wiki-menu::-webkit-scrollbar-track {
       background: #f3e7d8;
     }
-    
     .wiki-menu::-webkit-scrollbar-thumb {
       background: #d2bfa3;
       border-radius: 3px;
     }
-    
     .wiki-menu::-webkit-scrollbar-thumb:hover {
       background: #c2af93;
     }

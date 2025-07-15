@@ -46,6 +46,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
   
   late TextEditingController _searchController;
   late FocusNode _searchFocusNode;
+  late FocusNode _keyboardFocusNode;
   String _currentQuery = '';
   BlocoCategory? _selectedCategory;
   int _selectedIndex = 0;
@@ -55,6 +56,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
     super.initState();
     _searchController = TextEditingController(text: widget.searchQuery ?? '');
     _searchFocusNode = FocusNode();
+    _keyboardFocusNode = FocusNode();
     _currentQuery = widget.searchQuery ?? '';
     
     // Auto-focus na busca
@@ -67,6 +69,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _keyboardFocusNode.dispose();
     super.dispose();
   }
 
@@ -313,7 +316,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
     }
     
     return RawKeyboardListener(
-      focusNode: FocusNode(),
+      focusNode: _keyboardFocusNode,
       onKey: (event) => _handleKeyEvent(event, filteredBlocks),
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -678,21 +681,35 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
   }
 
   void _handleKeyEvent(RawKeyEvent event, List<BlockInfo> filteredBlocks) {
-    if (event is RawKeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-        setState(() {
-          _selectedIndex = (_selectedIndex + 1) % filteredBlocks.length;
-        });
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-        setState(() {
-          _selectedIndex = (_selectedIndex - 1 + filteredBlocks.length) % filteredBlocks.length;
-        });
-      } else if (event.logicalKey == LogicalKeyboardKey.enter) {
-        if (filteredBlocks.isNotEmpty) {
-          _insertBlock(filteredBlocks[_selectedIndex]);
-        }
-      } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-        widget.onDismiss?.call();
+    try {
+      if (event is! RawKeyDownEvent) return;
+      if (filteredBlocks.isEmpty) return;
+      
+      switch (event.logicalKey) {
+        case LogicalKeyboardKey.arrowDown:
+          setState(() {
+            _selectedIndex = (_selectedIndex + 1) % filteredBlocks.length;
+          });
+          break;
+        case LogicalKeyboardKey.arrowUp:
+          setState(() {
+            _selectedIndex = (_selectedIndex - 1 + filteredBlocks.length) % filteredBlocks.length;
+          });
+          break;
+        case LogicalKeyboardKey.enter:
+          if (_selectedIndex < filteredBlocks.length) {
+            _insertBlock(filteredBlocks[_selectedIndex]);
+          }
+          break;
+        case LogicalKeyboardKey.escape:
+          widget.onDismiss?.call();
+          break;
+      }
+    } catch (e) {
+      debugPrint('Error handling keyboard event: $e');
+      // Fallback: reset selected index to prevent out-of-bounds errors
+      if (filteredBlocks.isNotEmpty) {
+        _selectedIndex = 0;
       }
     }
   }

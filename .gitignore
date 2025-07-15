@@ -48,3 +48,4 @@ oauth_config.json
 *.env
 credentials.json
 client_secret.json
+/.claude

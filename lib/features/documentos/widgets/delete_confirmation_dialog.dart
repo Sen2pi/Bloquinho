@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/animated_action_button.dart';
 
 class DeleteConfirmationDialog extends StatelessWidget {
   final String title;
@@ -96,21 +97,20 @@ class DeleteConfirmationDialog extends StatelessWidget {
         ],
       ),
       actions: [
-        TextButton(
+        AnimatedActionButton(
+          text: 'Cancelar',
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          type: ButtonType.secondary,
         ),
-        ElevatedButton.icon(
+        const SizedBox(width: 8),
+        AnimatedActionButton(
+          text: 'Excluir',
           onPressed: () {
             onConfirm();
             Navigator.of(context).pop();
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-          ),
-          icon: Icon(PhosphorIcons.trash()),
-          label: const Text('Excluir'),
+          icon: PhosphorIcons.trash(),
+          type: ButtonType.error,
         ),
       ],
     );

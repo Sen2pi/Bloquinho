@@ -36,11 +36,19 @@ class LaTeXWidget extends ConsumerWidget {
         (isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary);
 
     try {
+      // Limpar e processar o LaTeX
+      String processedLatex = latex.trim();
+      
+      // Remover quebras de linha desnecessárias em fórmulas de bloco
+      if (isBlock) {
+        processedLatex = processedLatex.replaceAll(RegExp(r'\s+'), ' ');
+      }
+
       final mathWidget = Math.tex(
-        latex,
+        processedLatex,
         textStyle: TextStyle(
           color: color,
-          fontSize: fontSize ?? (isBlock ? 18 : 16),
+          fontSize: fontSize ?? (isBlock ? 20 : 16),
         ),
         mathStyle: isBlock ? MathStyle.display : MathStyle.text,
       );
@@ -49,19 +57,31 @@ class LaTeXWidget extends ConsumerWidget {
         return Container(
           width: double.infinity,
           margin: const EdgeInsets.symmetric(vertical: 16),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-            borderRadius: BorderRadius.circular(8),
+            color: isDarkMode 
+                ? AppColors.darkSurface.withOpacity(0.3) 
+                : AppColors.lightSurface.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+              color: isDarkMode 
+                  ? AppColors.darkBorder.withOpacity(0.3) 
+                  : AppColors.lightBorder.withOpacity(0.5),
             ),
           ),
-          child: Center(child: mathWidget),
+          child: Center(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: mathWidget,
+            ),
+          ),
         );
       }
 
-      return mathWidget;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: mathWidget,
+      );
     } catch (e) {
       // Fallback para LaTeX inválido
       return Container(

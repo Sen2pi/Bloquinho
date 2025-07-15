@@ -32,6 +32,8 @@ import '../../../core/models/workspace.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../bloquinho/models/page_model.dart';
 import '../../../shared/widgets/animated_theme_toggle.dart';
+import '../../../shared/widgets/bloquinho_animated_button.dart';
+import '../../../shared/widgets/bloquinho_3d_button.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -295,7 +297,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                 ),
               ),
-              
+
               // Indicador de progresso
               if (_currentPage > 0)
                 Padding(
@@ -451,7 +453,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             SizedBox(
               width: double.infinity,
               height: 56,
-              child: ElevatedButton(
+              child: Bloquinho3DButton(
+                label: strings.continueButton,
                 onPressed: () async {
                   // Salvar idioma selecionado
                   await ref
@@ -459,20 +462,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       .setLanguage(_selectedLanguage);
                   _nextPage();
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  strings.continueButton,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
               ),
             )
                 .animate(delay: 1400.ms)
@@ -494,10 +483,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: GestureDetector(
-        onTap: () {
+        onTap: () async {
           setState(() {
             _selectedLanguage = language;
           });
+          // Troca o idioma global imediatamente
+          await ref.read(languageProvider.notifier).setLanguage(language);
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -714,22 +705,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           SizedBox(
             width: double.infinity,
             height: 56,
-            child: ElevatedButton(
+            child: Bloquinho3DButton(
+              label: strings.startButton,
               onPressed: _nextPage,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                strings.startButton,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ),
           )
               .animate(delay: 2400.ms)
@@ -905,26 +883,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             SizedBox(
               width: double.infinity,
               height: 56,
-              child: ElevatedButton(
+              child: Bloquinho3DButton(
+                label: strings.continueButton,
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     _nextPage();
                   }
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  strings.continueButton,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
               ),
             )
                 .animate(delay: 1000.ms)
@@ -1013,37 +978,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           SizedBox(
             width: double.infinity,
             height: 56,
-            child: ElevatedButton(
-              onPressed:
-                  (_isCreatingUser || _isCompleted) ? null : _finishOnboarding,
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    _isCompleted ? AppColors.success : AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: _isCompleted
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.check_circle,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          strings.completedButton,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    )
-                  : _isCreatingUser
-                      ? const SizedBox(
+            child: _isCompleted
+                ? Bloquinho3DButton(
+                    label: strings.completedButton,
+                    enabled: false,
+                    onPressed: null,
+                  )
+                : (_isCreatingUser
+                    ? Container(
+                        height: 56,
+                        alignment: Alignment.center,
+                        child: const SizedBox(
                           width: 24,
                           height: 24,
                           child: CircularProgressIndicator(
@@ -1051,15 +996,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             valueColor:
                                 AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
-                        )
-                      : Text(
-                          strings.startUsingButton,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
                         ),
-            ),
+                      )
+                    : Bloquinho3DButton(
+                        label: strings.startUsingButton,
+                        onPressed: _finishOnboarding,
+                      )),
           )
               .animate(delay: 1000.ms)
               .fadeIn(duration: 600.ms)

@@ -404,6 +404,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "flutter_markdown_selectionarea",
+      "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_markdown_selectionarea-0.6.17+1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "flutter_math_fork",
       "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_math_fork-0.7.4",
       "packageUri": "lib/",
