@@ -41,6 +41,7 @@ import '../../bloquinho/providers/pages_provider.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
 import '../../../shared/providers/ai_status_provider.dart';
+import '../../../shared/widgets/animated_theme_toggle.dart';
 
 enum Section { bloquinho, agenda, passwords, documentos, database }
 
@@ -1162,17 +1163,31 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             ),
           ],
 
-          // Botão de tema
-          IconButton(
-            onPressed: () {
-              ref.read(themeProvider.notifier).toggleTheme();
-            },
-            icon: Icon(
-              isDarkMode ? PhosphorIcons.sun() : PhosphorIcons.moon(),
-              size: 20,
+          // Botão de tema animado
+          if (_isSidebarExpanded) ...[ 
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: AnimatedThemeToggle(
+                isDarkMode: isDarkMode,
+                width: 120,
+                height: 60,
+                onToggle: () {
+                  ref.read(themeProvider.notifier).toggleTheme();
+                },
+              ),
             ),
-            tooltip: isDarkMode ? 'Tema claro' : 'Tema escuro',
-          ),
+          ] else ...[
+            IconButton(
+              onPressed: () {
+                ref.read(themeProvider.notifier).toggleTheme();
+              },
+              icon: Icon(
+                isDarkMode ? PhosphorIcons.sun() : PhosphorIcons.moon(),
+                size: 20,
+              ),
+              tooltip: isDarkMode ? 'Tema claro' : 'Tema escuro',
+            ),
+          ],
         ],
       ),
     );

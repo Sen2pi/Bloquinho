@@ -447,7 +447,7 @@ class _BlocoRenderWidgetState extends ConsumerState<BlocoRenderWidget> {
           _deleteSelectedBlocks();
           return KeyEventResult.handled;
         }
-        break;
+        return KeyEventResult.ignored;
 
       case LogicalKeyboardKey.slash:
         if (_focusedBlockId != null) {

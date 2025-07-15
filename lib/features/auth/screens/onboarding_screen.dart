@@ -31,6 +31,7 @@ import '../../../core/services/bloquinho_storage_service.dart';
 import '../../../core/models/workspace.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../bloquinho/models/page_model.dart';
+import '../../../shared/widgets/animated_theme_toggle.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -279,6 +280,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: SafeArea(
           child: Column(
             children: [
+              // Theme toggle no topo (sempre visível)
+              Padding(
+                padding: const EdgeInsets.only(top: 16, right: 16),
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: AnimatedThemeToggle(
+                    isDarkMode: isDarkMode,
+                    width: 100,
+                    height: 50,
+                    onToggle: () {
+                      ref.read(themeProvider.notifier).toggleTheme();
+                    },
+                  ),
+                ),
+              ),
+              
               // Indicador de progresso
               if (_currentPage > 0)
                 Padding(

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bloquinho - Home</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/features-anim.css">
   <link rel="icon" href="public/logo.png">
   <style>
     /* Animated Letters */
@@ -25,44 +26,9 @@
       font-size: 2rem;
       font-weight: bold;
       font-family: 'Arial', sans-serif;
-      animation: float 8s linear infinite;
       opacity: 0;
       z-index: 1001;
     }
-    
-    @keyframes float {
-      0% {
-        opacity: 0;
-        transform: translateY(0px) rotate(0deg);
-      }
-      5% {
-        opacity: 1;
-      }
-      95% {
-        opacity: 1;
-      }
-      100% {
-        opacity: 0;
-        transform: translateY(100vh) rotate(360deg);
-      }
-    }
-    
-    /* Different animation delays for variety */
-    .floating-letter:nth-child(1) { animation-delay: 0s; }
-    .floating-letter:nth-child(2) { animation-delay: 0.5s; }
-    .floating-letter:nth-child(3) { animation-delay: 1s; }
-    .floating-letter:nth-child(4) { animation-delay: 1.5s; }
-    .floating-letter:nth-child(5) { animation-delay: 2s; }
-    .floating-letter:nth-child(6) { animation-delay: 2.5s; }
-    .floating-letter:nth-child(7) { animation-delay: 3s; }
-    .floating-letter:nth-child(8) { animation-delay: 3.5s; }
-    .floating-letter:nth-child(9) { animation-delay: 4s; }
-    .floating-letter:nth-child(10) { animation-delay: 4.5s; }
-    .floating-letter:nth-child(11) { animation-delay: 5s; }
-    .floating-letter:nth-child(12) { animation-delay: 5.5s; }
-    .floating-letter:nth-child(13) { animation-delay: 6s; }
-    .floating-letter:nth-child(14) { animation-delay: 6.5s; }
-    .floating-letter:nth-child(15) { animation-delay: 7s; }
     
     /* Ensure content is above animated letters */
     .navbar, .hero, .features-preview, .screenshots, .footer {
@@ -124,6 +90,7 @@
   <nav class="navbar">
     <div class="nav-left">
       <img src="public/logo.png" alt="Bloquinho Logo" class="nav-logo">
+      <img src="public/BloquinhoAi.png" alt="AI Logo" class="nav-logo" style="height:40px; margin-left:8px;">
       <span class="nav-title">Bloquinho</span>
     </div>
     <ul class="nav-links">
@@ -133,18 +100,24 @@
       <li><a href="architecture.html">Architecture</a></li>
       <li><a href="faq.html">FAQ</a></li>
       <li><a href="downloads_and_donate.html">Downloads & Donate</a></li>
+      <li><a href="wiki.html" class="active"><img src="public/graduation.png" class="wiki-navbar-icon" alt="Wiki">Wiki</a></li>
     </ul>
-    <button class="nav-toggle" aria-label="Menu" onclick="toggleMenu()">
-      <span></span><span></span><span></span>
-    </button>
   </nav>
 
   <!-- Hero Section -->
   <header class="hero">
     <div class="hero-content">
       <img src="public/logo.png" alt="Bloquinho Logo" class="hero-logo">
+      <img src="public/BloquinhoAi.png" alt="AI Logo" class="hero-logo" style="width:72px; height:72px; margin-left:12px; vertical-align:middle;">
       <h1 class="hero-title">Bloquinho</h1>
       <p class="hero-subtitle">Your open, private, and powerful knowledge workspace.</p>
+      <div style="margin: 24px auto 0 auto; max-width: 480px; background: #fff8ef; border-radius: 14px; box-shadow: 0 2px 12px #e2d2b6a0; padding: 20px 18px; display: flex; align-items: center; gap: 18px;">
+        <img src="public/BloquinhoAi.png" alt="AI Feature" style="width: 48px; height: 48px;">
+        <div>
+          <h3 style="margin: 0 0 6px 0; color: #8B4513; font-size: 1.2rem;">AI Assistant</h3>
+          <p style="margin: 0; color: #6B4423; font-size: 1rem;">Bloquinho now features a built-in AI assistant: generate summaries, get smart suggestions, auto-organize your notes, and boost your productivity with intelligent tools. 100% private, local, and secure.</p>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -152,30 +125,61 @@
   <section class="features-preview">
     <h2>Features</h2>
     <div class="features-cards">
-      <div class="feature-card">
-        <img src="public/notas.png" alt="Notes">
-        <h3>Notes & Rich Text</h3>
-        <p>Advanced markdown, rich text, and block editing.</p>
+      <div class="feature-animated-card" id="feature-card-1">
+        <svg id="feature-svg-1" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 24px 18px 18px 18px;">
+          <img src="public/notas.png" alt="Notes" style="height: 32px; margin-bottom: 8px;">
+          <h3>Notes & Rich Text</h3>
+          <p>Advanced markdown, rich text, and block editing.</p>
+        </div>
       </div>
-      <div class="feature-card">
-        <img src="public/agenda.png" alt="Agenda">
-        <h3>Agenda & Tasks</h3>
-        <p>Organize your life with calendar, kanban, and reminders.</p>
+      <div class="feature-animated-card" id="feature-card-2">
+        <svg id="feature-svg-2" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 24px 18px 18px 18px;">
+          <img src="public/agenda.png" alt="Agenda" style="height: 32px; margin-bottom: 8px;">
+          <h3>Agenda & Tasks</h3>
+          <p>Organize your life with calendar, kanban, and reminders.</p>
+        </div>
       </div>
-      <div class="feature-card">
-        <img src="public/dossier.png" alt="Database">
-        <h3>Database</h3>
-        <p>Flexible tables, formulas, and data types for any workflow.</p>
+      <div class="feature-animated-card" id="feature-card-3">
+        <svg id="feature-svg-3" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 24px 18px 18px 18px;">
+          <img src="public/dossier.png" alt="Database" style="height: 32px; margin-bottom: 8px;">
+          <h3>Database</h3>
+          <p>Flexible tables, formulas, and data types for any workflow.</p>
+        </div>
       </div>
-      <div class="feature-card">
-        <img src="public/senha.png" alt="Passwords">
-        <h3>Password Manager</h3>
-        <p>Securely store and manage your credentials.</p>
+      <div class="feature-animated-card" id="feature-card-4">
+        <svg id="feature-svg-4" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 24px 18px 18px 18px;">
+          <img src="public/senha.png" alt="Passwords" style="height: 32px; margin-bottom: 8px;">
+          <h3>Password Manager</h3>
+          <p>Securely store and manage your credentials.</p>
+        </div>
       </div>
-      <div class="feature-card">
-        <img src="public/cartao.png" alt="Cards">
-        <h3>Attachments</h3>
-        <p>Attach files, images, and documents to your notes.</p>
+      <div class="feature-animated-card" id="feature-card-5">
+        <svg id="feature-svg-5" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 24px 18px 18px 18px;">
+          <img src="public/cartao.png" alt="Cards" style="height: 32px; margin-bottom: 8px;">
+          <h3>Attachments</h3>
+          <p>Attach files, images, and documents to your notes.</p>
+        </div>
+      </div>
+      <div class="feature-animated-card" id="feature-card-6">
+        <svg id="feature-svg-6" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 24px 18px 18px 18px;">
+          <img src="public/latex.svg" alt="LaTeX" style="height: 32px; margin-bottom: 8px;">
+          <h3>LaTeX & Math</h3>
+          <p>Write and render mathematical formulas, equations, and matrices with LaTeX.</p>
+        </div>
+      </div>
+      <div class="feature-animated-card" id="feature-card-7">
+        <svg id="feature-svg-7" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 24px 18px 18px 18px;">
+          <img src="public/mermaid.png" alt="Mermaid" style="height: 32px; margin-bottom: 8px;">
+          <h3>Mermaid Diagrams</h3>
+          <p>Create flowcharts, sequence diagrams, ER diagrams, Gantt charts, and mindmaps visually.</p>
+        </div>
       </div>
     </div>
     <a href="features.html" class="see-all">See all features →</a>

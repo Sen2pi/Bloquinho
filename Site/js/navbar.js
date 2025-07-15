@@ -3,6 +3,37 @@ document.addEventListener('DOMContentLoaded', function() {
   const navToggle = document.querySelector('.nav-toggle');
   const navLinks = document.querySelector('.nav-links');
   
+  // Theme toggle functionality
+  const themeToggle = document.querySelector('#theme-toggle');
+  const body = document.body;
+  
+  // Load saved theme
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  if (savedTheme === 'dark') {
+    body.classList.add('dark-theme');
+    body.classList.remove('light-theme');
+    if (themeToggle) themeToggle.checked = true;
+  } else {
+    body.classList.add('light-theme');
+    body.classList.remove('dark-theme');
+    if (themeToggle) themeToggle.checked = false;
+  }
+  
+  // Theme toggle event listener
+  if (themeToggle) {
+    themeToggle.addEventListener('change', function() {
+      if (this.checked) {
+        body.classList.add('dark-theme');
+        body.classList.remove('light-theme');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        body.classList.add('light-theme');
+        body.classList.remove('dark-theme');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  }
+  
   if (navToggle && navLinks) {
     // Toggle menu function
     function toggleMenu() {

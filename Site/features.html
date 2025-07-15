@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Features - Bloquinho</title>
     <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/features-anim.css" />
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <style>
       .features-hero {
@@ -44,10 +45,11 @@
 
       .features {
         display: flex;
-        flex-direction: column;
-        gap: 30px;
+        flex-wrap: wrap;
+        gap: 32px;
         margin: 60px 0;
-        align-items: center;
+        align-items: stretch;
+        justify-content: center;
       }
 
       @media (max-width: 900px) {
@@ -58,7 +60,7 @@
         }
         
         .features {
-          gap: 30px;
+          flex-direction: column;
           align-items: center;
         }
       }
@@ -339,19 +341,20 @@
       }
 
       .overview-card {
+        flex: 1 1 320px;
+        min-width: 320px;
+        max-width: 420px;
+        margin: 0 12px 32px 12px;
+        box-sizing: border-box;
         display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
+        flex-direction: column;
+        align-items: flex-start;
         background: #fff8f3;
         border-radius: 20px;
         box-shadow: 0 8px 32px rgba(139, 69, 19, 0.10);
         border: 1px solid #e8dcc8;
-        padding: 48px 48px 48px 32px;
-        margin: 0 auto 60px auto;
-        max-width: 950px;
-        min-height: 260px;
-        gap: 48px;
+        padding: 40px 32px 32px 32px;
+        min-height: 340px;
       }
 
       .overview-card h3 {
@@ -463,10 +466,8 @@
         <li><a href="architecture.html">Architecture</a></li>
         <li><a href="faq.html">FAQ</a></li>
         <li><a href="downloads_and_donate.html">Downloads & Donate</a></li>
+        <li><a href="wiki.html" class="active"><img src="public/graduation.png" class="wiki-navbar-icon" alt="Wiki">Wiki</a></li>
       </ul>
-      <button class="nav-toggle" aria-label="Menu" onclick="toggleMenu()">
-        <span></span><span></span><span></span>
-      </button>
     </nav>
 
     <!-- Hero Section -->
@@ -483,12 +484,29 @@
 
     <!-- Main Content -->
     <div class="features-section">
-      <!-- Overview -->
-      <div class="overview-card">
-        <div>
-          <h3>Feature Overview</h3>
+      <!-- AI Features Section -->
+      <div class="feature-animated-card" id="feature-card-1">
+        <svg id="feature-svg-1" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 40px 32px 32px 32px;">
+          <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <img src="public/BloquinhoAi.png" alt="AI Logo" style="width: 72px; height: 72px; margin-bottom: 18px;">
+            <h3 style="color: #1565c0; text-align: center;">🤖 AI Features</h3>
+          </div>
+          <ul style="margin-top: 12px;">
+            <li><strong>AI Assistant:</strong> Get instant help, smart completions, and productivity boosts directly in your workspace.</li>
+            <li><strong>Smart Suggestions:</strong> Context-aware tips, auto-tagging, and intelligent recommendations for your notes and tasks.</li>
+            <li><strong>Auto-Summary:</strong> Summarize long notes and documents with a single click.</li>
+            <li><strong>Contextual Search:</strong> Find information using natural language and semantic queries.</li>
+            <li><strong>AI-powered Organization:</strong> Automatic sorting, grouping, and linking of related content.</li>
+            <li><strong>Privacy-first AI:</strong> All AI features run locally or with full user control—no data ever leaves your device without consent.</li>
+          </ul>
         </div>
-        <div class="overview-content">
+      </div>
+      <!-- Overview -->
+      <div class="feature-animated-card" id="feature-card-2">
+        <svg id="feature-svg-2" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 40px 32px 32px 32px;">
+          <h3>Feature Overview</h3>
           <p>Bloquinho offers a complete ecosystem of productivity tools, from basic organization to advanced collaboration and synchronization features. Each module is designed to be independent but integrated with the whole.</p>
           <ul>
             <li><strong>Notion-like Editor:</strong> Rich blocks, slash commands, page hierarchy</li>
@@ -499,26 +517,30 @@
           </ul>
         </div>
       </div>
-
-      <!-- Main Feature Cards -->
-      <div class="features">
-        <div class="overview-card">
+      <!-- Notion-like Editor -->
+      <div class="feature-animated-card" id="feature-card-3">
+        <svg id="feature-svg-3" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 40px 32px 32px 32px;">
           <h3>📝 Notion-like Editor</h3>
-          <p>Complete rich block editing system inspired by Notion, with advanced formatting and organization features.</p>
           <ul>
-            <li><strong>37 block types:</strong> Text, headers, lists, code, tables, images</li>
+            <li><strong>Rich blocks:</strong> Text, headers, lists, code, tables, images, LaTeX, Mermaid</li>
             <li><strong>Slash commands:</strong> 20+ commands with real-time search</li>
+            <li><strong>LaTeX & Math:</strong> <img src="public/latex.svg" alt="LaTeX" style="height: 24px; vertical-align: middle;"> equations, matrices, math blocks</li>
+            <li><strong>Mermaid Diagrams:</strong> <img src="public/mermaid.png" alt="Mermaid" style="height: 24px; vertical-align: middle;"> flowcharts, sequence, ER, Gantt, mindmaps</li>
             <li><strong>Page hierarchy:</strong> Subpages and breadcrumb navigation</li>
             <li><strong>Smart auto-save:</strong> Automatic saving with debounce</li>
             <li><strong>Markdown conversion:</strong> Bidirectional text ↔ blocks</li>
             <li><strong>Internal links:</strong> System of links between pages</li>
           </ul>
         </div>
-        <div class="overview-card">
+      </div>
+      <!-- Workspace System -->
+      <div class="feature-animated-card" id="feature-card-4">
+        <svg id="feature-svg-4" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 40px 32px 32px 32px;">
           <h3>🗂️ Workspace System</h3>
-          <p>Intelligent organization with multiple isolated contexts, allowing separation of different life areas.</p>
           <ul>
-            <li><strong>3 default workspaces:</strong> Personal, Work, Studies</li>
+            <li><strong>Multiple contexts:</strong> Personal, Work, Studies</li>
             <li><strong>Complete isolation:</strong> Each workspace has independent data</li>
             <li><strong>Organized sections:</strong> Notes, Documents, Passwords, Agenda, Database</li>
             <li><strong>Intuitive navigation:</strong> Sidebar with breadcrumb navigation</li>
@@ -526,9 +548,12 @@
             <li><strong>Isolated synchronization:</strong> Each workspace syncs independently</li>
           </ul>
         </div>
-        <div class="overview-card">
+      </div>
+      <!-- Agenda & Tasks -->
+      <div class="feature-animated-card" id="feature-card-5">
+        <svg id="feature-svg-5" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 40px 32px 32px 32px;">
           <h3>📅 Agenda & Tasks</h3>
-          <p>Complete time management system with multiple views and advanced features.</p>
           <ul>
             <li><strong>Multiple views:</strong> List, calendar, kanban, dashboard</li>
             <li><strong>Event types:</strong> Meetings, reminders, tasks, events</li>
@@ -538,9 +563,12 @@
             <li><strong>Synchronization:</strong> Integration with external calendars</li>
           </ul>
         </div>
-        <div class="overview-card">
+      </div>
+      <!-- Database -->
+      <div class="feature-animated-card" id="feature-card-6">
+        <svg id="feature-svg-6" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 40px 32px 32px 32px;">
           <h3>🗃️ Database</h3>
-          <p>Flexible table system with advanced data types and mathematical operations.</p>
           <ul>
             <li><strong>17 data types:</strong> Text, number, date, status, deadline, file</li>
             <li><strong>9 mathematical operations:</strong> Sum, average, count, formulas</li>
@@ -550,9 +578,12 @@
             <li><strong>Export:</strong> CSV, JSON, PDF</li>
           </ul>
         </div>
-        <div class="overview-card">
+      </div>
+      <!-- Password Manager -->
+      <div class="feature-animated-card" id="feature-card-7">
+        <svg id="feature-svg-7" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 40px 32px 32px 32px;">
           <h3>🔐 Password Manager</h3>
-          <p>Secure credential management with advanced features and integration.</p>
           <ul>
             <li><strong>Secure storage:</strong> Encrypted passwords with AES</li>
             <li><strong>Password generator:</strong> Complex passwords with options</li>
@@ -562,9 +593,12 @@
             <li><strong>Export/Import:</strong> Backup and restore functionality</li>
           </ul>
         </div>
-        <div class="overview-card">
+      </div>
+      <!-- Documents -->
+      <div class="feature-animated-card" id="feature-card-8">
+        <svg id="feature-svg-8" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 40px 32px 32px 32px;">
           <h3>📋 Documents</h3>
-          <p>Organize and store important documents, cards, and IDs securely and accessibly.</p>
           <ul>
             <li><strong>Card management:</strong> Store cards, IDs, and important docs</li>
             <li><strong>Categories:</strong> Organize by type and importance</li>
@@ -835,60 +869,37 @@ flowchart LR
         </div>
       </div>
 
-      <!-- Data Flow -->
-      <div class="feature-card">
-        <h3>🔄 Data Flow and States</h3>
-        <p>
-          Bloquinho uses a robust state management system with Riverpod,
-          ensuring reactivity and optimized performance.
-        </p>
-        <ul>
-          <li>
-            <strong>Hierarchical Providers:</strong> Global state managed by
-            specialized providers
-          </li>
-          <li>
-            <strong>Automatic Reactivity:</strong> UI updates automatically when
-            data changes
-          </li>
-          <li>
-            <strong>Smart Cache:</strong> In-memory data with automatic
-            invalidation
-          </li>
-          <li>
-            <strong>Local Persistence:</strong> Hive for fast and reliable
-            storage
-          </li>
-          <li>
-            <strong>Bidirectional Synchronization:</strong> Local ↔ Cloud with
-            conflict resolution
-          </li>
-          <li>
-            <strong>Loading States:</strong> Visual feedback in all operations
-          </li>
-        </ul>
+      <!-- Data Flow and States -->
+      <div class="feature-animated-card" id="feature-card-9">
+        <svg id="feature-svg-9" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 40px 32px 32px 32px;">
+          <h3>🔄 Data Flow and States</h3>
+          <p>Bloquinho uses a robust state management system with Riverpod, ensuring reactivity and optimized performance.</p>
+          <ul>
+            <li><strong>Hierarchical Providers:</strong> Global state managed by specialized providers</li>
+            <li><strong>Automatic Reactivity:</strong> UI updates automatically when data changes</li>
+            <li><strong>Smart Cache:</strong> In-memory data with automatic invalidation</li>
+            <li><strong>Local Persistence:</strong> Hive for fast and reliable storage</li>
+            <li><strong>Bidirectional Synchronization:</strong> Local ↔ Cloud with conflict resolution</li>
+            <li><strong>Loading States:</strong> Visual feedback in all operations</li>
+          </ul>
+        </div>
       </div>
-
       <!-- Performance and Optimization -->
-      <div class="feature-highlight">
-        <h3>⚡ Performance and Optimization</h3>
-        <p>
-          Bloquinho has been optimized to provide the best possible experience,
-          with fast loading, asynchronous operations and efficient resource
-          usage.
-        </p>
+      <div class="feature-animated-card" id="feature-card-10">
+        <svg id="feature-svg-10" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 32px 32px 24px 32px;">
+          <h3>⚡ Performance and Optimization</h3>
+          <p>Bloquinho has been optimized to provide the best possible experience, with fast loading, asynchronous operations and efficient resource usage.</p>
+        </div>
       </div>
-
       <!-- Conclusion -->
-      <div class="feature-card">
-        <h3>🌟 Conclusion</h3>
-        <p>
-          Bloquinho offers a complete productivity ecosystem that combines ease
-          of use with advanced features. From the Notion-like editor to
-          micro-features like avatar cache and password generator, each
-          component has been designed to work in harmony, offering total control
-          over your information on any platform.
-        </p>
+      <div class="feature-animated-card" id="feature-card-11">
+        <svg id="feature-svg-11" class="feature-border-svg" width="100%" height="100%"></svg>
+        <div style="position: relative; z-index: 4; padding: 32px 32px 24px 32px;">
+          <h3>🌟 Conclusion</h3>
+          <p>Bloquinho offers a complete productivity ecosystem that combines ease of use with advanced features. From the Notion-like editor to micro-features like avatar cache and password generator, each component has been designed to work in harmony, offering total control over your information on any platform.</p>
+        </div>
       </div>
     </div>
 
