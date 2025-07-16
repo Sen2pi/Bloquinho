@@ -63,7 +63,13 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
   @override
   void initState() {
     super.initState();
-    _setupAnimations();
+    // Remover chamada de _setupAnimations() daqui
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _setupAnimations(); // Chamar aqui, pois Theme.of(context) já está disponível
   }
 
   void _setupAnimations() {
@@ -139,7 +145,7 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
   @override
   void didUpdateWidget(AnimatedActionButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Handle loading state changes
     if (widget.isLoading != oldWidget.isLoading) {
       if (widget.isLoading) {
@@ -156,7 +162,7 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
         begin: _getButtonColor(),
         end: _getHoverColor(),
       ).animate(_controller);
-      
+
       _borderAnimation = ColorTween(
         begin: _getBorderColor(),
         end: _getHoverBorderColor(),
@@ -174,7 +180,7 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
 
   Color _getButtonColor() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     switch (widget.type) {
       case ButtonType.primary:
         return isDark ? AppColors.lightBackground : AppColors.primary;
@@ -191,7 +197,7 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
 
   Color _getHoverColor() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     switch (widget.type) {
       case ButtonType.primary:
         return isDark ? AppColors.lightHover : AppColors.primaryDark;
@@ -208,7 +214,7 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
 
   Color _getBorderColor() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     switch (widget.type) {
       case ButtonType.primary:
         return isDark ? AppColors.lightBorder : AppColors.primary;
@@ -225,12 +231,14 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
 
   Color _getHoverBorderColor() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     switch (widget.type) {
       case ButtonType.primary:
         return isDark ? AppColors.lightTextSecondary : AppColors.primaryDark;
       case ButtonType.secondary:
-        return isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+        return isDark
+            ? AppColors.darkTextSecondary
+            : AppColors.lightTextSecondary;
       case ButtonType.success:
         return AppColors.success.withOpacity(0.8);
       case ButtonType.warning:
@@ -242,7 +250,7 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
 
   Color _getTextColor() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     switch (widget.type) {
       case ButtonType.primary:
         return isDark ? AppColors.darkTextPrimary : Colors.white;
@@ -285,7 +293,7 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
   @override
   Widget build(BuildContext context) {
     final isDisabled = !widget.isEnabled || widget.isLoading;
-    
+
     return MouseRegion(
       onEnter: (_) => _onPointerEnter(),
       onExit: (_) => _onPointerExit(),
@@ -305,12 +313,13 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
               scale: _scaleAnimation.value * _pressAnimation.value,
               child: Container(
                 width: widget.width,
-                padding: widget.padding ?? const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
+                padding: widget.padding ??
+                    const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                 decoration: BoxDecoration(
-                  color: isDisabled 
+                  color: isDisabled
                       ? _getButtonColor().withOpacity(0.5)
                       : _backgroundAnimation.value,
                   borderRadius: BorderRadius.circular(8),
@@ -363,7 +372,7 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
                           ),
                         ),
                       ),
-                    
+
                     // Button content
                     Row(
                       mainAxisSize: MainAxisSize.min,

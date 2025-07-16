@@ -358,7 +358,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                           color: Colors.transparent,
                           child: InkWell(
                             borderRadius: BorderRadius.circular(8),
-                            onTap: () => context.push('/workspace/documentos'),
+                            onTap: () => context.push('/workspace/documents'),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 10),

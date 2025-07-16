@@ -86,6 +86,7 @@ class TextCellWidget extends DatabaseCellWidget {
       enableInteractiveSelection: true,
       autocorrect: false,
       enableSuggestions: true,
+      textDirection: TextDirection.ltr,
     );
   }
 
@@ -100,6 +101,7 @@ class TextCellWidget extends DatabaseCellWidget {
             : Theme.of(context).textTheme.bodyMedium?.color,
         fontStyle: displayText.isEmpty ? FontStyle.italic : null,
       ),
+      textDirection: TextDirection.ltr,
     );
   }
 }
