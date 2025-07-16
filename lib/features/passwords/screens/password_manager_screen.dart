@@ -70,7 +70,7 @@ class _PasswordManagerScreenState extends ConsumerState<PasswordManagerScreen> {
             isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.go('/workspace'),
           tooltip: 'Voltar',
         ),
         title: Row(

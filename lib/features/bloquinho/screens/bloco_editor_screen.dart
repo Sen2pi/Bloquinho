@@ -42,6 +42,7 @@ import '../../../shared/providers/language_provider.dart';
 import 'package:flutter/rendering.dart';
 import '../../../core/services/bloquinho_storage_service.dart';
 import '../../../core/models/app_language.dart';
+import '../../../core/services/enhanced_pdf_export_service.dart';
 
 class BlocoEditorScreen extends ConsumerStatefulWidget {
   final String? documentId;
@@ -185,20 +186,20 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
       // Se não tem documentId, criar página raiz
       if (widget.documentId == null) {
         debugPrint('📄 Criando nova página raiz...');
-        
+
         final pagesNotifier = ref.read(pagesNotifierProvider((
           profileName: currentProfile.name,
           workspaceName: currentWorkspace.name
         )));
-        
+
         final newPage = PageModel.create(
           title: widget.documentTitle ?? strings.newPage,
         );
-        
+
         pagesNotifier.state = [...pagesNotifier.state, newPage];
         _currentPageId = newPage.id;
         _navigationStack = [newPage.id];
-        
+
         debugPrint('✅ Nova página criada: ${newPage.id}');
       } else {
         debugPrint('📄 Usando página existente: ${widget.documentId}');
@@ -217,7 +218,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
             },
             strings: strings,
           );
-          
+
       debugPrint('✅ Editor inicializado com sucesso');
     } catch (e) {
       debugPrint('❌ Erro ao inicializar editor: $e');
@@ -284,7 +285,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
             title: Text(strings.errorNoContext),
             leading: IconButton(
               icon: Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.go('/workspace'),
             ),
           ),
           body: Center(
@@ -324,7 +325,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         profileName: currentProfile.name,
         workspaceName: currentWorkspace.name
       )));
-      
+
       final currentPage = pages.firstWhere(
         (p) => p.id == _currentPageId,
         orElse: () => PageModel.create(title: strings.pageNotFound),
@@ -356,7 +357,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
             title: Text(strings.errorNoContext),
             leading: IconButton(
               icon: Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.go('/workspace'),
             ),
           ),
           body: Center(
@@ -411,7 +412,14 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
           isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
       leading: IconButton(
         icon: Icon(Icons.arrow_back),
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () {
+          if (_navigationStack.length > 1) {
+            _navigateBack();
+          } else {
+            // Navegar para o dashboard do bloquinho
+            context.go('/workspace/bloquinho');
+          }
+        },
         tooltip: strings.back,
       ),
       titleSpacing: 0,
@@ -1035,35 +1043,20 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   Future<void> _exportDocumentWithPdfCapture(
       PageModel currentPage, AppStrings strings) async {
     try {
-      final key = GlobalKey();
-      final widgetToCapture = Material(
-        type: MaterialType.transparency,
-        child: Container(
-          width: 800,
-          padding: const EdgeInsets.all(20),
-          child: RepaintBoundary(
-            key: key,
-            child: PageContentWidget(
-              pageId: currentPage.id,
-              isEditing: false,
-            ),
-          ),
-        ),
-      );
-
-      // Renderizar widget offstage
-      final boundary = await _captureWidgetAsImage(widgetToCapture, key);
-      if (boundary == null) throw Exception('Erro ao capturar widget para PDF');
-
-      // Gerar PDF
-      final pdfExportService = ref.read(pdfExportServiceProvider);
-      final file = await pdfExportService.exportImageToPdf(
-        imageBytes: boundary,
+      final pdfExportService = EnhancedPdfExportService();
+      final filePath = await pdfExportService.exportMarkdownAsPdf(
+        markdown: currentPage.content ?? '',
         title: currentPage.title,
-        strings: strings,
+        author: 'Bloquinho App',
+        subject: 'Documento exportado do Bloquinho',
       );
-      _showSuccessSnackBar(
-          '${strings.documentExportedSuccessfully} - ${file.path}');
+      if (filePath != null) {
+        await pdfExportService.openExportedFile(filePath);
+        _showSuccessSnackBar(
+            '${strings.documentExportedSuccessfully} - ${filePath.split('/').last}');
+      } else {
+        _showErrorSnackBar(strings.errorExportingDocument);
+      }
     } catch (e) {
       _showErrorSnackBar('${strings.errorExportingDocument}: ${e.toString()}');
     }

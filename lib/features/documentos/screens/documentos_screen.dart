@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:go_router/go_router.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../providers/documentos_provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -82,7 +83,7 @@ class _DocumentosScreenState extends ConsumerState<DocumentosScreen>
           isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
       leading: IconButton(
         icon: Icon(Icons.arrow_back),
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () => context.go('/workspace'),
         tooltip: 'Voltar',
       ),
       title: Row(

@@ -31,7 +31,7 @@ class SettingsScreen extends ConsumerWidget {
         title: Text(strings.settingsTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () => context.go('/workspace'),
         ),
       ),
       body: ListView(

@@ -9,21 +9,157 @@
 
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-import 'package:open_file/open_file.dart';
 
-/// Serviço de exportação PDF que sincroniza com o Enhanced Markdown Preview
+import '../../../core/l10n/app_strings.dart';
+
 class EnhancedPdfExportService {
-  static final EnhancedPdfExportService _instance =
-      EnhancedPdfExportService._internal();
-  factory EnhancedPdfExportService() => _instance;
-  EnhancedPdfExportService._internal();
+  /// Exportar widget como imagem
+  Future<String?> exportWidgetAsImage({
+    required GlobalKey widgetKey,
+    required String fileName,
+  }) async {
+    try {
+      final RenderRepaintBoundary boundary =
+          widgetKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
+      final Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-  /// Exportar markdown como PDF com formatação idêntica ao preview
+      final downloadsDir = await _getDownloadsDirectory();
+      final sanitizedFileName = _sanitizeFileName(fileName);
+      final filePath = path.join(downloadsDir.path, '$sanitizedFileName.png');
+
+      final file = File(filePath);
+      await file.writeAsBytes(pngBytes);
+
+      return filePath;
+    } catch (e) {
+      debugPrint('Erro ao exportar widget como imagem: $e');
+      return null;
+    }
+  }
+
+  /// Exportar imagem como PDF
+  Future<File> exportImageToPdf({
+    required Uint8List imageBytes,
+    required String title,
+    required AppStrings strings,
+  }) async {
+    final pdf = pw.Document();
+    final image = pw.MemoryImage(imageBytes);
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Center(
+            child: pw.Image(image),
+          );
+        },
+      ),
+    );
+
+    final output = await getTemporaryDirectory();
+    final file = File("${output.path}/$title.pdf");
+    await file.writeAsBytes(await pdf.save());
+    return file;
+  }
+
+  /// Exportar código como arquivo de texto
+  Future<String?> exportCodeAsFile({
+    required String code,
+    required String language,
+    required String fileName,
+  }) async {
+    try {
+      final downloadsDir = await _getDownloadsDirectory();
+      final sanitizedFileName = _sanitizeFileName(fileName);
+      final extension = _getFileExtension(language);
+      final filePath =
+          path.join(downloadsDir.path, '$sanitizedFileName.$extension');
+
+      final file = File(filePath);
+      await file.writeAsString(code);
+
+      return filePath;
+    } catch (e) {
+      debugPrint('Erro ao exportar código: $e');
+      return null;
+    }
+  }
+
+  /// Abrir arquivo exportado
+  Future<void> openExportedFile(String filePath) async {
+    try {
+      await OpenFile.open(filePath);
+    } catch (e) {
+      debugPrint('Erro ao abrir arquivo: $e');
+    }
+  }
+
+  /// Obter diretório de downloads
+  Future<Directory> _getDownloadsDirectory() async {
+    if (Platform.isAndroid) {
+      return Directory('/storage/emulated/0/Download');
+    } else if (Platform.isIOS) {
+      return await getApplicationDocumentsDirectory();
+    } else if (Platform.isWindows) {
+      // CORRIGIDO: Adicionar barra invertida corretamente
+      return Directory('${Platform.environment['USERPROFILE']}\\Downloads');
+    } else if (Platform.isMacOS) {
+      return Directory('${Platform.environment['HOME']}/Downloads');
+    } else {
+      return await getApplicationDocumentsDirectory();
+    }
+  }
+
+  /// Sanitizar nome de arquivo
+  String _sanitizeFileName(String fileName) {
+    return fileName
+        .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+        .replaceAll(RegExp(r'\s+'), '_')
+        .toLowerCase();
+  }
+
+  /// Obter extensão de arquivo baseada na linguagem
+  String _getFileExtension(String language) {
+    final extensions = {
+      'javascript': 'js',
+      'typescript': 'ts',
+      'python': 'py',
+      'java': 'java',
+      'cpp': 'cpp',
+      'c': 'c',
+      'csharp': 'cs',
+      'php': 'php',
+      'ruby': 'rb',
+      'go': 'go',
+      'rust': 'rs',
+      'swift': 'swift',
+      'kotlin': 'kt',
+      'dart': 'dart',
+      'html': 'html',
+      'css': 'css',
+      'sql': 'sql',
+      'json': 'json',
+      'xml': 'xml',
+      'yaml': 'yaml',
+      'markdown': 'md',
+      'text': 'txt',
+    };
+
+    return extensions[language.toLowerCase()] ?? 'txt';
+  }
+
   Future<String?> exportMarkdownAsPdf({
     required String markdown,
     required String title,
@@ -238,7 +374,7 @@ class EnhancedPdfExportService {
 
   /// Processar LaTeX inline e em bloco na linha
   String _processLatexInLine(String line, List<pw.Widget> widgets) {
-    // Detectar LaTeX em bloco $$...$$
+    // Detectar LaTeX em bloco \$\$...\$\$
     if (line.contains('\$\$')) {
       final blockMatch = RegExp(r'\$\$([^\$]+)\$\$').firstMatch(line);
       if (blockMatch != null) {
@@ -346,7 +482,7 @@ class EnhancedPdfExportService {
           pw.BoxShadow(
             color: PdfColors.black,
             blurRadius: 8,
-            offset: const pw.Offset(0.0, 2.0),
+            offset: const PdfPoint(0.0, 2.0),
           ),
         ],
       ),
@@ -487,9 +623,9 @@ class EnhancedPdfExportService {
     String remaining = text;
 
     while (remaining.isNotEmpty) {
-      // Processar <span style="...">...</span>
+      // Processar <span style=\"...">...</span>
       final spanMatch =
-          RegExp(r'<span style="([^"]*)">(.*?)</span>').firstMatch(remaining);
+          RegExp(r'<span style="([^"]*)">(.*?)<\/span>').firstMatch(remaining);
       if (spanMatch != null && spanMatch.start == 0) {
         final style = spanMatch.group(1)!;
         final content = spanMatch.group(2)!;
@@ -507,12 +643,11 @@ class EnhancedPdfExportService {
         continue;
       }
 
-      // Processar LaTeX inline $...$
+      // Processar LaTeX inline \$...\$
       final latexMatch = RegExp(r'\$([^\$]+)\$').firstMatch(remaining);
       if (latexMatch != null && latexMatch.start == 0) {
-        final latex = latexMatch.group(1)!;
         parts.add(_TextSegment(
-          text: latex,
+          text: latexMatch.group(1)!,
           isLatex: true,
           color: PdfColors.blue800,
           isItalic: true,
@@ -559,7 +694,7 @@ class EnhancedPdfExportService {
       // Encontrar próxima formatação ou fim do texto
       var nextFormatPos = remaining.length;
       final patterns = [
-        r'<span style="[^"]*">.*?</span>',
+        r'<span style="[^"]*">.*?<\/span>',
         r'\$[^\$]+\$',
         r'\*\*[^*]+\*\*',
         r'\*[^*]+\*',
@@ -731,38 +866,6 @@ class EnhancedPdfExportService {
       return 20.0; // Lista items
     }
     return 20.0;
-  }
-
-  /// Obter diretório de downloads
-  Future<Directory> _getDownloadsDirectory() async {
-    if (Platform.isAndroid) {
-      return Directory('/storage/emulated/0/Download');
-    } else if (Platform.isIOS) {
-      return await getApplicationDocumentsDirectory();
-    } else if (Platform.isWindows) {
-      return Directory('${Platform.environment['USERPROFILE']}\\Downloads');
-    } else if (Platform.isMacOS) {
-      return Directory('${Platform.environment['HOME']}/Downloads');
-    } else {
-      return await getApplicationDocumentsDirectory();
-    }
-  }
-
-  /// Sanitizar nome de arquivo
-  String _sanitizeFileName(String fileName) {
-    return fileName
-        .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
-        .replaceAll(RegExp(r'\s+'), '_')
-        .toLowerCase();
-  }
-
-  /// Abrir arquivo exportado
-  Future<void> openExportedFile(String filePath) async {
-    try {
-      await OpenFile.open(filePath);
-    } catch (e) {
-      debugPrint('Erro ao abrir arquivo: $e');
-    }
   }
 }
 

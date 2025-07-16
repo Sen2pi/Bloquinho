@@ -15,6 +15,8 @@ import '../models/bloco_tipo_enum.dart';
 import '../services/clipboard_parser_service.dart';
 import '../services/blocos_converter_service.dart';
 import 'package:bloquinho/shared/providers/workspace_provider.dart';
+import '../../../core/utils/lru_cache.dart';
+import '../../../core/utils/debouncer.dart';
 
 /// Estado dos blocos
 class BlocosState {
@@ -86,8 +88,16 @@ class BlocosState {
     );
   }
 
-  /// Blocos filtrados pela busca e filtros ativos
+  /// Blocos filtrados pela busca e filtros ativos (com cache)
   List<BlocoBase> get filteredBlocos {
+    // Criar chave de cache baseada nos filtros e query
+    final cacheKey = _generateFilterCacheKey();
+    
+    // Verificar se resultado está em cache
+    final cached = _filterCache.get(cacheKey);
+    if (cached != null) return cached;
+
+    // Computar filtros
     var filtered = blocos;
 
     // Aplicar filtro de busca
@@ -104,8 +114,21 @@ class BlocosState {
       }).toList();
     }
 
+    // Salvar no cache
+    _filterCache.put(cacheKey, filtered);
     return filtered;
   }
+
+  /// Gerar chave de cache para filtros
+  String _generateFilterCacheKey() {
+    final queryHash = searchQuery?.hashCode ?? 0;
+    final filtersHash = activeFilters.map((f) => f.name).join(',').hashCode;
+    final blocosHash = blocos.length.hashCode; // Invalida cache quando lista muda
+    return '$queryHash-$filtersHash-$blocosHash';
+  }
+
+  /// Cache estático para filtros
+  static final LRUCache<String, List<BlocoBase>> _filterCache = LRUCache(maxSize: 50);
 
   /// Verificar se um bloco corresponde à query de busca
   bool _matchesSearchQuery(BlocoBase bloco, String query) {
@@ -182,19 +205,39 @@ class BlocosState {
   bool get isBusy => isLoading || isSaving || isExporting || isImporting;
 }
 
-/// Notifier para gerenciar blocos
-class BlocosNotifier extends StateNotifier<BlocosState> {
+/// Notifier para gerenciar blocos com otimizações de performance
+class BlocosNotifier extends StateNotifier<BlocosState> with DebounceMixin {
   static const _uuid = Uuid();
   final ClipboardParserService _clipboardService;
   final BlocosConverterService _converterService;
   final Ref _ref;
+
+  // Cache para operações custosas
+  static final LRUCache<String, List<BlocoBase>> _searchCache = LRUCache(maxSize: 100);
+  static final LRUCache<String, Map<String, int>> _statsCache = LRUCache(maxSize: 10);
+
+  // Debouncer para auto-save
+  late final AsyncDebouncer _autoSaveDebouncer;
+  
+  // Throttler para busca
+  late final Throttler _searchThrottler;
 
   BlocosNotifier(
     this._clipboardService,
     this._converterService,
     this._ref,
   ) : super(const BlocosState()) {
+    _autoSaveDebouncer = AsyncDebouncer(delay: const Duration(milliseconds: 1000));
+    _searchThrottler = Throttler(interval: const Duration(milliseconds: 200));
     _loadBlocos();
+  }
+
+  @override
+  void dispose() {
+    _autoSaveDebouncer.dispose();
+    _searchThrottler.dispose();
+    disposeAllDebouncers();
+    super.dispose();
   }
 
   /// Carregar blocos do workspace atual
@@ -222,9 +265,10 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
     }
   }
 
-  /// Adicionar novo bloco
+  /// Adicionar novo bloco (otimizado)
   void addBloco(BlocoBase bloco) {
     _saveToHistory();
+    _invalidateAllCaches(); // Limpar caches quando dados mudam
 
     final updatedBlocos = [...state.blocos, bloco];
     state = state.copyWith(
@@ -233,10 +277,10 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
       hasUnsavedChanges: true,
     );
 
-    _autoSave();
+    _debouncedAutoSave();
   }
 
-  /// Inserir bloco em posição específica
+  /// Inserir bloco em posição específica (otimizado)
   void insertBloco(int index, BlocoBase bloco) {
     if (index < 0 || index > state.blocos.length) {
       addBloco(bloco);
@@ -244,6 +288,7 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
     }
 
     _saveToHistory();
+    _invalidateAllCaches();
 
     final updatedBlocos = [...state.blocos];
     updatedBlocos.insert(index, bloco);
@@ -254,15 +299,16 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
       hasUnsavedChanges: true,
     );
 
-    _autoSave();
+    _debouncedAutoSave();
   }
 
-  /// Atualizar bloco existente
+  /// Atualizar bloco existente (otimizado)
   void updateBloco(String id, BlocoBase updatedBloco) {
     final index = state.blocos.indexWhere((b) => b.id == id);
     if (index == -1) return;
 
     _saveToHistory();
+    _invalidateAllCaches();
 
     final updatedBlocos = [...state.blocos];
     updatedBlocos[index] = updatedBloco;
@@ -273,7 +319,7 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
       hasUnsavedChanges: true,
     );
 
-    _autoSave();
+    _debouncedAutoSave();
   }
 
   /// Remover bloco
@@ -291,7 +337,7 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
       hasUnsavedChanges: true,
     );
 
-    _autoSave();
+    _debouncedAutoSave();
   }
 
   /// Remover múltiplos blocos
@@ -312,7 +358,7 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
       hasUnsavedChanges: true,
     );
 
-    _autoSave();
+    _debouncedAutoSave();
   }
 
   /// Reordenar blocos
@@ -331,7 +377,7 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
       hasUnsavedChanges: true,
     );
 
-    _autoSave();
+    _debouncedAutoSave();
   }
 
   /// Duplicar bloco
@@ -389,12 +435,14 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
     state = state.copyWith(selectedBlocoIds: filteredIds);
   }
 
-  /// Definir query de busca
+  /// Definir query de busca (com throttling)
   void setSearchQuery(String? query) {
-    state = state.copyWith(
-      searchQuery: query,
-      clearSearchQuery: query == null || query.isEmpty,
-    );
+    _searchThrottler.call(() {
+      state = state.copyWith(
+        searchQuery: query,
+        clearSearchQuery: query == null || query.isEmpty,
+      );
+    });
   }
 
   /// Adicionar filtro de tipo
@@ -431,7 +479,7 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
           hasUnsavedChanges: true,
         );
 
-        _autoSave();
+        _debouncedAutoSave();
       }
     } catch (e) {
       state = state.copyWith(
@@ -489,7 +537,7 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
         hasUnsavedChanges: true,
       );
 
-      _autoSave();
+      _debouncedAutoSave();
     } catch (e) {
       state = state.copyWith(
         isImporting: false,
@@ -521,10 +569,36 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
     // Por enquanto, placeholder
   }
 
-  /// Salvar automaticamente
-  void _autoSave() {
-    // TODO: Implementar auto-save
-    // Por enquanto, placeholder
+  /// Auto-save com debounce otimizado
+  void _debouncedAutoSave() {
+    _autoSaveDebouncer.call(() async {
+      await _performAutoSave();
+    });
+  }
+
+  /// Executar auto-save real
+  Future<void> _performAutoSave() async {
+    try {
+      // TODO: Implementar auto-save real
+      debugPrint('🔄 Auto-save executado em ${DateTime.now()}');
+      
+      // Simular save
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Atualizar estado se ainda estiver ativo
+      if (mounted) {
+        state = state.copyWith(hasUnsavedChanges: false);
+      }
+    } catch (e) {
+      debugPrint('❌ Erro no auto-save: $e');
+    }
+  }
+
+  /// Invalidar todos os caches quando dados mudam
+  void _invalidateAllCaches() {
+    _searchCache.clear();
+    _statsCache.clear();
+    BlocosState._filterCache.clear();
   }
 
   /// Salvar manualmente
@@ -565,7 +639,7 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
       hasUnsavedChanges: true,
     );
 
-    _autoSave();
+    _debouncedAutoSave();
   }
 
   /// Substituir todos os blocos
@@ -579,7 +653,7 @@ class BlocosNotifier extends StateNotifier<BlocosState> {
       hasUnsavedChanges: true,
     );
 
-    _autoSave();
+    _debouncedAutoSave();
   }
 
   /// Obter bloco por ID

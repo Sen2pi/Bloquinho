@@ -20,7 +20,7 @@ import 'package:flutter/rendering.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../../../features/bloquinho/models/code_theme.dart';
-import '../../../core/services/pdf_export_service.dart';
+import '../../../core/services/enhanced_pdf_export_service.dart';
 
 // Provider para o tema de código selecionado
 final selectedCodeThemeProvider = StateProvider<CodeTheme>((ref) {
@@ -398,7 +398,7 @@ class _WindowsCodeBlockWidgetState
       }
 
       // Exportar como arquivo
-      final pdfService = PdfExportService();
+      final pdfService = EnhancedPdfExportService();
       final filePath = await pdfService.exportCodeAsFile(
         code: widget.code,
         language: _selectedLanguage,
@@ -457,7 +457,7 @@ class _WindowsCodeBlockWidgetState
       }
 
       // Exportar como imagem
-      final pdfService = PdfExportService();
+      final pdfService = EnhancedPdfExportService();
       final filePath = await pdfService.exportWidgetAsImage(
         widgetKey: _repaintBoundaryKey,
         fileName:

@@ -420,9 +420,8 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
                       onTap: () {
                         Navigator.of(context).pop();
                         widget.onFormatApplied(
-                          'combinedColor',
-                          color: combo['text'],
-                          backgroundColor: combo['bg'],
+                          'span',
+                          content: '<span style="background-color:${combo['bg']}; color:${combo['text']}">TEXTO_SELECIONADO</span>',
                         );
                       },
                       borderRadius: BorderRadius.circular(8),

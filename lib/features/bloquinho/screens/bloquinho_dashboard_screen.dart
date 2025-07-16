@@ -72,7 +72,7 @@ class _BloquinhoDashboardScreenState
           isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
       leading: IconButton(
         icon: Icon(Icons.arrow_back),
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () => context.go('/workspace'),
         tooltip: strings.back,
       ),
       title: Row(

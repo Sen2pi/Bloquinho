@@ -68,7 +68,7 @@ class _StorageSettingsScreenState extends ConsumerState<StorageSettingsScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () => context.go('/workspace'),
         ),
       ),
       body: SingleChildScrollView(

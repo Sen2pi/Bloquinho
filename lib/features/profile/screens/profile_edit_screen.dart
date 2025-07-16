@@ -544,7 +544,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: isUpdating ? null : () => context.pop(),
+            onPressed: isUpdating ? null : () => context.go('/workspace'),
             child: const Text('Cancelar'),
           ),
         ),
@@ -703,7 +703,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 : 'Perfil criado com sucesso!'),
           ),
         );
-        context.pop();
+        context.go('/workspace');
       }
     } catch (e) {
       if (context.mounted) {

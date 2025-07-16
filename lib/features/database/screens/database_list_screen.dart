@@ -8,6 +8,7 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:bloquinho/core/models/database_models.dart';
 import 'package:bloquinho/core/services/database_service.dart';
 import 'package:bloquinho/features/database/screens/table_editor_screen.dart';
@@ -163,7 +164,7 @@ class _DatabaseListScreenState extends State<DatabaseListScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.go('/workspace'),
           tooltip: 'Voltar',
         ),
         title: Row(

@@ -17,7 +17,7 @@ import '../models/bloco_tipo_enum.dart';
 import '../models/page_model.dart';
 import '../services/clipboard_parser_service.dart';
 import '../services/blocos_converter_service.dart';
-import '../services/pdf_export_service.dart';
+import '../../../core/services/enhanced_pdf_export_service.dart';
 import 'blocos_provider.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
@@ -91,7 +91,7 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
   static const _uuid = Uuid();
   final ClipboardParserService _clipboardService;
   final BlocosConverterService _converterService;
-  final PdfExportService _pdfExportService;
+  final EnhancedPdfExportService _pdfExportService;
   final Ref _ref;
 
   EditorControllerNotifier(
@@ -364,16 +364,23 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
               'Página e widget de conteúdo são necessários para exportação PDF');
         }
 
-        final pdfFile = await _pdfExportService.exportPageToPdf(
-          page: page,
-          contentWidget: contentWidget,
-          strings: strings,
+        final content = state.content ?? '';
+        final timestamp = DateTime.now().toString().split('.')[0].replaceAll(':', '-');
+        final title = state.documentTitle ?? 'Bloquinho_Document_$timestamp';
+        
+        final filePath = await _pdfExportService.exportMarkdownAsPdf(
+          markdown: content,
+          title: title,
+          author: 'Bloquinho App',
+          subject: 'Documento exportado do Bloquinho',
         );
+
+        final file = filePath != null ? File(filePath) : null;
 
         return {
           'format': format,
-          'file': pdfFile,
-          'filePath': pdfFile.path,
+          'file': file,
+          'filePath': filePath,
           'exportedAt': DateTime.now().toIso8601String(),
         };
       } else {
@@ -476,7 +483,7 @@ final blocosConverterServiceProvider = Provider((ref) {
 });
 
 final pdfExportServiceProvider = Provider((ref) {
-  return PdfExportService();
+  return EnhancedPdfExportService();
 });
 
 /// Provider principal do editor

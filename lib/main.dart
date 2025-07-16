@@ -275,6 +275,24 @@ class BloquinhoApp extends ConsumerWidget {
           },
         ),
 
+        // Remover ou comentar as rotas que usam DocumentEditorScreen
+        // GoRoute(
+        //   path: '/documentos/editor/:documentId',
+        //   name: 'document_editor',
+        //   builder: (context, state) {
+        //     final documentId = state.pathParameters['documentId'] ?? '';
+        //     return DocumentEditorScreen(documentId: documentId);
+        //   },
+        // ),
+        // GoRoute(
+        //   path: '/workspace/documentos/editor/:documentId',
+        //   name: 'workspace_document_editor',
+        //   builder: (context, state) {
+        //     final documentId = state.pathParameters['documentId'] ?? '';
+        //     return DocumentEditorScreen(documentId: documentId);
+        //   },
+        // ),
+
         // Table Editor
         GoRoute(
           path: '/database/table/:tableId',
