@@ -16,6 +16,8 @@ import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/user_profile_provider.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
+import '../../../core/services/platform_service.dart';
+import '../../../core/services/web_auth_service.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -25,6 +27,9 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
+  bool _isAuthenticating = false;
+  String _currentStatus = 'Inicializando...';
+
   @override
   void initState() {
     super.initState();
@@ -36,7 +41,34 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       // Aguardar um tempo mínimo para mostrar splash
       await Future.delayed(const Duration(seconds: 1));
 
+      final platformService = PlatformService.instance;
+      final webAuthService = WebAuthService.instance;
+
+      // Verificar se é web e precisa de autenticação
+      if (platformService.isWeb && !webAuthService.isAuthenticated) {
+        setState(() {
+          _currentStatus = 'Autenticação necessária para a web';
+          _isAuthenticating = true;
+        });
+        
+        // Mostrar dialog de autenticação
+        await _showWebAuthDialog();
+        
+        // Verificar se folder existe e criar se necessário
+        final folderExists = await webAuthService.ensureCloudFolderExists();
+        if (!folderExists) {
+          setState(() {
+            _currentStatus = 'Erro ao criar pasta de dados';
+          });
+          return;
+        }
+      }
+
       // Carregar perfil salvo se existir
+      setState(() {
+        _currentStatus = 'Carregando dados salvos...';
+      });
+      
       try {
         await ref.read(userProfileProvider.notifier).loadProfile();
       } catch (e) {
@@ -65,6 +97,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       if (mounted) {
         context.goNamed('onboarding');
       }
+    }
+  }
+
+  Future<void> _showWebAuthDialog() async {
+    if (!mounted) return;
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const WebAuthDialog(),
+    );
+
+    if (result != true) {
+      // Usuário não autenticou, mostrar erro
+      setState(() {
+        _currentStatus = 'Autenticação necessária para continuar';
+      });
+      return;
     }
   }
 
@@ -181,8 +231,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 final isLoading = ref.watch(isProfileLoadingProvider);
                 final hasProfile = ref.watch(hasProfileProvider);
 
-                String statusText = strings.initializing;
-                if (isLoading) {
+                String statusText = _currentStatus;
+                if (_isAuthenticating) {
+                  statusText = 'Aguardando autenticação...';
+                } else if (isLoading) {
                   statusText = strings.loadingSavedData;
                 } else if (hasProfile) {
                   statusText = strings.profileFound;
@@ -202,5 +254,110 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         ),
       ),
     );
+  }
+}
+
+/// Dialog para autenticação na web
+class WebAuthDialog extends StatefulWidget {
+  const WebAuthDialog({super.key});
+
+  @override
+  State<WebAuthDialog> createState() => _WebAuthDialogState();
+}
+
+class _WebAuthDialogState extends State<WebAuthDialog> {
+  bool _isAuthenticating = false;
+  String? _errorMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Autenticação Necessária'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Para usar o Bloquinho na web, é necessário autenticar com um serviço de armazenamento em nuvem.',
+          ),
+          const SizedBox(height: 16),
+          if (_errorMessage != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.shade200),
+              ),
+              child: Text(
+                _errorMessage!,
+                style: TextStyle(color: Colors.red.shade700),
+              ),
+            ),
+          if (_errorMessage != null) const SizedBox(height: 16),
+          if (_isAuthenticating)
+            const Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 12),
+                Text('Autenticando...'),
+              ],
+            ),
+        ],
+      ),
+      actions: [
+        if (!_isAuthenticating) ...[
+          TextButton(
+            onPressed: () => _authenticateWithProvider('google'),
+            child: const Text('Google Drive'),
+          ),
+          TextButton(
+            onPressed: () => _authenticateWithProvider('onedrive'),
+            child: const Text('OneDrive'),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _authenticateWithProvider(String provider) async {
+    setState(() {
+      _isAuthenticating = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final webAuthService = WebAuthService.instance;
+      
+      late final result;
+      if (provider == 'google') {
+        result = await webAuthService.authenticateWithGoogleDrive();
+      } else if (provider == 'onedrive') {
+        result = await webAuthService.authenticateWithOneDrive();
+      } else {
+        throw Exception('Provider não suportado');
+      }
+
+      if (result.success) {
+        // Autenticação bem-sucedida
+        if (mounted) {
+          Navigator.of(context).pop(true);
+        }
+      } else {
+        setState(() {
+          _errorMessage = result.errorMessage ?? 'Erro desconhecido';
+          _isAuthenticating = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Erro ao autenticar: ${e.toString()}';
+        _isAuthenticating = false;
+      });
+    }
   }
 }

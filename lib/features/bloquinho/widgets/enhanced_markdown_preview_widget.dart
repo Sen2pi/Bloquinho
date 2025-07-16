@@ -28,6 +28,7 @@ import 'latex_widget.dart';
 import '../../../core/services/enhanced_pdf_export_service.dart';
 import 'mermaid_diagram_widget.dart'; // Adicionar import para WindowsMermaidDiagramWidget
 import '../../../core/utils/lru_cache.dart';
+import '../../../core/services/enhanced_markdown_parser.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
@@ -475,22 +476,60 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   }
 
   String _sanitizeMarkdown(String input) {
-    final buffer = StringBuffer();
-    bool foundInvalid = false;
-    for (final line in input.split('\n')) {
-      try {
-        // Tenta acessar runes para forçar validação UTF-16
-        line.runes.toList();
-        buffer.writeln(line);
-      } catch (e) {
-        foundInvalid = true;
+    try {
+      // Primeiro, verificar se a string é válida
+      input.runes.toList();
+      return input;
+    } catch (e) {
+      // Se não for válida, sanitizar caractere por caractere
+      final buffer = StringBuffer();
+      final codeUnits = input.codeUnits;
+
+      for (int i = 0; i < codeUnits.length; i++) {
+        final codeUnit = codeUnits[i];
+
+        // Verificar se é um caractere UTF-16 válido
+        if (_isValidUTF16CodeUnit(codeUnit)) {
+          buffer.writeCharCode(codeUnit);
+        } else {
+          // Substituir caracteres inválidos por espaço
+          buffer.write(' ');
+        }
       }
+
+      final sanitized = buffer.toString();
+
+      // Limpar sequências de espaços múltiplos
+      final cleaned = sanitized.replaceAll(RegExp(r'\s+'), ' ');
+
+      return cleaned;
     }
-    if (foundInvalid) {
-      buffer.writeln(
-          '\n⚠️ Atenção: Algumas linhas com caracteres inválidos foram removidas do preview.');
+  }
+
+  bool _isValidUTF16CodeUnit(int codeUnit) {
+    // Verificar se é um caractere de controle inválido
+    if (codeUnit < 0x20 &&
+        codeUnit != 0x09 &&
+        codeUnit != 0x0A &&
+        codeUnit != 0x0D) {
+      return false;
     }
-    return buffer.toString();
+
+    // Verificar se é um surrogate inválido
+    if (codeUnit >= 0xD800 && codeUnit <= 0xDFFF) {
+      return false;
+    }
+
+    // Verificar se é um caractere não-definido
+    if (codeUnit >= 0xFDD0 && codeUnit <= 0xFDEF) {
+      return false;
+    }
+
+    if (codeUnit == 0xFFFE || codeUnit == 0xFFFF) {
+      return false;
+    }
+
+    return true;
   }
 
   Widget _buildOptimizedMarkdown(

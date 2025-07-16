@@ -13,8 +13,11 @@ import 'package:bloquinho/core/services/cloud_storage_service.dart';
 import 'package:bloquinho/core/services/google_drive_service.dart';
 import 'package:bloquinho/core/services/onedrive_service.dart';
 import 'package:bloquinho/core/services/oauth2_service.dart' as oauth2;
+import 'package:bloquinho/core/services/platform_service.dart';
+import 'package:bloquinho/core/services/web_auth_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:bloquinho/core/services/data_directory_service.dart';
+import 'package:flutter/foundation.dart';
 
 /// Provider singleton para as configurações de armazenamento
 final storageSettingsProvider =
@@ -31,8 +34,21 @@ class StorageSettingsNotifier extends StateNotifier<StorageSettings> {
   CloudStorageService? _currentService;
   bool _initialized = false;
 
-  StorageSettingsNotifier() : super(StorageSettings.local()) {
+  StorageSettingsNotifier() : super(_getInitialSettings()) {
     // Não inicializar automaticamente para evitar loops infinitos
+  }
+  
+  /// Obter configurações iniciais baseadas na plataforma
+  static StorageSettings _getInitialSettings() {
+    final platformService = PlatformService.instance;
+    
+    if (kIsWeb && platformService.requiresCloudAuth) {
+      // Na web, sempre usar cloud storage
+      return StorageSettings.googleDrive(); // Padrão para Google Drive
+    } else {
+      // Outras plataformas usam local por padrão
+      return StorageSettings.local();
+    }
   }
 
   /// Garantir que o storage está inicializado
@@ -45,14 +61,32 @@ class StorageSettingsNotifier extends StateNotifier<StorageSettings> {
   /// Inicializar configurações carregando do Hive
   Future<void> _initializeSettings() async {
     try {
-      // Hive já foi inicializado globalmente
-      final dataDir = await DataDirectoryService().initialize();
-      final dbPath = await DataDirectoryService().getBasePath();
-      _box = await Hive.openBox<String>(_boxName, path: dbPath);
-      await _loadSettings();
+      final platformService = PlatformService.instance;
+      
+      // Na web, verificar se existe autenticação salva
+      if (kIsWeb && platformService.requiresCloudAuth) {
+        await _initializeWebStorage();
+      } else {
+        // Outras plataformas usam Hive
+        final dataDir = await DataDirectoryService().initialize();
+        final dbPath = await DataDirectoryService().getBasePath();
+        _box = await Hive.openBox<String>(_boxName, path: dbPath);
+        await _loadSettings();
+      }
     } catch (e) {
       // Erro ao inicializar configurações de storage: $e
       // Se falhar a inicialização, manter configurações padrão
+    }
+  }
+  
+  /// Inicializar storage na web
+  Future<void> _initializeWebStorage() async {
+    final webAuthService = WebAuthService.instance;
+    await webAuthService.initialize();
+    
+    if (webAuthService.isAuthenticated && webAuthService.storageSettings != null) {
+      state = webAuthService.storageSettings!;
+      _initializeService(state.provider);
     }
   }
 
@@ -115,6 +149,13 @@ class StorageSettingsNotifier extends StateNotifier<StorageSettings> {
 
   /// Alterar provider de armazenamento
   Future<void> changeProvider(CloudStorageProvider newProvider) async {
+    final platformService = PlatformService.instance;
+    
+    // Na web, não permitir armazenamento local
+    if (kIsWeb && platformService.requiresCloudAuth && newProvider == CloudStorageProvider.local) {
+      throw Exception('Armazenamento local não é permitido na plataforma web');
+    }
+    
     // Desconectar do serviço anterior
     if (_currentService != null) {
       await _currentService!.disconnect();
@@ -432,6 +473,15 @@ final syncStatusTextProvider = Provider<String>((ref) {
 
 /// Provider para providers disponíveis
 final availableProvidersProvider = Provider<List<CloudStorageProvider>>((ref) {
+  final platformService = PlatformService.instance;
+  
+  // Na web, não mostrar opção de armazenamento local
+  if (kIsWeb && platformService.requiresCloudAuth) {
+    return CloudStorageProvider.values
+        .where((provider) => provider != CloudStorageProvider.local)
+        .toList();
+  }
+  
   return CloudStorageProvider.values;
 });
 

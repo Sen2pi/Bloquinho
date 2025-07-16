@@ -62,6 +62,7 @@
         "shimmer",
         "sqflite",
         "table_calendar",
+        "universal_html",
         "url_launcher",
         "uuid",
         "web_socket_channel",
@@ -438,6 +439,21 @@
         "crypto",
         "http",
         "http_parser"
+      ]
+    },
+    {
+      "name": "universal_html",
+      "version": "2.2.4",
+      "dependencies": [
+        "async",
+        "charcode",
+        "collection",
+        "csslib",
+        "html",
+        "meta",
+        "source_span",
+        "typed_data",
+        "universal_io"
       ]
     },
     {
@@ -1555,6 +1571,20 @@
       ]
     },
     {
+      "name": "pointycastle",
+      "version": "3.9.1",
+      "dependencies": [
+        "collection",
+        "convert",
+        "js"
+      ]
+    },
+    {
+      "name": "asn1lib",
+      "version": "1.6.5",
+      "dependencies": []
+    },
+    {
       "name": "typed_data",
       "version": "1.4.0",
       "dependencies": [
@@ -1649,6 +1679,35 @@
         "source_span",
         "string_scanner",
         "typed_data"
+      ]
+    },
+    {
+      "name": "universal_io",
+      "version": "2.2.2",
+      "dependencies": [
+        "collection",
+        "meta",
+        "typed_data"
+      ]
+    },
+    {
+      "name": "html",
+      "version": "0.15.6",
+      "dependencies": [
+        "csslib",
+        "source_span"
+      ]
+    },
+    {
+      "name": "charcode",
+      "version": "1.4.0",
+      "dependencies": []
+    },
+    {
+      "name": "csslib",
+      "version": "1.0.2",
+      "dependencies": [
+        "source_span"
       ]
     },
     {
@@ -1877,11 +1936,6 @@
       ]
     },
     {
-      "name": "charcode",
-      "version": "1.4.0",
-      "dependencies": []
-    },
-    {
       "name": "flutter_quill_delta_from_html",
       "version": "1.5.2",
       "dependencies": [
@@ -1894,14 +1948,6 @@
       "version": "1.1.0",
       "dependencies": [
         "flutter"
-      ]
-    },
-    {
-      "name": "html",
-      "version": "0.15.6",
-      "dependencies": [
-        "csslib",
-        "source_span"
       ]
     },
     {
@@ -2348,13 +2394,6 @@
       ]
     },
     {
-      "name": "csslib",
-      "version": "1.0.2",
-      "dependencies": [
-        "source_span"
-      ]
-    },
-    {
       "name": "diff_match_patch",
       "version": "0.4.1",
       "dependencies": []
@@ -2385,20 +2424,6 @@
     {
       "name": "_macros",
       "version": "0.3.3",
-      "dependencies": []
-    },
-    {
-      "name": "pointycastle",
-      "version": "3.9.1",
-      "dependencies": [
-        "collection",
-        "convert",
-        "js"
-      ]
-    },
-    {
-      "name": "asn1lib",
-      "version": "1.6.5",
       "dependencies": []
     }
   ],

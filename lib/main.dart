@@ -21,6 +21,8 @@ import 'core/services/local_storage_service.dart';
 import 'core/services/file_storage_service.dart';
 import 'core/services/oauth2_service.dart';
 import 'core/services/data_directory_service.dart';
+import 'core/services/platform_service.dart';
+import 'core/services/web_auth_service.dart';
 import 'shared/providers/theme_provider.dart';
 import 'shared/providers/language_provider.dart';
 import 'shared/providers/user_profile_provider.dart';
@@ -92,6 +94,17 @@ Future<void> _initializeServices() async {
     // Inicializar OAuth2Service
     await OAuth2Service.initialize();
 
+    // Inicializar WebAuthService para verificação de autenticação web
+    final webAuthService = WebAuthService.instance;
+    await webAuthService.initialize();
+
+    // Verificar se é plataforma web e força autenticação
+    final platformService = PlatformService.instance;
+    if (platformService.isWeb && !webAuthService.isAuthenticated) {
+      // A autenticação será gerenciada pelo SplashScreen
+      // Aqui apenas garantimos que o serviço esteja pronto
+    }
+
     // Restaurar sessões OAuth2 existentes (conexões persistentes)
     // Delay para permitir inicialização completa do app
     await Future.delayed(const Duration(milliseconds: 500));
@@ -141,6 +154,24 @@ class BloquinhoApp extends ConsumerWidget {
   GoRouter _buildRouter() {
     return GoRouter(
       initialLocation: '/',
+      redirect: (context, state) {
+        // Verificar se está na web e precisa de autenticação
+        final platformService = PlatformService.instance;
+        final webAuthService = WebAuthService.instance;
+        
+        // Obter o path atual de forma compatível com go_router
+        final currentPath = state.uri.path;
+        
+        // Se estiver na web e não autenticado, redirecionar para splash
+        if (platformService.isWeb && 
+            !webAuthService.isAuthenticated && 
+            currentPath != '/' && 
+            currentPath != '/onboarding') {
+          return '/';
+        }
+        
+        return null; // Não redirecionar
+      },
       routes: [
         // Splash Screen
         GoRoute(

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloquinho - Web App</title>
+  <link rel="icon" href="public/logo.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f8f9fa;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #fff 0%, #f8f6f0 100%);
+    }
+
+    .loading-logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(139, 69, 19, 0.2);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .loading-title {
+      font-size: 2rem;
+      color: #8B4513;
+      margin-bottom: 8px;
+    }
+
+    .loading-subtitle {
+      color: #6B4423;
+      margin-bottom: 32px;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #8B4513;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: #6B4423;
+      font-size: 14px;
+    }
+
+    .app-container {
+      display: none;
+      width: 100%;
+      height: 100vh;
+      position: relative;
+    }
+
+    .app-header {
+      background: #8B4513;
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 1000;
+      position: relative;
+    }
+
+    .app-header .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-header .logo img {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+    }
+
+    .app-header .logo span {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .app-header .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .app-header .user-info .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #fff;
+      color: #8B4513;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .flutter-app {
+      width: 100%;
+      height: calc(100vh - 56px);
+      border: none;
+      background: #f8f9fa;
+    }
+
+    .error-container {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #f8f9fa;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .error-icon {
+      font-size: 4rem;
+      color: #dc3545;
+      margin-bottom: 16px;
+    }
+
+    .error-title {
+      font-size: 1.5rem;
+      color: #343a40;
+      margin-bottom: 8px;
+    }
+
+    .error-message {
+      color: #6c757d;
+      margin-bottom: 24px;
+      max-width: 400px;
+    }
+
+    .retry-button {
+      background: #8B4513;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .retry-button:hover {
+      background: #6d3410;
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-container" class="loading-container">
+    <img src="public/logo.png" alt="Bloquinho Logo" class="loading-logo">
+    <h1 class="loading-title">Bloquinho</h1>
+    <p class="loading-subtitle">Preparing your workspace...</p>
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Loading application...</p>
+  </div>
+
+  <!-- Error Screen -->
+  <div id="error-container" class="error-container">
+    <div class="error-icon">⚠️</div>
+    <h2 class="error-title">Unable to Load Application</h2>
+    <p class="error-message">There was an error loading the Bloquinho web app. Please check your internet connection and try again.</p>
+    <button class="retry-button" onclick="location.reload()">Retry</button>
+  </div>
+
+  <!-- App Container -->
+  <div id="app-container" class="app-container">
+    <header class="app-header">
+      <div class="logo">
+        <img src="public/logo.png" alt="Bloquinho">
+        <span>Bloquinho</span>
+      </div>
+      <div class="user-info">
+        <div class="user-avatar">👤</div>
+        <span id="user-name">User</span>
+      </div>
+    </header>
+    
+    <!-- Flutter App will be embedded here -->
+    <div id="flutter-app-container" class="flutter-app">
+      <!-- Flutter web app will be loaded here -->
+    </div>
+  </div>
+
+  <script src="flutter_integration.js"></script>
+  <script>
+    // Simulate app loading
+    window.addEventListener('load', () => {
+      // Check if user is authenticated
+      const authData = localStorage.getItem('bloquinho_auth_data');
+      
+      if (!authData) {
+        // Redirect to auth page if not authenticated
+        window.location.href = 'web_auth.html';
+        return;
+      }
+
+      // Simulate loading time
+      setTimeout(() => {
+        showApp();
+      }, 3000);
+    });
+
+    function showApp() {
+      const loadingContainer = document.getElementById('loading-container');
+      const appContainer = document.getElementById('app-container');
+      
+      loadingContainer.style.display = 'none';
+      appContainer.style.display = 'block';
+      
+      // Handle authentication state
+      handleAuthState();
+    }
+
+    function showError() {
+      const loadingContainer = document.getElementById('loading-container');
+      const errorContainer = document.getElementById('error-container');
+      
+      loadingContainer.style.display = 'none';
+      errorContainer.style.display = 'flex';
+    }
+
+    // Handle authentication state
+    function handleAuthState() {
+      const authData = localStorage.getItem('bloquinho_auth_data');
+      
+      if (authData) {
+        try {
+          const parsedData = JSON.parse(authData);
+          const userName = parsedData.storage_settings?.accountName || 'User';
+          document.getElementById('user-name').textContent = userName;
+        } catch (e) {
+          console.error('Error parsing auth data:', e);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

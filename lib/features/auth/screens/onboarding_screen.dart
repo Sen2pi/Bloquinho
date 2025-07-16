@@ -28,6 +28,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/services/onedrive_service.dart';
 import '../../../core/services/local_storage_service.dart';
 import '../../../core/services/bloquinho_storage_service.dart';
+import '../../../core/services/platform_service.dart';
+import '../../../core/services/web_auth_service.dart';
 import '../../../core/models/workspace.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../bloquinho/models/page_model.dart';
@@ -121,6 +123,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _nextPage() {
+    final platformService = PlatformService.instance;
+    
+    // Na web, pular a página de storage (página 3)
+    if (platformService.isWeb && _currentPage == 2) {
+      _finishOnboarding();
+      return;
+    }
+    
     if (_currentPage < 3 && _pageController.hasClients) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
@@ -219,21 +229,39 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       final userProfileNotifier = ref.read(userProfileProvider.notifier);
       await userProfileNotifier.createProfile(name: name, email: email);
 
-      // Configurar storage
-      final storageNotifier = ref.read(storageSettingsProvider.notifier);
-      await storageNotifier.changeProvider(_selectedStorage);
-
-      // Se OneDrive foi selecionado, fazer autenticação automática
-      if (_selectedStorage == CloudStorageProvider.oneDrive) {
-        final onedriveService = OneDriveService();
-        final authResult = await onedriveService.authenticate();
-
-        if (authResult.success) {
-          // Conectar ao serviço
-          await storageNotifier.connect();
+      final platformService = PlatformService.instance;
+      
+      // Configurar storage baseado na plataforma
+      if (platformService.isWeb) {
+        // Na web, usar as configurações de storage já autenticadas
+        final webAuthService = WebAuthService.instance;
+        final storageSettings = webAuthService.storageSettings;
+        
+        if (storageSettings != null) {
+          final storageNotifier = ref.read(storageSettingsProvider.notifier);
+          await storageNotifier.changeProvider(storageSettings.provider);
         } else {
-          throw Exception(
-              'Falha na autenticação com OneDrive: ${authResult.errorMessage}');
+          // Fallback para Google Drive se não há configurações
+          final storageNotifier = ref.read(storageSettingsProvider.notifier);
+          await storageNotifier.changeProvider(CloudStorageProvider.googleDrive);
+        }
+      } else {
+        // Desktop/mobile: usar storage selecionado
+        final storageNotifier = ref.read(storageSettingsProvider.notifier);
+        await storageNotifier.changeProvider(_selectedStorage);
+
+        // Se OneDrive foi selecionado, fazer autenticação automática
+        if (_selectedStorage == CloudStorageProvider.oneDrive) {
+          final onedriveService = OneDriveService();
+          final authResult = await onedriveService.authenticate();
+
+          if (authResult.success) {
+            // Conectar ao serviço
+            await storageNotifier.connect();
+          } else {
+            throw Exception(
+                'Falha na autenticação com OneDrive: ${authResult.errorMessage}');
+          }
         }
       }
 
@@ -362,7 +390,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: LinearProgressIndicator(
-                              value: (_currentPage + 1) / 4,
+                              value: (_currentPage + 1) / (PlatformService.instance.isWeb ? 3 : 4),
                               backgroundColor: isDarkMode
                                   ? AppColors.darkBorder
                                   : AppColors.lightBorder,
@@ -372,7 +400,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ),
                           const SizedBox(width: 16),
                           Text(
-                            '${_currentPage + 1} de 4',
+                            '${_currentPage + 1} de ${PlatformService.instance.isWeb ? 3 : 4}',
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: isDarkMode
@@ -393,12 +421,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           _currentPage = index;
                         });
                       },
-                      children: [
-                        _buildLanguageSelectionPage(isDarkMode, strings),
-                        _buildWelcomePage(isDarkMode, strings),
-                        _buildUserInfoPage(isDarkMode, strings),
-                        _buildStorageSelectionPage(isDarkMode, strings),
-                      ],
+                      children: PlatformService.instance.isWeb
+                          ? [
+                              _buildLanguageSelectionPage(isDarkMode, strings),
+                              _buildWelcomePage(isDarkMode, strings),
+                              _buildUserInfoPage(isDarkMode, strings),
+                            ]
+                          : [
+                              _buildLanguageSelectionPage(isDarkMode, strings),
+                              _buildWelcomePage(isDarkMode, strings),
+                              _buildUserInfoPage(isDarkMode, strings),
+                              _buildStorageSelectionPage(isDarkMode, strings),
+                            ],
                     ),
                   ),
                 ],

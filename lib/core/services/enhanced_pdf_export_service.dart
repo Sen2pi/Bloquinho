@@ -18,10 +18,38 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path/path.dart' as path;
+import 'package:flutter/services.dart' show rootBundle;
 
 import '../../../core/l10n/app_strings.dart';
+import 'enhanced_markdown_parser.dart';
 
 class EnhancedPdfExportService {
+  pw.Font? _notoSansFont;
+  pw.Font? _notoSansBoldFont;
+  pw.Font? _notoEmojiFont;
+
+  /// Carregar fontes Unicode e emoji
+  Future<void> _loadFonts() async {
+    if (_notoSansFont == null) {
+      _notoSansFont = pw.Font.ttf(
+          await rootBundle.load('assets/fonts/NotoSans-Regular.ttf'));
+    }
+    if (_notoEmojiFont == null) {
+      _notoEmojiFont =
+          pw.Font.ttf(await rootBundle.load('assets/fonts/NotoColorEmoji.ttf'));
+    }
+  }
+
+  /// Obter fonte padrão com fallback para emoji
+  pw.Font _getDefaultFont() {
+    return _notoSansFont ?? pw.Font.helvetica();
+  }
+
+  /// Obter fontes de fallback para emoji
+  List<pw.Font> _getFontFallbacks() {
+    return _notoEmojiFont != null ? [_notoEmojiFont!] : <pw.Font>[];
+  }
+
   /// Exportar widget como imagem
   Future<String?> exportWidgetAsImage({
     required GlobalKey widgetKey,
@@ -111,7 +139,6 @@ class EnhancedPdfExportService {
     } else if (Platform.isIOS) {
       return await getApplicationDocumentsDirectory();
     } else if (Platform.isWindows) {
-      // CORRIGIDO: Adicionar barra invertida corretamente
       return Directory('${Platform.environment['USERPROFILE']}\\Downloads');
     } else if (Platform.isMacOS) {
       return Directory('${Platform.environment['HOME']}/Downloads');
@@ -158,6 +185,7 @@ class EnhancedPdfExportService {
     return extensions[language.toLowerCase()] ?? 'txt';
   }
 
+  /// Exportar markdown como PDF
   Future<String?> exportMarkdownAsPdf({
     required String markdown,
     required String title,
@@ -165,11 +193,15 @@ class EnhancedPdfExportService {
     String? subject,
   }) async {
     try {
+      await _loadFonts();
       final pdf = pw.Document();
 
-      // Processar markdown usando o mesmo sistema do preview
-      final contentWidgets =
-          await _processEnhancedMarkdownToPdfWidgets(markdown);
+      // Usar o parser centralizado para garantir consistência com o preview
+      final blocks = EnhancedMarkdownParser.parseMarkdown(markdown,
+          enableHtmlEnhancements: true);
+
+      // Converter blocos para widgets PDF
+      final contentWidgets = await _convertBlocksToPdfWidgets(blocks);
 
       // Dividir conteúdo em páginas A4
       final pages = _splitContentIntoPages(contentWidgets, title);
@@ -190,6 +222,8 @@ class EnhancedPdfExportService {
                     style: pw.TextStyle(
                       fontSize: 24,
                       fontWeight: pw.FontWeight.bold,
+                      font: _getDefaultFont(),
+                      fontFallback: _getFontFallbacks(),
                     ),
                   ),
                   pw.SizedBox(height: 20),
@@ -241,232 +275,118 @@ class EnhancedPdfExportService {
     }
   }
 
-  /// Processar markdown usando o mesmo sistema do enhanced preview widget
-  Future<List<pw.Widget>> _processEnhancedMarkdownToPdfWidgets(
-      String markdown) async {
+  /// Converter blocos markdown para widgets PDF
+  Future<List<pw.Widget>> _convertBlocksToPdfWidgets(
+      List<MarkdownBlock> blocks) async {
     final widgets = <pw.Widget>[];
-    final lines = markdown.split('\n');
 
-    bool inCodeBlock = false;
-    String codeBlockContent = '';
-    String codeLanguage = '';
-    bool inList = false;
-    bool inBlockquote = false;
-    String blockquoteContent = '';
+    for (final block in blocks) {
+      switch (block.type) {
+        case BlockType.heading:
+          widgets.add(_createHeading(block.content, block.level!));
+          widgets.add(pw.SizedBox(height: _getHeadingSpacing(block.level!)));
+          break;
 
-    for (int i = 0; i < lines.length; i++) {
-      final line = lines[i];
-
-      // Detectar início/fim de bloco de código
-      if (line.startsWith('```')) {
-        if (inCodeBlock) {
-          // Fim do bloco de código
-          widgets.add(
-              _createEnhancedCodeBlock(codeBlockContent.trim(), codeLanguage));
-          widgets.add(pw.SizedBox(height: 16));
-          inCodeBlock = false;
-          codeBlockContent = '';
-          codeLanguage = '';
-        } else {
-          // Início do bloco de código
-          inCodeBlock = true;
-          codeLanguage = line.substring(3).trim();
-        }
-        continue;
-      }
-
-      if (inCodeBlock) {
-        codeBlockContent += line + '\n';
-        continue;
-      }
-
-      // Processar LaTeX inline e em bloco PRIMEIRO (antes de outros processamentos)
-      if (line.contains('\$')) {
-        final processedLine = _processLatexInLine(line, widgets);
-        if (processedLine != line) {
-          // LaTeX foi processado, continuar para próxima linha
-          continue;
-        }
-      }
-
-      // Detectar blockquotes
-      if (line.startsWith('> ')) {
-        if (!inBlockquote) {
-          inBlockquote = true;
-          blockquoteContent = '';
-        }
-        blockquoteContent += line.substring(2) + '\n';
-        continue;
-      } else if (inBlockquote) {
-        // Fim do blockquote
-        widgets.add(_createEnhancedBlockquote(blockquoteContent.trim()));
-        widgets.add(pw.SizedBox(height: 16));
-        inBlockquote = false;
-        blockquoteContent = '';
-      }
-
-      // Títulos
-      if (line.startsWith('# ')) {
-        widgets.add(_createEnhancedHeading(line.substring(2), 1));
-        widgets.add(pw.SizedBox(height: 16));
-      } else if (line.startsWith('## ')) {
-        widgets.add(_createEnhancedHeading(line.substring(3), 2));
-        widgets.add(pw.SizedBox(height: 14));
-      } else if (line.startsWith('### ')) {
-        widgets.add(_createEnhancedHeading(line.substring(4), 3));
-        widgets.add(pw.SizedBox(height: 12));
-      } else if (line.startsWith('#### ')) {
-        widgets.add(_createEnhancedHeading(line.substring(5), 4));
-        widgets.add(pw.SizedBox(height: 10));
-      } else if (line.startsWith('##### ')) {
-        widgets.add(_createEnhancedHeading(line.substring(6), 5));
-        widgets.add(pw.SizedBox(height: 8));
-      } else if (line.startsWith('###### ')) {
-        widgets.add(_createEnhancedHeading(line.substring(7), 6));
-        widgets.add(pw.SizedBox(height: 6));
-      }
-      // Listas
-      else if (line.startsWith('- ') ||
-          line.startsWith('* ') ||
-          line.startsWith('+ ')) {
-        widgets.add(_createEnhancedListItem(line.substring(2)));
-        widgets.add(pw.SizedBox(height: 4));
-        inList = true;
-      }
-      // Listas numeradas
-      else if (RegExp(r'^\d+\. ').hasMatch(line)) {
-        final match = RegExp(r'^\d+\. (.*)').firstMatch(line);
-        if (match != null) {
-          widgets.add(_createEnhancedNumberedListItem(match.group(1)!));
-          widgets.add(pw.SizedBox(height: 4));
-        }
-      }
-      // Texto normal ou com formatação inline
-      else if (line.trim().isNotEmpty) {
-        if (inList) {
-          widgets.add(pw.SizedBox(height: 8));
-          inList = false;
-        }
-        widgets.add(_createEnhancedFormattedText(line));
-        widgets.add(pw.SizedBox(height: 6));
-      }
-      // Linha em branco
-      else {
-        if (inList) {
-          widgets.add(pw.SizedBox(height: 8));
-          inList = false;
-        } else {
+        case BlockType.paragraph:
+          widgets.add(_createParagraph(block.content));
           widgets.add(pw.SizedBox(height: 12));
-        }
-      }
-    }
+          break;
 
-    // Finalizar blockquote se ainda estiver ativo
-    if (inBlockquote) {
-      widgets.add(_createEnhancedBlockquote(blockquoteContent.trim()));
+        case BlockType.listItem:
+          widgets.add(_createListItem(block.content, block.listType!));
+          widgets.add(pw.SizedBox(height: 4));
+          break;
+
+        case BlockType.code:
+          widgets.add(_createCodeBlock(block.content, block.language ?? ''));
+          widgets.add(pw.SizedBox(height: 16));
+          break;
+
+        case BlockType.blockquote:
+          widgets.add(_createBlockquote(block.content));
+          widgets.add(pw.SizedBox(height: 16));
+          break;
+
+        case BlockType.table:
+          widgets.add(_createTable(block.content));
+          widgets.add(pw.SizedBox(height: 16));
+          break;
+
+        case BlockType.horizontalRule:
+          widgets.add(_createHorizontalRule());
+          widgets.add(pw.SizedBox(height: 16));
+          break;
+      }
     }
 
     return widgets;
   }
 
-  /// Processar LaTeX inline e em bloco na linha
-  String _processLatexInLine(String line, List<pw.Widget> widgets) {
-    // Detectar LaTeX em bloco \$\$...\$\$
-    if (line.contains('\$\$')) {
-      final blockMatch = RegExp(r'\$\$([^\$]+)\$\$').firstMatch(line);
-      if (blockMatch != null) {
-        final beforeLatex = line.substring(0, blockMatch.start);
-        final latexContent = blockMatch.group(1)!;
-        final afterLatex = line.substring(blockMatch.end);
+  /// Criar título
+  pw.Widget _createHeading(String text, int level) {
+    final fontSize = _getHeadingFontSize(level);
+    final fontWeight = pw.FontWeight.bold;
 
-        // Adicionar texto antes do LaTeX
-        if (beforeLatex.trim().isNotEmpty) {
-          widgets.add(_createEnhancedFormattedText(beforeLatex));
-        }
+    // Processar elementos inline
+    final inlineElements = EnhancedMarkdownParser.parseInlineText(text);
+    final spans = <pw.InlineSpan>[];
 
-        // Adicionar LaTeX em bloco
-        widgets.add(_createLatexBlock(latexContent.trim()));
-        widgets.add(pw.SizedBox(height: 12));
-
-        // Processar texto após LaTeX
-        if (afterLatex.trim().isNotEmpty) {
-          widgets.add(_createEnhancedFormattedText(afterLatex));
-        }
-
-        return ''; // Linha foi processada
-      }
+    for (final element in inlineElements) {
+      spans.add(_createInlineSpan(element, fontSize, fontWeight));
     }
 
-    return line; // Linha não foi modificada
+    return pw.RichText(
+      text: pw.TextSpan(children: spans),
+    );
   }
 
-  /// Criar bloco LaTeX para PDF
-  pw.Widget _createLatexBlock(String latex) {
-    return pw.Container(
-      width: double.infinity,
-      padding: const pw.EdgeInsets.all(16),
-      margin: const pw.EdgeInsets.symmetric(vertical: 8),
-      decoration: pw.BoxDecoration(
-        color: PdfColors.grey50,
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-        border: pw.Border.all(color: PdfColors.grey300),
-      ),
-      child: pw.Center(
-        child: pw.Text(
-          latex,
-          style: pw.TextStyle(
-            fontSize: 14,
-            fontStyle: pw.FontStyle.italic,
-            color: PdfColors.blue800,
+  /// Criar parágrafo
+  pw.Widget _createParagraph(String text) {
+    // Processar elementos inline
+    final inlineElements = EnhancedMarkdownParser.parseInlineText(text);
+    final spans = <pw.InlineSpan>[];
+
+    for (final element in inlineElements) {
+      spans.add(_createInlineSpan(element, 14, pw.FontWeight.normal));
+    }
+
+    return pw.RichText(
+      text: pw.TextSpan(children: spans),
+    );
+  }
+
+  /// Criar item de lista
+  pw.Widget _createListItem(String text, ListType listType) {
+    final inlineElements = EnhancedMarkdownParser.parseInlineText(text);
+    final spans = <pw.InlineSpan>[];
+
+    for (final element in inlineElements) {
+      spans.add(_createInlineSpan(element, 14, pw.FontWeight.normal));
+    }
+
+    return pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Container(
+          width: 6,
+          height: 6,
+          margin: const pw.EdgeInsets.only(top: 8, right: 12),
+          decoration: const pw.BoxDecoration(
+            color: PdfColors.blue,
+            shape: pw.BoxShape.circle,
           ),
-          textAlign: pw.TextAlign.center,
         ),
-      ),
+        pw.Expanded(
+          child: pw.RichText(
+            text: pw.TextSpan(children: spans),
+          ),
+        ),
+      ],
     );
   }
 
-  /// Criar título formatado (mesmo estilo do preview)
-  pw.Widget _createEnhancedHeading(String text, int level) {
-    // Processar HTML inline no título
-    final processedText = _processHtmlInText(text);
-
-    double fontSize;
-    switch (level) {
-      case 1:
-        fontSize = 28.0;
-        break;
-      case 2:
-        fontSize = 24.0;
-        break;
-      case 3:
-        fontSize = 20.0;
-        break;
-      case 4:
-        fontSize = 18.0;
-        break;
-      case 5:
-        fontSize = 16.0;
-        break;
-      case 6:
-        fontSize = 14.0;
-        break;
-      default:
-        fontSize = 14.0;
-    }
-
-    return pw.Container(
-      width: double.infinity,
-      child: pw.RichText(
-        text: pw.TextSpan(
-          children: _createRichTextSpansFromProcessedText(
-              processedText, fontSize, true),
-        ),
-      ),
-    );
-  }
-
-  /// Criar bloco de código (mesmo estilo do preview)
-  pw.Widget _createEnhancedCodeBlock(String code, String language) {
+  /// Criar bloco de código
+  pw.Widget _createCodeBlock(String code, String language) {
     return pw.Container(
       width: double.infinity,
       padding: const pw.EdgeInsets.all(16),
@@ -500,6 +420,8 @@ class EnhancedPdfExportService {
                   fontSize: 11,
                   fontWeight: pw.FontWeight.bold,
                   color: PdfColors.grey300,
+                  font: _getDefaultFont(),
+                  fontFallback: _getFontFallbacks(),
                 ),
               ),
             ),
@@ -511,6 +433,8 @@ class EnhancedPdfExportService {
               fontSize: 12,
               color: PdfColors.grey100,
               height: 1.4,
+              font: _getDefaultFont(),
+              fontFallback: _getFontFallbacks(),
             ),
           ),
         ],
@@ -518,66 +442,14 @@ class EnhancedPdfExportService {
     );
   }
 
-  /// Criar item de lista (mesmo estilo do preview)
-  pw.Widget _createEnhancedListItem(String text) {
-    final processedText = _processHtmlInText(text);
+  /// Criar blockquote
+  pw.Widget _createBlockquote(String text) {
+    final inlineElements = EnhancedMarkdownParser.parseInlineText(text);
+    final spans = <pw.InlineSpan>[];
 
-    return pw.Row(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Container(
-          width: 6,
-          height: 6,
-          margin: const pw.EdgeInsets.only(top: 8, right: 12),
-          decoration: const pw.BoxDecoration(
-            color: PdfColors.blue,
-            shape: pw.BoxShape.circle,
-          ),
-        ),
-        pw.Expanded(
-          child: pw.RichText(
-            text: pw.TextSpan(
-              children: _createRichTextSpansFromProcessedText(
-                  processedText, 14, false),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Criar item de lista numerada
-  pw.Widget _createEnhancedNumberedListItem(String text) {
-    final processedText = _processHtmlInText(text);
-
-    return pw.Row(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Container(
-          width: 20,
-          child: pw.Text(
-            '•',
-            style: pw.TextStyle(
-                fontSize: 16,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.blue),
-          ),
-        ),
-        pw.Expanded(
-          child: pw.RichText(
-            text: pw.TextSpan(
-              children: _createRichTextSpansFromProcessedText(
-                  processedText, 14, false),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Criar blockquote (mesmo estilo do preview)
-  pw.Widget _createEnhancedBlockquote(String text) {
-    final processedText = _processHtmlInText(text);
+    for (final element in inlineElements) {
+      spans.add(_createInlineSpan(element, 14, pw.FontWeight.normal));
+    }
 
     return pw.Container(
       width: double.infinity,
@@ -594,218 +466,238 @@ class EnhancedPdfExportService {
         borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
       ),
       child: pw.RichText(
-        text: pw.TextSpan(
-          children:
-              _createRichTextSpansFromProcessedText(processedText, 14, false),
-        ),
+        text: pw.TextSpan(children: spans),
       ),
     );
   }
 
-  /// Criar texto com formatação inline (mesmo estilo do preview)
-  pw.Widget _createEnhancedFormattedText(String text) {
-    final processedText = _processHtmlInText(text);
+  /// Criar tabela
+  pw.Widget _createTable(String tableContent) {
+    final rows = tableContent.split('\n');
+    if (rows.isEmpty) return pw.SizedBox.shrink();
 
-    return pw.RichText(
-      text: pw.TextSpan(
-        children:
-            _createRichTextSpansFromProcessedText(processedText, 14, false),
-      ),
-    );
-  }
+    final tableRows = <pw.TableRow>[];
 
-  /// Processar HTML inline no texto (cores, estilos, etc.)
-  _ProcessedTextPart _processHtmlInText(String text) {
-    final parts = <_TextSegment>[];
-    String remaining = text;
+    for (int i = 0; i < rows.length; i++) {
+      final row = rows[i];
+      final cells = row.split('|').map((cell) => cell.trim()).toList();
 
-    while (remaining.isNotEmpty) {
-      // Processar <span style=\"...">...</span>
-      final spanMatch =
-          RegExp(r'<span style="([^"]*)">(.*?)<\/span>').firstMatch(remaining);
-      if (spanMatch != null && spanMatch.start == 0) {
-        final style = spanMatch.group(1)!;
-        final content = spanMatch.group(2)!;
-        final styleMap = _parseStyleString(style);
+      // Remover células vazias no início e fim
+      if (cells.isNotEmpty && cells.first.isEmpty) cells.removeAt(0);
+      if (cells.isNotEmpty && cells.last.isEmpty)
+        cells.removeAt(cells.length - 1);
 
-        parts.add(_TextSegment(
-          text: content,
-          color: styleMap['color'],
-          backgroundColor: styleMap['backgroundColor'],
-          isBold: styleMap['fontWeight'] == 'bold',
-          isItalic: styleMap['fontStyle'] == 'italic',
-        ));
-
-        remaining = remaining.substring(spanMatch.end);
-        continue;
-      }
-
-      // Processar LaTeX inline \$...\$
-      final latexMatch = RegExp(r'\$([^\$]+)\$').firstMatch(remaining);
-      if (latexMatch != null && latexMatch.start == 0) {
-        parts.add(_TextSegment(
-          text: latexMatch.group(1)!,
-          isLatex: true,
-          color: PdfColors.blue800,
-          isItalic: true,
-        ));
-        remaining = remaining.substring(latexMatch.end);
-        continue;
-      }
-
-      // Processar **texto**
-      final boldMatch = RegExp(r'\*\*([^*]+)\*\*').firstMatch(remaining);
-      if (boldMatch != null && boldMatch.start == 0) {
-        parts.add(_TextSegment(
-          text: boldMatch.group(1)!,
-          isBold: true,
-        ));
-        remaining = remaining.substring(boldMatch.end);
-        continue;
-      }
-
-      // Processar *texto*
-      final italicMatch = RegExp(r'\*([^*]+)\*').firstMatch(remaining);
-      if (italicMatch != null && italicMatch.start == 0) {
-        parts.add(_TextSegment(
-          text: italicMatch.group(1)!,
-          isItalic: true,
-        ));
-        remaining = remaining.substring(italicMatch.end);
-        continue;
-      }
-
-      // Processar `código`
-      final codeMatch = RegExp(r'`([^`]+)`').firstMatch(remaining);
-      if (codeMatch != null && codeMatch.start == 0) {
-        parts.add(_TextSegment(
-          text: codeMatch.group(1)!,
-          isCode: true,
-          backgroundColor: PdfColors.grey200,
-          fontFamily: 'monospace',
-        ));
-        remaining = remaining.substring(codeMatch.end);
-        continue;
-      }
-
-      // Encontrar próxima formatação ou fim do texto
-      var nextFormatPos = remaining.length;
-      final patterns = [
-        r'<span style="[^"]*">.*?<\/span>',
-        r'\$[^\$]+\$',
-        r'\*\*[^*]+\*\*',
-        r'\*[^*]+\*',
-        r'`[^`]+`'
-      ];
-
-      for (final pattern in patterns) {
-        final match = RegExp(pattern).firstMatch(remaining);
-        if (match != null && match.start < nextFormatPos) {
-          nextFormatPos = match.start;
-        }
-      }
-
-      if (nextFormatPos > 0) {
-        parts.add(_TextSegment(text: remaining.substring(0, nextFormatPos)));
-        remaining = remaining.substring(nextFormatPos);
-      } else {
-        break;
-      }
-    }
-
-    if (remaining.isNotEmpty) {
-      parts.add(_TextSegment(text: remaining));
-    }
-
-    return _ProcessedTextPart(parts);
-  }
-
-  /// Criar spans de texto rico a partir do texto processado
-  List<pw.InlineSpan> _createRichTextSpansFromProcessedText(
-      _ProcessedTextPart processedText, double fontSize, bool isHeading) {
-    final spans = <pw.InlineSpan>[];
-
-    for (final segment in processedText.segments) {
-      spans.add(
-        pw.TextSpan(
-          text: segment.text,
-          style: pw.TextStyle(
-            fontSize: segment.isLatex ? fontSize * 0.9 : fontSize,
-            fontWeight: (segment.isBold || isHeading)
-                ? pw.FontWeight.bold
-                : pw.FontWeight.normal,
-            fontStyle:
-                segment.isItalic ? pw.FontStyle.italic : pw.FontStyle.normal,
-            color: segment.color ?? PdfColors.black,
+      final tableCells = <pw.Widget>[];
+      for (final cell in cells) {
+        final isHeader = i == 0; // Primeira linha é cabeçalho
+        tableCells.add(
+          pw.Container(
+            padding: const pw.EdgeInsets.all(8),
+            decoration: pw.BoxDecoration(
+              color: isHeader ? PdfColors.grey100 : null,
+            ),
+            child: pw.Text(
+              cell,
+              style: pw.TextStyle(
+                fontWeight:
+                    isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+                fontSize: 12,
+                font: _getDefaultFont(),
+                fontFallback: _getFontFallbacks(),
+              ),
+            ),
           ),
-        ),
-      );
-    }
-
-    return spans;
-  }
-
-  /// Parse string de estilo CSS
-  Map<String, dynamic> _parseStyleString(String style) {
-    final map = <String, dynamic>{};
-    final props = style.split(';');
-
-    for (final prop in props) {
-      final parts = prop.split(':');
-      if (parts.length != 2) continue;
-
-      final key = parts[0].trim();
-      final value = parts[1].trim();
-
-      switch (key) {
-        case 'color':
-          map['color'] = _parseColor(value);
-          break;
-        case 'background-color':
-          map['backgroundColor'] = _parseColor(value);
-          break;
-        case 'font-weight':
-          map['fontWeight'] = value;
-          break;
-        case 'font-style':
-          map['fontStyle'] = value;
-          break;
+        );
       }
+
+      tableRows.add(pw.TableRow(children: tableCells));
     }
 
-    return map;
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey300),
+      children: tableRows,
+    );
   }
 
-  /// Parse cor CSS
-  PdfColor? _parseColor(String value) {
-    if (value.startsWith('#')) {
-      final hex = value.substring(1);
-      final r = int.parse(hex.substring(0, 2), radix: 16) / 255.0;
-      final g = int.parse(hex.substring(2, 4), radix: 16) / 255.0;
-      final b = int.parse(hex.substring(4, 6), radix: 16) / 255.0;
-      return PdfColor(r, g, b);
-    }
+  /// Criar linha horizontal
+  pw.Widget _createHorizontalRule() {
+    return pw.Container(
+      height: 1,
+      color: PdfColors.grey300,
+    );
+  }
 
-    switch (value.toLowerCase()) {
-      case 'red':
-        return PdfColors.red;
-      case 'blue':
-        return PdfColors.blue;
-      case 'green':
-        return PdfColors.green;
-      case 'yellow':
-        return PdfColors.yellow;
-      case 'orange':
-        return PdfColors.orange;
-      case 'white':
-        return PdfColors.white;
-      case 'black':
-        return PdfColors.black;
-      case 'grey':
-      case 'gray':
-        return PdfColors.grey;
+  /// Criar span inline
+  pw.InlineSpan _createInlineSpan(
+      InlineElement element, double fontSize, pw.FontWeight fontWeight) {
+    switch (element.type) {
+      case InlineType.text:
+        return pw.TextSpan(
+          text: element.content,
+          style: pw.TextStyle(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: PdfColors.black,
+            font: _getDefaultFont(),
+            fontFallback: _getFontFallbacks(),
+          ),
+        );
+
+      case InlineType.bold:
+        return pw.TextSpan(
+          text: element.content,
+          style: pw.TextStyle(
+            fontSize: fontSize,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.black,
+            font: _getDefaultFont(),
+            fontFallback: _getFontFallbacks(),
+          ),
+        );
+
+      case InlineType.italic:
+        return pw.TextSpan(
+          text: element.content,
+          style: pw.TextStyle(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            fontStyle: pw.FontStyle.italic,
+            color: PdfColors.black,
+            font: _getDefaultFont(),
+            fontFallback: _getFontFallbacks(),
+          ),
+        );
+
+      case InlineType.code:
+        return pw.TextSpan(
+          text: element.content,
+          style: pw.TextStyle(
+            fontSize: fontSize - 1,
+            fontWeight: fontWeight,
+            color: PdfColors.black,
+            font: _getDefaultFont(),
+            fontFallback: _getFontFallbacks(),
+          ),
+        );
+
+      case InlineType.latex:
+        return pw.TextSpan(
+          text: element.content,
+          style: pw.TextStyle(
+            fontSize: fontSize - 1,
+            fontWeight: fontWeight,
+            fontStyle: pw.FontStyle.italic,
+            color: PdfColors.blue800,
+            font: _getDefaultFont(),
+            fontFallback: _getFontFallbacks(),
+          ),
+        );
+
+      case InlineType.span:
+        final styleMap = element.style != null
+            ? EnhancedMarkdownParser.parseStyle(element.style!)
+            : <String, dynamic>{};
+
+        return pw.TextSpan(
+          text: element.content,
+          style: pw.TextStyle(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: styleMap['color'] ?? PdfColors.black,
+            fontStyle: styleMap['fontStyle'] ?? pw.FontStyle.normal,
+            decoration: styleMap['decoration'] ?? pw.TextDecoration.none,
+            font: _getDefaultFont(),
+            fontFallback: _getFontFallbacks(),
+          ),
+        );
+
+      case InlineType.kbd:
+        return pw.TextSpan(
+          text: element.content,
+          style: pw.TextStyle(
+            fontSize: fontSize - 1,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.black,
+            font: _getDefaultFont(),
+            fontFallback: _getFontFallbacks(),
+          ),
+        );
+
+      case InlineType.mark:
+        return pw.TextSpan(
+          text: element.content,
+          style: pw.TextStyle(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: PdfColors.black,
+            font: _getDefaultFont(),
+            fontFallback: _getFontFallbacks(),
+          ),
+        );
+
+      case InlineType.subscript:
+        return pw.TextSpan(
+          text: element.content,
+          style: pw.TextStyle(
+            fontSize: fontSize * 0.7,
+            fontWeight: fontWeight,
+            color: PdfColors.black,
+            font: _getDefaultFont(),
+            fontFallback: _getFontFallbacks(),
+          ),
+        );
+
+      case InlineType.superscript:
+        return pw.TextSpan(
+          text: element.content,
+          style: pw.TextStyle(
+            fontSize: fontSize * 0.7,
+            fontWeight: fontWeight,
+            color: PdfColors.black,
+            font: _getDefaultFont(),
+            fontFallback: _getFontFallbacks(),
+          ),
+        );
+    }
+  }
+
+  /// Obter tamanho da fonte para títulos
+  double _getHeadingFontSize(int level) {
+    switch (level) {
+      case 1:
+        return 28.0;
+      case 2:
+        return 24.0;
+      case 3:
+        return 20.0;
+      case 4:
+        return 18.0;
+      case 5:
+        return 16.0;
+      case 6:
+        return 14.0;
       default:
-        return null;
+        return 14.0;
+    }
+  }
+
+  /// Obter espaçamento para títulos
+  double _getHeadingSpacing(int level) {
+    switch (level) {
+      case 1:
+        return 20.0;
+      case 2:
+        return 18.0;
+      case 3:
+        return 16.0;
+      case 4:
+        return 14.0;
+      case 5:
+        return 12.0;
+      case 6:
+        return 10.0;
+      default:
+        return 10.0;
     }
   }
 
@@ -861,6 +753,8 @@ class EnhancedPdfExportService {
       return 60.0; // Blocos de código, blockquotes
     } else if (widget is pw.Row) {
       return 20.0; // Lista items
+    } else if (widget is pw.Table) {
+      return 40.0; // Tabelas
     }
     return 20.0;
   }
@@ -873,13 +767,16 @@ class EnhancedPdfExportService {
     String? subject,
   }) async {
     try {
+      await _loadFonts();
       final pdf = pw.Document();
 
-      // Processar markdown usando o mesmo sistema do preview
-      final contentWidgets =
-          await _processEnhancedMarkdownToPdfWidgets(markdown);
+      // Sanitizar markdown para evitar problemas UTF-16
+      String sanitizedMarkdown = _sanitizeText(markdown);
 
-      // Dividir conteúdo em páginas A4
+      // Usar o parser centralizado
+      final blocks = EnhancedMarkdownParser.parseMarkdown(sanitizedMarkdown,
+          enableHtmlEnhancements: true);
+      final contentWidgets = await _convertBlocksToPdfWidgets(blocks);
       final pages = _splitContentIntoPages(contentWidgets, title);
 
       // Adicionar páginas ao PDF
@@ -901,11 +798,18 @@ class EnhancedPdfExportService {
                         style: pw.TextStyle(
                           fontSize: 18,
                           fontWeight: pw.FontWeight.bold,
+                          font: _getDefaultFont(),
+                          fontFallback: _getFontFallbacks(),
                         ),
                       ),
                       pw.Text(
                         '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-                        style: pw.TextStyle(fontSize: 12, color: PdfColors.grey),
+                        style: pw.TextStyle(
+                          fontSize: 12,
+                          color: PdfColors.grey,
+                          font: _getDefaultFont(),
+                          fontFallback: _getFontFallbacks(),
+                        ),
                       ),
                     ],
                   ),
@@ -946,33 +850,29 @@ class EnhancedPdfExportService {
       return null;
     }
   }
-}
 
-/// Classe para representar parte de texto processado
-class _ProcessedTextPart {
-  final List<_TextSegment> segments;
-  _ProcessedTextPart(this.segments);
-}
+  /// Sanitizar texto para evitar problemas UTF-16
+  String _sanitizeText(String text) {
+    if (text.isEmpty) return text;
 
-/// Classe para representar segmento de texto com formatação
-class _TextSegment {
-  final String text;
-  final PdfColor? color;
-  final PdfColor? backgroundColor;
-  final bool isBold;
-  final bool isItalic;
-  final bool isCode;
-  final bool isLatex;
-  final String? fontFamily;
+    try {
+      // Verificar se a string é válida UTF-16
+      text.codeUnits;
 
-  _TextSegment({
-    required this.text,
-    this.color,
-    this.backgroundColor,
-    this.isBold = false,
-    this.isItalic = false,
-    this.isCode = false,
-    this.isLatex = false,
-    this.fontFamily,
-  });
+      // Remover caracteres de controle problemáticos
+      String sanitized =
+          text.replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]'), '');
+
+      // Garantir que não há caracteres nulos
+      sanitized = sanitized.replaceAll('\x00', '');
+
+      // Verificar novamente se é válida
+      sanitized.codeUnits;
+
+      return sanitized;
+    } catch (e) {
+      // Se houver erro, retornar string vazia
+      return '';
+    }
+  }
 }

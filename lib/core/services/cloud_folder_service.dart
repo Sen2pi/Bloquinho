@@ -19,6 +19,7 @@ class CloudFolderService {
 
   /// Estrutura de pastas padrão do Bloquinho
   static const Map<String, List<String>> _folderStructure = {
+    'data': [], // /Bloquinho/data/ - Pasta principal de dados
     'profiles': [], // /Bloquinho/profiles/
     'workspaces': [], // /Bloquinho/workspaces/
     'documents': [

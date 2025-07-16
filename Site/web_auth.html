@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloquinho - Web App Authentication</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="public/logo.png">
+  <style>
+    .auth-container {
+      max-width: 500px;
+      margin: 80px auto;
+      padding: 40px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(139, 69, 19, 0.1);
+      text-align: center;
+    }
+    
+    .auth-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px auto;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(139, 69, 19, 0.2);
+    }
+    
+    .auth-title {
+      font-size: 2.5rem;
+      color: #8B4513;
+      margin-bottom: 8px;
+    }
+    
+    .auth-subtitle {
+      color: #6B4423;
+      margin-bottom: 32px;
+      font-size: 1.1rem;
+    }
+    
+    .auth-info {
+      background: #fff8ef;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 32px;
+      border-left: 4px solid #8B4513;
+    }
+    
+    .auth-info h3 {
+      color: #8B4513;
+      margin-bottom: 8px;
+    }
+    
+    .auth-info p {
+      color: #6B4423;
+      margin: 0;
+    }
+    
+    .auth-providers {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    
+    .auth-provider {
+      display: flex;
+      align-items: center;
+      padding: 16px 24px;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #333;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .auth-provider:hover {
+      border-color: #8B4513;
+      background: #fff8ef;
+    }
+    
+    .auth-provider.google {
+      border-color: #4285F4;
+    }
+    
+    .auth-provider.google:hover {
+      background: #f1f5ff;
+      border-color: #4285F4;
+    }
+    
+    .auth-provider.onedrive {
+      border-color: #0078D4;
+    }
+    
+    .auth-provider.onedrive:hover {
+      background: #f1f7ff;
+      border-color: #0078D4;
+    }
+    
+    .provider-icon {
+      width: 24px;
+      height: 24px;
+      margin-right: 12px;
+    }
+    
+    .auth-status {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 8px;
+      display: none;
+    }
+    
+    .auth-status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .auth-status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .auth-status.loading {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    
+    .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #8B4513;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin-right: 8px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .back-link {
+      display: inline-block;
+      margin-top: 24px;
+      color: #8B4513;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body class="light-theme">
+  <!-- Barra de Navegação -->
+  <nav class="navbar">
+    <div class="nav-left">
+      <img src="public/logo.png" alt="Bloquinho Logo" class="nav-logo">
+      <img src="public/BloquinhoAi.png" alt="AI Logo" class="nav-logo" style="height:40px; margin-left:8px;">
+      <span class="nav-title">Bloquinho</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="features.html">Features</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="faq.html">FAQ</a></li>
+      <li><a href="downloads_and_donate.html">Downloads & Donate</a></li>
+      <li><a href="wiki.html"><img src="public/graduation.png" class="wiki-navbar-icon" alt="Wiki">Wiki</a></li>
+      <li><a href="web_auth.html" class="web-app-login active" style="background: #8B4513; color: white; padding: 8px 16px; border-radius: 8px; font-weight: bold;">🌐 Web App</a></li>
+    </ul>
+  </nav>
+
+  <!-- Authentication Container -->
+  <div class="auth-container">
+    <img src="public/logo.png" alt="Bloquinho Logo" class="auth-logo">
+    <h1 class="auth-title">Bloquinho Web App</h1>
+    <p class="auth-subtitle">Connect your cloud storage to get started</p>
+    
+    <div class="auth-info">
+      <h3>🔒 Why cloud authentication?</h3>
+      <p>The web version of Bloquinho stores your data in the cloud for security and accessibility. Choose your preferred cloud storage provider to continue.</p>
+    </div>
+    
+    <div class="auth-providers">
+      <button class="auth-provider google" onclick="authenticateWithGoogle()">
+        <img src="public/google-drive-icon.png" alt="Google Drive" class="provider-icon">
+        Continue with Google Drive
+      </button>
+      
+      <button class="auth-provider onedrive" onclick="authenticateWithOneDrive()">
+        <img src="public/onedrive-icon.png" alt="OneDrive" class="provider-icon">
+        Continue with OneDrive
+      </button>
+    </div>
+    
+    <div id="auth-status" class="auth-status"></div>
+    
+    <a href="index.html" class="back-link">← Back to Home</a>
+  </div>
+
+  <!-- Configuration -->
+  <script src="config.js"></script>
+  
+  <!-- Google APIs -->
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
+  <!-- Microsoft Graph API -->
+  <script src="https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js"></script>
+  
+  <script>
+    // Get configuration
+    const config = window.BLOQUINHO_CONFIG;
+    
+    // Google Drive OAuth2 Configuration
+    const GOOGLE_CLIENT_ID = config.google.clientId;
+    const GOOGLE_API_KEY = config.google.apiKey;
+    const GOOGLE_SCOPES = config.google.scopes;
+    
+    // Microsoft OneDrive OAuth2 Configuration
+    const MICROSOFT_CLIENT_ID = config.microsoft.clientId;
+    const MICROSOFT_SCOPES = config.microsoft.scopes;
+    
+    let googleTokenClient;
+    let msalInstance;
+    
+    // Initialize authentication libraries
+    function initializeAuth() {
+      // Initialize Google
+      gapi.load('auth2', function() {
+        gapi.auth2.init({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: GOOGLE_SCOPES
+        });
+      });
+      
+      googleTokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: GOOGLE_SCOPES,
+        callback: handleGoogleAuthResponse,
+      });
+      
+      // Initialize Microsoft
+      const msalConfig = {
+        auth: {
+          clientId: MICROSOFT_CLIENT_ID,
+          authority: 'https://login.microsoftonline.com/common'
+        },
+        cache: {
+          cacheLocation: 'localStorage',
+          storeAuthStateInCookie: false
+        }
+      };
+      
+      msalInstance = new msal.PublicClientApplication(msalConfig);
+    }
+    
+    async function authenticateWithGoogle() {
+      showLoading('Connecting to Google Drive...');
+      
+      try {
+        // Request access token
+        googleTokenClient.requestAccessToken();
+        
+      } catch (error) {
+        console.error('Google authentication error:', error);
+        showError('Failed to connect to Google Drive. Please try again.');
+      }
+    }
+    
+    async function handleGoogleAuthResponse(response) {
+      if (response.error) {
+        showError('Google authentication failed: ' + response.error);
+        return;
+      }
+      
+      try {
+        // Initialize Google Drive API
+        await gapi.load('client', async () => {
+          await gapi.client.init({
+            apiKey: GOOGLE_API_KEY,
+            clientId: GOOGLE_CLIENT_ID,
+            scope: GOOGLE_SCOPES
+          });
+          
+          await gapi.client.load('drive', 'v3');
+          
+          // Get user profile
+          const profile = await gapi.client.request({
+            path: 'https://www.googleapis.com/oauth2/v1/userinfo'
+          });
+          
+          // Create or check for Bloquinho folder
+          await createBloquinhoFolder('google');
+          
+          const authData = {
+            storage_settings: {
+              provider: 'googleDrive',
+              accountEmail: profile.result.email,
+              accountName: profile.result.name,
+              status: 'connected',
+              accessToken: response.access_token,
+              timestamp: new Date().toISOString()
+            },
+            timestamp: new Date().toISOString()
+          };
+          
+          localStorage.setItem('bloquinho_auth_data', JSON.stringify(authData));
+          
+          showSuccess('Successfully connected to Google Drive!');
+          
+          setTimeout(() => {
+            window.location.href = 'app.html';
+          }, 1500);
+        });
+        
+      } catch (error) {
+        console.error('Google Drive API error:', error);
+        showError('Failed to initialize Google Drive API. Please try again.');
+      }
+    }
+    
+    async function authenticateWithOneDrive() {
+      showLoading('Connecting to OneDrive...');
+      
+      try {
+        const loginRequest = {
+          scopes: MICROSOFT_SCOPES,
+          prompt: 'select_account'
+        };
+        
+        const response = await msalInstance.loginPopup(loginRequest);
+        
+        // Get access token
+        const tokenRequest = {
+          scopes: MICROSOFT_SCOPES,
+          account: response.account
+        };
+        
+        const tokenResponse = await msalInstance.acquireTokenSilent(tokenRequest);
+        
+        // Create or check for Bloquinho folder
+        await createBloquinhoFolder('onedrive', tokenResponse.accessToken);
+        
+        const authData = {
+          storage_settings: {
+            provider: 'oneDrive',
+            accountEmail: response.account.username,
+            accountName: response.account.name,
+            status: 'connected',
+            accessToken: tokenResponse.accessToken,
+            timestamp: new Date().toISOString()
+          },
+          timestamp: new Date().toISOString()
+        };
+        
+        localStorage.setItem('bloquinho_auth_data', JSON.stringify(authData));
+        
+        showSuccess('Successfully connected to OneDrive!');
+        
+        setTimeout(() => {
+          window.location.href = 'app.html';
+        }, 1500);
+        
+      } catch (error) {
+        console.error('OneDrive authentication error:', error);
+        showError('Failed to connect to OneDrive. Please try again.');
+      }
+    }
+    
+    async function createBloquinhoFolder(provider, accessToken = null) {
+      try {
+        if (provider === 'google') {
+          // Check if Bloquinho folder exists
+          const response = await gapi.client.drive.files.list({
+            q: "name='Bloquinho' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+            spaces: 'drive'
+          });
+          
+          if (response.result.files.length === 0) {
+            // Create Bloquinho folder
+            await gapi.client.drive.files.create({
+              resource: {
+                name: 'Bloquinho',
+                mimeType: 'application/vnd.google-apps.folder'
+              }
+            });
+            console.log('Bloquinho folder created in Google Drive');
+          } else {
+            console.log('Bloquinho folder already exists in Google Drive');
+          }
+          
+        } else if (provider === 'onedrive') {
+          // Check if Bloquinho folder exists
+          const response = await fetch('https://graph.microsoft.com/v1.0/me/drive/root/children?$filter=name eq \'Bloquinho\'', {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`
+            }
+          });
+          
+          const data = await response.json();
+          
+          if (data.value.length === 0) {
+            // Create Bloquinho folder
+            await fetch('https://graph.microsoft.com/v1.0/me/drive/root/children', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                name: 'Bloquinho',
+                folder: {}
+              })
+            });
+            console.log('Bloquinho folder created in OneDrive');
+          } else {
+            console.log('Bloquinho folder already exists in OneDrive');
+          }
+        }
+        
+      } catch (error) {
+        console.error('Error creating Bloquinho folder:', error);
+        // Don't fail authentication if folder creation fails
+      }
+    }
+    
+    // Initialize when page loads
+    window.onload = function() {
+      initializeAuth();
+    };
+    
+    function showLoading(message) {
+      const status = document.getElementById('auth-status');
+      status.className = 'auth-status loading';
+      status.innerHTML = `<div class="loading-spinner"></div>${message}`;
+      status.style.display = 'block';
+    }
+    
+    function showSuccess(message) {
+      const status = document.getElementById('auth-status');
+      status.className = 'auth-status success';
+      status.innerHTML = `✅ ${message}`;
+      status.style.display = 'block';
+    }
+    
+    function showError(message) {
+      const status = document.getElementById('auth-status');
+      status.className = 'auth-status error';
+      status.innerHTML = `❌ ${message}`;
+      status.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

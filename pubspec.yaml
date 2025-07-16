@@ -82,6 +82,7 @@ dependencies:
   # Network
   http: ^1.1.0
   dio: ^5.3.2
+  universal_html: ^2.2.4
 
   # OAuth2 & Authentication
   oauth2: ^2.0.2
@@ -159,4 +160,6 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/fonts/NotoSans-Regular.ttf
+    - assets/fonts/NotoColorEmoji.ttf
     - screenshots/

@@ -7,146 +7,509 @@
  * Commercial use prohibited without permission.
  */
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:bloquinho/core/models/storage_settings.dart';
-import 'package:bloquinho/core/services/cloud_storage_service.dart';
-import 'package:bloquinho/core/services/data_directory_service.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
-import 'package:uuid/uuid.dart';
+import 'package:crypto/crypto.dart';
+import 'cloud_storage_service.dart';
+import 'data_directory_service.dart';
+import 'platform_service.dart';
+import 'oauth2_service.dart';
 
-/// Serviço para sincronização de arquivos com logs de mudanças
-class SyncService {
-  static final SyncService _instance = SyncService._internal();
-  factory SyncService() => _instance;
-  SyncService._internal();
+/// Informações sobre um arquivo para sincronização
+class SyncFileInfo {
+  final String relativePath;
+  final String fullPath;
+  final DateTime lastModified;
+  final String hash;
+  final int size;
+  final bool isLocal;
 
-  // Streams para comunicação
-  final _syncStatusController = StreamController<SyncStatus>.broadcast();
-  final _syncProgressController = StreamController<SyncProgress>.broadcast();
+  const SyncFileInfo({
+    required this.relativePath,
+    required this.fullPath,
+    required this.lastModified,
+    required this.hash,
+    required this.size,
+    required this.isLocal,
+  });
 
-  // Configurações
-  late Box _changeLogBox;
-  late Box _settingsBox;
-  late String _localStoragePath;
-
-  // Estados
-  bool _isInitialized = false;
-  bool _isSyncing = false;
-  CloudStorageService? _cloudService;
-  Timer? _autoSyncTimer;
-
-  // Streams públicos
-  Stream<SyncStatus> get syncStatusStream => _syncStatusController.stream;
-  Stream<SyncProgress> get syncProgressStream => _syncProgressController.stream;
-
-  // Getters públicos
-  bool get isSyncing => _isSyncing;
-  bool get isInitialized => _isInitialized;
-
-  /// Inicializar serviço de sincronização
-  Future<void> initialize() async {
-    if (_isInitialized) return;
-
-    try {
-      // Inicializar Hive
-      await Hive.initFlutter();
-
-      final dataDir = await DataDirectoryService().initialize();
-      _localStoragePath = await DataDirectoryService().getBasePath();
-
-      // Abrir boxes
-      _changeLogBox = await Hive.openBox('change_log', path: _localStoragePath);
-      _settingsBox =
-          await Hive.openBox('sync_settings', path: _localStoragePath);
-
-      // Criar pasta se não existir
-      final localDir = Directory(_localStoragePath);
-      if (!await localDir.exists()) {
-        await localDir.create(recursive: true);
-      }
-
-      // Configurar sincronização automática
-      _setupAutoSync();
-
-      _isInitialized = true;
-    } catch (e) {
-      rethrow;
-    }
+  Map<String, dynamic> toJson() {
+    return {
+      'relativePath': relativePath,
+      'fullPath': fullPath,
+      'lastModified': lastModified.toIso8601String(),
+      'hash': hash,
+      'size': size,
+      'isLocal': isLocal,
+    };
   }
 
-  /// Configurar serviço de nuvem
-  void configureCloudService(CloudStorageService cloudService) {
-    _cloudService = cloudService;
-
-    // Reinicializar timer se necessário
-    if (_autoSyncTimer != null) {
-      _autoSyncTimer!.cancel();
-      _setupAutoSync();
-    }
-  }
-
-  /// Configurar sincronização automática
-  void _setupAutoSync() {
-    final autoSyncInterval =
-        _settingsBox.get('auto_sync_interval', defaultValue: 30);
-    final autoSyncEnabled =
-        _settingsBox.get('auto_sync_enabled', defaultValue: true);
-
-    if (autoSyncEnabled && _cloudService != null) {
-      _autoSyncTimer = Timer.periodic(
-        Duration(minutes: autoSyncInterval),
-        (timer) => syncAll(),
-      );
-    }
-  }
-
-  /// Registrar mudança em arquivo
-  Future<void> logChange({
-    required String filePath,
-    required ChangeType changeType,
-    Map<String, dynamic>? metadata,
-  }) async {
-    if (!_isInitialized) await initialize();
-
-    final changeLog = ChangeLog(
-      id: const Uuid().v4(),
-      filePath: filePath,
-      changeType: changeType,
-      timestamp: DateTime.now(),
-      metadata: metadata ?? {},
+  factory SyncFileInfo.fromJson(Map<String, dynamic> json) {
+    return SyncFileInfo(
+      relativePath: json['relativePath'],
+      fullPath: json['fullPath'],
+      lastModified: DateTime.parse(json['lastModified']),
+      hash: json['hash'],
+      size: json['size'],
+      isLocal: json['isLocal'],
     );
+  }
+}
 
-    await _changeLogBox.put(changeLog.id, changeLog.toJson());
+/// Ação de sincronização
+enum SyncAction {
+  upload,    // Local -> Cloud
+  download,  // Cloud -> Local
+  conflict,  // Conflito - necessita resolução
+  skip,      // Não necessita sincronização
+}
 
+/// Item de sincronização
+class SyncItem {
+  final SyncFileInfo? localFile;
+  final SyncFileInfo? cloudFile;
+  final SyncAction action;
+  final String reason;
 
-    // Sincronizar se configurado
-    if (_shouldAutoSync()) {
-      _scheduleSync();
+  const SyncItem({
+    this.localFile,
+    this.cloudFile,
+    required this.action,
+    required this.reason,
+  });
+
+  String get relativePath => localFile?.relativePath ?? cloudFile?.relativePath ?? '';
+}
+
+/// Resultado da sincronização
+class SyncResult {
+  final bool success;
+  final int uploadedFiles;
+  final int downloadedFiles;
+  final int conflicts;
+  final int skippedFiles;
+  final Duration duration;
+  final String? error;
+
+  const SyncResult({
+    required this.success,
+    required this.uploadedFiles,
+    required this.downloadedFiles,
+    required this.conflicts,
+    required this.skippedFiles,
+    required this.duration,
+    this.error,
+  });
+
+  factory SyncResult.success({
+    required int uploadedFiles,
+    required int downloadedFiles,
+    required int conflicts,
+    required int skippedFiles,
+    required Duration duration,
+  }) {
+    return SyncResult(
+      success: true,
+      uploadedFiles: uploadedFiles,
+      downloadedFiles: downloadedFiles,
+      conflicts: conflicts,
+      skippedFiles: skippedFiles,
+      duration: duration,
+    );
+  }
+
+  factory SyncResult.error(String error, Duration duration) {
+    return SyncResult(
+      success: false,
+      uploadedFiles: 0,
+      downloadedFiles: 0,
+      conflicts: 0,
+      skippedFiles: 0,
+      duration: duration,
+      error: error,
+    );
+  }
+}
+
+/// Serviço de sincronização entre local e cloud
+class SyncService {
+  static SyncService? _instance;
+  
+  SyncService._internal();
+  
+  static SyncService get instance {
+    _instance ??= SyncService._internal();
+    return _instance!;
+  }
+
+  final _platformService = PlatformService.instance;
+  bool _isSyncing = false;
+  
+  /// Verificar se deve sincronizar (apenas em desktop/mobile)
+  bool get shouldSync {
+    // Na web, dados estão sempre na cloud
+    if (kIsWeb) return false;
+    
+    // Desktop/mobile podem sincronizar se tiverem cloud storage conectado
+    return _platformService.supportsLocalFileSystem;
+  }
+
+  /// Verificar se está sincronizando
+  bool get isSyncing => _isSyncing;
+
+  /// Obter diretório de dados local
+  Future<Directory> _getLocalDataDirectory() async {
+    final dataDir = await DataDirectoryService().getBasePath();
+    final localDataDir = Directory(path.join(dataDir, 'data'));
+    
+    if (!await localDataDir.exists()) {
+      await localDataDir.create(recursive: true);
+    }
+    
+    return localDataDir;
+  }
+
+  /// Escanear arquivos locais
+  Future<List<SyncFileInfo>> _scanLocalFiles() async {
+    final localDir = await _getLocalDataDirectory();
+    final files = <SyncFileInfo>[];
+    
+    if (!await localDir.exists()) {
+      return files;
+    }
+    
+    await for (final entity in localDir.list(recursive: true)) {
+      if (entity is File) {
+        final stat = await entity.stat();
+        final relativePath = path.relative(entity.path, from: localDir.path);
+        
+        // Calcular hash do arquivo
+        final bytes = await entity.readAsBytes();
+        final hash = sha256.convert(bytes).toString();
+        
+        files.add(SyncFileInfo(
+          relativePath: relativePath,
+          fullPath: entity.path,
+          lastModified: stat.modified,
+          hash: hash,
+          size: stat.size,
+          isLocal: true,
+        ));
+      }
+    }
+    
+    return files;
+  }
+
+  /// Escanear arquivos na cloud
+  Future<List<SyncFileInfo>> _scanCloudFiles(CloudStorageService cloudService) async {
+    final files = <SyncFileInfo>[];
+    
+    try {
+      // Listar arquivos na pasta /Bloquinho/data/
+      final remoteFiles = await cloudService.listFiles(
+        folderPath: '/Bloquinho/data',
+        recursive: true,
+      );
+      
+      for (final remoteFile in remoteFiles) {
+        files.add(SyncFileInfo(
+          relativePath: remoteFile.name,
+          fullPath: remoteFile.path,
+          lastModified: remoteFile.lastModified,
+          hash: remoteFile.hash ?? '',
+          size: remoteFile.size,
+          isLocal: false,
+        ));
+      }
+    } catch (e) {
+      // Erro ao listar arquivos da cloud
+    }
+    
+    return files;
+  }
+
+  /// Comparar arquivos e determinar ações de sincronização
+  List<SyncItem> _compareFiles(List<SyncFileInfo> localFiles, List<SyncFileInfo> cloudFiles) {
+    final items = <SyncItem>[];
+    final localMap = <String, SyncFileInfo>{};
+    final cloudMap = <String, SyncFileInfo>{};
+    
+    // Criar mapas por caminho relativo
+    for (final file in localFiles) {
+      localMap[file.relativePath] = file;
+    }
+    
+    for (final file in cloudFiles) {
+      cloudMap[file.relativePath] = file;
+    }
+    
+    // Obter todos os caminhos únicos
+    final allPaths = <String>{...localMap.keys, ...cloudMap.keys};
+    
+    for (final relativePath in allPaths) {
+      final localFile = localMap[relativePath];
+      final cloudFile = cloudMap[relativePath];
+      
+      if (localFile != null && cloudFile != null) {
+        // Arquivo existe em ambos os locais
+        if (localFile.hash == cloudFile.hash) {
+          // Arquivos idênticos
+          items.add(SyncItem(
+            localFile: localFile,
+            cloudFile: cloudFile,
+            action: SyncAction.skip,
+            reason: 'Arquivos idênticos',
+          ));
+        } else if (localFile.lastModified.isAfter(cloudFile.lastModified)) {
+          // Local mais recente
+          items.add(SyncItem(
+            localFile: localFile,
+            cloudFile: cloudFile,
+            action: SyncAction.upload,
+            reason: 'Local mais recente',
+          ));
+        } else if (cloudFile.lastModified.isAfter(localFile.lastModified)) {
+          // Cloud mais recente
+          items.add(SyncItem(
+            localFile: localFile,
+            cloudFile: cloudFile,
+            action: SyncAction.download,
+            reason: 'Cloud mais recente',
+          ));
+        } else {
+          // Conflito - mesma data mas hashes diferentes
+          items.add(SyncItem(
+            localFile: localFile,
+            cloudFile: cloudFile,
+            action: SyncAction.conflict,
+            reason: 'Conflito - arquivos diferentes com mesma data',
+          ));
+        }
+      } else if (localFile != null) {
+        // Arquivo existe apenas localmente
+        items.add(SyncItem(
+          localFile: localFile,
+          action: SyncAction.upload,
+          reason: 'Arquivo novo local',
+        ));
+      } else if (cloudFile != null) {
+        // Arquivo existe apenas na cloud
+        items.add(SyncItem(
+          cloudFile: cloudFile,
+          action: SyncAction.download,
+          reason: 'Arquivo novo na cloud',
+        ));
+      }
+    }
+    
+    return items;
+  }
+
+  /// Executar sincronização
+  Future<SyncResult> performSync({
+    CloudStorageService? cloudService,
+    bool resolveConflicts = false,
+  }) async {
+    if (!shouldSync) {
+      return SyncResult.error('Sincronização não disponível nesta plataforma', Duration.zero);
+    }
+    
+    if (_isSyncing) {
+      return SyncResult.error('Sincronização já em andamento', Duration.zero);
+    }
+    
+    final startTime = DateTime.now();
+    _isSyncing = true;
+    
+    try {
+      // Obter serviço de cloud storage
+      cloudService ??= await _getCloudStorageService();
+      if (cloudService == null) {
+        return SyncResult.error('Serviço de cloud storage não disponível', Duration.zero);
+      }
+      
+      // Verificar se pasta data existe na cloud
+      await _ensureCloudDataFolder(cloudService);
+      
+      // Escanear arquivos
+      final localFiles = await _scanLocalFiles();
+      final cloudFiles = await _scanCloudFiles(cloudService);
+      
+      // Comparar e determinar ações
+      final syncItems = _compareFiles(localFiles, cloudFiles);
+      
+      // Executar sincronização
+      int uploadedFiles = 0;
+      int downloadedFiles = 0;
+      int conflicts = 0;
+      int skippedFiles = 0;
+      
+      for (final item in syncItems) {
+        try {
+          switch (item.action) {
+            case SyncAction.upload:
+              if (item.localFile != null) {
+                await _uploadFile(cloudService, item.localFile!);
+                uploadedFiles++;
+              }
+              break;
+              
+            case SyncAction.download:
+              if (item.cloudFile != null) {
+                await _downloadFile(cloudService, item.cloudFile!);
+                downloadedFiles++;
+              }
+              break;
+              
+            case SyncAction.conflict:
+              if (resolveConflicts && item.localFile != null) {
+                // Resolver conflito favorecendo versão local
+                await _uploadFile(cloudService, item.localFile!);
+                uploadedFiles++;
+              } else {
+                conflicts++;
+              }
+              break;
+              
+            case SyncAction.skip:
+              skippedFiles++;
+              break;
+          }
+        } catch (e) {
+          // Erro ao sincronizar arquivo individual
+        }
+      }
+      
+      final duration = DateTime.now().difference(startTime);
+      
+      return SyncResult.success(
+        uploadedFiles: uploadedFiles,
+        downloadedFiles: downloadedFiles,
+        conflicts: conflicts,
+        skippedFiles: skippedFiles,
+        duration: duration,
+      );
+      
+    } catch (e) {
+      final duration = DateTime.now().difference(startTime);
+      return SyncResult.error(e.toString(), duration);
+    } finally {
+      _isSyncing = false;
     }
   }
 
-  /// Sincronizar todos os arquivos
-  Future<SyncResult> syncAll() async {
-    if (!_isInitialized) await initialize();
-    if (_isSyncing)
-      return SyncResult(
-          success: false, message: 'Sincronização já em andamento');
-    if (_cloudService == null)
-      return SyncResult(
-          success: false, message: 'Serviço de nuvem não configurado');
+  /// Obter serviço de cloud storage ativo
+  Future<CloudStorageService?> _getCloudStorageService() async {
+    // Implementar lógica para obter serviço ativo
+    // Por enquanto, retornar null
+    return null;
+  }
 
-    _isSyncing = true;
-    final stopwatch = Stopwatch()..start();
+  /// Garantir que pasta data existe na cloud
+  Future<void> _ensureCloudDataFolder(CloudStorageService cloudService) async {
+    final dataFolderPath = '/Bloquinho/data';
+    
+    if (!await cloudService.fileExists(dataFolderPath)) {
+      await cloudService.createFolder(dataFolderPath);
+    }
+  }
 
+  /// Fazer upload de arquivo
+  Future<void> _uploadFile(CloudStorageService cloudService, SyncFileInfo fileInfo) async {
+    final remotePath = '/Bloquinho/data/${fileInfo.relativePath}';
+    
+    await cloudService.uploadFile(
+      localPath: fileInfo.fullPath,
+      remotePath: remotePath,
+      overwrite: true,
+    );
+  }
+
+  /// Fazer download de arquivo
+  Future<void> _downloadFile(CloudStorageService cloudService, SyncFileInfo fileInfo) async {
+    final localDir = await _getLocalDataDirectory();
+    final localPath = path.join(localDir.path, fileInfo.relativePath);
+    
+    // Criar diretório pai se necessário
+    final parentDir = Directory(path.dirname(localPath));
+    if (!await parentDir.exists()) {
+      await parentDir.create(recursive: true);
+    }
+    
+    await cloudService.downloadFile(
+      remotePath: fileInfo.fullPath,
+      localPath: localPath,
+      overwrite: true,
+    );
+  }
+
+  /// Verificar se há arquivos para sincronizar
+  Future<bool> hasChangesToSync() async {
+    if (!shouldSync) return false;
+    
     try {
-      _syncStatusController.add(SyncStatus.syncing);
+      final cloudService = await _getCloudStorageService();
+      if (cloudService == null) return false;
+      
+      final localFiles = await _scanLocalFiles();
+      final cloudFiles = await _scanCloudFiles(cloudService);
+      final syncItems = _compareFiles(localFiles, cloudFiles);
+      
+      return syncItems.any((item) => item.action != SyncAction.skip);
+    } catch (e) {
+      return false;
+    }
+  }
 
-      // Obter todas as mudanças não sincronizadas
-      final pendingChanges = await _getPendingChanges();
+  /// Obter estatísticas de sincronização
+  Future<Map<String, int>> getSyncStats() async {
+    if (!shouldSync) {
+      return {
+        'localFiles': 0,
+        'cloudFiles': 0,
+        'toUpload': 0,
+        'toDownload': 0,
+        'conflicts': 0,
+      };
+    }
+    
+    try {
+      final cloudService = await _getCloudStorageService();
+      if (cloudService == null) {
+        return {
+          'localFiles': 0,
+          'cloudFiles': 0,
+          'toUpload': 0,
+          'toDownload': 0,
+          'conflicts': 0,
+        };
+      }
+      
+      final localFiles = await _scanLocalFiles();
+      final cloudFiles = await _scanCloudFiles(cloudService);
+      final syncItems = _compareFiles(localFiles, cloudFiles);
+      
+      return {
+        'localFiles': localFiles.length,
+        'cloudFiles': cloudFiles.length,
+        'toUpload': syncItems.where((item) => item.action == SyncAction.upload).length,
+        'toDownload': syncItems.where((item) => item.action == SyncAction.download).length,
+        'conflicts': syncItems.where((item) => item.action == SyncAction.conflict).length,
+      };
+    } catch (e) {
+      return {
+        'localFiles': 0,
+        'cloudFiles': 0,
+        'toUpload': 0,
+        'toDownload': 0,
+        'conflicts': 0,
+      };
+    }
+  }
+}
 
       int filesUploaded = 0;
       int filesDownloaded = 0;
