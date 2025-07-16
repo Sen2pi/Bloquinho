@@ -40,6 +40,10 @@ import 'features/settings/screens/ai_settings_screen.dart';
 import 'features/settings/screens/code_theme_settings_screen.dart';
 import 'features/settings/screens/app_theme_settings_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
+import 'features/database/screens/database_list_screen.dart';
+import 'features/database/screens/table_editor_screen.dart';
+import 'core/models/database_models.dart';
+import 'shared/providers/database_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -158,6 +162,43 @@ class BloquinhoApp extends ConsumerWidget {
           builder: (context, state) => const WorkspaceScreen(),
         ),
 
+        // Workspace Routes - Rotas específicas para workspaces
+        GoRoute(
+          path: '/workspace/bloquinho',
+          name: 'workspace_bloquinho',
+          builder: (context, state) => const BloquinhoDashboardScreen(),
+        ),
+
+        GoRoute(
+          path: '/workspace/passwords',
+          name: 'workspace_passwords',
+          builder: (context, state) => const PasswordManagerScreen(),
+        ),
+
+        GoRoute(
+          path: '/workspace/agenda',
+          name: 'workspace_agenda',
+          builder: (context, state) => const AgendaScreen(),
+        ),
+
+        GoRoute(
+          path: '/workspace/database',
+          name: 'workspace_database',
+          builder: (context, state) => const DatabaseListScreen(),
+        ),
+
+        GoRoute(
+          path: '/workspace/documents',
+          name: 'workspace_documents',
+          builder: (context, state) => const DocumentosScreen(),
+        ),
+
+        GoRoute(
+          path: '/workspace/profile/storage',
+          name: 'workspace_profile_storage',
+          builder: (context, state) => const StorageSettingsScreen(),
+        ),
+
         // Backup
         GoRoute(
           path: '/backup',
@@ -221,6 +262,42 @@ class BloquinhoApp extends ConsumerWidget {
           builder: (context, state) {
             final pageId = state.pathParameters['pageId'] ?? '';
             return BlocoEditorScreen(documentId: pageId);
+          },
+        ),
+
+        // Workspace Bloco Editor
+        GoRoute(
+          path: '/workspace/bloquinho/editor/:pageId',
+          name: 'workspace_bloco_editor',
+          builder: (context, state) {
+            final pageId = state.pathParameters['pageId'] ?? '';
+            return BlocoEditorScreen(documentId: pageId);
+          },
+        ),
+
+        // Table Editor
+        GoRoute(
+          path: '/database/table/:tableId',
+          name: 'table_editor',
+          pageBuilder: (context, state) {
+            final tableId = state.pathParameters['tableId'] ?? '';
+            return MaterialPage(
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final tables = ref.watch(tablesProvider);
+                  final filtered = tables.where((t) => t.id == tableId);
+                  final table = filtered.isEmpty ? null : filtered.first;
+                  if (table == null) {
+                    return Scaffold(
+                      appBar:
+                          AppBar(title: const Text('Tabela não encontrada')),
+                      body: const Center(child: Text('Tabela não encontrada')),
+                    );
+                  }
+                  return TableEditorScreen(table: table);
+                },
+              ),
+            );
           },
         ),
 

@@ -4,7 +4,7 @@
 
 Este documento exemplifica **todas as principais funcionalidades** do Markdown, incluindo <span style="color:red; background-color:#ffeeee; padding:2px 5px; border-radius:3px">**cores personalizadas**</span> e formatação avançada
 
-### Exemplos de Texto <bg color="bg-red">Colorido</bg>
+### Exemplos de Texto <span style="background-color:#0000FF; color:#FFFFFF">Colorido</span>
 
 Aqui temos diferentes estilos de texto:
 
@@ -149,23 +149,100 @@ $
 $
 
 Matriz:
+# Guia de Matrizes LaTeX no Bloquinho
+
+Este documento mostra como escrever matrizes LaTeX que renderizam corretamente no Bloquinho.
+
+## Formato Básico
+
+Para criar matrizes, use o formato LaTeX com `$` simples (recomendado):
+
+$\begin{pmatrix} a & b \\ c & d \end{pmatrix}$
+
+Ou formato multi-linha:
 
 $
 \begin{pmatrix}
 a & b \\
 c & d
 \end{pmatrix}
-\begin{pmatrix}
-x \\
-y
-\end{pmatrix}
-=
-\begin{pmatrix}
-ax + by \\
-cx + dy
-\end{pmatrix}
 $
 
+## Tipos de Matrizes
+
+### 1. Matriz com Parênteses - `pmatrix`
+$\begin{pmatrix} 1 & 2 \\ 3 & 4 \end{pmatrix}$
+
+### 2. Matriz com Colchetes - `bmatrix`
+$\begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix}$
+
+### 3. Matriz com Chaves - `Bmatrix`
+$\begin{Bmatrix} 1 & 2 \\ 3 & 4 \end{Bmatrix}$
+
+### 4. Determinante - `vmatrix`
+$\begin{vmatrix} a & b \\ c & d \end{vmatrix} = ad - bc$
+
+### 5. Determinante Duplo - `Vmatrix`
+
+$\begin{Vmatrix} a & b \\ c & d \end{Vmatrix}$
+
+## Tamanhos de Matrizes
+
+### Matriz 2x2
+$\begin{pmatrix} a & b \\ c & d \end{pmatrix}$
+
+### Matriz 3x3
+$\begin{pmatrix} a & b & c \\ d & e & f \\ g & h & i \end{pmatrix}$
+
+### Matriz 4x4
+$\begin{pmatrix} 1 & 2 & 3 & 4 \\ 5 & 6 & 7 & 8 \\ 9 & 10 & 11 & 12 \\ 13 & 14 & 15 & 16 \end{pmatrix}$
+
+## Vetores
+
+### Vetor Coluna
+$\vec{v} = \begin{pmatrix} x \\ y \\ z \end{pmatrix}$
+
+### Vetor Linha
+$\vec{v} = \begin{pmatrix} x & y & z \end{pmatrix}$
+
+## Operações com Matrizes
+
+### Multiplicação de Matrizes
+$\begin{pmatrix} a & b \\ c & d \end{pmatrix} \begin{pmatrix} x \\ y \end{pmatrix} = \begin{pmatrix} ax + by \\ cx + dy \end{pmatrix}$
+
+### Sistema de Equações
+$\begin{cases} ax + by = c \\ dx + ey = f \end{cases}$
+
+## Matrizes Especiais
+
+### Matriz Identidade
+$I = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{pmatrix}$
+
+### Matriz Zero
+$O = \begin{pmatrix} 0 & 0 \\ 0 & 0 \end{pmatrix}$
+
+### Matriz Transposta
+$A^T = \begin{pmatrix} a & c \\ b & d \end{pmatrix}$
+
+## Dicas Importantes
+
+1. **Use formato `$...$`** (funciona melhor)
+2. **Separe elementos** com `&` 
+3. **Quebra de linha** com `\\`
+4. **Ambos os formatos funcionam**: linha única ou multi-linha
+5. **Teste a renderização** para verificar se está correta
+
+## Exemplos Avançados
+
+### Matriz com Frações
+$\begin{pmatrix} \frac{1}{2} & \frac{3}{4} \\ \frac{5}{6} & \frac{7}{8} \end{pmatrix}$
+
+### Matriz com Raízes
+$\begin{pmatrix} \sqrt{2} & \sqrt{3} \\ \sqrt{5} & \sqrt{7} \end{pmatrix}$
+```
+
+### Matriz com Potências
+$\begin{pmatrix} x^2 & x^3 \\ x^4 & x^5 \end{pmatrix}$
 Limite:
 
 $

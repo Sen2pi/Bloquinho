@@ -85,15 +85,17 @@ class _WindowsCodeBlockWidgetState
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (widget.showMacOSHeader)
-                _buildMacOSHeader(isDarkMode, languageObj, selectedTheme),
-              Expanded(
-                child: _buildCodeContent(isDarkMode, selectedTheme),
-              ),
-            ],
+          child: IntrinsicHeight(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (widget.showMacOSHeader)
+                  _buildMacOSHeader(isDarkMode, languageObj, selectedTheme),
+                Flexible(
+                  child: _buildCodeContent(isDarkMode, selectedTheme),
+                ),
+              ],
+            ),
           ),
         ),
       ),

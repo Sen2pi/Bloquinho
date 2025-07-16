@@ -9,12 +9,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:bloquinho/core/models/database_models.dart';
-import 'package:bloquinho/shared/providers/database_provider.dart';
-import 'package:bloquinho/features/database/screens/database_list_screen.dart';
-import 'package:bloquinho/features/database/screens/table_editor_screen.dart';
-import 'package:bloquinho/features/database/widgets/create_table_dialog.dart';
-import 'package:bloquinho/core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/models/database_models.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../shared/providers/database_provider.dart';
+import '../screens/table_editor_screen.dart';
+import '../screens/database_list_screen.dart';
+import 'create_table_dialog.dart';
 
 /// Widget especializado para a seção de database no workspace
 class DatabaseSectionWidget extends ConsumerStatefulWidget {
@@ -81,19 +83,11 @@ class _DatabaseSectionWidgetState extends ConsumerState<DatabaseSectionWidget> {
   }
 
   void _openTable(DatabaseTable table) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => TableEditorScreen(table: table),
-      ),
-    );
+    context.go('/database/table/${table.id}');
   }
 
   void _openDatabaseList() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const DatabaseListScreen(),
-      ),
-    );
+    context.go('/workspace/database');
   }
 
   @override
