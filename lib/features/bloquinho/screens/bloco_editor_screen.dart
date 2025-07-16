@@ -41,6 +41,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
 import 'package:flutter/rendering.dart';
 import '../../../core/services/bloquinho_storage_service.dart';
+import '../../../core/models/app_language.dart';
 
 class BlocoEditorScreen extends ConsumerStatefulWidget {
   final String? documentId;
@@ -166,28 +167,46 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   Future<void> _initializeEditor() async {
     final strings = ref.read(appStringsProvider);
     try {
+      // Verificar se temos o contexto necessário
+      final currentProfile = ref.read(currentProfileProvider);
+      final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+      if (currentProfile == null || currentWorkspace == null) {
+        debugPrint('❌ BlocoEditorScreen: Profile ou Workspace não disponível');
+        debugPrint('❌ Profile: ${currentProfile?.name ?? "null"}');
+        debugPrint('❌ Workspace: ${currentWorkspace?.name ?? "null"}');
+        return;
+      }
+
+      debugPrint('✅ BlocoEditorScreen: Inicializando editor...');
+      debugPrint('✅ Profile: ${currentProfile.name}');
+      debugPrint('✅ Workspace: ${currentWorkspace.name}');
+
       // Se não tem documentId, criar página raiz
       if (widget.documentId == null) {
-        final currentProfile = ref.read(currentProfileProvider);
-        final currentWorkspace = ref.read(currentWorkspaceProvider);
-
-        if (currentProfile != null && currentWorkspace != null) {
-          final pagesNotifier = ref.read(pagesNotifierProvider((
-            profileName: currentProfile.name,
-            workspaceName: currentWorkspace.name
-          )));
-          final newPage = PageModel.create(
-            title: widget.documentTitle ?? strings.newPage,
-          );
-          pagesNotifier.state = [...pagesNotifier.state, newPage];
-          _currentPageId = newPage.id;
-          _navigationStack = [newPage.id];
-        }
+        debugPrint('📄 Criando nova página raiz...');
+        
+        final pagesNotifier = ref.read(pagesNotifierProvider((
+          profileName: currentProfile.name,
+          workspaceName: currentWorkspace.name
+        )));
+        
+        final newPage = PageModel.create(
+          title: widget.documentTitle ?? strings.newPage,
+        );
+        
+        pagesNotifier.state = [...pagesNotifier.state, newPage];
+        _currentPageId = newPage.id;
+        _navigationStack = [newPage.id];
+        
+        debugPrint('✅ Nova página criada: ${newPage.id}');
       } else {
+        debugPrint('📄 Usando página existente: ${widget.documentId}');
         _currentPageId = widget.documentId!;
         _navigationStack = [widget.documentId!];
       }
 
+      // Inicializar o editor controller
       await ref.read(editorControllerProvider.notifier).initialize(
             documentId: _currentPageId,
             documentTitle: widget.documentTitle ?? strings.newPage,
@@ -198,7 +217,10 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
             },
             strings: strings,
           );
+          
+      debugPrint('✅ Editor inicializado com sucesso');
     } catch (e) {
+      debugPrint('❌ Erro ao inicializar editor: $e');
       _showErrorSnackBar('${strings.errorInitializingEditor}: ${e.toString()}');
     }
   }
@@ -251,11 +273,58 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     final currentProfile = ref.watch(currentProfileProvider);
     final strings = ref.watch(appStringsProvider);
 
-    if (currentProfile != null && currentWorkspace != null) {
+    // Verificação de segurança para evitar tela preta
+    if (currentProfile == null || currentWorkspace == null) {
+      return Theme(
+        data: isDarkMode ? ThemeData.dark() : ThemeData.light(),
+        child: Scaffold(
+          backgroundColor:
+              isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+          appBar: AppBar(
+            title: Text(strings.errorNoContext),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  PhosphorIcons.warning(),
+                  size: 64,
+                  color: Colors.orange,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  strings.errorProfileOrWorkspaceNotAvailable,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Profile: ${currentProfile?.name ?? "null"}',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                Text(
+                  'Workspace: ${currentWorkspace?.name ?? "null"}',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Verificação adicional para garantir que temos uma página válida
+    try {
       final pages = ref.watch(pagesProvider((
         profileName: currentProfile.name,
         workspaceName: currentWorkspace.name
       )));
+      
       final currentPage = pages.firstWhere(
         (p) => p.id == _currentPageId,
         orElse: () => PageModel.create(title: strings.pageNotFound),
@@ -276,18 +345,57 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
               _buildBottomBar(isDarkMode, editorState, strings),
         ),
       );
+    } catch (e) {
+      // Fallback em caso de erro
+      return Theme(
+        data: isDarkMode ? ThemeData.dark() : ThemeData.light(),
+        child: Scaffold(
+          backgroundColor:
+              isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+          appBar: AppBar(
+            title: Text(strings.errorNoContext),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  PhosphorIcons.warning(),
+                  size: 64,
+                  color: Colors.red,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Erro ao carregar página',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Erro: ${e.toString()}',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _currentPageId = '';
+                      _navigationStack = [];
+                    });
+                    _initializeEditor();
+                  },
+                  child: Text('Tentar novamente'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
-
-    // Fallback quando não há contexto
-    return Theme(
-      data: isDarkMode ? ThemeData.dark() : ThemeData.light(),
-      child: Scaffold(
-        backgroundColor:
-            isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
-        appBar: AppBar(title: Text(strings.errorNoContext)),
-        body: Center(child: Text(strings.errorProfileOrWorkspaceNotAvailable)),
-      ),
-    );
   }
 
   PreferredSizeWidget _buildAppBar(

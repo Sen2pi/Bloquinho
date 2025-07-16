@@ -413,7 +413,8 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
         break;
       case 'backgroundColor':
         if (backgroundColor != null) {
-          formattedText = '<span style="background-color:$backgroundColor">$selectedText</span>';
+          formattedText =
+              '<span style="background-color:$backgroundColor">$selectedText</span>';
         }
         break;
       case 'alignment':
@@ -508,6 +509,30 @@ $matrixTemplate
       )));
       pagesNotifier.updatePageContent(pageId, content);
     }
+  }
+
+  String _sanitizeContent(String content) {
+    final buffer = StringBuffer();
+    bool foundInvalid = false;
+
+    for (final line in content.split('\n')) {
+      try {
+        // Tenta acessar runes para forçar validação UTF-16
+        line.runes.toList();
+        buffer.writeln(line);
+      } catch (e) {
+        foundInvalid = true;
+        // Substituir linha inválida por placeholder
+        buffer.writeln('⚠️ [Conteúdo inválido removido]');
+      }
+    }
+
+    if (foundInvalid) {
+      debugPrint(
+          '⚠️ PageContentWidget: Conteúdo inválido UTF-16 detectado e removido');
+    }
+
+    return buffer.toString();
   }
 
   @override

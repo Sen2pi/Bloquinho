@@ -22,6 +22,7 @@ import '../models/page_model.dart';
 import '../widgets/page_tree_widget.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
+import '../../../core/models/app_language.dart';
 
 class BloquinhoDashboardScreen extends ConsumerStatefulWidget {
   const BloquinhoDashboardScreen({super.key});
@@ -596,22 +597,30 @@ class _BloquinhoDashboardScreenState
       context: context,
       builder: (context) => _ParentPageSelectorDialog(
         pages: pages,
-        onParentSelected: (parentId) {
-          // Criar subpágina e navegar para ela
+        onParentSelected: (parentId) async {
+          // Criar subpágina com template baseado no idioma
           final pagesNotifier = ref.read(pagesNotifierProvider((
             profileName: currentProfile.name,
             workspaceName: currentWorkspace.name
           )));
 
-          final newPage = PageModel.create(
-            title: strings.newSubpage,
-            parentId: parentId,
-          );
+          try {
+            // Criar página simples sem template
+            final newPage = PageModel.create(
+              title: strings.newSubpage,
+              parentId: parentId,
+            );
 
-          pagesNotifier.state = [...pagesNotifier.state, newPage];
+            pagesNotifier.state = [...pagesNotifier.state, newPage];
 
-          // Navegar para a nova subpágina
-          context.push('/workspace/bloquinho/editor/${newPage.id}');
+            // Navegar para a nova subpágina
+            context.push('/workspace/bloquinho/editor/${newPage.id}');
+          } catch (e) {
+            // Em caso de erro, mostrar mensagem
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erro ao criar página: $e')),
+            );
+          }
 
           Navigator.of(context).pop();
         },

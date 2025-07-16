@@ -195,6 +195,15 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
         ),
         const SizedBox(width: 4),
 
+        // Cor combinada (texto + fundo)
+        _buildFormatButton(
+          icon: Icons.palette,
+          tooltip: 'Cor combinada (texto + fundo)',
+          onTap: () => _showCombinedColorPicker(context),
+          isDarkMode: isDarkMode,
+        ),
+        const SizedBox(width: 4),
+
         // Alinhamento
         _buildFormatButton(
           icon: Icons.format_align_left,
@@ -328,6 +337,171 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
                 ),
               );
             },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCombinedColorPicker(BuildContext context) {
+    // Combinações otimizadas: cores escuras com fundos claros e vice-versa
+    final colorCombinations = [
+      // Escuro sobre claro
+      {'text': '#000000', 'bg': '#FFFFFF', 'name': 'Preto / Branco', 'example': 'Aa'},
+      {'text': '#1a1a1a', 'bg': '#f8f9fa', 'name': 'Carvão / Cinza Claro', 'example': 'Aa'},
+      {'text': '#2c3e50', 'bg': '#ecf0f1', 'name': 'Azul Escuro / Cinza Pérola', 'example': 'Aa'},
+      {'text': '#8b0000', 'bg': '#ffe6e6', 'name': 'Vermelho Escuro / Rosa Claro', 'example': 'Aa'},
+      {'text': '#4a5568', 'bg': '#f7fafc', 'name': 'Ardósia / Azul Muito Claro', 'example': 'Aa'},
+      {'text': '#2d3748', 'bg': '#edf2f7', 'name': 'Cinza Escuro / Cinza Gelo', 'example': 'Aa'},
+      {'text': '#744210', 'bg': '#fffaf0', 'name': 'Marrom Escuro / Bege Claro', 'example': 'Aa'},
+      {'text': '#0d5415', 'bg': '#f0fff4', 'name': 'Verde Escuro / Verde Muito Claro', 'example': 'Aa'},
+      
+      // Claro sobre escuro
+      {'text': '#FFFFFF', 'bg': '#000000', 'name': 'Branco / Preto', 'example': 'Aa'},
+      {'text': '#f8f9fa', 'bg': '#2c3e50', 'name': 'Cinza Claro / Azul Escuro', 'example': 'Aa'},
+      {'text': '#ffffff', 'bg': '#1a365d', 'name': 'Branco / Azul Marinho', 'example': 'Aa'},
+      {'text': '#f7fafc', 'bg': '#2d3748', 'name': 'Azul Muito Claro / Cinza Escuro', 'example': 'Aa'},
+      {'text': '#fff5f5', 'bg': '#742a2a', 'name': 'Rosa Claro / Vermelho Escuro', 'example': 'Aa'},
+      {'text': '#f0fff4', 'bg': '#22543d', 'name': 'Verde Muito Claro / Verde Escuro', 'example': 'Aa'},
+      {'text': '#fffaf0', 'bg': '#744210', 'name': 'Bege Claro / Marrom Escuro', 'example': 'Aa'},
+      {'text': '#faf5ff', 'bg': '#553c9a', 'name': 'Roxo Claro / Roxo Escuro', 'example': 'Aa'},
+      
+      // Combinações vibrantes
+      {'text': '#ffffff', 'bg': '#e53e3e', 'name': 'Branco / Vermelho', 'example': '⚠️'},
+      {'text': '#ffffff', 'bg': '#38a169', 'name': 'Branco / Verde', 'example': '✅'},
+      {'text': '#ffffff', 'bg': '#3182ce', 'name': 'Branco / Azul', 'example': 'ℹ️'},
+      {'text': '#ffffff', 'bg': '#d69e2e', 'name': 'Branco / Amarelo Escuro', 'example': '⚡'},
+      {'text': '#ffffff', 'bg': '#805ad5', 'name': 'Branco / Roxo', 'example': '🔮'},
+      {'text': '#ffffff', 'bg': '#dd6b20', 'name': 'Branco / Laranja', 'example': '🔥'},
+      
+      // Pastéis profissionais
+      {'text': '#2d3748', 'bg': '#bee3f8', 'name': 'Escuro / Azul Pastel', 'example': 'Info'},
+      {'text': '#2d3748', 'bg': '#c6f6d5', 'name': 'Escuro / Verde Pastel', 'example': 'OK'},
+      {'text': '#2d3748', 'bg': '#fed7d7', 'name': 'Escuro / Rosa Pastel', 'example': 'Alert'},
+      {'text': '#2d3748', 'bg': '#fef5e7', 'name': 'Escuro / Amarelo Pastel', 'example': 'Note'},
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('🎨 Combinações de Cores'),
+        content: SizedBox(
+          width: 400,
+          height: 500,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Escolha uma combinação otimizada de texto + fundo:',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 2.2,
+                  ),
+                  itemCount: colorCombinations.length,
+                  itemBuilder: (context, index) {
+                    final combo = colorCombinations[index];
+                    final textColor = _getColorFromName(combo['text']!);
+                    final bgColor = _getColorFromName(combo['bg']!);
+                    
+                    return InkWell(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        widget.onFormatApplied(
+                          'combinedColor',
+                          color: combo['text'],
+                          backgroundColor: combo['bg'],
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Exemplo visual grande
+                              Text(
+                                combo['example']!,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.0,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              // Nome da combinação
+                              Text(
+                                combo['name']!,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Informação adicional
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Combinações otimizadas para máximo contraste e legibilidade',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
         actions: [

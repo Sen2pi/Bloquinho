@@ -25,7 +25,7 @@ import 'windows_code_block_widget.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'latex_widget.dart';
-import '../../../core/services/pdf_export_service.dart';
+import '../../../core/services/enhanced_pdf_export_service.dart';
 import 'mermaid_diagram_widget.dart'; // Adicionar import para WindowsMermaidDiagramWidget
 
 import 'dart:io';
@@ -130,8 +130,8 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         ),
       );
 
-      // Exportar PDF com formatação completa
-      final pdfService = PdfExportService();
+      // Exportar PDF com formatação completa (sincronizada com preview)
+      final pdfService = EnhancedPdfExportService();
       final timestamp = DateTime.now().toString().split('.')[0].replaceAll(':', '-');
       final title = 'Bloquinho_Document_$timestamp';
       
@@ -317,11 +317,30 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     return null;
   }
 
+  String _sanitizeMarkdown(String input) {
+    final buffer = StringBuffer();
+    bool foundInvalid = false;
+    for (final line in input.split('\n')) {
+      try {
+        // Tenta acessar runes para forçar validação UTF-16
+        line.runes.toList();
+        buffer.writeln(line);
+      } catch (e) {
+        foundInvalid = true;
+      }
+    }
+    if (foundInvalid) {
+      buffer.writeln('\n⚠️ Atenção: Algumas linhas com caracteres inválidos foram removidas do preview.');
+    }
+    return buffer.toString();
+  }
+
   Widget _buildEnhancedMarkdown(
       BuildContext context, TextStyle baseStyle, WidgetRef ref) {
+    final safeMarkdown = _sanitizeMarkdown(markdown);
     if (!enableHtmlEnhancements) {
       return MarkdownBody(
-        data: markdown,
+        data: safeMarkdown,
         styleSheet: _createBasicStyleSheet(context, baseStyle),
         builders: {
           'code': AdvancedCodeBlockBuilder(),
@@ -353,13 +372,13 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     }
 
     // Cache do markdown processado
-    final hash = markdown.hashCode ^ enableHtmlEnhancements.hashCode;
+    final hash = safeMarkdown.hashCode ^ enableHtmlEnhancements.hashCode;
     String processedContent;
     if (_markdownCache.containsKey(hash)) {
       processedContent = _markdownCache[hash]!;
     } else {
       processedContent =
-          HtmlEnhancementParser.processWithEnhancements(markdown);
+          HtmlEnhancementParser.processWithEnhancements(safeMarkdown);
       _markdownCache[hash] = processedContent;
     }
 

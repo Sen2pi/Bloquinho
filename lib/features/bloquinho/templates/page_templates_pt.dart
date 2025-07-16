@@ -244,7 +244,7 @@ Este documento demonstra a versatilidade e poder do Markdown quando combinado co
 Este exemplo inclui todas as principais funcionalidades do Markdown moderno, servindo como referência completa para criação de documentos profissionais.
 </span>
 
-*Documento criado em ${DateTime.now().day} de ${_getMonthName(DateTime.now().month)} de ${DateTime.now().year} - Guimarães, Portugal* 🇵🇹
+*Documento criado - Guimarães, Portugal* 🇵🇹
 ''';
 
   static const String newPageTemplate = '''# Nova Página
@@ -279,11 +279,4 @@ void main() {
 > **Dica:** Use o menu de formatação para adicionar mais elementos à sua página.
 ''';
 
-  static String _getMonthName(int month) {
-    const months = [
-      '', 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-    ];
-    return months[month];
-  }
 }

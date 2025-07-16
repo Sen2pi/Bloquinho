@@ -15,6 +15,8 @@ import '../../../core/services/bloquinho_storage_service.dart';
 import '../../../core/constants/page_icons.dart';
 import '../../../shared/providers/user_profile_provider.dart';
 import '../../../shared/providers/workspace_provider.dart';
+import '../../../core/models/app_language.dart';
+import '../services/page_template_service.dart';
 
 class PagesNotifier extends StateNotifier<List<PageModel>> {
   final BloquinhoStorageService _storageService = BloquinhoStorageService();
@@ -148,6 +150,7 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
     String? icon,
     String? parentId,
     String content = '',
+    AppLanguage? language,
   }) async {
     try {
       await initialize();
@@ -163,11 +166,17 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
         parentId = null; // Corrigir para null se for auto-referência
       }
 
+      // Usar template apropriado se o conteúdo não foi fornecido
+      String finalContent = content;
+      if (content.isEmpty && language != null) {
+        finalContent = PageTemplateService.getAppropriateTemplate(title, language);
+      }
+
       final page = PageModel.create(
         title: title,
         icon: icon,
         parentId: parentId,
-        content: content,
+        content: finalContent,
       );
 
       // Adicionar ao estado
@@ -183,6 +192,22 @@ class PagesNotifier extends StateNotifier<List<PageModel>> {
     } catch (e) {
       throw Exception('Erro ao criar página: $e');
     }
+  }
+
+  /// Criar nova página com template baseado no idioma
+  Future<void> createPageWithTemplate({
+    required String title,
+    String? icon,
+    String? parentId,
+    required AppLanguage language,
+  }) async {
+    await createPage(
+      title: title,
+      icon: icon,
+      parentId: parentId,
+      content: '', // Será preenchido pelo template
+      language: language,
+    );
   }
 
   /// Atualizar página e salvar no armazenamento
