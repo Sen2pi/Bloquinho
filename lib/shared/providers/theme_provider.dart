@@ -82,6 +82,38 @@ class ThemeNotifier extends StateNotifier<AppThemeConfig> {
     }
   }
 
+  /// Definir tema para modo claro
+  Future<void> setLightThemeType(AppThemeType themeType) async {
+    try {
+      final newConfig = state.copyWith(lightThemeType: themeType);
+      state = newConfig;
+
+      // Garantir que o box está aberto antes de salvar
+      await _ensureBoxIsOpen();
+
+      // Salvar configuração
+      await _box!.put(_themeConfigKey, newConfig.toJson());
+    } catch (e) {
+      // Em caso de erro, não alterar o estado
+    }
+  }
+
+  /// Definir tema para modo escuro
+  Future<void> setDarkThemeType(AppThemeType themeType) async {
+    try {
+      final newConfig = state.copyWith(darkThemeType: themeType);
+      state = newConfig;
+
+      // Garantir que o box está aberto antes de salvar
+      await _ensureBoxIsOpen();
+
+      // Salvar configuração
+      await _box!.put(_themeConfigKey, newConfig.toJson());
+    } catch (e) {
+      // Em caso de erro, não alterar o estado
+    }
+  }
+
   /// Definir modo de tema (light/dark/system)
   Future<void> setThemeMode(ThemeMode themeMode) async {
     try {
@@ -174,21 +206,23 @@ final currentThemeProvider = Provider<ThemeData>((ref) {
   final config = ref.watch(themeConfigProvider);
   final isDark = ref.watch(isDarkModeProvider);
 
+  final currentThemeType = config.getCurrentThemeType(isDark);
+  
   if (isDark) {
-    return theme.AppTheme.getDarkTheme(config.themeType);
+    return theme.AppTheme.getDarkTheme(currentThemeType);
   } else {
-    return theme.AppTheme.getLightTheme(config.themeType);
+    return theme.AppTheme.getLightTheme(currentThemeType);
   }
 });
 
 /// Provider para obter tema claro atual
 final lightThemeProvider = Provider<ThemeData>((ref) {
   final config = ref.watch(themeConfigProvider);
-  return theme.AppTheme.getLightTheme(config.themeType);
+  return theme.AppTheme.getLightTheme(config.lightThemeType);
 });
 
 /// Provider para obter tema escuro atual
 final darkThemeProvider = Provider<ThemeData>((ref) {
   final config = ref.watch(themeConfigProvider);
-  return theme.AppTheme.getDarkTheme(config.themeType);
+  return theme.AppTheme.getDarkTheme(config.darkThemeType);
 });

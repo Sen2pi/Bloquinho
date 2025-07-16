@@ -151,12 +151,16 @@ enum AppThemeType {
 /// Configuração de tema da aplicação
 class AppThemeConfig {
   final AppThemeType themeType;
+  final AppThemeType lightThemeType;
+  final AppThemeType darkThemeType;
   final ThemeMode themeMode;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   const AppThemeConfig({
     required this.themeType,
+    required this.lightThemeType,
+    required this.darkThemeType,
     required this.themeMode,
     required this.createdAt,
     required this.updatedAt,
@@ -167,7 +171,9 @@ class AppThemeConfig {
     final now = DateTime.now();
     return AppThemeConfig(
       themeType: AppThemeType.classic,
-      themeMode: ThemeMode.light,
+      lightThemeType: AppThemeType.classic,
+      darkThemeType: AppThemeType.midnight,
+      themeMode: ThemeMode.system,
       createdAt: now,
       updatedAt: now,
     );
@@ -176,21 +182,32 @@ class AppThemeConfig {
   /// Criar cópia com alterações
   AppThemeConfig copyWith({
     AppThemeType? themeType,
+    AppThemeType? lightThemeType,
+    AppThemeType? darkThemeType,
     ThemeMode? themeMode,
     DateTime? updatedAt,
   }) {
     return AppThemeConfig(
       themeType: themeType ?? this.themeType,
+      lightThemeType: lightThemeType ?? this.lightThemeType,
+      darkThemeType: darkThemeType ?? this.darkThemeType,
       themeMode: themeMode ?? this.themeMode,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
   }
 
+  /// Obter o tipo de tema atual baseado no modo
+  AppThemeType getCurrentThemeType(bool isDarkMode) {
+    return isDarkMode ? darkThemeType : lightThemeType;
+  }
+
   /// Converter para JSON
   Map<String, dynamic> toJson() {
     return {
       'themeType': themeType.name,
+      'lightThemeType': lightThemeType.name,
+      'darkThemeType': darkThemeType.name,
       'themeMode': themeMode.name,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -204,9 +221,17 @@ class AppThemeConfig {
         (e) => e.name == json['themeType'],
         orElse: () => AppThemeType.classic,
       ),
+      lightThemeType: AppThemeType.values.firstWhere(
+        (e) => e.name == (json['lightThemeType'] ?? json['themeType']),
+        orElse: () => AppThemeType.classic,
+      ),
+      darkThemeType: AppThemeType.values.firstWhere(
+        (e) => e.name == (json['darkThemeType'] ?? 'midnight'),
+        orElse: () => AppThemeType.midnight,
+      ),
       themeMode: ThemeMode.values.firstWhere(
         (e) => e.name == json['themeMode'],
-        orElse: () => ThemeMode.light,
+        orElse: () => ThemeMode.system,
       ),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),

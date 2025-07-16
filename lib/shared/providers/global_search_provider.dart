@@ -353,8 +353,7 @@ class GlobalSearchNotifier extends StateNotifier<GlobalSearchState> {
       final agendaState = _ref.read(agendaProvider);
       final items = agendaState.items;
 
-      debugPrint(
-          '🔍 GlobalSearch: Pesquisando em ${items.length} itens da agenda');
+
 
       final results = <SearchResult>[];
       final lowerQuery = query.toLowerCase();

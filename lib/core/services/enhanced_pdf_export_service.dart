@@ -44,7 +44,6 @@ class EnhancedPdfExportService {
 
       return filePath;
     } catch (e) {
-      debugPrint('Erro ao exportar widget como imagem: $e');
       return null;
     }
   }
@@ -92,7 +91,6 @@ class EnhancedPdfExportService {
 
       return filePath;
     } catch (e) {
-      debugPrint('Erro ao exportar código: $e');
       return null;
     }
   }
@@ -102,7 +100,7 @@ class EnhancedPdfExportService {
     try {
       await OpenFile.open(filePath);
     } catch (e) {
-      debugPrint('Erro ao abrir arquivo: $e');
+      // Erro ao abrir arquivo
     }
   }
 
