@@ -24,6 +24,7 @@ import '../widgets/agenda_stats_card.dart';
 import '../widgets/agenda_dashboard.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
+import '../widgets/past_events_timeline.dart';
 
 class AgendaScreen extends ConsumerStatefulWidget {
   const AgendaScreen({super.key});
@@ -98,6 +99,11 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
             onPressed: () => _showStatsDialog(context, strings),
             icon: Icon(Icons.analytics),
             tooltip: strings.statistics,
+          ),
+          IconButton(
+            onPressed: () => _showTimelineDialog(context, strings),
+            icon: Icon(Icons.timeline),
+            tooltip: 'Linha do Tempo',
           ),
         ],
       ),
@@ -468,24 +474,65 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
       context: context,
       builder: (context) => Dialog(
         child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+            maxWidth: 400,
+          ),
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                strings.agendaStats,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 16),
-              AgendaStatsCard(stats: stats),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(strings.closeButton),
-              ),
-            ],
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  strings.agendaStats,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                AgendaStatsCard(stats: stats),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(strings.closeButton),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showTimelineDialog(BuildContext context, AppStrings strings) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+            maxWidth: 900,
+          ),
+          padding: const EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Linha do Tempo',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                PastEventsTimeline(),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(strings.closeButton),
+                ),
+              ],
+            ),
           ),
         ),
       ),

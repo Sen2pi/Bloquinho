@@ -270,12 +270,13 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
 
   Future<void> addPassword(PasswordEntry password) async {
     try {
-      state = state.copyWith(isLoading: true, error: null);
+      state = state.copyWith(isCreating: true, error: null);
       final id = await _passwordService.createPassword(password);
       await _loadInitialData();
+      state = state.copyWith(isCreating: false);
     } catch (e) {
       state = state.copyWith(
-        isLoading: false,
+        isCreating: false,
         error: e.toString(),
       );
     }
@@ -283,12 +284,13 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
 
   Future<void> updatePassword(PasswordEntry password) async {
     try {
-      state = state.copyWith(isLoading: true, error: null);
+      state = state.copyWith(isUpdating: true, error: null);
       await _passwordService.updatePassword(password);
       await _loadInitialData();
+      state = state.copyWith(isUpdating: false);
     } catch (e) {
       state = state.copyWith(
-        isLoading: false,
+        isUpdating: false,
         error: e.toString(),
       );
     }
@@ -296,12 +298,13 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
 
   Future<void> deletePassword(String id) async {
     try {
-      state = state.copyWith(isLoading: true, error: null);
+      state = state.copyWith(isDeleting: true, error: null);
       await _passwordService.deletePassword(id);
       await _loadInitialData();
+      state = state.copyWith(isDeleting: false);
     } catch (e) {
       state = state.copyWith(
-        isLoading: false,
+        isDeleting: false,
         error: e.toString(),
       );
     }
@@ -309,12 +312,13 @@ class PasswordNotifier extends StateNotifier<PasswordState> {
 
   Future<void> deleteMultiplePasswords(List<String> ids) async {
     try {
-      state = state.copyWith(isLoading: true, error: null);
+      state = state.copyWith(isDeleting: true, error: null);
       await _passwordService.deleteMultiplePasswords(ids);
       await _loadInitialData();
+      state = state.copyWith(isDeleting: false);
     } catch (e) {
       state = state.copyWith(
-        isLoading: false,
+        isDeleting: false,
         error: e.toString(),
       );
     }

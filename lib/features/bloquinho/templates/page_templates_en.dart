@@ -69,7 +69,6 @@ def calculate_fibonacci(n):
 
 # Usage example
 result = calculate_fibonacci(10)
-print(f"Fibonacci(10): {result}")
 ```
 
 
@@ -266,7 +265,7 @@ Welcome to your new page! Here you can start writing your content.
 
 ```dart
 void main() {
-  print('Hello, world!');
+  // Hello, world!
 }
 ```
 

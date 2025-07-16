@@ -18,6 +18,7 @@ import 'package:bloquinho/core/services/workspace_storage_service.dart';
 import 'package:bloquinho/core/services/data_directory_service.dart';
 
 import '../models/password_entry.dart';
+import 'password_encryption_service.dart';
 
 class PasswordService {
   static const String _boxName = 'passwords';
@@ -34,6 +35,7 @@ class PasswordService {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final Uuid _uuid = const Uuid();
   final WorkspaceStorageService _workspaceStorage = WorkspaceStorageService();
+  final PasswordEncryptionService _encryptionService = PasswordEncryptionService();
 
   bool _isInitialized = false;
   String? _currentWorkspaceId;
@@ -49,6 +51,7 @@ class PasswordService {
 
     try {
       await _workspaceStorage.initialize();
+      await _encryptionService.initialize();
       await _loadBreachDatabase();
       await _loadVaults();
       await _loadSecuritySettings();
@@ -479,7 +482,18 @@ class PasswordService {
     final workspaceData =
         await _workspaceStorage.loadWorkspaceData('passwords');
     if (workspaceData != null) {
-      final passwordsData = workspaceData['passwords'] as List<dynamic>? ?? [];
+      Map<String, dynamic> actualData;
+      
+      // Verificar se os dados estão encriptados
+      if (workspaceData['encrypted'] == true) {
+        final encryptedData = workspaceData['data'] as String;
+        actualData = await _encryptionService.decryptJson(encryptedData);
+      } else {
+        // Dados não encriptados (legacy)
+        actualData = workspaceData;
+      }
+      
+      final passwordsData = actualData['passwords'] as List<dynamic>? ?? [];
       for (final data in passwordsData) {
         try {
           final entry = PasswordEntry.fromJson(Map<String, dynamic>.from(data));
@@ -520,6 +534,7 @@ class PasswordService {
       workspaceId: _currentWorkspaceId, // Definir workspace
       lastPasswordChange: now,
       usageCount: 0,
+      category: entry.category?.isEmpty == true || entry.category == null ? 'Social' : entry.category, // Categoria padrão "Social"
     );
 
     // Salvar no workspace storage
@@ -570,7 +585,7 @@ class PasswordService {
     await _savePasswordsToWorkspace(allPasswords);
   }
 
-  /// Salvar passwords no workspace storage
+  /// Salvar passwords no workspace storage (encriptado)
   Future<void> _savePasswordsToWorkspace(List<PasswordEntry> passwords) async {
     if (_currentWorkspaceId == null) return;
 
@@ -579,7 +594,15 @@ class PasswordService {
       'lastModified': DateTime.now().toIso8601String(),
     };
 
-    await _workspaceStorage.saveWorkspaceData('passwords', data);
+    // Encriptar dados antes de salvar
+    final encryptedData = await _encryptionService.encryptJson(data);
+    final encryptedWrapper = {
+      'encrypted': true,
+      'data': encryptedData,
+      'version': '1.0',
+    };
+
+    await _workspaceStorage.saveWorkspaceData('passwords', encryptedWrapper);
   }
 
   /// Salvar folders no workspace storage

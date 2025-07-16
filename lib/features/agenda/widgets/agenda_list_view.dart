@@ -58,19 +58,22 @@ class AgendaListView extends ConsumerWidget {
       );
     }
 
-    return ListView.builder(
+    return GridView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: items.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 6,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1.2, // Ajuste para o formato desejado
+      ),
       itemBuilder: (context, index) {
         final item = items[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: AgendaItemCard(
-            item: item,
-            onTap: () => _showItemDetails(context, item, strings),
-            onEdit: () => _showEditItemDialog(context, item),
-            onDelete: () => _showDeleteConfirmation(context, item, strings),
-          ),
+        return AgendaItemCard(
+          item: item,
+          onTap: () => _showItemDetails(context, item, strings),
+          onEdit: () => _showEditItemDialog(context, item),
+          onDelete: () => _showDeleteConfirmation(context, item, strings),
         );
       },
     );

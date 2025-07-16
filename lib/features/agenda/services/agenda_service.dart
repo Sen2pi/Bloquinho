@@ -137,6 +137,11 @@ class AgendaService {
       throw Exception('Workspace não definido');
     }
 
+    // Se o item é da base de dados, não precisa salvar na agenda
+    if (item.databaseItemId != null) {
+      return;
+    }
+
     final updatedItem = item.copyWith(
       updatedAt: DateTime.now(),
       workspaceId: _currentWorkspaceId, // Garantir workspace
@@ -330,7 +335,7 @@ class AgendaService {
         final TaskStatus? status = _mapDatabaseStatusToTaskStatus(statusValue);
         items.add(
           AgendaItem(
-            id: '', // será gerado ao criar na agenda
+            id: 'db_${table.name}_${row.id}', // ID único para itens da base de dados
             title:
                 row.getCell(titleColumn.id)?.value?.toString() ?? 'Sem título',
             description: row.getCell(titleColumn.id)?.value?.toString(),

@@ -155,10 +155,26 @@ class AgendaNotifier extends StateNotifier<AgendaState> {
       // Unificar itens (agenda + base de dados)
       final allItems = [...agendaItems, ...databaseDeadlines];
 
+      // --- NOVO: Cancelar automaticamente eventos vencidos e não concluídos ---
+      final now = DateTime.now();
+      final List<AgendaItem> atualizados = [];
+      for (final item in allItems) {
+        if (item.deadline != null &&
+            item.deadline!.isBefore(now) &&
+            item.status != TaskStatus.done &&
+            item.status != TaskStatus.cancelled) {
+          final cancelado = item.copyWith(status: TaskStatus.cancelled);
+          await _agendaService.updateItem(cancelado);
+          atualizados.add(cancelado);
+        } else {
+          atualizados.add(item);
+        }
+      }
+
       final stats = await _agendaService.getAgendaStats();
 
       state = state.copyWith(
-        items: allItems,
+        items: atualizados,
         stats: stats,
         isLoading: false,
       );
@@ -366,8 +382,17 @@ class AgendaNotifier extends StateNotifier<AgendaState> {
   }
 
   Future<void> updateItemStatus(String id, TaskStatus status) async {
-    final item = state.items.firstWhere((item) => item.id == id);
+    final itemIndex = state.items.indexWhere((item) => item.id == id);
+    if (itemIndex == -1) return;
+    
+    final item = state.items[itemIndex];
     final updatedItem = item.copyWith(status: status);
+
+    // Atualizar imediatamente no state para UI responsiva
+    final updatedItems = List<AgendaItem>.from(state.items);
+    updatedItems[itemIndex] = updatedItem;
+    state = state.copyWith(items: updatedItems);
+    _applyFilters();
 
     // Se o item é da base de dados, atualizar lá também
     if (item.databaseItemId != null && item.databaseName != null) {
@@ -375,7 +400,9 @@ class AgendaNotifier extends StateNotifier<AgendaState> {
           item.databaseItemId!, item.databaseName!, status);
     }
 
-    await updateItem(updatedItem);
+    // Persistir mudanças no serviço
+    await _agendaService.updateItem(updatedItem);
+    await _updateStats();
   }
 
   /// Atualiza o status de um item na base de dados
@@ -586,16 +613,20 @@ final agendaCurrentViewProvider = Provider<String>((ref) {
 
 // Providers para Kanban
 final todoItemsProvider = Provider<List<AgendaItem>>((ref) {
-  return ref.watch(agendaProvider.notifier).todoItems;
+  final state = ref.watch(agendaProvider);
+  return state.items.where((item) => item.status == TaskStatus.todo).toList();
 });
 final inProgressItemsProvider = Provider<List<AgendaItem>>((ref) {
-  return ref.watch(agendaProvider.notifier).inProgressItems;
+  final state = ref.watch(agendaProvider);
+  return state.items.where((item) => item.status == TaskStatus.inProgress).toList();
 });
 final doneItemsProvider = Provider<List<AgendaItem>>((ref) {
-  return ref.watch(agendaProvider.notifier).doneItems;
+  final state = ref.watch(agendaProvider);
+  return state.items.where((item) => item.status == TaskStatus.done).toList();
 });
 final cancelledItemsProvider = Provider<List<AgendaItem>>((ref) {
-  return ref.watch(agendaProvider.notifier).cancelledItems;
+  final state = ref.watch(agendaProvider);
+  return state.items.where((item) => item.status == TaskStatus.cancelled).toList();
 });
 
 // Provider para inicializar contexto do workspace
@@ -612,4 +643,16 @@ final agendaContextProvider = Provider<void>((ref) {
       await notifier.setContext(profile.name, workspaceId);
     });
   }
+});
+
+// Provider para chronologia de eventos passados
+final pastEventsProvider = Provider<List<AgendaItem>>((ref) {
+  final state = ref.watch(agendaProvider);
+  final now = DateTime.now();
+  return state.items.where((item) {
+    if (item.deadline == null) return false;
+    final isPast = item.deadline!.isBefore(now);
+    final isDoneOrCancelled = item.status == TaskStatus.done || item.status == TaskStatus.cancelled;
+    return isPast && isDoneOrCancelled;
+  }).toList();
 });

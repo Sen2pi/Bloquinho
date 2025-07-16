@@ -14,6 +14,7 @@ import '../../../shared/providers/theme_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/agenda_provider.dart';
 import '../models/agenda_item.dart';
+import 'dart:math';
 import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
 
@@ -166,7 +167,8 @@ class AgendaDashboard extends ConsumerWidget {
             Column(
               children: items
                   .take(3)
-                  .map((item) => _buildEventItem(context, item, isDarkMode, strings))
+                  .map((item) =>
+                      _buildEventItem(context, item, isDarkMode, strings))
                   .toList(),
             ),
           if (items.length > 3)
@@ -185,8 +187,8 @@ class AgendaDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildEventItem(
-      BuildContext context, AgendaItem item, bool isDarkMode, AppStrings strings) {
+  Widget _buildEventItem(BuildContext context, AgendaItem item, bool isDarkMode,
+      AppStrings strings) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -214,7 +216,9 @@ class AgendaDashboard extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  item.displayTime.isNotEmpty ? item.displayTime : strings.noTime,
+                  item.displayTime.isNotEmpty
+                      ? item.displayTime
+                      : strings.noTime,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.grey[600],
                         fontSize: 11,

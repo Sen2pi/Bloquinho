@@ -11,9 +11,11 @@
         "collection",
         "connectivity_plus",
         "crypto",
+        "csv",
         "cupertino_icons",
         "device_info_plus",
         "dio",
+        "encrypt",
         "equatable",
         "file_picker",
         "fl_chart",
@@ -344,6 +346,23 @@
         "web",
         "web_socket"
       ]
+    },
+    {
+      "name": "encrypt",
+      "version": "5.0.3",
+      "dependencies": [
+        "args",
+        "asn1lib",
+        "clock",
+        "collection",
+        "crypto",
+        "pointycastle"
+      ]
+    },
+    {
+      "name": "csv",
+      "version": "6.0.0",
+      "dependencies": []
     },
     {
       "name": "crypto",
@@ -2366,6 +2385,20 @@
     {
       "name": "_macros",
       "version": "0.3.3",
+      "dependencies": []
+    },
+    {
+      "name": "pointycastle",
+      "version": "3.9.1",
+      "dependencies": [
+        "collection",
+        "convert",
+        "js"
+      ]
+    },
+    {
+      "name": "asn1lib",
+      "version": "1.6.5",
       "dependencies": []
     }
   ],

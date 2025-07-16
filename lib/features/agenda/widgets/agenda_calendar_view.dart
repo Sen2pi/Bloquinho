@@ -102,6 +102,66 @@ class AgendaCalendarView extends ConsumerWidget {
                         ) ??
                     const TextStyle(),
               ),
+              calendarBuilders: CalendarBuilders(
+                defaultBuilder: (context, day, focusedDay) {
+                  final events = _getEventsForDay(day, items);
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Text(
+                        '${day.day}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      if (events.isNotEmpty)
+                        Positioned(
+                          right: 2,
+                          bottom: 2,
+                          child: Container(
+                            width: 18,
+                            height: 18,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 1),
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.notifications,
+                                color: Colors.white,
+                                size: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+                // Mantém o markerBuilder para compatibilidade
+                markerBuilder: (context, day, events) {
+                  if (events.isNotEmpty) {
+                    return Positioned(
+                      right: 1,
+                      bottom: 1,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '${events.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return null;
+                },
+              ),
             ),
           ),
 
@@ -159,19 +219,33 @@ class AgendaCalendarView extends ConsumerWidget {
       );
     }
 
-    return ListView.builder(
+    // Adapta o número de colunas conforme a largura disponível
+    final width = MediaQuery.of(context).size.width;
+    int crossAxisCount = 3;
+    if (width > 1200) {
+      crossAxisCount = 6;
+    } else if (width > 800) {
+      crossAxisCount = 4;
+    }
+
+    return GridView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: dayEvents.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1.2,
+      ),
       itemBuilder: (context, index) {
         final item = dayEvents[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: AgendaItemCard(
-            item: item,
-            onTap: () => _showItemDetails(context, item, strings),
-            onEdit: () => _showEditItemDialog(context, item),
-            onDelete: () => _showDeleteConfirmation(context, item, strings),
-          ),
+        return AgendaItemCard(
+          item: item,
+          onTap: () => _showItemDetails(context, item, strings),
+          onEdit: () => _showEditItemDialog(context, item),
+          onDelete: () => _showDeleteConfirmation(context, item, strings),
         );
       },
     );

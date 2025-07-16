@@ -32,6 +32,12 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "asn1lib",
+      "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/asn1lib-1.6.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "async",
       "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/async-2.13.0",
       "packageUri": "lib/",
@@ -200,6 +206,12 @@
       "languageVersion": "3.1"
     },
     {
+      "name": "csv",
+      "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/csv-6.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "cupertino_icons",
       "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/cupertino_icons-1.0.8",
       "packageUri": "lib/",
@@ -252,6 +264,12 @@
       "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/dio_web_adapter-2.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.3"
+    },
+    {
+      "name": "encrypt",
+      "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/encrypt-5.0.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
     },
     {
       "name": "equatable",
@@ -1002,6 +1020,12 @@
       "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/pointer_interceptor_web-0.10.3",
       "packageUri": "lib/",
       "languageVersion": "3.6"
+    },
+    {
+      "name": "pointycastle",
+      "rootUri": "file:///C:/Users/MC_SE/AppData/Local/Pub/Cache/hosted/pub.dev/pointycastle-3.9.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
     },
     {
       "name": "pool",

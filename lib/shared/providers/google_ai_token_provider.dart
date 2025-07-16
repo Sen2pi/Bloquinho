@@ -39,7 +39,6 @@ class GoogleAITokenNotifier extends StateNotifier<String> {
       }
     } catch (e) {
       // Em caso de erro, manter token vazio
-      print('Erro ao inicializar Google AI token: $e');
     }
   }
 
@@ -67,7 +66,7 @@ class GoogleAITokenNotifier extends StateNotifier<String> {
       await _ensureBoxIsOpen();
       await _box!.put(_tokenKey, token);
     } catch (e) {
-      print('Erro ao salvar token Google AI: $e');
+      // Erro ao salvar token Google AI
     }
   }
 }

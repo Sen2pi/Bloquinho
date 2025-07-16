@@ -94,6 +94,8 @@ dependencies:
   equatable: ^2.0.5
   json_annotation: ^4.8.1
   crypto: ^3.0.3
+  csv: ^6.0.0
+  encrypt: ^5.0.3
 
   # Real-time & Synchronization
   web_socket_channel: ^3.0.3

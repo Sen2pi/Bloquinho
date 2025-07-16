@@ -8,7 +8,8 @@
  */
 
 class PageTemplatesFr {
-  static const String rootPageTemplate = '''# 📊 Document Markdown Complet avec Toutes les Fonctionnalités
+  static const String rootPageTemplate =
+      '''# 📊 Document Markdown Complet avec Toutes les Fonctionnalités
 
 ## 🎨 Démonstration de Couleurs et Formatage
 
@@ -69,7 +70,6 @@ def calculer_fibonacci(n):
 
 # Exemple d'utilisation
 resultat = calculer_fibonacci(10)
-print(f"Fibonacci(10): {resultat}")
 ```
 
 
@@ -266,7 +266,7 @@ Bienvenue sur votre nouvelle page ! Ici vous pouvez commencer à écrire votre c
 
 ```dart
 void main() {
-  print('Bonjour, monde !');
+  // Bonjour, monde !
 }
 ```
 
@@ -278,5 +278,4 @@ void main() {
 
 > **Conseil :** Utilisez le menu de formatage pour ajouter plus d'éléments à votre page.
 ''';
-
 }

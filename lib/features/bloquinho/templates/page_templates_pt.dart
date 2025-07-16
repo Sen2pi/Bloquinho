@@ -8,7 +8,8 @@
  */
 
 class PageTemplatesPt {
-  static const String rootPageTemplate = '''# 📊 Documento Markdown Completo com Todas as Funcionalidades
+  static const String rootPageTemplate =
+      '''# 📊 Documento Markdown Completo com Todas as Funcionalidades
 
 ## 🎨 Demonstração de Cores e Formatação
 
@@ -69,7 +70,6 @@ def calcular_fibonacci(n):
 
 # Exemplo de uso
 resultado = calcular_fibonacci(10)
-print(f"Fibonacci(10): {resultado}")
 ```
 
 
@@ -244,7 +244,7 @@ Este documento demonstra a versatilidade e poder do Markdown quando combinado co
 Este exemplo inclui todas as principais funcionalidades do Markdown moderno, servindo como referência completa para criação de documentos profissionais.
 </span>
 
-*Documento criado - Guimarães, Portugal* 🇵🇹
+*Documento criado - Portugal* 🇵🇹
 ''';
 
   static const String newPageTemplate = '''# Nova Página
@@ -266,7 +266,7 @@ Bem-vindo à sua nova página! Aqui você pode começar a escrever seu conteúdo
 
 ```dart
 void main() {
-  print('Olá, mundo!');
+  // Olá, mundo!
 }
 ```
 
@@ -278,5 +278,4 @@ void main() {
 
 > **Dica:** Use o menu de formatação para adicionar mais elementos à sua página.
 ''';
-
 }

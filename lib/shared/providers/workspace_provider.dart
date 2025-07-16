@@ -18,13 +18,7 @@ class WorkspaceNotifier extends StateNotifier<Workspace?> {
   final WorkspaceStorageService _storageService;
 
   WorkspaceNotifier(this._storageService)
-      : super(DefaultWorkspaces.workspaces.first) {
-    // DEBUG: Log da inicialização
-    debugPrint(
-        '🔍 WorkspaceNotifier inicializado com workspace: ${state?.name} (${state?.id})');
-    debugPrint(
-        '🔍 Workspace padrão: ${DefaultWorkspaces.workspaces.first.name} (${DefaultWorkspaces.workspaces.first.id})');
-  }
+      : super(DefaultWorkspaces.workspaces.first);
 
   /// Obter workspace padrão (Pessoal)
   Workspace get defaultWorkspace => DefaultWorkspaces.workspaces.first;
@@ -32,41 +26,32 @@ class WorkspaceNotifier extends StateNotifier<Workspace?> {
   /// Obter workspace atual ou padrão se não houver
   Workspace get currentWorkspaceOrDefault {
     final current = state ?? defaultWorkspace;
-    debugPrint('🔍 currentWorkspaceOrDefault: ${current.name} (${current.id})');
     return current;
   }
 
   /// Obter ID do workspace atual ou padrão
   String get currentWorkspaceIdOrDefault {
     final id = currentWorkspaceOrDefault.id;
-    debugPrint('🔍 currentWorkspaceIdOrDefault: $id');
     return id;
   }
 
   /// Inicializar workspace padrão se não houver workspace selecionado
   Future<void> initializeDefaultWorkspace() async {
     if (state == null) {
-      debugPrint('🔍 Inicializando workspace padrão: ${defaultWorkspace.name}');
       state = defaultWorkspace;
 
       // Atualizar contexto no WorkspaceStorageService
       await _updateWorkspaceContext(defaultWorkspace);
-    } else {
-      debugPrint('🔍 Workspace já inicializado: ${state?.name}');
     }
   }
 
   Future<void> selectWorkspace(String workspaceId) async {
-    debugPrint('🔍 selectWorkspace chamado com ID: $workspaceId');
-
     final newWorkspace = DefaultWorkspaces.workspaces
         .firstWhere((element) => element.id == workspaceId);
 
     // Só atualizar se realmente mudou
     if (state?.id != newWorkspace.id) {
       final oldWorkspace = state;
-      debugPrint(
-          '🔍 Mudando workspace: ${oldWorkspace?.name} → ${newWorkspace.name}');
       state = newWorkspace;
 
       // Atualizar contexto no WorkspaceStorageService
@@ -74,8 +59,6 @@ class WorkspaceNotifier extends StateNotifier<Workspace?> {
 
       // Forçar recarregamento de todos os providers
       _notifyWorkspaceChange(newWorkspace, oldWorkspace);
-    } else {
-      debugPrint('🔍 Workspace já selecionado: ${newWorkspace.name}');
     }
   }
 
@@ -85,12 +68,9 @@ class WorkspaceNotifier extends StateNotifier<Workspace?> {
       final profile = await _getCurrentProfile();
       if (profile != null) {
         await _storageService.setContextFromProfile(profile, workspace.id);
-        debugPrint('✅ Contexto atualizado: ${profile.name}/${workspace.id}');
-      } else {
-        debugPrint('⚠️ Nenhum perfil encontrado para definir contexto');
       }
     } catch (e) {
-      debugPrint('❌ Erro ao atualizar contexto do workspace: $e');
+      // Erro ao atualizar contexto do workspace
     }
   }
 
@@ -106,8 +86,6 @@ class WorkspaceNotifier extends StateNotifier<Workspace?> {
   }
 
   void _notifyWorkspaceChange(Workspace newWorkspace, Workspace? oldWorkspace) {
-    debugPrint(
-        '🔄 Notificando mudança de workspace: ${oldWorkspace?.name} → ${newWorkspace.name}');
     // Este método será usado para notificar outros providers sobre mudança de workspace
     // Aqui podemos adicionar lógica para notificar outros providers
     // Por exemplo, forçar recarregamento de dados específicos do workspace
@@ -115,7 +93,6 @@ class WorkspaceNotifier extends StateNotifier<Workspace?> {
 
   /// Definir contexto manualmente (usado por outros providers)
   Future<void> setContext(UserProfile profile, String workspaceId) async {
-    debugPrint('🔍 setContext chamado: ${profile.name}/$workspaceId');
     await _storageService.setContextFromProfile(profile, workspaceId);
   }
 
@@ -133,7 +110,6 @@ final workspaceProvider =
 
   // Inicializar workspace padrão automaticamente
   WidgetsBinding.instance.addPostFrameCallback((_) async {
-    debugPrint('🔍 Inicializando workspace padrão automaticamente...');
     await notifier.initializeDefaultWorkspace();
   });
 
@@ -142,15 +118,12 @@ final workspaceProvider =
 
 final currentWorkspaceProvider = Provider<Workspace?>((ref) {
   final workspace = ref.watch(workspaceProvider);
-  debugPrint(
-      '🔍 currentWorkspaceProvider: ${workspace?.name} (${workspace?.id})');
   return workspace;
 });
 
 final currentWorkspaceIdProvider = Provider<String?>((ref) {
   final workspace = ref.watch(currentWorkspaceProvider);
   final id = workspace?.id;
-  debugPrint('🔍 currentWorkspaceIdProvider: $id');
   return id;
 });
 
@@ -158,8 +131,6 @@ final currentWorkspaceIdProvider = Provider<String?>((ref) {
 final currentWorkspaceOrDefaultProvider = Provider<Workspace>((ref) {
   final notifier = ref.read(workspaceProvider.notifier);
   final workspace = notifier.currentWorkspaceOrDefault;
-  debugPrint(
-      '🔍 currentWorkspaceOrDefaultProvider: ${workspace.name} (${workspace.id})');
   return workspace;
 });
 
@@ -167,7 +138,6 @@ final currentWorkspaceOrDefaultProvider = Provider<Workspace>((ref) {
 final currentWorkspaceIdOrDefaultProvider = Provider<String>((ref) {
   final notifier = ref.read(workspaceProvider.notifier);
   final id = notifier.currentWorkspaceIdOrDefault;
-  debugPrint('🔍 currentWorkspaceIdOrDefaultProvider: $id');
   return id;
 });
 
@@ -180,8 +150,6 @@ final defaultWorkspaceProvider = Provider<Workspace>((ref) {
 final currentWorkspaceSectionsProvider =
     Provider<List<WorkspaceSection>>((ref) {
   final workspaceId = ref.watch(currentWorkspaceIdOrDefaultProvider);
-  debugPrint(
-      '🔍 currentWorkspaceSectionsProvider para workspace: $workspaceId');
   return WorkspaceSections.getSectionsForWorkspace(workspaceId);
 });
 
@@ -244,41 +212,35 @@ final workspaceContextNotifierProvider = Provider<WorkspaceNotifier>((ref) {
 /// Provider para documentos com workspace default
 final documentosWorkspaceProvider = Provider<String>((ref) {
   final workspaceId = ref.watch(currentWorkspaceIdOrDefaultProvider);
-  debugPrint('🔍 documentosWorkspaceProvider: $workspaceId');
   return workspaceId;
 });
 
 /// Provider para agenda com workspace default
 final agendaWorkspaceProvider = Provider<String>((ref) {
   final workspaceId = ref.watch(currentWorkspaceIdOrDefaultProvider);
-  debugPrint('🔍 agendaWorkspaceProvider: $workspaceId');
   return workspaceId;
 });
 
 /// Provider para senhas com workspace default
 final passwordsWorkspaceProvider = Provider<String>((ref) {
   final workspaceId = ref.watch(currentWorkspaceIdOrDefaultProvider);
-  debugPrint('🔍 passwordsWorkspaceProvider: $workspaceId');
   return workspaceId;
 });
 
 /// Provider para database com workspace default
 final databaseWorkspaceProvider = Provider<String>((ref) {
   final workspaceId = ref.watch(currentWorkspaceIdOrDefaultProvider);
-  debugPrint('🔍 databaseWorkspaceProvider: $workspaceId');
   return workspaceId;
 });
 
 /// Provider para backup com workspace default
 final backupWorkspaceProvider = Provider<String>((ref) {
   final workspaceId = ref.watch(currentWorkspaceIdOrDefaultProvider);
-  debugPrint('🔍 backupWorkspaceProvider: $workspaceId');
   return workspaceId;
 });
 
 /// Provider para profile com workspace default
 final profileWorkspaceProvider = Provider<String>((ref) {
   final workspaceId = ref.watch(currentWorkspaceIdOrDefaultProvider);
-  debugPrint('🔍 profileWorkspaceProvider: $workspaceId');
   return workspaceId;
 });

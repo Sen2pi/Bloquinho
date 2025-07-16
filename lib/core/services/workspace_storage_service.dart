@@ -42,7 +42,7 @@ class WorkspaceStorageService {
     final newContext = '$profileName/$workspaceId';
 
     if (previousContext != newContext) {
-      debugPrint('🔄 Contexto mudou: $previousContext → $newContext');
+
       _currentProfileName = profileName;
       _currentWorkspaceId = workspaceId;
 

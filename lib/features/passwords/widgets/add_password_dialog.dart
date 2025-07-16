@@ -49,9 +49,27 @@ class _AddPasswordDialogState extends ConsumerState<AddPasswordDialog> {
       _passwordController.text = widget.password!.password;
       _websiteController.text = widget.password!.website ?? '';
       _notesController.text = widget.password!.notes ?? '';
-      _categoryController.text = widget.password!.category ?? '';
+      _categoryController.text = widget.password!.category ?? 'Social';
       _tagsController.text = widget.password!.tags.join(', ');
-      _selectedCategory = widget.password!.category;
+      
+      // Verificar se a categoria existe na lista predefinida
+      final predefinedCategories = [
+        'Social', 'Finance', 'Work', 'Email', 'Shopping', 
+        'Entertainment', 'Health', 'Education'
+      ];
+      
+      if (widget.password!.category != null && 
+          predefinedCategories.contains(widget.password!.category)) {
+        _selectedCategory = widget.password!.category;
+      } else if (widget.password!.category != null && widget.password!.category!.isNotEmpty) {
+        _selectedCategory = widget.password!.category; // Categoria personalizada
+      } else {
+        _selectedCategory = 'Social'; // Categoria padrão
+      }
+    } else {
+      // Para novas senhas, definir "Social" como padrão
+      _selectedCategory = 'Social';
+      _categoryController.text = 'Social';
     }
   }
 
@@ -224,38 +242,45 @@ class _AddPasswordDialogState extends ConsumerState<AddPasswordDialog> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Categoria
-                      DropdownButtonFormField<String>(
-                        value: _selectedCategory,
-                        decoration: const InputDecoration(
+                      // Categoria (usando TextFormField em vez de DropdownButton)
+                      TextFormField(
+                        controller: _categoryController,
+                        decoration: InputDecoration(
                           labelText: 'Categoria',
-                          prefixIcon: Icon(Icons.category),
-                        ),
-                        items: [
-                          const DropdownMenuItem(
-                            value: null,
-                            child: Text('Selecionar categoria'),
+                          hintText: 'Ex: Social, Finance, Work...',
+                          prefixIcon: const Icon(Icons.category),
+                          suffixIcon: PopupMenuButton<String>(
+                            icon: const Icon(Icons.arrow_drop_down),
+                            onSelected: (value) {
+                              setState(() {
+                                _categoryController.text = value;
+                                _selectedCategory = value;
+                              });
+                            },
+                            itemBuilder: (context) => [
+                              'Social',
+                              'Finance',
+                              'Work',
+                              'Email',
+                              'Shopping',
+                              'Entertainment',
+                              'Health',
+                              'Education'
+                            ]
+                                .map((category) => PopupMenuItem(
+                                      value: category,
+                                      child: Text(category),
+                                    ))
+                                .toList(),
                           ),
-                          ...[
-                            'Social',
-                            'Finance',
-                            'Work',
-                            'Email',
-                            'Shopping',
-                            'Entertainment',
-                            'Health',
-                            'Education'
-                          ]
-                              .map((category) => DropdownMenuItem(
-                                    value: category,
-                                    child: Text(category),
-                                  ))
-                              .toList(),
-                        ],
+                        ),
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        autocorrect: false,
+                        enableSuggestions: true,
                         onChanged: (value) {
                           setState(() {
-                            _selectedCategory = value;
-                            _categoryController.text = value ?? '';
+                            _selectedCategory = value.isNotEmpty ? value : null;
                           });
                         },
                       ),
@@ -357,7 +382,7 @@ class _AddPasswordDialogState extends ConsumerState<AddPasswordDialog> {
       notes: _notesController.text.trim().isEmpty
           ? null
           : _notesController.text.trim(),
-      category: _selectedCategory,
+      category: _selectedCategory?.isEmpty == true || _selectedCategory == null ? 'Social' : _selectedCategory,
       tags: _tagsController.text.trim().isEmpty
           ? []
           : _tagsController.text

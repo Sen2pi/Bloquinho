@@ -123,14 +123,11 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         lastModified: DateTime.now(),
         content: initialContent ?? '',
       );
-
-      debugPrint('✅ Editor inicializado com sucesso');
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: '${strings.errorInitializingEditor}: ${e.toString()}',
       );
-      debugPrint('❌ Erro ao inicializar editor: $e');
     }
   }
 
@@ -365,9 +362,10 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         }
 
         final content = state.content ?? '';
-        final timestamp = DateTime.now().toString().split('.')[0].replaceAll(':', '-');
+        final timestamp =
+            DateTime.now().toString().split('.')[0].replaceAll(':', '-');
         final title = state.documentTitle ?? 'Bloquinho_Document_$timestamp';
-        
+
         final filePath = await _pdfExportService.exportMarkdownAsPdf(
           markdown: content,
           title: title,
@@ -444,18 +442,23 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
     final selectedText = content.substring(start, end);
 
     // Detectar se já existe tag [color=...] ou [bg=...] ou [badge color=...]
-    final colorRegex = RegExp(r'\[color=([^\]]+)\](.*?)\[/color\]', dotAll: true);
+    final colorRegex =
+        RegExp(r'\[color=([^\]]+)\](.*?)\[/color\]', dotAll: true);
     final bgRegex = RegExp(r'\[bg=([^\]]+)\](.*?)\[/bg\]', dotAll: true);
-    final badgeRegex = RegExp(r'\[badge color=([^\]]+)\](.*?)\[/badge\]', dotAll: true);
+    final badgeRegex =
+        RegExp(r'\[badge color=([^\]]+)\](.*?)\[/badge\]', dotAll: true);
 
     String newText = selectedText;
     if (tag == 'color' && colorRegex.hasMatch(selectedText)) {
       // Trocar apenas o valor da cor
-      newText = selectedText.replaceAllMapped(colorRegex, (m) => '[color=$color]${m[2]}[/color]');
+      newText = selectedText.replaceAllMapped(
+          colorRegex, (m) => '[color=$color]${m[2]}[/color]');
     } else if (tag == 'bg' && bgRegex.hasMatch(selectedText)) {
-      newText = selectedText.replaceAllMapped(bgRegex, (m) => '[bg=$color]${m[2]}[/bg]');
+      newText = selectedText.replaceAllMapped(
+          bgRegex, (m) => '[bg=$color]${m[2]}[/bg]');
     } else if (tag == 'badge' && badgeRegex.hasMatch(selectedText)) {
-      newText = selectedText.replaceAllMapped(badgeRegex, (m) => '[badge color=$color]${m[2]}[/badge]');
+      newText = selectedText.replaceAllMapped(
+          badgeRegex, (m) => '[badge color=$color]${m[2]}[/badge]');
     } else {
       // Se não existe, envolver com a tag
       if (tag == 'color') {
@@ -468,8 +471,10 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
     }
 
     final newContent = content.replaceRange(start, end, newText);
-    final newSelection = TextSelection.collapsed(offset: start + newText.length);
-    state = state.copyWith(content: newContent, selection: newSelection, hasChanges: true);
+    final newSelection =
+        TextSelection.collapsed(offset: start + newText.length);
+    state = state.copyWith(
+        content: newContent, selection: newSelection, hasChanges: true);
   }
 }
 

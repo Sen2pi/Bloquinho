@@ -528,8 +528,7 @@ $matrixTemplate
     }
 
     if (foundInvalid) {
-      debugPrint(
-          '⚠️ PageContentWidget: Conteúdo inválido UTF-16 detectado e removido');
+      // Conteúdo inválido UTF-16 detectado e removido
     }
 
     return buffer.toString();

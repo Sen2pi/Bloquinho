@@ -28,38 +28,24 @@ class GlobalSearchResults extends ConsumerWidget {
     final searchState = ref.watch(globalSearchProvider);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    // DEBUG: Log do estado da pesquisa
-    debugPrint('🔍 GlobalSearchResults: query="${searchState.query}"');
-    debugPrint('🔍 GlobalSearchResults: results=${searchState.results.length}');
-    debugPrint(
-        '🔍 GlobalSearchResults: isSearching=${searchState.isSearching}');
-    debugPrint(
-        '🔍 GlobalSearchResults: showLoadingIndicator=${searchState.showLoadingIndicator}');
-
     // Mostrar indicador de carregamento se estiver pesquisando ou se o indicador estiver ativo
     if (searchState.isSearching || searchState.showLoadingIndicator) {
-      debugPrint('🔍 GlobalSearchResults: showing loading state');
       return _buildLoadingState(isDarkMode);
     }
 
     // Mostrar mensagem de mínimo de caracteres se query tem menos de 3 caracteres
     if (searchState.query.isNotEmpty && searchState.query.length < 3) {
-      debugPrint('🔍 GlobalSearchResults: showing min chars message');
       return _buildMinCharsMessage(isDarkMode);
     }
 
     if (searchState.results.isEmpty && searchState.query.isNotEmpty) {
-      debugPrint('🔍 GlobalSearchResults: showing empty state');
       return _buildEmptyState(isDarkMode, searchState.query);
     }
 
     if (searchState.results.isEmpty) {
-      debugPrint('🔍 GlobalSearchResults: no results, showing nothing');
       return const SizedBox.shrink();
     }
 
-    debugPrint(
-        '🔍 GlobalSearchResults: showing results list with ${searchState.results.length} results');
     return _buildResultsList(context, ref, searchState, isDarkMode);
   }
 

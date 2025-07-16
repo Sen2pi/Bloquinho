@@ -80,11 +80,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       final currentWorkspace = ref.read(currentWorkspaceProvider);
 
       if (currentProfile != null && currentWorkspace != null) {
-        debugPrint('🔍 Inicializando contexto dos providers...');
-        debugPrint('🔍 Profile: ${currentProfile.name}');
-        debugPrint(
-            '🔍 Workspace: ${currentWorkspace.name} (${currentWorkspace.id})');
-
         // Inicializar todos os providers com o contexto correto
         await ref
             .read(passwordProvider.notifier)
@@ -101,13 +96,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         await ref
             .read(databaseNotifierProvider.notifier)
             .setContext(currentProfile.name, currentWorkspace.id);
-
-        debugPrint('🔍 Contexto dos providers inicializado com sucesso!');
-      } else {
-        debugPrint('🔍 Profile ou Workspace não disponível para inicialização');
       }
     } catch (e) {
-      debugPrint('🔍 Erro ao inicializar contexto dos providers: $e');
+      // Erro ao inicializar contexto dos providers
     }
   }
 
@@ -115,8 +106,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   Future<void> _updateProvidersContext(
       String profileName, String workspaceId) async {
     try {
-      debugPrint('🔍 Atualizando contexto: $profileName / $workspaceId');
-
       // Atualizar todos os providers com o novo contexto
       await ref
           .read(passwordProvider.notifier)
@@ -133,10 +122,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       await ref
           .read(databaseNotifierProvider.notifier)
           .setContext(profileName, workspaceId);
-
-      debugPrint('🔍 Contexto dos providers atualizado com sucesso!');
     } catch (e) {
-      debugPrint('🔍 Erro ao atualizar contexto dos providers: $e');
+      // Erro ao atualizar contexto dos providers
     }
   }
 
@@ -153,20 +140,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     final currentWorkspace = ref.watch(currentWorkspaceProvider);
     final workspaceSections = ref.watch(currentWorkspaceSectionsProvider);
 
-    // DEBUG: Log do estado atual
-    debugPrint('🔍 WorkspaceScreen - currentProfile: ${currentProfile?.name}');
-    debugPrint(
-        '🔍 WorkspaceScreen - currentWorkspace: ${currentWorkspace?.name} (${currentWorkspace?.id})');
-    debugPrint(
-        '🔍 WorkspaceScreen - workspaceSections: ${workspaceSections.length} seções');
-
     // Carregar páginas automaticamente quando o contexto muda
     ref.watch(pagesLoaderProvider);
 
     // Listener para garantir que os providers tenham o contexto correto
     ref.listen<Workspace?>(currentWorkspaceProvider, (previous, next) {
       if (next != null && currentProfile != null) {
-        debugPrint('🔍 Workspace mudou, atualizando contexto dos providers...');
         _updateProvidersContext(currentProfile.name, next.id);
       }
     });
@@ -474,13 +453,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   Widget _buildSidebarSearchBar(bool isDarkMode) {
     final searchState = ref.watch(globalSearchProvider);
 
-    // DEBUG: Log do estado da pesquisa
-    debugPrint('🔍 SidebarSearch: query="${_searchController.text}"');
-    debugPrint('🔍 SidebarSearch: results=${searchState.results.length}');
-    debugPrint('🔍 SidebarSearch: isSearching=${searchState.isSearching}');
-    debugPrint(
-        '🔍 SidebarSearch: showLoadingIndicator=${searchState.showLoadingIndicator}');
-
     return Column(
       children: [
         Container(
@@ -516,11 +488,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     color: isDarkMode ? Colors.white : Colors.black87,
                   ),
                   onChanged: (value) {
-                    debugPrint('🔍 SidebarSearch: onChanged="$value"');
                     _performGlobalSearch(value);
                   },
                   onSubmitted: (value) {
-                    debugPrint('🔍 SidebarSearch: onSubmitted="$value"');
                     _performGlobalSearch(value);
                   },
                 ),
@@ -528,7 +498,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               if (_searchController.text.isNotEmpty)
                 IconButton(
                   onPressed: () {
-                    debugPrint('🔍 SidebarSearch: clearing search');
                     _searchController.clear();
                     _clearGlobalSearch();
                   },
@@ -564,7 +533,6 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             ),
             child: GlobalSearchResults(
               onResultSelected: () {
-                debugPrint('🔍 SidebarSearch: result selected, clearing');
                 _searchController.clear();
                 _clearGlobalSearch();
               },

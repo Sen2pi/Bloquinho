@@ -43,7 +43,7 @@ class BlocoMenuWidget extends ConsumerStatefulWidget {
 
 class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
   static const _uuid = Uuid();
-  
+
   late TextEditingController _searchController;
   late FocusNode _searchFocusNode;
   late FocusNode _keyboardFocusNode;
@@ -58,7 +58,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
     _searchFocusNode = FocusNode();
     _keyboardFocusNode = FocusNode();
     _currentQuery = widget.searchQuery ?? '';
-    
+
     // Auto-focus na busca
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocusNode.requestFocus();
@@ -76,11 +76,11 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(isDarkModeProvider);
-    
+
     if (widget.showAsModal) {
       return _buildModal(context, isDarkMode);
     }
-    
+
     return _buildInlineMenu(context, isDarkMode);
   }
 
@@ -105,7 +105,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
           children: [
             // Header do modal
             _buildModalHeader(isDarkMode),
-            
+
             // Conteúdo principal
             Expanded(
               child: _buildMenuContent(isDarkMode),
@@ -159,8 +159,8 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
           Text(
             'Inserir Bloco',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const Spacer(),
           IconButton(
@@ -180,15 +180,15 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
       children: [
         // Barra de busca
         _buildSearchBar(isDarkMode),
-        
+
         // Categorias (se habilitadas)
         if (widget.showCategories) _buildCategoryTabs(isDarkMode),
-        
+
         // Lista de blocos
         Expanded(
           child: _buildBlockList(isDarkMode),
         ),
-        
+
         // Footer com dicas
         _buildFooter(isDarkMode),
       ],
@@ -217,17 +217,17 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
           hintText: 'Buscar blocos...',
           prefixIcon: Icon(PhosphorIcons.magnifyingGlass(), size: 18),
           suffixIcon: _currentQuery.isNotEmpty
-            ? IconButton(
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() {
-                    _currentQuery = '';
-                    _selectedIndex = 0;
-                  });
-                },
-                icon: Icon(PhosphorIcons.x(), size: 16),
-              )
-            : null,
+              ? IconButton(
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _currentQuery = '';
+                      _selectedIndex = 0;
+                    });
+                  },
+                  icon: Icon(PhosphorIcons.x(), size: 16),
+                )
+              : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -242,7 +242,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
 
   Widget _buildCategoryTabs(bool isDarkMode) {
     final categories = BlocoCategory.values;
-    
+
     return Container(
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -262,7 +262,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
               },
             );
           }
-          
+
           final category = categories[index - 1];
           return _buildCategoryTab(
             label: category.displayName,
@@ -293,7 +293,8 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
           color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey.withOpacity(0.3),
+            color:
+                isSelected ? AppColors.primary : Colors.grey.withOpacity(0.3),
           ),
         ),
         child: Text(
@@ -310,11 +311,11 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
 
   Widget _buildBlockList(bool isDarkMode) {
     final filteredBlocks = _getFilteredBlocks();
-    
+
     if (filteredBlocks.isEmpty) {
       return _buildEmptyState();
     }
-    
+
     return RawKeyboardListener(
       focusNode: _keyboardFocusNode,
       onKey: (event) => _handleKeyEvent(event, filteredBlocks),
@@ -324,7 +325,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
         itemBuilder: (context, index) {
           final blockInfo = filteredBlocks[index];
           final isSelected = index == _selectedIndex;
-          
+
           return _buildBlockItem(
             blockInfo: blockInfo,
             isSelected: isSelected,
@@ -352,9 +353,9 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               color: isSelected ? AppColors.primary.withOpacity(0.1) : null,
-              border: isSelected 
-                ? Border.all(color: AppColors.primary, width: 1)
-                : null,
+              border: isSelected
+                  ? Border.all(color: AppColors.primary, width: 1)
+                  : null,
             ),
             child: Row(
               children: [
@@ -372,9 +373,9 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
                     color: blockInfo.color,
                   ),
                 ),
-                
+
                 const SizedBox(width: 12),
-                
+
                 // Informações do bloco
                 Expanded(
                   child: Column(
@@ -383,25 +384,26 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
                       Text(
                         blockInfo.name,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
                       Text(
                         blockInfo.description,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                              color: Colors.grey[600],
+                            ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-                
+
                 // Atalho de teclado
                 if (blockInfo.shortcut != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.grey.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(4),
@@ -409,8 +411,8 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
                     child: Text(
                       blockInfo.shortcut!,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontFamily: 'Courier',
-                      ),
+                            fontFamily: 'Courier',
+                          ),
                     ),
                   ),
               ],
@@ -435,15 +437,15 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
           Text(
             'Nenhum bloco encontrado',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.grey[600],
-            ),
+                  color: Colors.grey[600],
+                ),
           ),
           const SizedBox(height: 8),
           Text(
             'Tente uma busca diferente',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.grey[500],
-            ),
+                  color: Colors.grey[500],
+                ),
           ),
         ],
       ),
@@ -472,8 +474,8 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
             child: Text(
               'Use ↑↓ para navegar e Enter para inserir',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.grey[500],
-              ),
+                    color: Colors.grey[500],
+                  ),
             ),
           ),
         ],
@@ -485,23 +487,25 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
 
   List<BlockInfo> _getFilteredBlocks() {
     List<BlockInfo> blocks = _getAllBlocks();
-    
+
     // Filtrar por categoria
     if (_selectedCategory != null) {
-      blocks = blocks.where((block) => block.category == _selectedCategory).toList();
+      blocks =
+          blocks.where((block) => block.category == _selectedCategory).toList();
     }
-    
+
     // Filtrar por query de busca
     if (_currentQuery.isNotEmpty) {
       final query = _currentQuery.toLowerCase();
       blocks = blocks.where((block) {
         return block.name.toLowerCase().contains(query) ||
-               block.description.toLowerCase().contains(query) ||
-               (block.keywords?.any((keyword) => 
-                 keyword.toLowerCase().contains(query)) ?? false);
+            block.description.toLowerCase().contains(query) ||
+            (block.keywords
+                    ?.any((keyword) => keyword.toLowerCase().contains(query)) ??
+                false);
       }).toList();
     }
-    
+
     return blocks;
   }
 
@@ -527,7 +531,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
         shortcut: '#',
         keywords: ['título', 'cabeçalho', 'h1', 'h2', 'h3'],
       ),
-      
+
       // Listas
       BlockInfo(
         tipo: BlocoTipo.lista,
@@ -559,7 +563,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
         shortcut: '[]',
         keywords: ['tarefa', 'todo', 'checkbox', 'lista'],
       ),
-      
+
       // Mídia
       BlockInfo(
         tipo: BlocoTipo.imagem,
@@ -579,7 +583,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
         category: BlocoCategory.media,
         keywords: ['vídeo', 'filme', 'reprodutor'],
       ),
-      
+
       // Código e Matemática
       BlockInfo(
         tipo: BlocoTipo.codigo,
@@ -600,7 +604,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
         category: BlocoCategory.code,
         keywords: ['equação', 'matemática', 'latex', 'fórmula'],
       ),
-      
+
       // Estrutura
       BlockInfo(
         tipo: BlocoTipo.tabela,
@@ -630,7 +634,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
         category: BlocoCategory.structure,
         keywords: ['colunas', 'layout', 'grid'],
       ),
-      
+
       // Avançado
       BlockInfo(
         tipo: BlocoTipo.link,
@@ -684,7 +688,7 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
     try {
       if (event is! RawKeyDownEvent) return;
       if (filteredBlocks.isEmpty) return;
-      
+
       switch (event.logicalKey) {
         case LogicalKeyboardKey.arrowDown:
           setState(() {
@@ -693,7 +697,8 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
           break;
         case LogicalKeyboardKey.arrowUp:
           setState(() {
-            _selectedIndex = (_selectedIndex - 1 + filteredBlocks.length) % filteredBlocks.length;
+            _selectedIndex = (_selectedIndex - 1 + filteredBlocks.length) %
+                filteredBlocks.length;
           });
           break;
         case LogicalKeyboardKey.enter:
@@ -706,7 +711,6 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
           break;
       }
     } catch (e) {
-      debugPrint('Error handling keyboard event: $e');
       // Fallback: reset selected index to prevent out-of-bounds errors
       if (filteredBlocks.isNotEmpty) {
         _selectedIndex = 0;
@@ -722,55 +726,57 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
 
   BlocoBase _createBlocoFromType(BlocoTipo tipo) {
     final id = _uuid.v4();
-    
+
     switch (tipo) {
       case BlocoTipo.texto:
         return BlocoTexto(id: id, conteudo: '');
-      
+
       case BlocoTipo.titulo:
         return BlocoTitulo(id: id, conteudo: '', nivel: 1);
-      
+
       case BlocoTipo.lista:
         return BlocoLista(id: id, itens: ['']);
-      
+
       case BlocoTipo.listaNumerada:
         return BlocoListaNumerada(id: id, itens: ['']);
-      
+
       case BlocoTipo.tarefa:
         return BlocoTarefa(id: id, conteudo: '', concluida: false);
-      
+
       case BlocoTipo.tabela:
         return BlocoTabela(
           id: id,
           cabecalhos: ['Coluna 1', 'Coluna 2'],
-          linhas: [['', '']],
+          linhas: [
+            ['', '']
+          ],
         );
-      
+
       case BlocoTipo.codigo:
         return BlocoCodigo(id: id, codigo: '', linguagem: 'text');
-      
+
       case BlocoTipo.equacao:
         return BlocoEquacao(id: id, formula: '');
-      
+
       case BlocoTipo.imagem:
         return BlocoImagem(id: id, url: '');
-      
+
       case BlocoTipo.video:
         return BlocoVideo(id: id, url: '');
-      
+
       case BlocoTipo.link:
         return BlocoLink(id: id, url: '');
-      
+
       case BlocoTipo.divisor:
         return BlocoDivisor(id: id);
-      
+
       case BlocoTipo.coluna:
         return BlocoColuna(
           id: id,
           colunas: [[], []],
           proporcoes: [0.5, 0.5],
         );
-      
+
       case BlocoTipo.baseDados:
         return BlocoBaseDados(
           id: id,
@@ -778,13 +784,13 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
           colunas: [],
           linhas: [],
         );
-      
+
       case BlocoTipo.wiki:
         return BlocoWiki(id: id, titulo: '', conteudo: '');
-      
+
       case BlocoTipo.pagina:
         return BlocoPagina(id: id, titulo: 'Nova Página');
-      
+
       case BlocoTipo.blocoSincronizado:
         return BlocoBlocoSincronizado(
           id: id,
@@ -921,7 +927,7 @@ class QuickBlocoActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const uuid = Uuid();
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -933,7 +939,7 @@ class QuickBlocoActions extends StatelessWidget {
           icon: Icon(PhosphorIcons.textT()),
           tooltip: 'Texto',
         ),
-        
+
         // Lista
         IconButton(
           onPressed: () => onBlockSelected?.call(
@@ -942,7 +948,7 @@ class QuickBlocoActions extends StatelessWidget {
           icon: Icon(PhosphorIcons.list()),
           tooltip: 'Lista',
         ),
-        
+
         // Código
         IconButton(
           onPressed: () => onBlockSelected?.call(
@@ -951,10 +957,11 @@ class QuickBlocoActions extends StatelessWidget {
           icon: Icon(PhosphorIcons.code()),
           tooltip: 'Código',
         ),
-        
+
         // Menu completo
         IconButton(
-          onPressed: () => showBlocoMenuModal(context, onBlockSelected: onBlockSelected),
+          onPressed: () =>
+              showBlocoMenuModal(context, onBlockSelected: onBlockSelected),
           icon: Icon(PhosphorIcons.plus()),
           tooltip: 'Mais blocos',
         ),

@@ -92,7 +92,7 @@ class BlocosState {
   List<BlocoBase> get filteredBlocos {
     // Criar chave de cache baseada nos filtros e query
     final cacheKey = _generateFilterCacheKey();
-    
+
     // Verificar se resultado está em cache
     final cached = _filterCache.get(cacheKey);
     if (cached != null) return cached;
@@ -123,12 +123,14 @@ class BlocosState {
   String _generateFilterCacheKey() {
     final queryHash = searchQuery?.hashCode ?? 0;
     final filtersHash = activeFilters.map((f) => f.name).join(',').hashCode;
-    final blocosHash = blocos.length.hashCode; // Invalida cache quando lista muda
+    final blocosHash =
+        blocos.length.hashCode; // Invalida cache quando lista muda
     return '$queryHash-$filtersHash-$blocosHash';
   }
 
   /// Cache estático para filtros
-  static final LRUCache<String, List<BlocoBase>> _filterCache = LRUCache(maxSize: 50);
+  static final LRUCache<String, List<BlocoBase>> _filterCache =
+      LRUCache(maxSize: 50);
 
   /// Verificar se um bloco corresponde à query de busca
   bool _matchesSearchQuery(BlocoBase bloco, String query) {
@@ -213,12 +215,14 @@ class BlocosNotifier extends StateNotifier<BlocosState> with DebounceMixin {
   final Ref _ref;
 
   // Cache para operações custosas
-  static final LRUCache<String, List<BlocoBase>> _searchCache = LRUCache(maxSize: 100);
-  static final LRUCache<String, Map<String, int>> _statsCache = LRUCache(maxSize: 10);
+  static final LRUCache<String, List<BlocoBase>> _searchCache =
+      LRUCache(maxSize: 100);
+  static final LRUCache<String, Map<String, int>> _statsCache =
+      LRUCache(maxSize: 10);
 
   // Debouncer para auto-save
   late final AsyncDebouncer _autoSaveDebouncer;
-  
+
   // Throttler para busca
   late final Throttler _searchThrottler;
 
@@ -227,7 +231,8 @@ class BlocosNotifier extends StateNotifier<BlocosState> with DebounceMixin {
     this._converterService,
     this._ref,
   ) : super(const BlocosState()) {
-    _autoSaveDebouncer = AsyncDebouncer(delay: const Duration(milliseconds: 1000));
+    _autoSaveDebouncer =
+        AsyncDebouncer(delay: const Duration(milliseconds: 1000));
     _searchThrottler = Throttler(interval: const Duration(milliseconds: 200));
     _loadBlocos();
   }
@@ -580,17 +585,16 @@ class BlocosNotifier extends StateNotifier<BlocosState> with DebounceMixin {
   Future<void> _performAutoSave() async {
     try {
       // TODO: Implementar auto-save real
-      debugPrint('🔄 Auto-save executado em ${DateTime.now()}');
-      
+
       // Simular save
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       // Atualizar estado se ainda estiver ativo
       if (mounted) {
         state = state.copyWith(hasUnsavedChanges: false);
       }
     } catch (e) {
-      debugPrint('❌ Erro no auto-save: $e');
+      // Erro no auto-save
     }
   }
 

@@ -205,10 +205,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
 
-    print('DEBUG: Iniciando criação de perfil - Nome: $name, Email: $email');
-
     if (name.isEmpty || email.isEmpty) {
-      print('DEBUG: Dados inválidos - nome ou email vazio');
       _showError('Por favor, volte e preencha todos os campos');
       return;
     }
@@ -218,35 +215,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     });
 
     try {
-      print('DEBUG: Criando perfil...');
       // Salvar perfil
       final userProfileNotifier = ref.read(userProfileProvider.notifier);
       await userProfileNotifier.createProfile(name: name, email: email);
-      print('DEBUG: Perfil criado com sucesso');
 
-      print('DEBUG: Configurando storage...');
       // Configurar storage
       final storageNotifier = ref.read(storageSettingsProvider.notifier);
       await storageNotifier.changeProvider(_selectedStorage);
-      print('DEBUG: Storage configurado');
 
       // Se OneDrive foi selecionado, fazer autenticação automática
       if (_selectedStorage == CloudStorageProvider.oneDrive) {
-        print('DEBUG: Configurando OneDrive...');
         final onedriveService = OneDriveService();
         final authResult = await onedriveService.authenticate();
 
         if (authResult.success) {
           // Conectar ao serviço
           await storageNotifier.connect();
-          print('DEBUG: OneDrive conectado');
         } else {
           throw Exception(
               'Falha na autenticação com OneDrive: ${authResult.errorMessage}');
         }
       }
 
-      print('DEBUG: Criando workspaces padrão...');
       // Criar workspaces padrão
       final localStorageService = LocalStorageService();
       await localStorageService.initialize();
@@ -254,7 +244,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       // Criar os 3 workspaces padrão
       final workspaces = ['Pessoal', 'Trabalho', 'Projetos'];
       for (final workspaceName in workspaces) {
-        print('DEBUG: Criando workspace: $workspaceName');
         // Criar estrutura de pastas para o perfil
         await localStorageService.createProfileStructure(name);
 
@@ -279,8 +268,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         // await bloquinhoStorage.savePage(initialPage, name, workspaceName);
       }
 
-      print('DEBUG: Workspaces criados com sucesso');
-
       // Mostrar estado de conclusão
       if (mounted) {
         setState(() {
@@ -290,7 +277,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         // Aguardar um pouco para mostrar a animação
         await Future.delayed(const Duration(milliseconds: 1000));
 
-        print('DEBUG: Navegando para workspace...');
         // Navegar para o workspace com delay para evitar conflitos
         if (context.mounted) {
           await Future.delayed(const Duration(milliseconds: 500));
@@ -300,7 +286,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         }
       }
     } catch (e) {
-      print('DEBUG: Erro ao criar usuário: $e');
       _showError('Erro ao criar usuário: $e');
     } finally {
       if (mounted) {

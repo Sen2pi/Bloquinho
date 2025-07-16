@@ -465,7 +465,6 @@ class _BlocoRenderWidgetState extends ConsumerState<BlocoRenderWidget> {
 
       return KeyEventResult.ignored;
     } catch (e) {
-      debugPrint('Error handling key event in bloco_render_widget: $e');
       return KeyEventResult.ignored;
     }
   }
@@ -483,7 +482,6 @@ class _BlocoRenderWidgetState extends ConsumerState<BlocoRenderWidget> {
 
       _setFocusedBlock(blockId);
     } catch (e) {
-      debugPrint('Error in _handleBlockTap: $e');
       // Fallback: just select the block
       _selectSingleBlock(blockId);
       _setFocusedBlock(blockId);

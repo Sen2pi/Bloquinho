@@ -173,20 +173,11 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
       final currentWorkspace = ref.read(currentWorkspaceProvider);
 
       if (currentProfile == null || currentWorkspace == null) {
-        debugPrint('❌ BlocoEditorScreen: Profile ou Workspace não disponível');
-        debugPrint('❌ Profile: ${currentProfile?.name ?? "null"}');
-        debugPrint('❌ Workspace: ${currentWorkspace?.name ?? "null"}');
         return;
       }
 
-      debugPrint('✅ BlocoEditorScreen: Inicializando editor...');
-      debugPrint('✅ Profile: ${currentProfile.name}');
-      debugPrint('✅ Workspace: ${currentWorkspace.name}');
-
       // Se não tem documentId, criar página raiz
       if (widget.documentId == null) {
-        debugPrint('📄 Criando nova página raiz...');
-
         final pagesNotifier = ref.read(pagesNotifierProvider((
           profileName: currentProfile.name,
           workspaceName: currentWorkspace.name
@@ -199,10 +190,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         pagesNotifier.state = [...pagesNotifier.state, newPage];
         _currentPageId = newPage.id;
         _navigationStack = [newPage.id];
-
-        debugPrint('✅ Nova página criada: ${newPage.id}');
       } else {
-        debugPrint('📄 Usando página existente: ${widget.documentId}');
         _currentPageId = widget.documentId!;
         _navigationStack = [widget.documentId!];
       }
@@ -218,10 +206,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
             },
             strings: strings,
           );
-
-      debugPrint('✅ Editor inicializado com sucesso');
     } catch (e) {
-      debugPrint('❌ Erro ao inicializar editor: $e');
       _showErrorSnackBar('${strings.errorInitializingEditor}: ${e.toString()}');
     }
   }

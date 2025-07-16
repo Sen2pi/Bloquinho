@@ -28,7 +28,6 @@ class AgendaKanbanView extends ConsumerWidget {
     final todoItems = ref.watch(todoItemsProvider);
     final inProgressItems = ref.watch(inProgressItemsProvider);
     final doneItems = ref.watch(doneItemsProvider);
-    final cancelledItems = ref.watch(cancelledItemsProvider);
     final strings = ref.watch(appStringsProvider);
 
     return Padding(
@@ -75,20 +74,6 @@ class AgendaKanbanView extends ConsumerWidget {
               ref,
             ),
           ),
-          const SizedBox(width: 16),
-
-          // Coluna: Cancelada
-          Expanded(
-            child: _buildKanbanColumn(
-              context,
-              strings.statusCancelled,
-              cancelledItems,
-              TaskStatus.cancelled,
-              Colors.red,
-              isDarkMode,
-              ref,
-            ),
-          ),
         ],
       ),
     );
@@ -104,80 +89,123 @@ class AgendaKanbanView extends ConsumerWidget {
     WidgetRef ref,
   ) {
     final strings = ref.watch(appStringsProvider);
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
-        ),
-      ),
-      child: Column(
-        children: [
-          // Header da coluna
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
+    return DragTarget<AgendaItem>(
+      onWillAccept: (data) => data != null && data.status != status,
+      onAccept: (data) => _moveItemToStatus(data, status, ref),
+      builder: (context, candidateData, rejectedData) {
+        final isActive = candidateData.isNotEmpty;
+        return Container(
+          decoration: BoxDecoration(
+            color: isActive
+                ? color.withOpacity(0.15)
+                : (isDarkMode ? AppColors.darkSurface : AppColors.lightSurface),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isActive
+                  ? color.withOpacity(0.7)
+                  : (isDarkMode ? AppColors.darkBorder : AppColors.lightBorder),
+              width: isActive ? 3 : 1,
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: color,
-                      ),
-                ),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${items.length}',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                ),
-              ],
-            ),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: color.withOpacity(0.3),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : null,
           ),
+          child: Column(
+            children: [
+              // Header da coluna
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(12)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: color,
+                          ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${items.length}',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-          // Lista de itens
-          Expanded(
-            child: items.isEmpty
-                ? _buildEmptyColumn(context, title, isDarkMode, strings)
-                : ListView.builder(
-                    padding: const EdgeInsets.all(8),
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Draggable<AgendaItem>(
-                          data: item,
-                          feedback: Material(
-                            elevation: 8,
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              width: 280,
+              // Lista de itens
+              Expanded(
+                child: items.isEmpty
+                    ? _buildEmptyColumn(context, title, isDarkMode, strings)
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(8),
+                        itemCount: items.length,
+                        shrinkWrap: true,
+                        physics: const ClampingScrollPhysics(),
+                        itemBuilder: (context, index) {
+                          final item = items[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Draggable<AgendaItem>(
+                              data: item,
+                              feedback: Material(
+                                elevation: 8,
+                                borderRadius: BorderRadius.circular(12),
+                                child: SizedBox(
+                                  width: 280,
+                                  child: AgendaItemCard(
+                                    item: item,
+                                    onTap: () => _showItemDetails(
+                                        context, item, strings),
+                                    onEdit: () =>
+                                        _showEditItemDialog(context, item),
+                                    onDelete: () => _showDeleteConfirmation(
+                                        context, item, strings),
+                                  ),
+                                ),
+                              ),
+                              childWhenDragging: Container(
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    style: BorderStyle.solid,
+                                  ),
+                                ),
+                              ),
                               child: AgendaItemCard(
                                 item: item,
                                 onTap: () =>
@@ -188,42 +216,14 @@ class AgendaKanbanView extends ConsumerWidget {
                                     context, item, strings),
                               ),
                             ),
-                          ),
-                          childWhenDragging: Container(
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.grey.withOpacity(0.5),
-                                style: BorderStyle.solid,
-                              ),
-                            ),
-                          ),
-                          child: DragTarget<AgendaItem>(
-                            onWillAccept: (data) =>
-                                data != null && data.status != status,
-                            onAccept: (data) =>
-                                _moveItemToStatus(data, status, ref),
-                            builder: (context, candidateData, rejectedData) {
-                              return AgendaItemCard(
-                                item: item,
-                                onTap: () =>
-                                    _showItemDetails(context, item, strings),
-                                onEdit: () =>
-                                    _showEditItemDialog(context, item),
-                                onDelete: () => _showDeleteConfirmation(
-                                    context, item, strings),
-                              );
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -258,9 +258,12 @@ class AgendaKanbanView extends ConsumerWidget {
     );
   }
 
-  void _moveItemToStatus(AgendaItem item, TaskStatus newStatus, WidgetRef ref) {
+  void _moveItemToStatus(
+      AgendaItem item, TaskStatus newStatus, WidgetRef ref) async {
     // Usar o provider para atualizar o status (que também atualiza na base de dados se necessário)
-    ref.read(agendaProvider.notifier).updateItemStatus(item.id, newStatus);
+    await ref
+        .read(agendaProvider.notifier)
+        .updateItemStatus(item.id, newStatus);
   }
 
   void _showItemDetails(

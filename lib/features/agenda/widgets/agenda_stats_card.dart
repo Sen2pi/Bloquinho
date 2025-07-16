@@ -49,13 +49,9 @@ class AgendaStatsCard extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // Grid de estatísticas
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.5,
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
             children: [
               _buildStatCard(
                 context,

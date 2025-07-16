@@ -39,7 +39,6 @@ class HuggingFaceTokenNotifier extends StateNotifier<String> {
       }
     } catch (e) {
       // Em caso de erro, manter token vazio
-      print('Erro ao inicializar HuggingFace token: $e');
     }
   }
 
@@ -67,7 +66,7 @@ class HuggingFaceTokenNotifier extends StateNotifier<String> {
       await _ensureBoxIsOpen();
       await _box!.put(_tokenKey, token);
     } catch (e) {
-      print('Erro ao salvar token HuggingFace: $e');
+      // Erro ao salvar token HuggingFace
     }
   }
 }
