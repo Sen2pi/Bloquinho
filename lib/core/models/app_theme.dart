@@ -11,14 +11,22 @@ import 'package:flutter/material.dart';
 
 /// Enum para tipos de tema disponíveis
 enum AppThemeType {
-  classic,    // Tema clássico (atual)
-  modern,     // Tema moderno
-  minimal,    // Tema minimalista
-  colorful,   // Tema colorido
+  classic, // Tema clássico (atual)
+  modern, // Tema moderno
+  minimal, // Tema minimalista
+  colorful, // Tema colorido
   professional, // Tema profissional
-  creative,   // Tema criativo
-  nature,     // Tema natureza
-  tech;       // Tema tecnológico
+  creative, // Tema criativo
+  nature, // Tema natureza
+  tech, // Tema tecnológico
+  sunset, // Tema pôr do sol
+  ocean, // Tema oceano
+  forest, // Tema floresta
+  desert, // Tema deserto
+  midnight, // Tema meia-noite
+  aurora, // Tema aurora boreal
+  cyberpunk, // Tema cyberpunk
+  vintage; // Tema vintage
 
   /// Nome legível do tema
   String get displayName {
@@ -39,6 +47,22 @@ enum AppThemeType {
         return 'Natureza';
       case AppThemeType.tech:
         return 'Tecnológico';
+      case AppThemeType.sunset:
+        return 'Pôr do Sol';
+      case AppThemeType.ocean:
+        return 'Oceano';
+      case AppThemeType.forest:
+        return 'Floresta';
+      case AppThemeType.desert:
+        return 'Deserto';
+      case AppThemeType.midnight:
+        return 'Meia-noite';
+      case AppThemeType.aurora:
+        return 'Aurora';
+      case AppThemeType.cyberpunk:
+        return 'Cyberpunk';
+      case AppThemeType.vintage:
+        return 'Vintage';
     }
   }
 
@@ -61,6 +85,22 @@ enum AppThemeType {
         return 'Cores inspiradas na natureza';
       case AppThemeType.tech:
         return 'Estilo tecnológico e futurista';
+      case AppThemeType.sunset:
+        return 'Cores quentes do pôr do sol';
+      case AppThemeType.ocean:
+        return 'Tons azuis do oceano profundo';
+      case AppThemeType.forest:
+        return 'Verdes da floresta exuberante';
+      case AppThemeType.desert:
+        return 'Cores quentes do deserto';
+      case AppThemeType.midnight:
+        return 'Escuridão da meia-noite';
+      case AppThemeType.aurora:
+        return 'Cores mágicas da aurora boreal';
+      case AppThemeType.cyberpunk:
+        return 'Estilo futurista cyberpunk';
+      case AppThemeType.vintage:
+        return 'Estilo retrô e nostálgico';
     }
   }
 
@@ -83,6 +123,22 @@ enum AppThemeType {
         return Icons.eco;
       case AppThemeType.tech:
         return Icons.computer;
+      case AppThemeType.sunset:
+        return Icons.wb_sunny;
+      case AppThemeType.ocean:
+        return Icons.water;
+      case AppThemeType.forest:
+        return Icons.forest;
+      case AppThemeType.desert:
+        return Icons.landscape;
+      case AppThemeType.midnight:
+        return Icons.nightlight_round;
+      case AppThemeType.aurora:
+        return Icons.auto_awesome;
+      case AppThemeType.cyberpunk:
+        return Icons.electric_bolt;
+      case AppThemeType.vintage:
+        return Icons.history_edu;
     }
   }
 
@@ -156,4 +212,4 @@ class AppThemeConfig {
       updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
-} 
+}

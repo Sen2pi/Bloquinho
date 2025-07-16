@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
 import '../../../shared/providers/theme_provider.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/models/app_theme.dart';
 
 class AppThemeSettingsScreen extends ConsumerStatefulWidget {
   const AppThemeSettingsScreen({super.key});
@@ -15,17 +17,20 @@ class AppThemeSettingsScreen extends ConsumerStatefulWidget {
 class _AppThemeSettingsScreenState
     extends ConsumerState<AppThemeSettingsScreen> {
   ThemeMode? _selectedTheme;
+  AppThemeType? _previewThemeType;
 
   @override
   void initState() {
     super.initState();
     _selectedTheme = ref.read(themeProvider);
+    _previewThemeType = null;
   }
 
   @override
   Widget build(BuildContext context) {
     final strings = AppStringsProvider.of(ref.watch(languageProvider));
     final currentTheme = ref.watch(themeProvider);
+    final currentThemeType = ref.watch(themeConfigProvider).themeType;
 
     return Scaffold(
       appBar: AppBar(
@@ -43,17 +48,14 @@ class _AppThemeSettingsScreenState
             ),
           ),
           SizedBox(
-            height: 120,
+            height: 160,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: [
-                _buildThemeCard(context, ThemeMode.light, strings.themeLight,
-                    Icons.wb_sunny),
-                _buildThemeCard(context, ThemeMode.dark, strings.themeDark,
-                    Icons.nightlight_round),
-                _buildThemeCard(context, ThemeMode.system, strings.themeSystem,
-                    Icons.settings_system_daydream),
+                for (final themeType in AppThemeType.values)
+                  _buildThemeCard(
+                      context, themeType, currentThemeType, strings),
               ],
             ),
           ),
@@ -82,7 +84,10 @@ class _AppThemeSettingsScreenState
                   ),
                   Expanded(
                     child: _buildThemePreview(
-                        context, _selectedTheme ?? currentTheme, strings),
+                        context,
+                        _selectedTheme ?? currentTheme,
+                        _previewThemeType ?? currentThemeType,
+                        strings),
                   ),
                 ],
               ),
@@ -93,22 +98,23 @@ class _AppThemeSettingsScreenState
     );
   }
 
-  Widget _buildThemeCard(
-      BuildContext context, ThemeMode mode, String name, IconData icon) {
-    final isSelected = _selectedTheme == mode;
+  Widget _buildThemeCard(BuildContext context, AppThemeType themeType,
+      AppThemeType currentThemeType, AppStrings strings) {
+    final isSelected = currentThemeType == themeType;
+    final color = AppColors.getPrimaryColor(themeType);
+    final bg = AppColors.getLightBackgroundColor(themeType);
+    final text = AppColors.getLightTextPrimaryColor(themeType);
     return Container(
       width: 200,
       margin: const EdgeInsets.only(right: 12),
       child: Card(
         elevation: isSelected ? 4 : 2,
-        color:
-            isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : null,
+        color: isSelected ? color.withOpacity(0.1) : null,
         child: InkWell(
           onTap: () {
             setState(() {
-              _selectedTheme = mode;
+              _previewThemeType = themeType;
             });
-            ref.read(themeConfigProvider.notifier).setTheme(mode);
           },
           borderRadius: BorderRadius.circular(8),
           child: Padding(
@@ -116,16 +122,31 @@ class _AppThemeSettingsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, size: 32),
-                const SizedBox(height: 12),
+                Icon(themeType.icon, size: 32, color: color),
+                const SizedBox(height: 8),
                 Text(
-                  name,
+                  themeType.displayName,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
+                        color: color,
                       ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    _buildColorPreview(bg),
+                    const SizedBox(width: 4),
+                    _buildColorPreview(color),
+                    const SizedBox(width: 4),
+                    _buildColorPreview(text),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  themeType.description,
+                  style: Theme.of(context).textTheme.bodySmall,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -135,16 +156,31 @@ class _AppThemeSettingsScreenState
     );
   }
 
-  Widget _buildThemePreview(
-      BuildContext context, ThemeMode mode, AppStrings strings) {
+  Widget _buildColorPreview(Color color) {
+    return Container(
+      width: 18,
+      height: 18,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+      ),
+    );
+  }
+
+  Widget _buildThemePreview(BuildContext context, ThemeMode mode,
+      AppThemeType themeType, AppStrings strings) {
     // Simula uma tela do app com botões, textos, etc, para preview do tema
     final theme = Theme.of(context);
+    final color = AppColors.getPrimaryColor(themeType);
+    final bg = AppColors.getLightBackgroundColor(themeType);
+    final text = AppColors.getLightTextPrimaryColor(themeType);
     return Center(
       child: Container(
         width: 400,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: theme.cardColor,
+          color: bg,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -160,29 +196,31 @@ class _AppThemeSettingsScreenState
           children: [
             Text(
               strings.preview,
-              style: theme.textTheme.headlineSmall,
+              style: theme.textTheme.headlineSmall?.copyWith(color: text),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
               'Bloquinho App',
-              style: theme.textTheme.titleLarge,
+              style: theme.textTheme.titleLarge?.copyWith(color: color),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: color),
               onPressed: () {},
               child: Text(strings.startUsingButton),
             ),
             const SizedBox(height: 8),
             OutlinedButton(
+              style: OutlinedButton.styleFrom(foregroundColor: color),
               onPressed: () {},
               child: Text(strings.completedButton),
             ),
             const SizedBox(height: 8),
             Text(
-              strings.settingsThemeDescription,
-              style: theme.textTheme.bodyMedium,
+              themeType.description,
+              style: theme.textTheme.bodyMedium?.copyWith(color: text),
               textAlign: TextAlign.center,
             ),
           ],

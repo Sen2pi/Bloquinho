@@ -90,7 +90,9 @@ class _WindowsCodeBlockWidgetState
             children: [
               if (widget.showMacOSHeader)
                 _buildMacOSHeader(isDarkMode, languageObj, selectedTheme),
-              _buildCodeContent(isDarkMode, selectedTheme),
+              Expanded(
+                child: _buildCodeContent(isDarkMode, selectedTheme),
+              ),
             ],
           ),
         ),
@@ -239,22 +241,24 @@ class _WindowsCodeBlockWidgetState
                   right: BorderSide(color: theme.borderColor, width: 1),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: List.generate(lineCount, (index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Text(
-                      '${index + 1}',
-                      style: TextStyle(
-                        color: theme.lineNumberColor,
-                        fontSize: 13,
-                        fontFamily: 'monospace',
-                        height: 1.5,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: List.generate(lineCount, (index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          color: theme.lineNumberColor,
+                          fontSize: 13,
+                          fontFamily: 'monospace',
+                          height: 1.5,
+                        ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  }),
+                ),
               ),
             ),
 

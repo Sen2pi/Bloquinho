@@ -144,6 +144,110 @@ class AppColors {
   static const Color techDarkTextPrimary = Color(0xFFCFFAFE);
   static const Color techDarkTextSecondary = Color(0xFFA5F3FC);
 
+  // === TEMA PÔR DO SOL ===
+  static const Color sunsetPrimary = Color(0xFFFF6B35); // Laranja
+  static const Color sunsetLightBackground = Color(0xFFFFF5F0);
+  static const Color sunsetLightSurface = Color(0xFFFFF8F5);
+  static const Color sunsetLightBorder = Color(0xFFFFB366);
+  static const Color sunsetLightTextPrimary = Color(0xFF7C2D12);
+  static const Color sunsetLightTextSecondary = Color(0xFFEA580C);
+  static const Color sunsetDarkBackground = Color(0xFF1F0A00);
+  static const Color sunsetDarkSurface = Color(0xFF2D1500);
+  static const Color sunsetDarkBorder = Color(0xFF4C2500);
+  static const Color sunsetDarkTextPrimary = Color(0xFFFEF3C7);
+  static const Color sunsetDarkTextSecondary = Color(0xFFFCD34D);
+
+  // === TEMA OCEANO ===
+  static const Color oceanPrimary = Color(0xFF0891B2); // Azul oceano
+  static const Color oceanLightBackground = Color(0xFFF0F9FF);
+  static const Color oceanLightSurface = Color(0xFFF7FCFF);
+  static const Color oceanLightBorder = Color(0xFFA5F3FC);
+  static const Color oceanLightTextPrimary = Color(0xFF164E63);
+  static const Color oceanLightTextSecondary = Color(0xFF0891B2);
+  static const Color oceanDarkBackground = Color(0xFF0A1A1F);
+  static const Color oceanDarkSurface = Color(0xFF1A2A2F);
+  static const Color oceanDarkBorder = Color(0xFF2D4A4F);
+  static const Color oceanDarkTextPrimary = Color(0xFFCFFAFE);
+  static const Color oceanDarkTextSecondary = Color(0xFFA5F3FC);
+
+  // === TEMA FLORESTA ===
+  static const Color forestPrimary = Color(0xFF059669); // Verde floresta
+  static const Color forestLightBackground = Color(0xFFF0FDF4);
+  static const Color forestLightSurface = Color(0xFFF7FEF9);
+  static const Color forestLightBorder = Color(0xFFBBF7D0);
+  static const Color forestLightTextPrimary = Color(0xFF064E3B);
+  static const Color forestLightTextSecondary = Color(0xFF047857);
+  static const Color forestDarkBackground = Color(0xFF0A1F0A);
+  static const Color forestDarkSurface = Color(0xFF1A2E1A);
+  static const Color forestDarkBorder = Color(0xFF2D4A2D);
+  static const Color forestDarkTextPrimary = Color(0xFFD1FAE5);
+  static const Color forestDarkTextSecondary = Color(0xFFA7F3D0);
+
+  // === TEMA DESERTO ===
+  static const Color desertPrimary = Color(0xFFD97706); // Amarelo deserto
+  static const Color desertLightBackground = Color(0xFFFFFBEB);
+  static const Color desertLightSurface = Color(0xFFFFFDF5);
+  static const Color desertLightBorder = Color(0xFFFDE68A);
+  static const Color desertLightTextPrimary = Color(0xFF78350F);
+  static const Color desertLightTextSecondary = Color(0xFFB45309);
+  static const Color desertDarkBackground = Color(0xFF1F0A00);
+  static const Color desertDarkSurface = Color(0xFF2D1500);
+  static const Color desertDarkBorder = Color(0xFF4C2500);
+  static const Color desertDarkTextPrimary = Color(0xFFFEF3C7);
+  static const Color desertDarkTextSecondary = Color(0xFFFCD34D);
+
+  // === TEMA MEIA-NOITE ===
+  static const Color midnightPrimary = Color(0xFF7C3AED); // Roxo meia-noite
+  static const Color midnightLightBackground = Color(0xFFFAF5FF);
+  static const Color midnightLightSurface = Color(0xFFFFF8FF);
+  static const Color midnightLightBorder = Color(0xFFE9D5FF);
+  static const Color midnightLightTextPrimary = Color(0xFF581C87);
+  static const Color midnightLightTextSecondary = Color(0xFF7C3AED);
+  static const Color midnightDarkBackground = Color(0xFF1A0B2E);
+  static const Color midnightDarkSurface = Color(0xFF2D1B4E);
+  static const Color midnightDarkBorder = Color(0xFF4C1D7A);
+  static const Color midnightDarkTextPrimary = Color(0xFFF3E8FF);
+  static const Color midnightDarkTextSecondary = Color(0xFFC4B5FD);
+
+  // === TEMA AURORA ===
+  static const Color auroraPrimary = Color(0xFFEC4899); // Rosa aurora
+  static const Color auroraLightBackground = Color(0xFFFFF0F6);
+  static const Color auroraLightSurface = Color(0xFFFFF8FC);
+  static const Color auroraLightBorder = Color(0xFFFFB3D1);
+  static const Color auroraLightTextPrimary = Color(0xFF831843);
+  static const Color auroraLightTextSecondary = Color(0xFFBE185D);
+  static const Color auroraDarkBackground = Color(0xFF1F0B1A);
+  static const Color auroraDarkSurface = Color(0xFF2D1B2D);
+  static const Color auroraDarkBorder = Color(0xFF4C1D4C);
+  static const Color auroraDarkTextPrimary = Color(0xFFFCE7F3);
+  static const Color auroraDarkTextSecondary = Color(0xFFF9A8D4);
+
+  // === TEMA CYBERPUNK ===
+  static const Color cyberpunkPrimary = Color(0xFF00FF88); // Verde neon
+  static const Color cyberpunkLightBackground = Color(0xFF0A0A0A);
+  static const Color cyberpunkLightSurface = Color(0xFF1A1A1A);
+  static const Color cyberpunkLightBorder = Color(0xFF00FF88);
+  static const Color cyberpunkLightTextPrimary = Color(0xFF00FF88);
+  static const Color cyberpunkLightTextSecondary = Color(0xFF00CC6A);
+  static const Color cyberpunkDarkBackground = Color(0xFF000000);
+  static const Color cyberpunkDarkSurface = Color(0xFF0A0A0A);
+  static const Color cyberpunkDarkBorder = Color(0xFF00FF88);
+  static const Color cyberpunkDarkTextPrimary = Color(0xFF00FF88);
+  static const Color cyberpunkDarkTextSecondary = Color(0xFF00CC6A);
+
+  // === TEMA VINTAGE ===
+  static const Color vintagePrimary = Color(0xFF8B4513); // Marrom vintage
+  static const Color vintageLightBackground = Color(0xFFF5F5DC);
+  static const Color vintageLightSurface = Color(0xFFFAFAF0);
+  static const Color vintageLightBorder = Color(0xFFD2B48C);
+  static const Color vintageLightTextPrimary = Color(0xFF654321);
+  static const Color vintageLightTextSecondary = Color(0xFF8B4513);
+  static const Color vintageDarkBackground = Color(0xFF2F1B0A);
+  static const Color vintageDarkSurface = Color(0xFF3D2B1A);
+  static const Color vintageDarkBorder = Color(0xFF5D4B3A);
+  static const Color vintageDarkTextPrimary = Color(0xFFF5DEB3);
+  static const Color vintageDarkTextSecondary = Color(0xFFDEB887);
+
   // Cores especiais para blocos e editor
   static const Color blockBackground = Color(0xFFF1F5F9);
   static const Color blockBackgroundDark = Color(0xFF1E293B);
@@ -221,6 +325,22 @@ class AppColors {
         return naturePrimary;
       case AppThemeType.tech:
         return techPrimary;
+      case AppThemeType.sunset:
+        return sunsetPrimary;
+      case AppThemeType.ocean:
+        return oceanPrimary;
+      case AppThemeType.forest:
+        return forestPrimary;
+      case AppThemeType.desert:
+        return desertPrimary;
+      case AppThemeType.midnight:
+        return midnightPrimary;
+      case AppThemeType.aurora:
+        return auroraPrimary;
+      case AppThemeType.cyberpunk:
+        return cyberpunkPrimary;
+      case AppThemeType.vintage:
+        return vintagePrimary;
     }
   }
 
@@ -243,6 +363,22 @@ class AppColors {
         return natureLightBackground;
       case AppThemeType.tech:
         return techLightBackground;
+      case AppThemeType.sunset:
+        return sunsetLightBackground;
+      case AppThemeType.ocean:
+        return oceanLightBackground;
+      case AppThemeType.forest:
+        return forestLightBackground;
+      case AppThemeType.desert:
+        return desertLightBackground;
+      case AppThemeType.midnight:
+        return midnightLightBackground;
+      case AppThemeType.aurora:
+        return auroraLightBackground;
+      case AppThemeType.cyberpunk:
+        return cyberpunkLightBackground;
+      case AppThemeType.vintage:
+        return vintageLightBackground;
     }
   }
 
@@ -265,6 +401,22 @@ class AppColors {
         return natureLightSurface;
       case AppThemeType.tech:
         return techLightSurface;
+      case AppThemeType.sunset:
+        return sunsetLightSurface;
+      case AppThemeType.ocean:
+        return oceanLightSurface;
+      case AppThemeType.forest:
+        return forestLightSurface;
+      case AppThemeType.desert:
+        return desertLightSurface;
+      case AppThemeType.midnight:
+        return midnightLightSurface;
+      case AppThemeType.aurora:
+        return auroraLightSurface;
+      case AppThemeType.cyberpunk:
+        return cyberpunkLightSurface;
+      case AppThemeType.vintage:
+        return vintageLightSurface;
     }
   }
 
@@ -287,6 +439,22 @@ class AppColors {
         return natureLightBorder;
       case AppThemeType.tech:
         return techLightBorder;
+      case AppThemeType.sunset:
+        return sunsetLightBorder;
+      case AppThemeType.ocean:
+        return oceanLightBorder;
+      case AppThemeType.forest:
+        return forestLightBorder;
+      case AppThemeType.desert:
+        return desertLightBorder;
+      case AppThemeType.midnight:
+        return midnightLightBorder;
+      case AppThemeType.aurora:
+        return auroraLightBorder;
+      case AppThemeType.cyberpunk:
+        return cyberpunkLightBorder;
+      case AppThemeType.vintage:
+        return vintageLightBorder;
     }
   }
 
@@ -309,6 +477,22 @@ class AppColors {
         return natureLightTextPrimary;
       case AppThemeType.tech:
         return techLightTextPrimary;
+      case AppThemeType.sunset:
+        return sunsetLightTextPrimary;
+      case AppThemeType.ocean:
+        return oceanLightTextPrimary;
+      case AppThemeType.forest:
+        return forestLightTextPrimary;
+      case AppThemeType.desert:
+        return desertLightTextPrimary;
+      case AppThemeType.midnight:
+        return midnightLightTextPrimary;
+      case AppThemeType.aurora:
+        return auroraLightTextPrimary;
+      case AppThemeType.cyberpunk:
+        return cyberpunkLightTextPrimary;
+      case AppThemeType.vintage:
+        return vintageLightTextPrimary;
     }
   }
 
@@ -331,6 +515,22 @@ class AppColors {
         return natureLightTextSecondary;
       case AppThemeType.tech:
         return techLightTextSecondary;
+      case AppThemeType.sunset:
+        return sunsetLightTextSecondary;
+      case AppThemeType.ocean:
+        return oceanLightTextSecondary;
+      case AppThemeType.forest:
+        return forestLightTextSecondary;
+      case AppThemeType.desert:
+        return desertLightTextSecondary;
+      case AppThemeType.midnight:
+        return midnightLightTextSecondary;
+      case AppThemeType.aurora:
+        return auroraLightTextSecondary;
+      case AppThemeType.cyberpunk:
+        return cyberpunkLightTextSecondary;
+      case AppThemeType.vintage:
+        return vintageLightTextSecondary;
     }
   }
 
@@ -353,6 +553,22 @@ class AppColors {
         return natureDarkBackground;
       case AppThemeType.tech:
         return techDarkBackground;
+      case AppThemeType.sunset:
+        return sunsetDarkBackground;
+      case AppThemeType.ocean:
+        return oceanDarkBackground;
+      case AppThemeType.forest:
+        return forestDarkBackground;
+      case AppThemeType.desert:
+        return desertDarkBackground;
+      case AppThemeType.midnight:
+        return midnightDarkBackground;
+      case AppThemeType.aurora:
+        return auroraDarkBackground;
+      case AppThemeType.cyberpunk:
+        return cyberpunkDarkBackground;
+      case AppThemeType.vintage:
+        return vintageDarkBackground;
     }
   }
 
@@ -375,6 +591,22 @@ class AppColors {
         return natureDarkSurface;
       case AppThemeType.tech:
         return techDarkSurface;
+      case AppThemeType.sunset:
+        return sunsetDarkSurface;
+      case AppThemeType.ocean:
+        return oceanDarkSurface;
+      case AppThemeType.forest:
+        return forestDarkSurface;
+      case AppThemeType.desert:
+        return desertDarkSurface;
+      case AppThemeType.midnight:
+        return midnightDarkSurface;
+      case AppThemeType.aurora:
+        return auroraDarkSurface;
+      case AppThemeType.cyberpunk:
+        return cyberpunkDarkSurface;
+      case AppThemeType.vintage:
+        return vintageDarkSurface;
     }
   }
 
@@ -397,6 +629,22 @@ class AppColors {
         return natureDarkBorder;
       case AppThemeType.tech:
         return techDarkBorder;
+      case AppThemeType.sunset:
+        return sunsetDarkBorder;
+      case AppThemeType.ocean:
+        return oceanDarkBorder;
+      case AppThemeType.forest:
+        return forestDarkBorder;
+      case AppThemeType.desert:
+        return desertDarkBorder;
+      case AppThemeType.midnight:
+        return midnightDarkBorder;
+      case AppThemeType.aurora:
+        return auroraDarkBorder;
+      case AppThemeType.cyberpunk:
+        return cyberpunkDarkBorder;
+      case AppThemeType.vintage:
+        return vintageDarkBorder;
     }
   }
 
@@ -419,6 +667,22 @@ class AppColors {
         return natureDarkTextPrimary;
       case AppThemeType.tech:
         return techDarkTextPrimary;
+      case AppThemeType.sunset:
+        return sunsetDarkTextPrimary;
+      case AppThemeType.ocean:
+        return oceanDarkTextPrimary;
+      case AppThemeType.forest:
+        return forestDarkTextPrimary;
+      case AppThemeType.desert:
+        return desertDarkTextPrimary;
+      case AppThemeType.midnight:
+        return midnightDarkTextPrimary;
+      case AppThemeType.aurora:
+        return auroraDarkTextPrimary;
+      case AppThemeType.cyberpunk:
+        return cyberpunkDarkTextPrimary;
+      case AppThemeType.vintage:
+        return vintageDarkTextPrimary;
     }
   }
 
@@ -441,6 +705,22 @@ class AppColors {
         return natureDarkTextSecondary;
       case AppThemeType.tech:
         return techDarkTextSecondary;
+      case AppThemeType.sunset:
+        return sunsetDarkTextSecondary;
+      case AppThemeType.ocean:
+        return oceanDarkTextSecondary;
+      case AppThemeType.forest:
+        return forestDarkTextSecondary;
+      case AppThemeType.desert:
+        return desertDarkTextSecondary;
+      case AppThemeType.midnight:
+        return midnightDarkTextSecondary;
+      case AppThemeType.aurora:
+        return auroraDarkTextSecondary;
+      case AppThemeType.cyberpunk:
+        return cyberpunkDarkTextSecondary;
+      case AppThemeType.vintage:
+        return vintageDarkTextSecondary;
     }
   }
 }

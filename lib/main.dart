@@ -38,6 +38,7 @@ import 'features/bloquinho/screens/bloquinho_dashboard_screen.dart';
 import 'features/bloquinho/screens/bloco_editor_screen.dart';
 import 'features/settings/screens/ai_settings_screen.dart';
 import 'features/settings/screens/code_theme_settings_screen.dart';
+import 'features/settings/screens/app_theme_settings_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 
 void main() async {
@@ -235,6 +236,13 @@ class BloquinhoApp extends ConsumerWidget {
           path: '/code_theme_settings',
           name: 'code_theme_settings',
           builder: (context, state) => const CodeThemeSettingsScreen(),
+        ),
+
+        // App Theme Settings
+        GoRoute(
+          path: '/app_theme_settings',
+          name: 'app_theme_settings',
+          builder: (context, state) => const AppThemeSettingsScreen(),
         ),
 
         // Settings
