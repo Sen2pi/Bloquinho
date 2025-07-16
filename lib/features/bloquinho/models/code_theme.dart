@@ -522,6 +522,17 @@ class LanguageSyntax {
   final RegExp classPattern;
   final RegExp operatorPattern;
   final RegExp punctuationPattern;
+  final RegExp methodPattern;
+  final RegExp parameterPattern;
+  final RegExp propertyPattern;
+  final RegExp typePattern;
+  final RegExp constantPattern;
+  final RegExp annotationPattern;
+  final RegExp directivePattern;
+  final RegExp namespacePattern;
+  final RegExp importPattern;
+  final RegExp exportPattern;
+  final RegExp decoratorPattern;
 
   const LanguageSyntax({
     required this.keywordPattern,
@@ -533,6 +544,17 @@ class LanguageSyntax {
     required this.classPattern,
     required this.operatorPattern,
     required this.punctuationPattern,
+    required this.methodPattern,
+    required this.parameterPattern,
+    required this.propertyPattern,
+    required this.typePattern,
+    required this.constantPattern,
+    required this.annotationPattern,
+    required this.directivePattern,
+    required this.namespacePattern,
+    required this.importPattern,
+    required this.exportPattern,
+    required this.decoratorPattern,
   });
 }
 
@@ -550,6 +572,17 @@ final Map<String, LanguageSyntax> _languageSyntaxes = {
     classPattern: RegExp(r'\bclass ([a-zA-Z_][a-zA-Z0-9_]*)'),
     operatorPattern: RegExp(r'[+\-*/%=<>!&|^~]'),
     punctuationPattern: RegExp(r'[(){}\[\];:,.]'),
+    methodPattern: RegExp(r''),
+    parameterPattern: RegExp(r''),
+    propertyPattern: RegExp(r''),
+    typePattern: RegExp(r''),
+    constantPattern: RegExp(r''),
+    annotationPattern: RegExp(r''),
+    directivePattern: RegExp(r''),
+    namespacePattern: RegExp(r''),
+    importPattern: RegExp(r''),
+    exportPattern: RegExp(r''),
+    decoratorPattern: RegExp(r''),
   ),
   'javascript': LanguageSyntax(
     keywordPattern: RegExp(
@@ -563,6 +596,17 @@ final Map<String, LanguageSyntax> _languageSyntaxes = {
     classPattern: RegExp(r'\bclass ([a-zA-Z_\$][a-zA-Z0-9_\$]*)'),
     operatorPattern: RegExp(r'[+\-*/%=<>!&|^~]'),
     punctuationPattern: RegExp(r'[(){}\[\];:,.]'),
+    methodPattern: RegExp(r''),
+    parameterPattern: RegExp(r''),
+    propertyPattern: RegExp(r''),
+    typePattern: RegExp(r''),
+    constantPattern: RegExp(r''),
+    annotationPattern: RegExp(r''),
+    directivePattern: RegExp(r''),
+    namespacePattern: RegExp(r''),
+    importPattern: RegExp(r''),
+    exportPattern: RegExp(r''),
+    decoratorPattern: RegExp(r''),
   ),
   // Fallback genérico
   'text': LanguageSyntax(
@@ -575,6 +619,17 @@ final Map<String, LanguageSyntax> _languageSyntaxes = {
     classPattern: RegExp(r''),
     operatorPattern: RegExp(r''),
     punctuationPattern: RegExp(r''),
+    methodPattern: RegExp(r''),
+    parameterPattern: RegExp(r''),
+    propertyPattern: RegExp(r''),
+    typePattern: RegExp(r''),
+    constantPattern: RegExp(r''),
+    annotationPattern: RegExp(r''),
+    directivePattern: RegExp(r''),
+    namespacePattern: RegExp(r''),
+    importPattern: RegExp(r''),
+    exportPattern: RegExp(r''),
+    decoratorPattern: RegExp(r''),
   ),
 };
 

@@ -13,6 +13,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../models/cartao_credito.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/animated_action_button.dart';
+import 'documento_grid_card.dart';
 
 class CartaoCreditoListWidget extends StatelessWidget {
   final List<CartaoCredito> cartoes;
@@ -40,13 +41,40 @@ class CartaoCreditoListWidget extends StatelessWidget {
       return _buildEmptyState(context);
     }
 
-    return ListView.builder(
+    return Padding(
       padding: const EdgeInsets.all(16),
-      itemCount: cartoes.length,
-      itemBuilder: (context, index) {
-        final cartao = cartoes[index];
-        return _buildCartaoCard(context, cartao);
-      },
+      child: Column(
+        children: [
+          // Botão de adicionar
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 16),
+            child: AnimatedActionButton(
+              text: 'Adicionar Cartão',
+              onPressed: onAdd,
+              isLoading: false,
+              isEnabled: true,
+              icon: PhosphorIcons.plus(),
+            ),
+          ),
+          // Grid de cartões
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.8, // Ratio para altura ajustável
+              ),
+              itemCount: cartoes.length,
+              itemBuilder: (context, index) {
+                final cartao = cartoes[index];
+                return _buildCartaoGridCard(context, cartao);
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -87,158 +115,17 @@ class CartaoCreditoListWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildCartaoCard(BuildContext context, CartaoCredito cartao) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              cartao.corBandeira,
-              cartao.corBandeira.withOpacity(0.8),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    cartao.iconeBandeira,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    cartao.nomeBandeira,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      cartao.nomeTipo,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                cartao.numeroMascarado,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                cartao.nomeImpresso,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(
-                    'Validade: ${cartao.validade}',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Text(
-                    'Emissor: ${cartao.emissor}',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-              if (cartao.limite != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Limite: ${cartao.limite}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-              if (cartao.vencido) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'VENCIDO',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
-                    onPressed: () => onEdit(cartao),
-                    icon: Icon(
-                      PhosphorIcons.pencil(),
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    tooltip: 'Editar',
-                  ),
-                  IconButton(
-                    onPressed: () => onDelete(cartao.id),
-                    icon: Icon(
-                      PhosphorIcons.trash(),
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    tooltip: 'Excluir',
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+  Widget _buildCartaoGridCard(BuildContext context, CartaoCredito cartao) {
+    return DocumentoGridCard(
+      imagemPath: cartao.imagemPath,
+      titulo: cartao.nomeBandeira,
+      subtitulo: cartao.numeroMascarado,
+      informacaoSecundaria: '${cartao.nomeTipo} • ${cartao.validade}',
+      corPrimaria: cartao.corBandeira,
+      iconePadrao: cartao.iconeBandeira,
+      isVencido: cartao.vencido,
+      onEdit: () => onEdit(cartao),
+      onDelete: () => onDelete(cartao.id),
     );
   }
 }

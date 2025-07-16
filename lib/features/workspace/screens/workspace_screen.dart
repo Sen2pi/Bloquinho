@@ -1164,7 +1164,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
           ],
 
           // Botão de tema animado
-          if (_isSidebarExpanded) ...[ 
+          if (_isSidebarExpanded) ...[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: AnimatedThemeToggle(
@@ -1172,14 +1172,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 width: 60,
                 height: 30,
                 onToggle: () {
-                  ref.read(themeProvider.notifier).toggleTheme();
+                  ref.read(themeConfigProvider.notifier).toggleTheme();
                 },
               ),
             ),
           ] else ...[
             IconButton(
               onPressed: () {
-                ref.read(themeProvider.notifier).toggleTheme();
+                ref.read(themeConfigProvider.notifier).toggleTheme();
               },
               icon: Icon(
                 isDarkMode ? PhosphorIcons.sun() : PhosphorIcons.moon(),

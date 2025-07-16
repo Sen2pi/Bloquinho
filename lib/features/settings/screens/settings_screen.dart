@@ -55,7 +55,7 @@ class SettingsScreen extends ConsumerWidget {
             title: strings.settingsTheme,
             description: strings.settingsThemeDescription,
             icon: Icons.palette,
-            onTap: () => _showThemeDialog(context, ref),
+            onTap: () => context.pushNamed('app_theme_settings'),
             trailing: _getThemeDisplayName(themeMode),
           ),
 
@@ -92,11 +92,24 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => context.pushNamed('profile'),
           ),
 
+          const SizedBox(height: 16),
+
+          // Seção de Tema de Código
+          _buildSection(
+            context,
+            title: strings.codeTheme,
+            description: strings.codeThemeDescription,
+            icon: Icons.code,
+            onTap: () => context.pushNamed('code_theme_settings'),
+          ),
+
+          const SizedBox(height: 16),
+
           // Seção de IA
           _buildSection(
             context,
-            title: 'Configurações de IA',
-            description: 'Token Hugging Face e integração de IA',
+            title: strings.aiSettings,
+            description: strings.aiSettingsDescription,
             icon: Icons.smart_toy,
             onTap: () => context.pushNamed('ai_settings'),
           ),
@@ -217,69 +230,6 @@ class SettingsScreen extends ConsumerWidget {
           : null,
       onTap: () {
         ref.read(languageProvider.notifier).setLanguage(language);
-        Navigator.of(context).pop();
-      },
-    );
-  }
-
-  void _showThemeDialog(BuildContext context, WidgetRef ref) {
-    final strings = ref.read(appStringsProvider);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(strings.settingsTheme),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildThemeOption(
-              context,
-              ref,
-              ThemeMode.light,
-              'Claro',
-              Icons.wb_sunny,
-            ),
-            _buildThemeOption(
-              context,
-              ref,
-              ThemeMode.dark,
-              'Escuro',
-              Icons.nightlight_round,
-            ),
-            _buildThemeOption(
-              context,
-              ref,
-              ThemeMode.system,
-              'Sistema',
-              Icons.settings_system_daydream,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThemeOption(
-    BuildContext context,
-    WidgetRef ref,
-    ThemeMode themeMode,
-    String name,
-    IconData icon,
-  ) {
-    final currentTheme = ref.watch(themeProvider);
-    final isSelected = currentTheme == themeMode;
-
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(name),
-      trailing: isSelected
-          ? Icon(
-              Icons.check,
-              color: Theme.of(context).colorScheme.primary,
-            )
-          : null,
-      onTap: () {
-        ref.read(themeProvider.notifier).setTheme(themeMode);
         Navigator.of(context).pop();
       },
     );

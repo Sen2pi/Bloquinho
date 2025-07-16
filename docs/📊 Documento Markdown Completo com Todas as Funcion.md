@@ -138,19 +138,19 @@ A fórmula quadrática: $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$
 
 Integral definida:
 
-$$
+$
 \int_a^b f(x) \, dx = F(b) - F(a)
-$$
+$
 
 Somatório:
 
-$$
+$
 \sum_{i=1}^{n} i = \frac{n(n+1)}{2}
-$$
+$
 
 Matriz:
 
-$$
+$
 \begin{pmatrix}
 a & b \\
 c & d
@@ -164,13 +164,13 @@ y
 ax + by \\
 cx + dy
 \end{pmatrix}
-$$
+$
 
 Limite:
 
-$$
+$
 \lim_{x \to \infty} \frac{1}{x} = 0
-$$
+$
 
 ## 📊 Tabelas Avançadas
 

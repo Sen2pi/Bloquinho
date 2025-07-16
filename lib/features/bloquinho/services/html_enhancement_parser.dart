@@ -83,7 +83,7 @@ class HtmlEnhancementParser {
     // Proteger blocos LaTeX ($$ ... $$) e Mermaid (```mermaid ... ```) para não serem processados
     final protectedBlocks = <String>[];
     content = content.replaceAllMapped(
-      RegExp(r'\$\$([\s\S]+?)\$\$|```mermaid([\s\S]+?)```', multiLine: true),
+      RegExp(r'\$\$([\s\S]*?)\$\$|```mermaid([\s\S]+?)```', multiLine: true),
       (match) {
         protectedBlocks.add(match.group(0)!);
         return '<<PROTECTED_BLOCK_${protectedBlocks.length - 1}>>';

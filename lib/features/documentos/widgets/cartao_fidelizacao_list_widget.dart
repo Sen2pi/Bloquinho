@@ -13,6 +13,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../models/cartao_fidelizacao.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/animated_action_button.dart';
+import 'documento_grid_card.dart';
 
 class CartaoFidelizacaoListWidget extends StatelessWidget {
   final List<CartaoFidelizacao> cartoes;
@@ -40,13 +41,40 @@ class CartaoFidelizacaoListWidget extends StatelessWidget {
       return _buildEmptyState(context);
     }
 
-    return ListView.builder(
+    return Padding(
       padding: const EdgeInsets.all(16),
-      itemCount: cartoes.length,
-      itemBuilder: (context, index) {
-        final cartao = cartoes[index];
-        return _buildCartaoCard(context, cartao);
-      },
+      child: Column(
+        children: [
+          // Botão de adicionar
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 16),
+            child: AnimatedActionButton(
+              text: 'Adicionar Cartão de Fidelização',
+              onPressed: onAdd,
+              isLoading: false,
+              isEnabled: true,
+              icon: PhosphorIcons.plus(),
+            ),
+          ),
+          // Grid de cartões
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.8,
+              ),
+              itemCount: cartoes.length,
+              itemBuilder: (context, index) {
+                final cartao = cartoes[index];
+                return _buildCartaoGridCard(context, cartao);
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -87,181 +115,22 @@ class CartaoFidelizacaoListWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildCartaoCard(BuildContext context, CartaoFidelizacao cartao) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              cartao.corTipo,
-              cartao.corTipo.withOpacity(0.8),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    cartao.iconeTipo,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          cartao.nome,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          cartao.empresa,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      cartao.nomeTipo,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                cartao.numeroMascarado,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 1,
-                ),
-              ),
-              if (cartao.pontosAtuais != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      PhosphorIcons.star(),
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${cartao.pontosAtuais} pontos',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    if (cartao.pontosExpiram) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'EXPIRA',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-              if (cartao.validade != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Validade: ${cartao.validade}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-              if (cartao.vencido) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'VENCIDO',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
-                    onPressed: () => onEdit(cartao),
-                    icon: Icon(
-                      PhosphorIcons.pencil(),
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    tooltip: 'Editar',
-                  ),
-                  IconButton(
-                    onPressed: () => onDelete(cartao.id),
-                    icon: Icon(
-                      PhosphorIcons.trash(),
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    tooltip: 'Excluir',
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+  Widget _buildCartaoGridCard(BuildContext context, CartaoFidelizacao cartao) {
+    String informacaoSecundaria = cartao.empresa;
+    if (cartao.pontosAtuais != null) {
+      informacaoSecundaria += ' • ${cartao.pontosAtuais} pts';
+    }
+    
+    return DocumentoGridCard(
+      imagemPath: cartao.imagemPath,
+      titulo: cartao.nome,
+      subtitulo: cartao.nomeTipo,
+      informacaoSecundaria: informacaoSecundaria,
+      corPrimaria: cartao.corTipo,
+      iconePadrao: cartao.iconeTipo,
+      isVencido: cartao.vencido || cartao.pontosExpiram,
+      onEdit: () => onEdit(cartao),
+      onDelete: () => onDelete(cartao.id),
     );
   }
 }

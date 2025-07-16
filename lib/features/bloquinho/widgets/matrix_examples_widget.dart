@@ -142,58 +142,54 @@ class MatrixExamplesWidget extends ConsumerWidget {
 
   Widget _buildMarkdownPreview() {
     const markdownExample = r'''
-# Exemplos de Matrizes em Markdown
+# Exemplos de Matrizes LaTeX
 
-## Matriz 2x2
-$$
-\begin{pmatrix} 
-a & b \\ 
-c & d 
-\end{pmatrix}
-$$
+## 1. Matriz com Parênteses (pmatrix)
+$\begin{pmatrix} 1 & 2 \\ 3 & 4 \end{pmatrix}$
 
-## Sistema de Equações
-$$
-\begin{cases}
-ax + by = c \\
-dx + ey = f
-\end{cases}
-$$
+## 2. Matriz com Colchetes (bmatrix)
+$\begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix}$
 
-## Determinante
-$$
-\begin{vmatrix}
+## 3. Matriz com Chaves (Bmatrix)
+$\begin{Bmatrix} 1 & 2 \\ 3 & 4 \end{Bmatrix}$
+
+## 4. Determinante (vmatrix)
+$\begin{vmatrix} a & b \\ c & d \end{vmatrix} = ad - bc$
+
+## 5. Matriz 3x3
+$\begin{pmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \\ 7 & 8 & 9 \end{pmatrix}$
+
+## 6. Vetor Coluna
+$\vec{v} = \begin{pmatrix} x \\ y \\ z \end{pmatrix}$
+
+## 7. Multiplicação de Matrizes
+$\begin{pmatrix} a & b \\ c & d \end{pmatrix} \begin{pmatrix} x \\ y \end{pmatrix} = \begin{pmatrix} ax + by \\ cx + dy \end{pmatrix}$
+
+## 8. Sistema de Equações
+$\begin{cases} ax + by = c \\ dx + ey = f \end{cases}$
+
+## 9. Matriz Identidade
+$I = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{pmatrix}$
+
+## 10. Matriz com Frações
+$\begin{pmatrix} \frac{1}{2} & \frac{3}{4} \\ \frac{5}{6} & \frac{7}{8} \end{pmatrix}$
+
+---
+
+## Formato Multi-linha (também funciona)
+
+Alternativamente, você pode usar formato multi-linha:
+
+```
+$
+\begin{pmatrix}
 a & b \\
 c & d
-\end{vmatrix} = ad - bc
-$$
+\end{pmatrix}
+$
+```
 
-## Vetor
-$$
-\vec{v} = \begin{pmatrix} x \\ y \\ z \end{pmatrix}
-$$
-
-## Fórmulas Matemáticas
-
-### Integral
-$$
-\int_{a}^{b} f(x) \, dx
-$$
-
-### Derivada
-$$
-\frac{d}{dx} f(x)
-$$
-
-### Soma
-$$
-\sum_{i=1}^{n} x_i
-$$
-
-### Limite
-$$
-\lim_{x \to \infty} f(x)
-$$
+**Nota:** Ambos os formatos funcionam. Use `$...$` para compatibilidade.
 ''';
 
     return Column(

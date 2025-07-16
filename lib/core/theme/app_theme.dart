@@ -10,47 +10,47 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
+import '../models/app_theme.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme {
+  /// Obter tema claro baseado no tipo de tema
+  static ThemeData getLightTheme(AppThemeType themeType) {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: const ColorScheme.light(
-        primary: AppColors.primary,
+      colorScheme: ColorScheme.light(
+        primary: AppColors.getPrimaryColor(themeType),
         secondary: AppColors.secondary,
-        surface: AppColors.lightSurface,
-        background: AppColors.lightBackground,
+        surface: AppColors.getLightSurfaceColor(themeType),
+        background: AppColors.getLightBackgroundColor(themeType),
         error: AppColors.error,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
-        onSurface: AppColors.lightTextPrimary,
-        onBackground: AppColors.lightTextPrimary,
+        onSurface: AppColors.getLightTextPrimaryColor(themeType),
+        onBackground: AppColors.getLightTextPrimaryColor(themeType),
         onError: Colors.white,
       ),
 
       // Configuração da tipografia
-      textTheme: _buildTextTheme(AppColors.lightTextPrimary),
+      textTheme: _buildTextTheme(AppColors.getLightTextPrimaryColor(themeType)),
 
       // AppBar
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.lightBackground,
-        foregroundColor: AppColors.lightTextPrimary,
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.getLightBackgroundColor(themeType),
+        foregroundColor: AppColors.getLightTextPrimaryColor(themeType),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: TextStyle(
-          color: AppColors.lightTextPrimary,
+          color: AppColors.getLightTextPrimaryColor(themeType),
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
       ),
 
-      // Cards configurado via ThemeData padrão
-
       // Botões
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.getPrimaryColor(themeType),
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -60,8 +60,8 @@ class AppTheme {
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary),
+          foregroundColor: AppColors.getPrimaryColor(themeType),
+          side: BorderSide(color: AppColors.getPrimaryColor(themeType)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
@@ -69,7 +69,7 @@ class AppTheme {
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
+          foregroundColor: AppColors.getPrimaryColor(themeType),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
@@ -78,18 +78,21 @@ class AppTheme {
       // Input Fields
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.lightSurface,
+        fillColor: AppColors.getLightSurfaceColor(themeType),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.lightBorder),
+          borderSide:
+              BorderSide(color: AppColors.getLightBorderColor(themeType)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.lightBorder),
+          borderSide:
+              BorderSide(color: AppColors.getLightBorderColor(themeType)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide:
+              BorderSide(color: AppColors.getPrimaryColor(themeType), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -102,39 +105,41 @@ class AppTheme {
       ),
 
       // Dividers
-      dividerTheme: const DividerThemeData(
-        color: AppColors.lightDivider,
+      dividerTheme: DividerThemeData(
+        color: AppColors.getLightBorderColor(themeType),
         space: 1,
         thickness: 1,
       ),
 
       // Navigation Rail
-      navigationRailTheme: const NavigationRailThemeData(
+      navigationRailTheme: NavigationRailThemeData(
         backgroundColor: AppColors.sidebarBackground,
-        selectedIconTheme: IconThemeData(color: AppColors.primary, size: 24),
+        selectedIconTheme: IconThemeData(
+            color: AppColors.getPrimaryColor(themeType), size: 24),
         unselectedIconTheme: IconThemeData(
-          color: AppColors.lightTextSecondary,
+          color: AppColors.getLightTextSecondaryColor(themeType),
           size: 24,
         ),
-        selectedLabelTextStyle: TextStyle(color: AppColors.primary),
+        selectedLabelTextStyle:
+            TextStyle(color: AppColors.getPrimaryColor(themeType)),
         unselectedLabelTextStyle: TextStyle(
-          color: AppColors.lightTextSecondary,
+          color: AppColors.getLightTextSecondaryColor(themeType),
         ),
       ),
 
       // Lista
-      listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         tileColor: Colors.transparent,
-        selectedTileColor: AppColors.lightHover,
-        shape: RoundedRectangleBorder(
+        selectedTileColor: AppColors.getLightSurfaceColor(themeType),
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(8)),
         ),
       ),
 
       // Floating Action Button
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primary,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppColors.getPrimaryColor(themeType),
         foregroundColor: Colors.white,
         elevation: 4,
       ),
@@ -143,22 +148,22 @@ class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: MaterialStateProperty.resolveWith((states) {
           if (states.contains(MaterialState.selected)) {
-            return AppColors.primary;
+            return AppColors.getPrimaryColor(themeType);
           }
-          return AppColors.lightTextTertiary;
+          return AppColors.getLightTextSecondaryColor(themeType);
         }),
         trackColor: MaterialStateProperty.resolveWith((states) {
           if (states.contains(MaterialState.selected)) {
-            return AppColors.primary.withOpacity(0.3);
+            return AppColors.getPrimaryColor(themeType).withOpacity(0.3);
           }
-          return AppColors.lightBorder;
+          return AppColors.getLightBorderColor(themeType);
         }),
       ),
 
       checkboxTheme: CheckboxThemeData(
         fillColor: MaterialStateProperty.resolveWith((states) {
           if (states.contains(MaterialState.selected)) {
-            return AppColors.primary;
+            return AppColors.getPrimaryColor(themeType);
           }
           return Colors.transparent;
         }),
@@ -166,58 +171,57 @@ class AppTheme {
       ),
 
       // Data Table
-      dataTableTheme: const DataTableThemeData(
+      dataTableTheme: DataTableThemeData(
         headingRowColor: MaterialStatePropertyAll(AppColors.databaseHeader),
         dataRowColor: MaterialStatePropertyAll(AppColors.databaseRow),
         columnSpacing: 16,
         horizontalMargin: 16,
         headingTextStyle: TextStyle(
           fontWeight: FontWeight.w600,
-          color: AppColors.lightTextPrimary,
+          color: AppColors.getLightTextPrimaryColor(themeType),
         ),
       ),
     );
   }
 
-  static ThemeData get darkTheme {
+  /// Obter tema escuro baseado no tipo de tema
+  static ThemeData getDarkTheme(AppThemeType themeType) {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: const ColorScheme.dark(
-        primary: AppColors.primary,
+      colorScheme: ColorScheme.dark(
+        primary: AppColors.getPrimaryColor(themeType),
         secondary: AppColors.secondary,
-        surface: AppColors.darkSurface,
-        background: AppColors.darkBackground,
+        surface: AppColors.getDarkSurfaceColor(themeType),
+        background: AppColors.getDarkBackgroundColor(themeType),
         error: AppColors.error,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
-        onSurface: AppColors.darkTextPrimary,
-        onBackground: AppColors.darkTextPrimary,
+        onSurface: AppColors.getDarkTextPrimaryColor(themeType),
+        onBackground: AppColors.getDarkTextPrimaryColor(themeType),
         onError: Colors.white,
       ),
 
       // Configuração da tipografia
-      textTheme: _buildTextTheme(AppColors.darkTextPrimary),
+      textTheme: _buildTextTheme(AppColors.getDarkTextPrimaryColor(themeType)),
 
       // AppBar
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.darkBackground,
-        foregroundColor: AppColors.darkTextPrimary,
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.getDarkBackgroundColor(themeType),
+        foregroundColor: AppColors.getDarkTextPrimaryColor(themeType),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: TextStyle(
-          color: AppColors.darkTextPrimary,
+          color: AppColors.getDarkTextPrimaryColor(themeType),
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
       ),
 
-      // Cards configurado via ThemeData padrão
-
       // Botões
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.getPrimaryColor(themeType),
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -227,8 +231,8 @@ class AppTheme {
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary),
+          foregroundColor: AppColors.getPrimaryColor(themeType),
+          side: BorderSide(color: AppColors.getPrimaryColor(themeType)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
@@ -236,7 +240,7 @@ class AppTheme {
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
+          foregroundColor: AppColors.getPrimaryColor(themeType),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
@@ -245,18 +249,21 @@ class AppTheme {
       // Input Fields
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.darkSurface,
+        fillColor: AppColors.getDarkSurfaceColor(themeType),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.darkBorder),
+          borderSide:
+              BorderSide(color: AppColors.getDarkBorderColor(themeType)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.darkBorder),
+          borderSide:
+              BorderSide(color: AppColors.getDarkBorderColor(themeType)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide:
+              BorderSide(color: AppColors.getPrimaryColor(themeType), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -269,37 +276,40 @@ class AppTheme {
       ),
 
       // Dividers
-      dividerTheme: const DividerThemeData(
-        color: AppColors.darkDivider,
+      dividerTheme: DividerThemeData(
+        color: AppColors.getDarkBorderColor(themeType),
         space: 1,
         thickness: 1,
       ),
 
       // Navigation Rail
-      navigationRailTheme: const NavigationRailThemeData(
+      navigationRailTheme: NavigationRailThemeData(
         backgroundColor: AppColors.sidebarBackgroundDark,
-        selectedIconTheme: IconThemeData(color: AppColors.primary, size: 24),
+        selectedIconTheme: IconThemeData(
+            color: AppColors.getPrimaryColor(themeType), size: 24),
         unselectedIconTheme: IconThemeData(
-          color: AppColors.darkTextSecondary,
+          color: AppColors.getDarkTextSecondaryColor(themeType),
           size: 24,
         ),
-        selectedLabelTextStyle: TextStyle(color: AppColors.primary),
-        unselectedLabelTextStyle: TextStyle(color: AppColors.darkTextSecondary),
+        selectedLabelTextStyle:
+            TextStyle(color: AppColors.getPrimaryColor(themeType)),
+        unselectedLabelTextStyle:
+            TextStyle(color: AppColors.getDarkTextSecondaryColor(themeType)),
       ),
 
       // Lista
-      listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         tileColor: Colors.transparent,
-        selectedTileColor: AppColors.darkHover,
-        shape: RoundedRectangleBorder(
+        selectedTileColor: AppColors.getDarkSurfaceColor(themeType),
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(8)),
         ),
       ),
 
       // Floating Action Button
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primary,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppColors.getPrimaryColor(themeType),
         foregroundColor: Colors.white,
         elevation: 4,
       ),
@@ -308,22 +318,22 @@ class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: MaterialStateProperty.resolveWith((states) {
           if (states.contains(MaterialState.selected)) {
-            return AppColors.primary;
+            return AppColors.getPrimaryColor(themeType);
           }
-          return AppColors.darkTextTertiary;
+          return AppColors.getDarkTextSecondaryColor(themeType);
         }),
         trackColor: MaterialStateProperty.resolveWith((states) {
           if (states.contains(MaterialState.selected)) {
-            return AppColors.primary.withOpacity(0.3);
+            return AppColors.getPrimaryColor(themeType).withOpacity(0.3);
           }
-          return AppColors.darkBorder;
+          return AppColors.getDarkBorderColor(themeType);
         }),
       ),
 
       checkboxTheme: CheckboxThemeData(
         fillColor: MaterialStateProperty.resolveWith((states) {
           if (states.contains(MaterialState.selected)) {
-            return AppColors.primary;
+            return AppColors.getPrimaryColor(themeType);
           }
           return Colors.transparent;
         }),
@@ -331,18 +341,22 @@ class AppTheme {
       ),
 
       // Data Table
-      dataTableTheme: const DataTableThemeData(
+      dataTableTheme: DataTableThemeData(
         headingRowColor: MaterialStatePropertyAll(AppColors.databaseHeaderDark),
         dataRowColor: MaterialStatePropertyAll(AppColors.databaseRowDark),
         columnSpacing: 16,
         horizontalMargin: 16,
         headingTextStyle: TextStyle(
           fontWeight: FontWeight.w600,
-          color: AppColors.darkTextPrimary,
+          color: AppColors.getDarkTextPrimaryColor(themeType),
         ),
       ),
     );
   }
+
+  // Métodos de compatibilidade para manter o tema atual funcionando
+  static ThemeData get lightTheme => getLightTheme(AppThemeType.classic);
+  static ThemeData get darkTheme => getDarkTheme(AppThemeType.classic);
 
   static TextTheme _buildTextTheme(Color textColor) {
     return GoogleFonts.interTextTheme().copyWith(

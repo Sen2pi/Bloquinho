@@ -39,9 +39,15 @@ class LaTeXWidget extends ConsumerWidget {
       // Limpar e processar o LaTeX
       String processedLatex = latex.trim();
       
-      // Remover quebras de linha desnecessárias em fórmulas de bloco
+      // Para blocos, preservar a estrutura de matrizes
       if (isBlock) {
-        processedLatex = processedLatex.replaceAll(RegExp(r'\s+'), ' ');
+        // Preservar estruturas de matrizes e normalizar espaços
+        processedLatex = processedLatex
+            .replaceAll(RegExp(r'\s*\\\\\s*'), r' \\ ') // Normalizar quebras de linha de matriz
+            .replaceAll(RegExp(r'\s*&\s*'), r' & ') // Normalizar separadores de coluna
+            .replaceAll(RegExp(r'[ \t]+'), ' ') // Normalizar espaços horizontais
+            .replaceAll(RegExp(r'\n+'), ' ') // Converter quebras de linha em espaços
+            .trim();
       }
 
       final mathWidget = Math.tex(

@@ -11,12 +11,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:bloquinho/core/services/data_directory_service.dart';
+import 'package:bloquinho/core/models/app_theme.dart';
+import 'package:bloquinho/core/theme/app_theme.dart' as theme;
 
-class ThemeNotifier extends StateNotifier<ThemeMode> {
-  static const String _themeKey = 'theme_mode';
+class ThemeNotifier extends StateNotifier<AppThemeConfig> {
+  static const String _themeConfigKey = 'theme_config';
   Box? _box;
 
-  ThemeNotifier() : super(ThemeMode.light) {
+  ThemeNotifier() : super(AppThemeConfig.defaultConfig()) {
     _initHive();
   }
 
@@ -27,18 +29,24 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
       final dbPath = await DataDirectoryService().getBasePath();
       _box = await Hive.openBox('app_settings', path: dbPath);
 
-      // Carregar tema salvo
-      final savedTheme = _box!.get(_themeKey, defaultValue: 'light');
-      if (savedTheme == 'dark') {
-        state = ThemeMode.dark;
-      } else if (savedTheme == 'system') {
-        state = ThemeMode.system;
+      // Carregar configuração de tema salva
+      final savedConfigJson = _box!.get(_themeConfigKey);
+      if (savedConfigJson != null) {
+        try {
+          final savedConfig = AppThemeConfig.fromJson(
+              Map<String, dynamic>.from(savedConfigJson));
+          state = savedConfig;
+        } catch (e) {
+          // Se houver erro ao carregar, usar configuração padrão
+          state = AppThemeConfig.defaultConfig();
+        }
       } else {
-        state = ThemeMode.light;
+        // Se não houver configuração salva, usar padrão
+        state = AppThemeConfig.defaultConfig();
       }
     } catch (e) {
-      // Em caso de erro, usar tema padrão
-      state = ThemeMode.light;
+      // Em caso de erro, usar configuração padrão
+      state = AppThemeConfig.defaultConfig();
     }
   }
 
@@ -58,59 +66,129 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
     }
   }
 
-  Future<void> setTheme(ThemeMode themeMode) async {
+  /// Definir tipo de tema
+  Future<void> setThemeType(AppThemeType themeType) async {
     try {
-      state = themeMode;
+      final newConfig = state.copyWith(themeType: themeType);
+      state = newConfig;
 
       // Garantir que o box está aberto antes de salvar
       await _ensureBoxIsOpen();
 
-      // Salvar tema
-      String themeString;
-      switch (themeMode) {
-        case ThemeMode.dark:
-          themeString = 'dark';
-          break;
-        case ThemeMode.system:
-          themeString = 'system';
-          break;
-        case ThemeMode.light:
-        default:
-          themeString = 'light';
-          break;
-      }
-
-      await _box!.put(_themeKey, themeString);
+      // Salvar configuração
+      await _box!.put(_themeConfigKey, newConfig.toJson());
     } catch (e) {
-      // Mesmo com erro ao salvar, manter o estado atual
+      // Em caso de erro, não alterar o estado
     }
   }
 
-  void toggleTheme() {
-    if (state == ThemeMode.light) {
-      setTheme(ThemeMode.dark);
-    } else {
-      setTheme(ThemeMode.light);
+  /// Definir modo de tema (light/dark/system)
+  Future<void> setThemeMode(ThemeMode themeMode) async {
+    try {
+      final newConfig = state.copyWith(themeMode: themeMode);
+      state = newConfig;
+
+      // Garantir que o box está aberto antes de salvar
+      await _ensureBoxIsOpen();
+
+      // Salvar configuração
+      await _box!.put(_themeConfigKey, newConfig.toJson());
+    } catch (e) {
+      // Em caso de erro, não alterar o estado
     }
   }
 
-  bool get isDarkMode => state == ThemeMode.dark;
-  bool get isLightMode => state == ThemeMode.light;
-  bool get isSystemMode => state == ThemeMode.system;
+  /// Definir configuração completa de tema
+  Future<void> setThemeConfig(AppThemeConfig config) async {
+    try {
+      state = config;
+
+      // Garantir que o box está aberto antes de salvar
+      await _ensureBoxIsOpen();
+
+      // Salvar configuração
+      await _box!.put(_themeConfigKey, config.toJson());
+    } catch (e) {
+      // Em caso de erro, não alterar o estado
+    }
+  }
+
+  /// Resetar para configuração padrão
+  Future<void> resetToDefault() async {
+    await setThemeConfig(AppThemeConfig.defaultConfig());
+  }
+
+  // Métodos de compatibilidade para manter o sistema atual funcionando
+  Future<void> setTheme(ThemeMode themeMode) async {
+    await setThemeMode(themeMode);
+  }
+
+  /// Alternar entre tema claro e escuro
+  Future<void> toggleTheme() async {
+    final currentMode = state.themeMode;
+    final newMode = currentMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    await setThemeMode(newMode);
+  }
+
+  /// Obter o modo de tema atual (para compatibilidade)
+  ThemeMode get themeMode => state.themeMode;
+
+  /// Obter o tipo de tema atual
+  AppThemeType get themeType => state.themeType;
 }
 
-// Provider do tema
-final themeProvider = StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) {
+/// Provider para configuração de tema
+final themeConfigProvider =
+    StateNotifierProvider<ThemeNotifier, AppThemeConfig>((ref) {
   return ThemeNotifier();
 });
 
-// Provider para verificar se está no modo escuro
+/// Provider para modo de tema (compatibilidade)
+final themeProvider = Provider<ThemeMode>((ref) {
+  return ref.watch(themeConfigProvider).themeMode;
+});
+
+/// Provider para tipo de tema
+final themeTypeProvider = Provider<AppThemeType>((ref) {
+  return ref.watch(themeConfigProvider).themeType;
+});
+
+/// Provider para verificar se é tema escuro
 final isDarkModeProvider = Provider<bool>((ref) {
   final themeMode = ref.watch(themeProvider);
-  if (themeMode == ThemeMode.system) {
-    // Para modo sistema, precisaríamos do contexto para verificar
-    // Por simplicidade, vamos retornar false (claro) como padrão
-    return false;
+  final brightness =
+      WidgetsBinding.instance.platformDispatcher.platformBrightness;
+
+  switch (themeMode) {
+    case ThemeMode.light:
+      return false;
+    case ThemeMode.dark:
+      return true;
+    case ThemeMode.system:
+      return brightness == Brightness.dark;
   }
-  return themeMode == ThemeMode.dark;
+});
+
+/// Provider para obter tema atual baseado na configuração
+final currentThemeProvider = Provider<ThemeData>((ref) {
+  final config = ref.watch(themeConfigProvider);
+  final isDark = ref.watch(isDarkModeProvider);
+
+  if (isDark) {
+    return theme.AppTheme.getDarkTheme(config.themeType);
+  } else {
+    return theme.AppTheme.getLightTheme(config.themeType);
+  }
+});
+
+/// Provider para obter tema claro atual
+final lightThemeProvider = Provider<ThemeData>((ref) {
+  final config = ref.watch(themeConfigProvider);
+  return theme.AppTheme.getLightTheme(config.themeType);
+});
+
+/// Provider para obter tema escuro atual
+final darkThemeProvider = Provider<ThemeData>((ref) {
+  final config = ref.watch(themeConfigProvider);
+  return theme.AppTheme.getDarkTheme(config.themeType);
 });

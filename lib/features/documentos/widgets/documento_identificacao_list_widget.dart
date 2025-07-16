@@ -13,6 +13,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../models/documento_identificacao.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/animated_action_button.dart';
+import 'documento_grid_card.dart';
 
 class DocumentoIdentificacaoListWidget extends StatelessWidget {
   final List<DocumentoIdentificacao> documentos;
@@ -40,13 +41,40 @@ class DocumentoIdentificacaoListWidget extends StatelessWidget {
       return _buildEmptyState(context);
     }
 
-    return ListView.builder(
+    return Padding(
       padding: const EdgeInsets.all(16),
-      itemCount: documentos.length,
-      itemBuilder: (context, index) {
-        final documento = documentos[index];
-        return _buildDocumentoCard(context, documento);
-      },
+      child: Column(
+        children: [
+          // Botão de adicionar
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 16),
+            child: AnimatedActionButton(
+              text: 'Adicionar Documento',
+              onPressed: onAdd,
+              isLoading: false,
+              isEnabled: true,
+              icon: PhosphorIcons.plus(),
+            ),
+          ),
+          // Grid de documentos
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.8,
+              ),
+              itemCount: documentos.length,
+              itemBuilder: (context, index) {
+                final documento = documentos[index];
+                return _buildDocumentoGridCard(context, documento);
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -87,205 +115,70 @@ class DocumentoIdentificacaoListWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildDocumentoCard(
-      BuildContext context, DocumentoIdentificacao documento) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+  Widget _buildDocumentoGridCard(BuildContext context, DocumentoIdentificacao documento) {
+    String informacaoSecundaria = documento.numeroFormatado;
+    if (documento.orgaoEmissor != null) {
+      informacaoSecundaria += ' • ${documento.orgaoEmissor}';
+    }
+    
+    // Botões de ação customizados para incluir visualização se houver arquivos
+    List<Widget> actionButtons = [];
+    
+    if (documento.temPdf || documento.temImagem) {
+      actionButtons.add(
+        _buildActionButton(
+          PhosphorIcons.eye(),
+          () {
+            // TODO: Implementar visualização de arquivo
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Visualizar arquivo...')),
+            );
+          },
+          'Visualizar',
+        ),
+      );
+    }
+    
+    actionButtons.addAll([
+      _buildActionButton(
+        PhosphorIcons.pencil(),
+        () => onEdit(documento),
+        'Editar',
+      ),
+      _buildActionButton(
+        PhosphorIcons.trash(),
+        () => onDelete(documento.id),
+        'Excluir',
+      ),
+    ]);
+    
+    return DocumentoGridCard(
+      imagemPath: documento.arquivoImagemPath,
+      titulo: documento.nomeTipo,
+      subtitulo: documento.nomeCompleto,
+      informacaoSecundaria: informacaoSecundaria,
+      corPrimaria: documento.corTipo,
+      iconePadrao: documento.iconeTipo,
+      isVencido: documento.vencido || documento.venceEmBreve,
+      actionButtons: actionButtons,
+    );
+  }
+  
+  Widget _buildActionButton(IconData icon, VoidCallback onPressed, String tooltip) {
+    return GestureDetector(
+      onTap: onPressed,
       child: Container(
+        width: 24,
+        height: 24,
+        margin: const EdgeInsets.only(left: 4),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              documento.corTipo,
-              documento.corTipo.withOpacity(0.8),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    documento.iconeTipo,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          documento.nomeTipo,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          documento.nomeCompleto,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (documento.temPdf || documento.temImagem) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (documento.temPdf)
-                            Icon(
-                              PhosphorIcons.filePdf(),
-                              color: Colors.white,
-                              size: 12,
-                            ),
-                          if (documento.temImagem)
-                            Icon(
-                              PhosphorIcons.image(),
-                              color: Colors.white,
-                              size: 12,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                documento.numeroFormatado,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 1,
-                ),
-              ),
-              if (documento.orgaoEmissor != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Órgão: ${documento.orgaoEmissor}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-              if (documento.dataEmissao != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Emissão: ${documento.dataEmissao}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-              if (documento.dataVencimento != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Vencimento: ${documento.dataVencimento}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-              if (documento.vencido) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'VENCIDO',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ] else if (documento.venceEmBreve) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'VENCE EM BREVE',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (documento.temPdf || documento.temImagem)
-                    IconButton(
-                      onPressed: () {
-                        // TODO: Implementar visualização de arquivo
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Visualizar arquivo...')),
-                        );
-                      },
-                      icon: Icon(
-                        PhosphorIcons.eye(),
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      tooltip: 'Visualizar',
-                    ),
-                  IconButton(
-                    onPressed: () => onEdit(documento),
-                    icon: Icon(
-                      PhosphorIcons.pencil(),
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    tooltip: 'Editar',
-                  ),
-                  IconButton(
-                    onPressed: () => onDelete(documento.id),
-                    icon: Icon(
-                      PhosphorIcons.trash(),
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    tooltip: 'Excluir',
-                  ),
-                ],
-              ),
-            ],
-          ),
+        child: Icon(
+          icon,
+          size: 12,
+          color: Colors.white,
         ),
       ),
     );

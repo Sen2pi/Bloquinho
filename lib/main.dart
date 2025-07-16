@@ -37,6 +37,7 @@ import 'features/documentos/screens/documentos_screen.dart';
 import 'features/bloquinho/screens/bloquinho_dashboard_screen.dart';
 import 'features/bloquinho/screens/bloco_editor_screen.dart';
 import 'features/settings/screens/ai_settings_screen.dart';
+import 'features/settings/screens/code_theme_settings_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 
 void main() async {
@@ -102,221 +103,147 @@ class BloquinhoApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
     final currentLocale = ref.watch(currentLocaleProvider);
+    final lightTheme = ref.watch(lightThemeProvider);
+    final darkTheme = ref.watch(darkThemeProvider);
 
     return MaterialApp.router(
       title: 'Bloquinho',
       debugShowCheckedModeBanner: false,
 
       // Configuração de temas
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: lightTheme,
+      darkTheme: darkTheme,
       themeMode: themeMode,
 
-      // Configuração de roteamento
-      routerConfig: _router,
-
-      // Configurações de localização
+      // Configuração de localização
+      locale: currentLocale,
+      supportedLocales: const [
+        Locale('pt', 'BR'),
+        Locale('en', 'US'),
+        Locale('fr', 'FR'),
+      ],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: AppLanguage.supportedLocales,
-      locale: currentLocale,
 
-      // Builder para configurações globais
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.noScaling, // Evita zoom de texto do sistema
-          ),
-          child: child!,
-        );
-      },
+      // Configuração de rotas
+      routerConfig: _buildRouter(),
     );
   }
-}
 
-// Configuração de rotas com GoRouter
-final GoRouter _router = GoRouter(
-  initialLocation: '/',
-  routes: [
-    GoRoute(
-      path: '/',
-      name: 'splash',
-      builder: (context, state) => const SplashScreen(),
-    ),
-    GoRoute(
-      path: '/workspace',
-      name: 'workspace',
-      builder: (context, state) => const WorkspaceScreen(),
+  GoRouter _buildRouter() {
+    return GoRouter(
+      initialLocation: '/',
       routes: [
+        // Splash Screen
         GoRoute(
-          path: 'backup',
+          path: '/',
+          builder: (context, state) => const SplashScreen(),
+        ),
+
+        // Onboarding
+        GoRoute(
+          path: '/onboarding',
+          name: 'onboarding',
+          builder: (context, state) => const OnboardingScreen(),
+        ),
+
+        // Workspace (tela principal)
+        GoRoute(
+          path: '/workspace',
+          name: 'workspace',
+          builder: (context, state) => const WorkspaceScreen(),
+        ),
+
+        // Backup
+        GoRoute(
+          path: '/backup',
           name: 'backup',
           builder: (context, state) => const BackupScreen(),
         ),
+
+        // Profile
         GoRoute(
-          path: 'profile',
+          path: '/profile',
           name: 'profile',
           builder: (context, state) => const ProfileScreen(),
         ),
+
+        // Profile Edit
         GoRoute(
-          path: 'profile/edit',
+          path: '/profile/edit',
           name: 'profile_edit',
           builder: (context, state) => const ProfileEditScreen(),
         ),
+
+        // Storage Settings
         GoRoute(
-          path: 'profile/storage',
+          path: '/storage_settings',
           name: 'storage_settings',
           builder: (context, state) => const StorageSettingsScreen(),
         ),
+
+        // Agenda
         GoRoute(
-          path: 'agenda',
+          path: '/agenda',
           name: 'agenda',
           builder: (context, state) => const AgendaScreen(),
         ),
+
+        // Passwords
         GoRoute(
-          path: 'passwords',
+          path: '/passwords',
           name: 'passwords',
           builder: (context, state) => const PasswordManagerScreen(),
         ),
+
+        // Documentos
         GoRoute(
-          path: 'documentos',
+          path: '/documentos',
           name: 'documentos',
           builder: (context, state) => const DocumentosScreen(),
         ),
+
+        // Bloquinho Dashboard
         GoRoute(
-          path: 'bloquinho',
-          name: 'bloquinho_dashboard',
+          path: '/bloquinho',
+          name: 'bloquinho',
           builder: (context, state) => const BloquinhoDashboardScreen(),
-          routes: [
-            GoRoute(
-              path: 'editor',
-              name: 'bloquinho_editor_new',
-              builder: (context, state) {
-                return const BlocoEditorScreen(
-                  documentTitle: 'Nova Página',
-                );
-              },
-            ),
-            GoRoute(
-              path: 'editor/:pageId',
-              name: 'bloquinho_editor',
-              builder: (context, state) {
-                final pageId = state.pathParameters['pageId'];
-                return BlocoEditorScreen(
-                  documentId: pageId,
-                  documentTitle: 'Página',
-                );
-              },
-            ),
-          ],
+        ),
+
+        // Bloco Editor
+        GoRoute(
+          path: '/bloquinho/editor/:pageId',
+          name: 'bloco_editor',
+          builder: (context, state) {
+            final pageId = state.pathParameters['pageId'] ?? '';
+            return BlocoEditorScreen(documentId: pageId);
+          },
+        ),
+
+        // AI Settings
+        GoRoute(
+          path: '/ai_settings',
+          name: 'ai_settings',
+          builder: (context, state) => const AISettingsScreen(),
+        ),
+
+        // Code Theme Settings
+        GoRoute(
+          path: '/code_theme_settings',
+          name: 'code_theme_settings',
+          builder: (context, state) => const CodeThemeSettingsScreen(),
+        ),
+
+        // Settings
+        GoRoute(
+          path: '/settings',
+          name: 'settings',
+          builder: (context, state) => const SettingsScreen(),
         ),
       ],
-    ),
-    GoRoute(
-      path: '/auth',
-      name: 'auth',
-      builder: (context, state) => const AuthScreen(),
-    ),
-    GoRoute(
-      path: '/onboarding',
-      name: 'onboarding',
-      builder: (context, state) => const OnboardingScreen(),
-    ),
-    GoRoute(
-      path: '/settings',
-      name: 'settings',
-      builder: (context, state) => const SettingsScreen(),
-    ),
-    GoRoute(
-      path: '/ai_settings',
-      name: 'ai_settings',
-      builder: (context, state) => const AISettingsScreen(),
-    ),
-  ],
-  errorBuilder: (context, state) => const NotFoundScreen(),
-);
-
-// Tela de autenticação (placeholder)
-class AuthScreen extends StatelessWidget {
-  const AuthScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/logo.png',
-              height: 120,
-              width: 120,
-            ),
-            const SizedBox(height: 32),
-            const Text(
-              'Bloquinho',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Seu workspace pessoal',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 48),
-            ElevatedButton(
-              onPressed: () {
-                context.goNamed('workspace');
-              },
-              child: const Text('Entrar'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Tela de página não encontrada
-class NotFoundScreen extends StatelessWidget {
-  const NotFoundScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Página não encontrada'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Página não encontrada',
-              style: TextStyle(fontSize: 24),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () => context.goNamed('workspace'),
-              child: const Text('Voltar ao início'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

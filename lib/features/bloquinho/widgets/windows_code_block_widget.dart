@@ -22,6 +22,11 @@ import '../../../shared/providers/theme_provider.dart';
 import '../../../features/bloquinho/models/code_theme.dart';
 import '../../../core/services/pdf_export_service.dart';
 
+// Provider para o tema de código selecionado
+final selectedCodeThemeProvider = StateProvider<CodeTheme>((ref) {
+  return CodeTheme.defaultTheme;
+});
+
 class WindowsCodeBlockWidget extends ConsumerStatefulWidget {
   final String code;
   final String language;
@@ -60,8 +65,10 @@ class _WindowsCodeBlockWidgetState
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(isDarkModeProvider);
+    final selectedTheme = ref.watch(selectedCodeThemeProvider);
     final languageObj = ProgrammingLanguage.getByCode(_selectedLanguage) ??
         ProgrammingLanguage.javascript;
+
     return RepaintBoundary(
       key: _repaintBoundaryKey,
       child: Container(
@@ -82,8 +89,8 @@ class _WindowsCodeBlockWidgetState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (widget.showMacOSHeader)
-                _buildMacOSHeader(isDarkMode, languageObj),
-              _buildCodeContent(isDarkMode),
+                _buildMacOSHeader(isDarkMode, languageObj, selectedTheme),
+              _buildCodeContent(isDarkMode, selectedTheme),
             ],
           ),
         ),
@@ -91,17 +98,15 @@ class _WindowsCodeBlockWidgetState
     );
   }
 
-  Widget _buildMacOSHeader(bool isDarkMode, ProgrammingLanguage languageObj) {
-    // Cores exatas como na imagem
-    const headerColor = Color(0xFF2D3748); // Cinza escuro como na imagem
-
+  Widget _buildMacOSHeader(
+      bool isDarkMode, ProgrammingLanguage languageObj, CodeTheme theme) {
     return Container(
       height: 44,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
-        color: headerColor,
+      decoration: BoxDecoration(
+        color: theme.headerBackgroundColor,
         border: Border(
-          bottom: BorderSide(color: Color(0xFF4A5568), width: 1),
+          bottom: BorderSide(color: theme.borderColor, width: 1),
         ),
       ),
       child: Row(
@@ -118,8 +123,8 @@ class _WindowsCodeBlockWidgetState
           // Título da linguagem
           Text(
             languageObj.icon + ' ' + languageObj.displayName,
-            style: const TextStyle(
-              color: Colors.white70,
+            style: TextStyle(
+              color: theme.headerTextColor,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -129,14 +134,14 @@ class _WindowsCodeBlockWidgetState
           // Dropdown para trocar linguagem
           DropdownButton<String>(
             value: _selectedLanguage,
-            dropdownColor: headerColor,
-            style: const TextStyle(
-                color: Colors.white70,
+            dropdownColor: theme.headerBackgroundColor,
+            style: TextStyle(
+                color: theme.headerTextColor,
                 fontSize: 11,
                 fontWeight: FontWeight.w600),
             underline: Container(),
-            icon: const Icon(Icons.arrow_drop_down,
-                color: Colors.white70, size: 16),
+            icon: Icon(Icons.arrow_drop_down,
+                color: theme.headerTextColor, size: 16),
             items: ProgrammingLanguage.languages
                 .map((lang) => DropdownMenuItem(
                       value: lang.code,
@@ -157,18 +162,21 @@ class _WindowsCodeBlockWidgetState
             PhosphorIcons.copy(),
             'Copiar código',
             _copyCode,
+            theme,
           ),
           const SizedBox(width: 8),
           _buildHeaderButton(
             PhosphorIcons.downloadSimple(),
             'Exportar como arquivo',
             _exportAsFile,
+            theme,
           ),
           const SizedBox(width: 8),
           _buildHeaderButton(
             PhosphorIcons.image(),
             'Exportar como imagem',
             _exportAsImage,
+            theme,
           ),
         ],
       ),
@@ -194,7 +202,7 @@ class _WindowsCodeBlockWidgetState
   }
 
   Widget _buildHeaderButton(
-      IconData icon, String tooltip, VoidCallback onPressed) {
+      IconData icon, String tooltip, VoidCallback onPressed, CodeTheme theme) {
     return Tooltip(
       message: tooltip,
       child: InkWell(
@@ -205,23 +213,19 @@ class _WindowsCodeBlockWidgetState
           child: Icon(
             icon,
             size: 16,
-            color: Colors.white70,
+            color: theme.headerTextColor,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCodeContent(bool isDarkMode) {
+  Widget _buildCodeContent(bool isDarkMode, CodeTheme theme) {
     final lines = widget.code.split('\n');
     final lineCount = lines.length;
 
-    // Cores exatas como na imagem
-    const codeBackgroundColor = Color(0xFF1A202C); // Fundo escuro do código
-    const lineNumberColor = Color(0xFF4A5568); // Cor dos números das linhas
-
     return Container(
-      color: codeBackgroundColor,
+      color: theme.backgroundColor,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -229,10 +233,10 @@ class _WindowsCodeBlockWidgetState
           if (widget.showLineNumbers)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-              decoration: const BoxDecoration(
-                color: Color(0xFF171923), // Fundo dos números
+              decoration: BoxDecoration(
+                color: theme.lineNumberBackgroundColor,
                 border: Border(
-                  right: BorderSide(color: Color(0xFF2D3748), width: 1),
+                  right: BorderSide(color: theme.borderColor, width: 1),
                 ),
               ),
               child: Column(
@@ -242,8 +246,8 @@ class _WindowsCodeBlockWidgetState
                     padding: const EdgeInsets.only(bottom: 2),
                     child: Text(
                       '${index + 1}',
-                      style: const TextStyle(
-                        color: lineNumberColor,
+                      style: TextStyle(
+                        color: theme.lineNumberColor,
                         fontSize: 13,
                         fontFamily: 'monospace',
                         height: 1.5,
@@ -261,12 +265,12 @@ class _WindowsCodeBlockWidgetState
               child: Container(
                 padding: const EdgeInsets.all(16),
                 child: SelectableText.rich(
-                  _buildHighlightedCode(),
-                  style: const TextStyle(
+                  _buildHighlightedCode(theme),
+                  style: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 14,
                     height: 1.5,
-                    color: Colors.white,
+                    color: theme.textColor,
                   ),
                 ),
               ),
@@ -277,16 +281,13 @@ class _WindowsCodeBlockWidgetState
     );
   }
 
-  TextSpan _buildHighlightedCode() {
-    // Implementação simples de syntax highlighting para JavaScript
-    // (pode ser expandida para outras linguagens)
-
+  TextSpan _buildHighlightedCode(CodeTheme theme) {
     final codeLines = widget.code.split('\n');
     final spans = <TextSpan>[];
 
     for (int i = 0; i < codeLines.length; i++) {
       final line = codeLines[i];
-      spans.add(_highlightLine(line));
+      spans.add(_highlightLine(line, theme));
 
       if (i < codeLines.length - 1) {
         spans.add(const TextSpan(text: '\n'));
@@ -296,25 +297,31 @@ class _WindowsCodeBlockWidgetState
     return TextSpan(children: spans);
   }
 
-  TextSpan _highlightLine(String line) {
+  TextSpan _highlightLine(String line, CodeTheme theme) {
+    // Obter sintaxe da linguagem
+    final syntax = CodeThemeSyntaxExt.getSyntax(_selectedLanguage);
+
     // Regex patterns para diferentes tipos de tokens
     final patterns = {
-      'keyword': RegExp(
-          r'\b(const|let|var|function|return|if|else|for|while|class|export|import|async|await|=>)\b'),
-      'string': RegExp(r"['" "].*?['" "]"),
-      'number': RegExp(r'\b\d+\.?\d*\b'),
-      'comment': RegExp(r'//.*|/\*.*?\*/'),
-      'operator': RegExp(r'[+\-*/=<>!&|^%]'),
-      'parentheses': RegExp(r'[(){}[\];,.]'),
+      'keyword': syntax.keywordPattern,
+      'string': syntax.stringPattern,
+      'number': syntax.numberPattern,
+      'comment': syntax.commentPattern,
+      'function': syntax.functionPattern,
+      'class': syntax.classPattern,
+      'operator': syntax.operatorPattern,
+      'punctuation': syntax.punctuationPattern,
     };
 
     final colors = {
-      'keyword': const Color(0xFFFF79C6), // Rosa/magenta para palavras-chave
-      'string': const Color(0xFFF1FA8C), // Amarelo para strings
-      'number': const Color(0xFFBD93F9), // Roxo para números
-      'comment': const Color(0xFF6272A4), // Azul acinzentado para comentários
-      'operator': const Color(0xFFFF79C6), // Rosa para operadores
-      'parentheses': const Color(0xFFF8F8F2), // Branco para parênteses
+      'keyword': theme.keywordColor,
+      'string': theme.stringColor,
+      'number': theme.numberColor,
+      'comment': theme.commentColor,
+      'function': theme.functionColor,
+      'class': theme.classColor,
+      'operator': theme.operatorColor,
+      'punctuation': theme.punctuationColor,
     };
 
     final spans = <TextSpan>[];
@@ -325,13 +332,15 @@ class _WindowsCodeBlockWidgetState
 
       for (final entry in patterns.entries) {
         final pattern = entry.value;
+        if (pattern.pattern.isEmpty) continue; // Pular padrões vazios
+
         final match = pattern.matchAsPrefix(line, currentIndex);
 
         if (match != null) {
           final text = match.group(0)!;
           spans.add(TextSpan(
             text: text,
-            style: TextStyle(color: colors[entry.key] ?? Colors.white),
+            style: TextStyle(color: colors[entry.key] ?? theme.textColor),
           ));
           currentIndex = match.end;
           matched = true;
@@ -343,7 +352,7 @@ class _WindowsCodeBlockWidgetState
         // Caractere normal
         spans.add(TextSpan(
           text: line[currentIndex],
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: theme.textColor),
         ));
         currentIndex++;
       }

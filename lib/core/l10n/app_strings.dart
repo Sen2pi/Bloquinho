@@ -2641,8 +2641,6 @@ class AppStrings {
         return 'Rappels';
     }
   }
-  
-  
 
   String get completed {
     switch (_language) {
@@ -5035,6 +5033,117 @@ class AppStrings {
     }
   }
 
+  // --- STRINGS PARA TEMAS DE CÓDIGO ---
+  String get codeTheme {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Tema de código';
+      case AppLanguage.english:
+        return 'Code theme';
+      case AppLanguage.french:
+        return 'Thème de code';
+    }
+  }
+
+  String get codeThemeDescription {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Escolha o tema para blocos de código';
+      case AppLanguage.english:
+        return 'Choose the theme for code blocks';
+      case AppLanguage.french:
+        return 'Choisissez le thème pour les blocs de code';
+    }
+  }
+
+  String get selectCodeTheme {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Selecionar tema de código';
+      case AppLanguage.english:
+        return 'Select code theme';
+      case AppLanguage.french:
+        return 'Sélectionner le thème de code';
+    }
+  }
+
+  String get codeThemeChanged {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Tema de código alterado';
+      case AppLanguage.english:
+        return 'Code theme changed';
+      case AppLanguage.french:
+        return 'Thème de code changé';
+    }
+  }
+
+  String get darkThemes {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Temas escuros';
+      case AppLanguage.english:
+        return 'Dark themes';
+      case AppLanguage.french:
+        return 'Thèmes sombres';
+    }
+  }
+
+  String get lightThemes {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Temas claros';
+      case AppLanguage.english:
+        return 'Light themes';
+      case AppLanguage.french:
+        return 'Thèmes clairs';
+    }
+  }
+
+  String get preview {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Prévia';
+      case AppLanguage.english:
+        return 'Preview';
+      case AppLanguage.french:
+        return 'Aperçu';
+    }
+  }
+
+  String get sampleCode {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Código de exemplo';
+      case AppLanguage.english:
+        return 'Sample code';
+      case AppLanguage.french:
+        return 'Code d\'exemple';
+    }
+  }
+
+  String get applyTheme {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Aplicar tema';
+      case AppLanguage.english:
+        return 'Apply theme';
+      case AppLanguage.french:
+        return 'Appliquer le thème';
+    }
+  }
+
+  String get resetToDefault {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Restaurar padrão';
+      case AppLanguage.english:
+        return 'Reset to default';
+      case AppLanguage.french:
+        return 'Réinitialiser par défaut';
+    }
+  }
+
   String get others {
     switch (_language) {
       case AppLanguage.portuguese:
@@ -5604,7 +5713,6 @@ class AppStrings {
   }
 }
 
-/// Provider de strings localizadas
 class AppStringsProvider {
   static AppStrings of(AppLanguage language) {
     return AppStrings(language);

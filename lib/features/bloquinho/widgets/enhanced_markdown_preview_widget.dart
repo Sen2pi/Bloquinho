@@ -118,54 +118,104 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   }
 
   void _exportToPdf(BuildContext context) async {
-    FocusScope.of(context).unfocus(); // Evita erro de teclado
+    FocusScope.of(context).unfocus();
 
     try {
-      // Mostrar loading
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Gerando PDF...'),
-          duration: Duration(seconds: 1),
+      // Mostrar dialog de loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
         ),
       );
 
-      // Exportar PDF
+      // Exportar PDF com formatação completa
       final pdfService = PdfExportService();
+      final timestamp = DateTime.now().toString().split('.')[0].replaceAll(':', '-');
+      final title = 'Bloquinho_Document_$timestamp';
+      
       final filePath = await pdfService.exportMarkdownAsPdf(
         markdown: markdown,
-        title: 'Documento Bloquinho',
+        title: title,
         author: 'Bloquinho App',
-        subject: 'Documento exportado',
+        subject: 'Documento exportado do Bloquinho',
       );
 
+      // Fechar loading
+      Navigator.of(context).pop();
+
       if (filePath != null) {
-        // Abrir arquivo
+        // Mostrar sucesso e abrir arquivo
         await pdfService.openExportedFile(filePath);
 
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '✅ PDF exportado com sucesso!',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text('Salvo em: ${filePath.split('\\').last}'),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '📋 Todo o conteúdo foi incluído com formatação completa',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: Colors.white,
+                onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+              ),
+            ),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Erro ao gerar PDF'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Fechar loading se ainda estiver aberto
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('PDF exportado com sucesso!\nSalvo em: $filePath'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erro ao gerar PDF'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '❌ Erro ao exportar PDF',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text('Detalhes: $e'),
+              ],
+            ),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 4),
           ),
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao exportar PDF: $e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
-        ),
-      );
     }
   }
 
@@ -1170,6 +1220,14 @@ class LatexBlockSyntax extends md.BlockSyntax {
 
     // Procurar por $$
     if (line.content.startsWith('\$\$')) {
+      // Primeiro, verificar se é um bloco de linha única
+      if (line.content.endsWith('\$\$') && line.content.length > 4) {
+        final content = line.content.substring(2, line.content.length - 2).trim();
+        parser.advance();
+        return md.Element.text('latex-block', content);
+      }
+      
+      // Caso contrário, processar bloco multi-linha
       lines.add(line.content);
       parser.advance();
 
@@ -1184,13 +1242,18 @@ class LatexBlockSyntax extends md.BlockSyntax {
         }
       }
 
-      // Extrair o conteúdo LaTeX
+      // Extrair o conteúdo LaTeX preservando estrutura
       final fullContent = lines.join('\n');
-      final match = RegExp(r'\\\${2}([\s\S]*?)\\\${2}').firstMatch(fullContent);
+      final match = RegExp(r'\${2}([\s\S]*?)\${2}').firstMatch(fullContent);
 
       if (match != null) {
-        final content = match.group(1)?.trim() ?? '';
-        return md.Element.text('latex-block', content);
+        final content = match.group(1) ?? '';
+        // Preservar quebras de linha e estrutura de matrizes
+        final processedContent = content
+            .trim()
+            .replaceAll(RegExp(r'[ \t]+'), ' ') // Normalizar espaços horizontais
+            .replaceAll(RegExp(r'\n[ \t]*\n'), '\n'); // Remover linhas vazias extras
+        return md.Element.text('latex-block', processedContent);
       }
     }
 

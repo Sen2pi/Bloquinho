@@ -485,7 +485,9 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
               final latexContent = latexController.text.trim();
               if (latexContent.isNotEmpty) {
                 Navigator.of(context).pop();
-                widget.onFormatApplied('latex', content: latexContent);
+                // Usar formato $ simples (funciona melhor)
+                final finalContent = '\$$latexContent\$';
+                widget.onFormatApplied('latex', content: finalContent);
               }
             },
             child: const Text('Inserir'),
@@ -557,7 +559,9 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
                   final templateContent =
                       LaTeXWidget.matrixTemplates[templateName];
                   if (templateContent != null) {
-                    widget.onFormatApplied('matrix', content: templateContent);
+                    // Usar formato $ simples para melhor compatibilidade
+                    final wrappedContent = '\$$templateContent\$';
+                    widget.onFormatApplied('matrix', content: wrappedContent);
                   }
                 },
                 child: Container(

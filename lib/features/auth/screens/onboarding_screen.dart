@@ -60,14 +60,25 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _isCheckingOneDrive = false;
   bool _oneDriveAvailable = false;
 
+  // Estado para controlar overlays
+  bool _showErrorSnackBar = false;
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
-    _checkOneDriveAvailability();
+    // Delay para evitar conflitos de overlay na inicialização
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkOneDriveAvailability();
+    });
   }
 
   @override
   void dispose() {
+    // Limpar todos os overlays antes de destruir
+    _showErrorSnackBar = false;
+    _errorMessage = null;
+
     _pageController.dispose();
     _nameController.dispose();
     _emailController.dispose();
@@ -76,6 +87,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   /// Verificar se o OneDrive está disponível
   Future<void> _checkOneDriveAvailability() async {
+    if (!mounted) return;
+
     setState(() {
       _isCheckingOneDrive = true;
     });
@@ -87,22 +100,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
       // Por enquanto, assumir que está disponível
       // TODO: Implementar lógica real de verificação de subscrição
-      setState(() {
-        _oneDriveAvailable = true;
-      });
+      if (mounted) {
+        setState(() {
+          _oneDriveAvailable = true;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _oneDriveAvailable = false;
-      });
+      if (mounted) {
+        setState(() {
+          _oneDriveAvailable = false;
+        });
+      }
     } finally {
-      setState(() {
-        _isCheckingOneDrive = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isCheckingOneDrive = false;
+        });
+      }
     }
   }
 
   void _nextPage() {
-    if (_currentPage < 3) {
+    if (_currentPage < 3 && _pageController.hasClients) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOutCubic,
@@ -111,7 +130,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _previousPage() {
-    if (_currentPage > 0) {
+    if (_currentPage > 0 && _pageController.hasClients) {
       _pageController.previousPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOutCubic,
@@ -120,28 +139,63 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _selectImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 512,
-      maxHeight: 512,
-      imageQuality: 85,
-    );
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
 
-    if (pickedFile != null) {
-      if (kIsWeb) {
-        // No web, usar Uint8List
-        final bytes = await pickedFile.readAsBytes();
+      if (pickedFile != null && mounted) {
+        if (kIsWeb) {
+          // No web, usar Uint8List
+          final bytes = await pickedFile.readAsBytes();
+          setState(() {
+            _selectedImage = bytes;
+          });
+        } else {
+          // No mobile, usar File
+          setState(() {
+            _selectedImage = File(pickedFile.path);
+          });
+        }
+      }
+    } catch (e) {
+      _showError('Erro ao selecionar imagem: $e');
+    }
+  }
+
+  /// Método seguro para mostrar erros
+  void _showError(String message) {
+    if (!mounted) return;
+
+    // Limpar qualquer overlay existente primeiro
+    setState(() {
+      _showErrorSnackBar = false;
+      _errorMessage = null;
+    });
+
+    // Aguardar um frame antes de mostrar novo erro
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
         setState(() {
-          _selectedImage = bytes;
+          _errorMessage = message;
+          _showErrorSnackBar = true;
         });
-      } else {
-        // No mobile, usar File
-        setState(() {
-          _selectedImage = File(pickedFile.path);
+
+        // Auto-hide após 3 segundos
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) {
+            setState(() {
+              _showErrorSnackBar = false;
+              _errorMessage = null;
+            });
+          }
         });
       }
-    }
+    });
   }
 
   Future<void> _finishOnboarding() async {
@@ -151,15 +205,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
 
+    print('DEBUG: Iniciando criação de perfil - Nome: $name, Email: $email');
+
     if (name.isEmpty || email.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Por favor, volte e preencha todos os campos'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      print('DEBUG: Dados inválidos - nome ou email vazio');
+      _showError('Por favor, volte e preencha todos os campos');
       return;
     }
 
@@ -168,28 +218,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     });
 
     try {
+      print('DEBUG: Criando perfil...');
       // Salvar perfil
       final userProfileNotifier = ref.read(userProfileProvider.notifier);
       await userProfileNotifier.createProfile(name: name, email: email);
+      print('DEBUG: Perfil criado com sucesso');
 
+      print('DEBUG: Configurando storage...');
       // Configurar storage
       final storageNotifier = ref.read(storageSettingsProvider.notifier);
       await storageNotifier.changeProvider(_selectedStorage);
+      print('DEBUG: Storage configurado');
 
       // Se OneDrive foi selecionado, fazer autenticação automática
       if (_selectedStorage == CloudStorageProvider.oneDrive) {
+        print('DEBUG: Configurando OneDrive...');
         final onedriveService = OneDriveService();
         final authResult = await onedriveService.authenticate();
 
         if (authResult.success) {
           // Conectar ao serviço
           await storageNotifier.connect();
+          print('DEBUG: OneDrive conectado');
         } else {
           throw Exception(
               'Falha na autenticação com OneDrive: ${authResult.errorMessage}');
         }
       }
 
+      print('DEBUG: Criando workspaces padrão...');
       // Criar workspaces padrão
       final localStorageService = LocalStorageService();
       await localStorageService.initialize();
@@ -197,6 +254,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       // Criar os 3 workspaces padrão
       final workspaces = ['Pessoal', 'Trabalho', 'Projetos'];
       for (final workspaceName in workspaces) {
+        print('DEBUG: Criando workspace: $workspaceName');
         // Criar estrutura de pastas para o perfil
         await localStorageService.createProfileStructure(name);
 
@@ -221,6 +279,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         // await bloquinhoStorage.savePage(initialPage, name, workspaceName);
       }
 
+      print('DEBUG: Workspaces criados com sucesso');
+
       // Mostrar estado de conclusão
       if (mounted) {
         setState(() {
@@ -230,20 +290,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         // Aguardar um pouco para mostrar a animação
         await Future.delayed(const Duration(milliseconds: 1000));
 
-        // Navegar para o workspace
+        print('DEBUG: Navegando para workspace...');
+        // Navegar para o workspace com delay para evitar conflitos
         if (context.mounted) {
-          context.goNamed('workspace');
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (context.mounted) {
+            context.goNamed('workspace');
+          }
         }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao criar usuário: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      print('DEBUG: Erro ao criar usuário: $e');
+      _showError('Erro ao criar usuário: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -259,104 +317,162 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final strings = ref.watch(appStringsProvider);
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDarkMode
-                ? [
-                    const Color(0xFF0F172A),
-                    const Color(0xFF1E293B),
-                    const Color(0xFF334155),
-                  ]
-                : [
-                    const Color(0xFFFFFFFF),
-                    const Color(0xFFF8FAFC),
-                    const Color(0xFFE2E8F0),
-                  ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Theme toggle no topo (sempre visível)
-              Padding(
-                padding: const EdgeInsets.only(top: 16, right: 16),
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: AnimatedThemeToggle(
-                    isDarkMode: isDarkMode,
-                    width: 100,
-                    height: 50,
-                    onToggle: () {
-                      ref.read(themeProvider.notifier).toggleTheme();
-                    },
-                  ),
-                ),
+      body: Stack(
+        children: [
+          // Conteúdo principal
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDarkMode
+                    ? [
+                        const Color(0xFF0F172A),
+                        const Color(0xFF1E293B),
+                        const Color(0xFF334155),
+                      ]
+                    : [
+                        const Color(0xFFFFFFFF),
+                        const Color(0xFFF8FAFC),
+                        const Color(0xFFE2E8F0),
+                      ],
               ),
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Theme toggle no topo (sempre visível)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16, right: 16),
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: AnimatedThemeToggle(
+                        isDarkMode: isDarkMode,
+                        width: 100,
+                        height: 50,
+                        onToggle: () {
+                          ref.read(themeConfigProvider.notifier).toggleTheme();
+                        },
+                      ),
+                    ),
+                  ),
 
-              // Indicador de progresso
-              if (_currentPage > 0)
-                Padding(
-                  padding: const EdgeInsets.all(24),
+                  // Indicador de progresso
+                  if (_currentPage > 0)
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: _previousPage,
+                            icon: Icon(
+                              PhosphorIcons.arrowLeft(),
+                              color: isDarkMode
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.lightTextPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: LinearProgressIndicator(
+                              value: (_currentPage + 1) / 4,
+                              backgroundColor: isDarkMode
+                                  ? AppColors.darkBorder
+                                  : AppColors.lightBorder,
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                  AppColors.primary),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            '${_currentPage + 1} de 4',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: isDarkMode
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.lightTextSecondary,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Conteúdo das páginas
+                  Expanded(
+                    child: PageView(
+                      controller: _pageController,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentPage = index;
+                        });
+                      },
+                      children: [
+                        _buildLanguageSelectionPage(isDarkMode, strings),
+                        _buildWelcomePage(isDarkMode, strings),
+                        _buildUserInfoPage(isDarkMode, strings),
+                        _buildStorageSelectionPage(isDarkMode, strings),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Overlay de erro (substitui ScaffoldMessenger)
+          if (_showErrorSnackBar && _errorMessage != null)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 80,
+              left: 16,
+              right: 16,
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Row(
                     children: [
-                      IconButton(
-                        onPressed: _previousPage,
-                        icon: Icon(
-                          PhosphorIcons.arrowLeft(),
-                          color: isDarkMode
-                              ? AppColors.darkTextPrimary
-                              : AppColors.lightTextPrimary,
-                        ),
+                      Icon(
+                        PhosphorIcons.warning(),
+                        color: Colors.white,
+                        size: 20,
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: LinearProgressIndicator(
-                          value: (_currentPage + 1) / 4,
-                          backgroundColor: isDarkMode
-                              ? AppColors.darkBorder
-                              : AppColors.lightBorder,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppColors.primary),
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Text(
-                        '${_currentPage + 1} de 4',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: isDarkMode
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.lightTextSecondary,
-                            ),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _showErrorSnackBar = false;
+                            _errorMessage = null;
+                          });
+                        },
+                        icon: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ],
                   ),
                 ),
-
-              // Conteúdo das páginas
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index;
-                    });
-                  },
-                  children: [
-                    _buildLanguageSelectionPage(isDarkMode, strings),
-                    _buildWelcomePage(isDarkMode, strings),
-                    _buildUserInfoPage(isDarkMode, strings),
-                    _buildStorageSelectionPage(isDarkMode, strings),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+              ).animate().slideY(begin: -1, duration: 300.ms).fadeIn(),
+            ),
+        ],
       ),
     );
   }
@@ -370,11 +486,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           children: [
             // Ícone de idioma
             Container(
-              width: 120,
-              height: 120,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
                 color: isDarkMode ? AppColors.darkSurface : Colors.white,
-                borderRadius: BorderRadius.circular(60),
+                borderRadius: BorderRadius.circular(50),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
@@ -385,7 +501,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
               child: Icon(
                 Icons.language,
-                size: 60,
+                size: 50,
                 color: AppColors.primary,
               ),
             )
@@ -393,13 +509,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 .scale(begin: const Offset(0.5, 0.5), duration: 800.ms)
                 .fadeIn(duration: 600.ms),
 
-            const SizedBox(height: 48),
+            const SizedBox(height: 32),
 
             // Título
             Text(
               strings.chooseLanguage,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
             )
@@ -407,24 +523,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 .fadeIn(duration: 800.ms)
                 .slideY(begin: 0.3, end: 0),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Subtítulo
             Text(
               strings.languageDescription,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: isDarkMode
                         ? AppColors.darkTextSecondary
                         : AppColors.lightTextSecondary,
-                    height: 1.5,
+                    height: 1.4,
                   ),
             )
                 .animate(delay: 600.ms)
                 .fadeIn(duration: 800.ms)
                 .slideY(begin: 0.3, end: 0),
 
-            const SizedBox(height: 48),
+            const SizedBox(height: 32),
 
             // Opções de idioma (apenas 3 idiomas)
             Column(
@@ -447,7 +563,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               }).toList(),
             ),
 
-            const SizedBox(height: 64),
+            const SizedBox(height: 32),
 
             // Botão continuar
             SizedBox(
@@ -483,12 +599,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: GestureDetector(
-        onTap: () async {
+        onTap: () {
           setState(() {
             _selectedLanguage = language;
           });
-          // Troca o idioma global imediatamente
-          await ref.read(languageProvider.notifier).setLanguage(language);
+          // Remover a chamada imediata de setLanguage para evitar recarregamento
+          // await ref.read(languageProvider.notifier).setLanguage(language);
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -568,152 +684,156 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget _buildWelcomePage(bool isDarkMode, AppStrings strings) {
     return Padding(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Logo animado com caneta e bloco
-          Hero(
-            tag: 'onboarding_logo',
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Bloco (papel)
-                Container(
-                  width: 200,
-                  height: 260,
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? AppColors.darkSurface : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 24),
-                      // Linhas do bloco
-                      for (int i = 0; i < 8; i++)
-                        Container(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 4),
-                          height: 2,
-                          decoration: BoxDecoration(
-                            color: (isDarkMode
-                                    ? AppColors.darkBorder
-                                    : AppColors.lightBorder)
-                                .withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(1),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Logo animado com caneta e bloco
+            Hero(
+              tag: 'onboarding_logo',
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Bloco (papel)
+                  Container(
+                    width: 200,
+                    height: 260,
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? AppColors.darkSurface : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 24),
+                        // Linhas do bloco
+                        for (int i = 0; i < 8; i++)
+                          Container(
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 4),
+                            height: 2,
+                            decoration: BoxDecoration(
+                              color: (isDarkMode
+                                      ? AppColors.darkBorder
+                                      : AppColors.lightBorder)
+                                  .withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(1),
+                            ),
+                          )
+                              .animate(delay: Duration(milliseconds: 200 * i))
+                              .slideX(begin: -1, duration: 400.ms)
+                              .fadeIn(),
+                        const SizedBox(height: 24),
+                        // Logo do app
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.asset(
+                            isDarkMode
+                                ? 'assets/images/logoDark.png'
+                                : 'assets/images/logo.png',
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
                           ),
                         )
-                            .animate(delay: Duration(milliseconds: 200 * i))
-                            .slideX(begin: -1, duration: 400.ms)
+                            .animate(delay: 800.ms)
+                            .scale(
+                                begin: const Offset(0.5, 0.5), duration: 600.ms)
                             .fadeIn(),
-                      const SizedBox(height: 24),
-                      // Logo do app
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.asset(
-                          isDarkMode
-                              ? 'assets/images/logoDark.png'
-                              : 'assets/images/logo.png',
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                          .animate(delay: 800.ms)
-                          .scale(
-                              begin: const Offset(0.5, 0.5), duration: 600.ms)
-                          .fadeIn(),
-                    ],
-                  ),
-                )
-                    .animate()
-                    .slideY(
-                        begin: 0.5, duration: 800.ms, curve: Curves.easeOutBack)
-                    .fadeIn(duration: 600.ms),
+                      ],
+                    ),
+                  )
+                      .animate()
+                      .slideY(
+                          begin: 0.5,
+                          duration: 800.ms,
+                          curve: Curves.easeOutBack)
+                      .fadeIn(duration: 600.ms),
 
-                // Caneta
-                Positioned(
-                  right: -20,
-                  top: 40,
-                  child: Transform.rotate(
-                    angle: 0.3,
-                    child: Container(
-                      width: 8,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(2, 2),
-                          ),
-                        ],
+                  // Caneta
+                  Positioned(
+                    right: -20,
+                    top: 40,
+                    child: Transform.rotate(
+                      angle: 0.3,
+                      child: Container(
+                        width: 8,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(4),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(2, 2),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  )
+                      .animate(delay: 1200.ms)
+                      .slideX(begin: 1, duration: 600.ms, curve: Curves.easeOut)
+                      .fadeIn(),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 48),
+
+            // Título
+            Text(
+              strings.welcomeToBloquinho,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    height: 1.2,
                   ),
-                )
-                    .animate(delay: 1200.ms)
-                    .slideX(begin: 1, duration: 600.ms, curve: Curves.easeOut)
-                    .fadeIn(),
-              ],
-            ),
-          ),
+            )
+                .animate(delay: 1600.ms)
+                .fadeIn(duration: 800.ms)
+                .slideY(begin: 0.3, end: 0),
 
-          const SizedBox(height: 48),
+            const SizedBox(height: 24),
 
-          // Título
-          Text(
-            strings.welcomeToBloquinho,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  height: 1.2,
-                ),
-          )
-              .animate(delay: 1600.ms)
-              .fadeIn(duration: 800.ms)
-              .slideY(begin: 0.3, end: 0),
+            // Subtítulo
+            Text(
+              strings.workspaceDescription,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: isDarkMode
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                    height: 1.5,
+                  ),
+            )
+                .animate(delay: 2000.ms)
+                .fadeIn(duration: 800.ms)
+                .slideY(begin: 0.3, end: 0),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 64),
 
-          // Subtítulo
-          Text(
-            strings.workspaceDescription,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: isDarkMode
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
-                  height: 1.5,
-                ),
-          )
-              .animate(delay: 2000.ms)
-              .fadeIn(duration: 800.ms)
-              .slideY(begin: 0.3, end: 0),
-
-          const SizedBox(height: 64),
-
-          // Botão começar
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: Bloquinho3DButton(
-              label: strings.startButton,
-              onPressed: _nextPage,
-            ),
-          )
-              .animate(delay: 2400.ms)
-              .fadeIn(duration: 800.ms)
-              .slideY(begin: 0.5, end: 0),
-        ],
+            // Botão começar
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: Bloquinho3DButton(
+                label: strings.startButton,
+                onPressed: _nextPage,
+              ),
+            )
+                .animate(delay: 2400.ms)
+                .fadeIn(duration: 800.ms)
+                .slideY(begin: 0.5, end: 0),
+          ],
+        ),
       ),
     );
   }
@@ -721,8 +841,191 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget _buildUserInfoPage(bool isDarkMode, AppStrings strings) {
     return Padding(
       padding: const EdgeInsets.all(24),
-      child: Form(
-        key: _formKey,
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 32),
+
+              // Título
+              Text(
+                strings.createProfile,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2, end: 0),
+
+              const SizedBox(height: 8),
+
+              Text(
+                strings.profileDescription,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: isDarkMode
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
+                    ),
+              )
+                  .animate(delay: 200.ms)
+                  .fadeIn(duration: 600.ms)
+                  .slideX(begin: -0.2, end: 0),
+
+              const SizedBox(height: 48),
+
+              // Avatar
+              Center(
+                child: GestureDetector(
+                  onTap: _selectImage,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDarkMode
+                          ? AppColors.darkSurface
+                          : AppColors.lightSurface,
+                      border: Border.all(
+                        color: isDarkMode
+                            ? AppColors.darkBorder
+                            : AppColors.lightBorder,
+                        width: 2,
+                      ),
+                    ),
+                    child: _selectedImage != null
+                        ? ClipOval(
+                            child: kIsWeb
+                                ? Image.memory(
+                                    _selectedImage as Uint8List,
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(
+                                    _selectedImage as File,
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                PhosphorIcons.camera(),
+                                size: 32,
+                                color: isDarkMode
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                strings.addPhoto,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: isDarkMode
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.lightTextSecondary,
+                                    ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+              )
+                  .animate(delay: 400.ms)
+                  .scale(begin: const Offset(0.8, 0.8), duration: 600.ms)
+                  .fadeIn(),
+
+              const SizedBox(height: 48),
+
+              // Nome
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: strings.fullName,
+                  prefixIcon: Icon(PhosphorIcons.user()),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                textInputAction: TextInputAction.next,
+                enableInteractiveSelection: true,
+                autocorrect: false,
+                enableSuggestions: true,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return strings.pleaseEnterName;
+                  }
+                  return null;
+                },
+              )
+                  .animate(delay: 600.ms)
+                  .fadeIn(duration: 600.ms)
+                  .slideY(begin: 0.3, end: 0),
+
+              const SizedBox(height: 24),
+
+              // Email
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: strings.email,
+                  prefixIcon: Icon(PhosphorIcons.envelope()),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                textInputAction: TextInputAction.done,
+                keyboardType: TextInputType.emailAddress,
+                enableInteractiveSelection: true,
+                autocorrect: false,
+                enableSuggestions: true,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return strings.pleaseEnterEmail;
+                  }
+                  if (!value.contains('@')) {
+                    return strings.pleaseEnterValidEmail;
+                  }
+                  return null;
+                },
+              )
+                  .animate(delay: 800.ms)
+                  .fadeIn(duration: 600.ms)
+                  .slideY(begin: 0.3, end: 0),
+
+              const SizedBox(height: 48),
+
+              // Botão continuar
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: Bloquinho3DButton(
+                  label: strings.continueButton,
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      _nextPage();
+                    }
+                  },
+                ),
+              )
+                  .animate(delay: 1000.ms)
+                  .fadeIn(duration: 600.ms)
+                  .slideY(begin: 0.5, end: 0),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStorageSelectionPage(bool isDarkMode, AppStrings strings) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -730,7 +1033,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
             // Título
             Text(
-              strings.createProfile,
+              strings.chooseStorage,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -739,7 +1042,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             const SizedBox(height: 8),
 
             Text(
-              strings.profileDescription,
+              strings.storageDescription,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: isDarkMode
                         ? AppColors.darkTextSecondary
@@ -752,261 +1055,98 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
             const SizedBox(height: 48),
 
-            // Avatar
-            Center(
-              child: GestureDetector(
-                onTap: _selectImage,
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isDarkMode
-                        ? AppColors.darkSurface
-                        : AppColors.lightSurface,
-                    border: Border.all(
-                      color: isDarkMode
-                          ? AppColors.darkBorder
-                          : AppColors.lightBorder,
-                      width: 2,
-                    ),
-                  ),
-                  child: _selectedImage != null
-                      ? ClipOval(
-                          child: kIsWeb
-                              ? Image.memory(
-                                  _selectedImage as Uint8List,
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.cover,
-                                )
-                              : Image.file(
-                                  _selectedImage as File,
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.cover,
-                                ),
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              PhosphorIcons.camera(),
-                              size: 32,
-                              color: isDarkMode
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.lightTextSecondary,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              strings.addPhoto,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: isDarkMode
-                                        ? AppColors.darkTextSecondary
-                                        : AppColors.lightTextSecondary,
-                                  ),
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-            )
-                .animate(delay: 400.ms)
-                .scale(begin: const Offset(0.8, 0.8), duration: 600.ms)
-                .fadeIn(),
+            // Opções de armazenamento
+            _buildStorageOption(
+              provider: CloudStorageProvider.local,
+              title: strings.localStorage,
+              subtitle: strings.localStorageDescription,
+              icon: PhosphorIcons.desktop(),
+              warning: strings.localStorageWarning,
+              isDarkMode: isDarkMode,
+              delay: 400,
+            ),
+
+            const SizedBox(height: 16),
+
+            _buildStorageOption(
+              provider: CloudStorageProvider.googleDrive,
+              title: 'Google Drive',
+              subtitle: strings.googleDriveDescription,
+              icon: PhosphorIcons.cloud(),
+              isDarkMode: isDarkMode,
+              delay: 600,
+            ),
+
+            const SizedBox(height: 16),
+
+            // OneDrive - mostrar apenas se disponível
+            if (_isCheckingOneDrive)
+              _buildOneDriveCheckingWidget(isDarkMode)
+            else if (_oneDriveAvailable)
+              _buildStorageOption(
+                provider: CloudStorageProvider.oneDrive,
+                title: 'OneDrive',
+                subtitle: strings.oneDriveDescription,
+                icon: PhosphorIcons.cloud(),
+                isDarkMode: isDarkMode,
+                delay: 800,
+              )
+            else
+              _buildOneDriveUnavailableWidget(isDarkMode),
 
             const SizedBox(height: 48),
 
-            // Nome
-            TextFormField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: strings.fullName,
-                prefixIcon: Icon(PhosphorIcons.user()),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              textInputAction: TextInputAction.next,
-              enableInteractiveSelection: true,
-              autocorrect: false,
-              enableSuggestions: true,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return strings.pleaseEnterName;
-                }
-                return null;
-              },
-            )
-                .animate(delay: 600.ms)
-                .fadeIn(duration: 600.ms)
-                .slideY(begin: 0.3, end: 0),
-
-            const SizedBox(height: 24),
-
-            // Email
-            TextFormField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: strings.email,
-                prefixIcon: Icon(PhosphorIcons.envelope()),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              enableInteractiveSelection: true,
-              autocorrect: false,
-              enableSuggestions: false,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return strings.pleaseEnterEmail;
-                }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                    .hasMatch(value.trim())) {
-                  return strings.pleaseEnterValidEmail;
-                }
-                return null;
-              },
-            )
-                .animate(delay: 800.ms)
-                .fadeIn(duration: 600.ms)
-                .slideY(begin: 0.3, end: 0),
-
-            const Spacer(),
-
-            // Botão continuar
+            // Botão finalizar
             SizedBox(
               width: double.infinity,
               height: 56,
-              child: Bloquinho3DButton(
-                label: strings.continueButton,
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    _nextPage();
-                  }
-                },
-              ),
+              child: _isCompleted
+                  ? Bloquinho3DButton(
+                      label: strings.completedButton,
+                      enabled: false,
+                      onPressed: null,
+                    )
+                  : (_isCreatingUser
+                      ? Container(
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Criando perfil...',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Bloquinho3DButton(
+                          label: strings.startUsingButton,
+                          onPressed: _finishOnboarding,
+                        )),
             )
                 .animate(delay: 1000.ms)
                 .fadeIn(duration: 600.ms)
                 .slideY(begin: 0.5, end: 0),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStorageSelectionPage(bool isDarkMode, AppStrings strings) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 32),
-
-          // Título
-          Text(
-            strings.chooseStorage,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2, end: 0),
-
-          const SizedBox(height: 8),
-
-          Text(
-            strings.storageDescription,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: isDarkMode
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
-                ),
-          )
-              .animate(delay: 200.ms)
-              .fadeIn(duration: 600.ms)
-              .slideX(begin: -0.2, end: 0),
-
-          const SizedBox(height: 48),
-
-          // Opções de armazenamento
-          _buildStorageOption(
-            provider: CloudStorageProvider.local,
-            title: strings.localStorage,
-            subtitle: strings.localStorageDescription,
-            icon: PhosphorIcons.desktop(),
-            warning: strings.localStorageWarning,
-            isDarkMode: isDarkMode,
-            delay: 400,
-          ),
-
-          const SizedBox(height: 16),
-
-          _buildStorageOption(
-            provider: CloudStorageProvider.googleDrive,
-            title: 'Google Drive',
-            subtitle: strings.googleDriveDescription,
-            icon: PhosphorIcons.cloud(),
-            isDarkMode: isDarkMode,
-            delay: 600,
-          ),
-
-          const SizedBox(height: 16),
-
-          // OneDrive - mostrar apenas se disponível
-          if (_isCheckingOneDrive)
-            _buildOneDriveCheckingWidget(isDarkMode)
-          else if (_oneDriveAvailable)
-            _buildStorageOption(
-              provider: CloudStorageProvider.oneDrive,
-              title: 'OneDrive',
-              subtitle: strings.oneDriveDescription,
-              icon: PhosphorIcons.cloud(),
-              isDarkMode: isDarkMode,
-              delay: 800,
-            )
-          else
-            _buildOneDriveUnavailableWidget(isDarkMode),
-
-          const Spacer(),
-
-          // Botão finalizar
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: _isCompleted
-                ? Bloquinho3DButton(
-                    label: strings.completedButton,
-                    enabled: false,
-                    onPressed: null,
-                  )
-                : (_isCreatingUser
-                    ? Container(
-                        height: 56,
-                        alignment: Alignment.center,
-                        child: const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        ),
-                      )
-                    : Bloquinho3DButton(
-                        label: strings.startUsingButton,
-                        onPressed: _finishOnboarding,
-                      )),
-          )
-              .animate(delay: 1000.ms)
-              .fadeIn(duration: 600.ms)
-              .slideY(begin: 0.5, end: 0),
-        ],
       ),
     );
   }
@@ -1175,8 +1315,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             child: const Center(
               child: SizedBox(
-                width: 24,
-                height: 24,
+                width: 20,
+                height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
