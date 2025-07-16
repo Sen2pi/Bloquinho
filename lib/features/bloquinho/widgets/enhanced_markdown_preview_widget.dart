@@ -29,6 +29,10 @@ import '../../../core/services/enhanced_pdf_export_service.dart';
 import 'mermaid_diagram_widget.dart'; // Adicionar import para WindowsMermaidDiagramWidget
 import '../../../core/utils/lru_cache.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
+import 'package:printing/printing.dart';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'dart:io';
 
@@ -55,7 +59,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     this.showLineNumbers = false,
     this.enableHtmlEnhancements = true,
     this.baseTextStyle,
-    this.padding = const EdgeInsets.all(16.0),
+    this.padding = const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
     this.backgroundColor,
     this.showScrollbar = true,
     this.scrollPhysics,
@@ -131,6 +135,14 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
               icon: Icons.copy,
               tooltip: 'Copiar texto formatado',
               onPressed: () => _copyFormattedText(context),
+              isDark: isDark,
+            ),
+            const SizedBox(width: 4),
+            // Botão de impressão
+            _buildActionButton(
+              icon: Icons.print,
+              tooltip: 'Imprimir documento',
+              onPressed: () => _printDocument(context),
               isDark: isDark,
             ),
             const SizedBox(width: 4),
@@ -257,6 +269,99 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
               children: [
                 const Text(
                   '❌ Erro ao exportar PDF',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text('Detalhes: $e'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Método para imprimir o documento markdown
+  void _printDocument(BuildContext context) async {
+    FocusScope.of(context).unfocus();
+
+    try {
+      // Mostrar dialog de loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Gerar PDF para impressão usando o mesmo serviço
+      final pdfService = EnhancedPdfExportService();
+      final timestamp =
+          DateTime.now().toString().split('.')[0].replaceAll(':', '-');
+      final title = 'Bloquinho_Document_$timestamp';
+
+      // Gerar PDF como bytes em memória
+      final pdfBytes = await pdfService.generatePdfBytes(
+        markdown: markdown,
+        title: title,
+        author: 'Bloquinho App',
+        subject: 'Documento para impressão do Bloquinho',
+      );
+
+      // Fechar loading
+      Navigator.of(context).pop();
+
+      if (pdfBytes != null) {
+        // Abrir dialog de impressão
+        await Printing.layoutPdf(
+          onLayout: (format) async => pdfBytes,
+          name: title,
+        );
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.print, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('🖨️ Documento preparado para impressão'),
+                ],
+              ),
+              backgroundColor: Colors.blue,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Erro ao preparar documento para impressão'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Fechar loading se ainda estiver aberto
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '❌ Erro ao imprimir documento',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
@@ -1149,7 +1254,7 @@ H<sub>2</sub>O e E=mc<sup>2</sup>
     return EnhancedMarkdownPreviewWidget(
       markdown: examples,
       enableHtmlEnhancements: true,
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
     );
   }
 }

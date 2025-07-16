@@ -237,7 +237,6 @@ class EnhancedPdfExportService {
 
       return filePath;
     } catch (e) {
-      debugPrint('Erro ao exportar PDF: $e');
       return null;
     }
   }
@@ -864,6 +863,88 @@ class EnhancedPdfExportService {
       return 20.0; // Lista items
     }
     return 20.0;
+  }
+
+  /// Gerar PDF como bytes em memória (para impressão)
+  Future<Uint8List?> generatePdfBytes({
+    required String markdown,
+    required String title,
+    String? author,
+    String? subject,
+  }) async {
+    try {
+      final pdf = pw.Document();
+
+      // Processar markdown usando o mesmo sistema do preview
+      final contentWidgets =
+          await _processEnhancedMarkdownToPdfWidgets(markdown);
+
+      // Dividir conteúdo em páginas A4
+      final pages = _splitContentIntoPages(contentWidgets, title);
+
+      // Adicionar páginas ao PDF
+      for (int i = 0; i < pages.length; i++) {
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat.a4,
+            margin: const pw.EdgeInsets.all(40),
+            build: (pw.Context context) => pw.Column(
+              children: [
+                // Cabeçalho
+                pw.Container(
+                  margin: const pw.EdgeInsets.only(bottom: 20),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        title,
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.Text(
+                        '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+                        style: pw.TextStyle(fontSize: 12, color: PdfColors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Conteúdo da página
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: pages[i],
+                  ),
+                ),
+
+                // Rodapé
+                pw.SizedBox(height: 20),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'Bloquinho - $title',
+                      style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+                    ),
+                    pw.Text(
+                      'Página ${i + 1} de ${pages.length}',
+                      style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // Retornar bytes do PDF
+      return await pdf.save();
+    } catch (e) {
+      return null;
+    }
   }
 }
 

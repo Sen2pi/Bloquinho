@@ -42,7 +42,6 @@ class WorkspaceStorageService {
     final newContext = '$profileName/$workspaceId';
 
     if (previousContext != newContext) {
-
       _currentProfileName = profileName;
       _currentWorkspaceId = workspaceId;
 
@@ -77,7 +76,6 @@ class WorkspaceStorageService {
     await _ensureInitialized();
 
     if (_currentProfileName == null || _currentWorkspaceId == null) {
-      debugPrint('⚠️ Contexto não definido');
       return null;
     }
 
@@ -107,9 +105,6 @@ class WorkspaceStorageService {
       'lastModified': DateTime.now().toIso8601String(),
       'data': data,
     }));
-
-    debugPrint(
-        '💾 Dados salvos para workspace $_currentWorkspaceId: $dataType');
   }
 
   /// Carregar dados específicos do workspace
@@ -117,27 +112,21 @@ class WorkspaceStorageService {
     await _ensureInitialized();
 
     if (_currentProfileName == null || _currentWorkspaceId == null) {
-      debugPrint('⚠️ Contexto não definido');
       return null;
     }
 
     final workspacePath = await getCurrentWorkspacePath();
     if (workspacePath == null) {
-      debugPrint('⚠️ Workspace não encontrado');
       return null;
     }
 
     final dataFile = File(path.join(workspacePath, '$dataType.json'));
     if (!await dataFile.exists()) {
-      debugPrint('📄 Arquivo de dados não encontrado: $dataType');
-
       // Garantir que o arquivo de dados padrão seja criado
       try {
         await _localStorage.ensureDataFileExists(
             _currentProfileName!, _currentWorkspaceId!, dataType);
-        debugPrint('✅ Arquivo de dados criado automaticamente: $dataType');
       } catch (e) {
-        debugPrint('❌ Erro ao criar arquivo de dados: $e');
         return null;
       }
     }
@@ -148,16 +137,11 @@ class WorkspaceStorageService {
 
       // Verificar se os dados pertencem ao workspace atual
       if (jsonData['workspaceId'] != _currentWorkspaceId) {
-        debugPrint(
-            '⚠️ Dados de workspace diferente: ${jsonData['workspaceId']} vs $_currentWorkspaceId');
         return null;
       }
 
-      debugPrint(
-          '📄 Dados carregados do workspace $_currentWorkspaceId: $dataType');
       return jsonData['data'] as Map<String, dynamic>;
     } catch (e) {
-      debugPrint('❌ Erro ao carregar dados: $e');
       return null;
     }
   }
@@ -182,7 +166,6 @@ class WorkspaceStorageService {
 
       return workspaces;
     } catch (e) {
-      debugPrint('❌ Erro ao listar workspaces: $e');
       return [];
     }
   }
@@ -218,8 +201,6 @@ class WorkspaceStorageService {
     final dataFile = File(path.join(workspacePath, '$dataType.json'));
     if (await dataFile.exists()) {
       await dataFile.delete();
-      debugPrint(
-          '🗑️ Dados deletados do workspace $_currentWorkspaceId: $dataType');
     }
   }
 
@@ -274,7 +255,6 @@ class WorkspaceStorageService {
 
       return stats;
     } catch (e) {
-      debugPrint('❌ Erro ao obter estatísticas: $e');
       return {};
     }
   }
@@ -290,6 +270,5 @@ class WorkspaceStorageService {
   void clearContext() {
     _currentProfileName = null;
     _currentWorkspaceId = null;
-    debugPrint('🔄 Contexto limpo');
   }
 }

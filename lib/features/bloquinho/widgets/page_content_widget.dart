@@ -539,12 +539,12 @@ $matrixTemplate
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     if (_showLivePreview) {
-      // Modo com live preview (60-40)
+      // Modo com live preview (50-50)
       return Row(
         children: [
-          // Editor (60%)
+          // Editor (50%)
           Expanded(
-            flex: 6,
+            flex: 5,
             child: _buildEditor(isDarkMode),
           ),
           // Separador vertical
@@ -552,9 +552,9 @@ $matrixTemplate
             width: 1,
             color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
           ),
-          // Live Preview (40%)
+          // Live Preview (50%)
           Expanded(
-            flex: 4,
+            flex: 5,
             child: _buildLivePreview(isDarkMode),
           ),
         ],

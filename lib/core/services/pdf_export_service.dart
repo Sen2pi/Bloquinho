@@ -105,7 +105,6 @@ class PdfExportService {
 
       return filePath;
     } catch (e) {
-      debugPrint('Erro ao exportar PDF: $e');
       return null;
     }
   }
@@ -137,7 +136,6 @@ class PdfExportService {
 
       return null;
     } catch (e) {
-      debugPrint('Erro ao exportar imagem: $e');
       return null;
     }
   }
@@ -160,7 +158,6 @@ class PdfExportService {
 
       return filePath;
     } catch (e) {
-      debugPrint('Erro ao exportar código: $e');
       return null;
     }
   }
@@ -170,7 +167,7 @@ class PdfExportService {
     try {
       await OpenFile.open(filePath);
     } catch (e) {
-      debugPrint('Erro ao abrir arquivo: $e');
+      // Error handling
     }
   }
 
