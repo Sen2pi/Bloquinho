@@ -504,7 +504,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
       
       // Calcular dimensões da página PDF
       final pageWidth = PdfPageFormat.a4.width;
-      final pageHeight = PdfPageFormat.a4.height - 40; // Deixar espaço para footer
+      final pageHeight = PdfPageFormat.a4.height - 25; // Deixar espaço para footer
       
       // Calcular quantas páginas serão necessárias
       final imageAspectRatio = combinedImage.width / combinedImage.height;
@@ -572,7 +572,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                 left: 0,
                 right: 0,
                 child: pw.Container(
-                  height: PdfPageFormat.a4.height - 40,
+                  height: PdfPageFormat.a4.height - 25,
                   child: pw.Image(
                     pw.MemoryImage(imageBytes),
                     fit: pw.BoxFit.contain,
@@ -583,7 +583,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
 
               // Footer com logo e texto
               pw.Positioned(
-                bottom: 10,
+                bottom: 5,
                 left: 20,
                 child: pw.Row(
                   mainAxisSize: pw.MainAxisSize.min,
@@ -613,7 +613,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
 
               // Número da página (canto inferior direito)
               pw.Positioned(
-                bottom: 10,
+                bottom: 5,
                 right: 20,
                 child: pw.Text(
                   'pág $pageNumber',
