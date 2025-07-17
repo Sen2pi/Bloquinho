@@ -473,6 +473,93 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     return filePath;
   }
   
+  Future<Uint8List> _createPdfBytesFromMultipleScreenshots(List<Uint8List> screenshots) async {
+    final pdf = pw.Document();
+    
+    // Carregar o logo do Bloquinho
+    final logoBytes = await _loadLogoBytes();
+    pw.MemoryImage? logo;
+    if (logoBytes != null) {
+      logo = pw.MemoryImage(logoBytes);
+    }
+    
+    // Cor castanha do tema para o texto
+    final brownColor = PdfColor.fromHex('#5C4033');
+    
+    // Carregar fonte com suporte Unicode para resolver o aviso
+    final robotoFont = await PdfGoogleFonts.robotoRegular();
+    
+    // Criar uma página para cada screenshot
+    for (int i = 0; i < screenshots.length; i++) {
+      final screenshot = screenshots[i];
+      final image = pw.MemoryImage(screenshot);
+      final pageNumber = i + 1;
+      
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Stack(
+              children: [
+                // Conteúdo principal (screenshot)
+                pw.Center(
+                  child: pw.Image(image, fit: pw.BoxFit.contain),
+                ),
+                
+                // Footer com logo e texto
+                pw.Positioned(
+                  bottom: 10,
+                  left: 20,
+                  child: pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      // Logo do Bloquinho
+                      if (logo != null)
+                        pw.Container(
+                          width: 16,
+                          height: 16,
+                          child: pw.Image(logo),
+                        ),
+                      
+                      if (logo != null)
+                        pw.SizedBox(width: 8),
+                      
+                      // Texto "Exported with Bloquinho"
+                      pw.Text(
+                        'Exported with Bloquinho',
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          color: brownColor,
+                          font: robotoFont,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Número da página (canto inferior direito)
+                pw.Positioned(
+                  bottom: 10,
+                  right: 20,
+                  child: pw.Text(
+                    'pág $pageNumber',
+                    style: pw.TextStyle(
+                      fontSize: 10,
+                      color: brownColor,
+                      font: robotoFont,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    }
+    
+    return await pdf.save();
+  }
+
   Future<Uint8List> _createPdfBytes(Uint8List screenshot) async {
     final pdf = pw.Document();
     
@@ -486,6 +573,15 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     // Cor castanha do tema para o texto
     final brownColor = PdfColor.fromHex('#5C4033');
     
+    // Carregar fonte com suporte Unicode para resolver o aviso
+    pw.Font? font;
+    try {
+      font = await PdfGoogleFonts.robotoRegular();
+    } catch (e) {
+      print('Erro ao carregar fonte: $e');
+      // Usar fonte padrão se não conseguir carregar
+    }
+    
     // Criar imagem do screenshot
     final image = pw.MemoryImage(screenshot);
     
@@ -497,7 +593,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
             children: [
               // Conteúdo principal (screenshot)
               pw.Center(
-                child: pw.Image(image),
+                child: pw.Image(image, fit: pw.BoxFit.contain),
               ),
               
               // Footer com logo e texto
@@ -524,6 +620,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                       style: pw.TextStyle(
                         fontSize: 10,
                         color: brownColor,
+                        font: font,  // em vez de font: robotoFont
                       ),
                     ),
                   ],
@@ -539,6 +636,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                   style: pw.TextStyle(
                     fontSize: 10,
                     color: brownColor,
+                    font: font,  // em vez de font: robotoFont
                   ),
                 ),
               ),
@@ -575,9 +673,14 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
           build: (pw.Context context) {
             return pw.Stack(
               children: [
-                // Conteúdo principal (screenshot)
-                pw.Center(
-                  child: pw.Image(image),
+                // Conteúdo principal (screenshot) - ajustado para caber na página
+                pw.Container(
+                  width: PdfPageFormat.a4.width,
+                  height: PdfPageFormat.a4.height - 40, // Deixar espaço para footer
+                  child: pw.Image(
+                    image,
+                    fit: pw.BoxFit.contain,
+                  ),
                 ),
                 
                 // Footer com logo e texto

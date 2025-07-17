@@ -28,6 +28,7 @@ import '../../../core/utils/lru_cache.dart';
 import '../../../core/services/enhanced_markdown_parser.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:screenshot/screenshot.dart';
 
 import 'dart:io';
 import '../../../core/l10n/app_strings.dart';
@@ -53,6 +54,10 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   // Cache otimizado para markdown processado
   static final LRUCache<int, String> _markdownCache = LRUCache(maxSize: 100);
   static final LRUCache<int, Widget> _widgetCache = LRUCache(maxSize: 50);
+  
+  // Screenshot controller para captura de imagem
+  static final ScreenshotController _screenshotController = ScreenshotController();
+  static final ScrollController _scrollController = ScrollController();
 
   EnhancedMarkdownPreviewWidget({
     super.key,
@@ -82,35 +87,40 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     final cachedWidget = _widgetCache.get(cacheKey);
     if (cachedWidget != null) return cachedWidget;
 
-    final widget = RepaintBoundary(
-      child: Container(
-        color: containerColor,
-        child: Stack(
-          children: [
-            Scrollbar(
-              child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  SliverPadding(
-                    padding: padding,
-                    sliver: SliverToBoxAdapter(
-                      child: SelectionArea(
-                        child: _buildOptimizedMarkdown(context, textStyle, ref, sanitizedMarkdown),
+    final widget = Screenshot(
+      controller: _screenshotController,
+      child: RepaintBoundary(
+        child: Container(
+          color: containerColor,
+          child: Stack(
+            children: [
+              Scrollbar(
+                controller: _scrollController,
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverPadding(
+                      padding: padding,
+                      sliver: SliverToBoxAdapter(
+                        child: SelectionArea(
+                          child: _buildOptimizedMarkdown(context, textStyle, ref, sanitizedMarkdown),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            // Botões de ação otimizados
-            _buildOptimizedActionButtons(context, isDark, ref),
-          ],
+              // Botões de ação otimizados
+              _buildOptimizedActionButtons(context, isDark, ref),
+            ],
+          ),
         ),
       ),
     );
 
-    // Cache do widget completo
-    _widgetCache.put(cacheKey, widget);
+    // Cache do widget completo (removido para Screenshot funcionar)
+    // _widgetCache.put(cacheKey, widget);
     return widget;
   }
 
@@ -283,29 +293,67 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     final screenshots = <Uint8List>[];
     
     try {
-      // Primeiro, vamos capturar apenas a visualização atual como fallback
-      print('Iniciando captura de screenshots...');
+      print('Iniciando captura completa com scroll...');
       
-      // Encontrar o RenderObject do widget
-      final renderObject = context.findRenderObject();
-      if (renderObject == null) {
-        print('RenderObject não encontrado');
-        return screenshots;
+      // Primeiro, vamos à posição inicial
+      _scrollController.jumpTo(0);
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Obter dimensões da tela visível
+      final screenHeight = MediaQuery.of(context).size.height;
+      final maxScrollExtent = _scrollController.position.maxScrollExtent;
+      
+      print('Altura da tela: $screenHeight');
+      print('Máximo scroll: $maxScrollExtent');
+      
+      if (maxScrollExtent <= 0) {
+        // Conteúdo cabe em uma tela
+        print('Conteúdo cabe em uma tela, capturando único screenshot...');
+        final screenshot = await _captureCurrentView();
+        if (screenshot != null) {
+          screenshots.add(screenshot);
+        }
+      } else {
+        // Conteúdo requer scroll
+        print('Conteúdo requer scroll, iniciando captura múltipla...');
+        
+        double currentPosition = 0;
+        final stepSize = screenHeight * 0.8; // 80% da altura da tela com 20% de sobreposição
+        
+        while (currentPosition <= maxScrollExtent) {
+          print('Capturando na posição: $currentPosition');
+          
+          // Ir para a posição atual
+          _scrollController.jumpTo(currentPosition);
+          await Future.delayed(const Duration(milliseconds: 500)); // Aguardar renderização
+          
+          // Capturar screenshot
+          final screenshot = await _captureCurrentView();
+          if (screenshot != null) {
+            screenshots.add(screenshot);
+            print('Screenshot ${screenshots.length} capturado');
+          }
+          
+          // Avançar para próxima posição
+          currentPosition += stepSize;
+          
+          // Se chegamos perto do final, capturar o final
+          if (currentPosition > maxScrollExtent && currentPosition - stepSize < maxScrollExtent) {
+            print('Capturando final do documento...');
+            _scrollController.jumpTo(maxScrollExtent);
+            await Future.delayed(const Duration(milliseconds: 500));
+            
+            final finalScreenshot = await _captureCurrentView();
+            if (finalScreenshot != null) {
+              screenshots.add(finalScreenshot);
+              print('Screenshot final capturado');
+            }
+            break;
+          }
+        }
       }
       
-      // Verificar se é um RepaintBoundary
-      if (renderObject is! RenderRepaintBoundary) {
-        print('Widget não é um RepaintBoundary, tentando capturar mesmo assim...');
-      }
-      
-      // Capturar a visualização atual
-      final screenshot = await _captureCurrentView(context);
-      screenshots.addAll(screenshot);
-      
-      print('Capturou ${screenshots.length} screenshots');
-      
-      // Por enquanto, vamos retornar apenas a visualização atual
-      // TODO: Implementar scroll completo posteriormente
+      print('Captura completa: ${screenshots.length} screenshots');
       return screenshots;
       
     } catch (e) {
@@ -314,65 +362,32 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     }
   }
   
-  Future<List<Uint8List>> _captureCurrentView(BuildContext context) async {
-    final screenshots = <Uint8List>[];
-    
+  Future<Uint8List?> _captureCurrentView() async {
     try {
-      print('Tentando capturar visualização atual...');
+      print('Capturando screenshot com Screenshot library...');
       
       // Aguardar um frame para garantir que o widget está renderizado
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 200));
       
-      final renderObject = context.findRenderObject();
-      if (renderObject == null) {
-        print('RenderObject é null');
-        return screenshots;
-      }
+      // Usar Screenshot library para capturar
+      final imageBytes = await _screenshotController.capture(
+        pixelRatio: 2.0,
+        delay: const Duration(milliseconds: 100),
+      );
       
-      print('RenderObject encontrado: ${renderObject.runtimeType}');
-      
-      // Procurar pelo RepaintBoundary
-      RenderRepaintBoundary? boundary;
-      
-      if (renderObject is RenderRepaintBoundary) {
-        print('RenderObject é RepaintBoundary');
-        boundary = renderObject;
+      if (imageBytes != null) {
+        print('Screenshot capturado com sucesso (${imageBytes.length} bytes)');
+        return imageBytes;
       } else {
-        print('Procurando RepaintBoundary no pai...');
-        RenderObject? current = renderObject;
-        while (current != null) {
-          if (current is RenderRepaintBoundary) {
-            print('RepaintBoundary encontrado no pai: ${current.runtimeType}');
-            boundary = current;
-            break;
-          }
-          current = current.parent;
-        }
-      }
-      
-      if (boundary != null) {
-        print('Capturando imagem do RepaintBoundary...');
-        final image = await boundary.toImage(pixelRatio: 2.0);
-        print('Imagem capturada: ${image.width}x${image.height}');
-        
-        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-        if (byteData != null) {
-          final bytes = byteData.buffer.asUint8List();
-          screenshots.add(bytes);
-          print('Screenshot adicionado à lista (${bytes.length} bytes)');
-        } else {
-          print('Erro: byteData é null');
-        }
-      } else {
-        print('Nenhum RepaintBoundary encontrado');
+        print('Erro: Screenshot é null');
+        return null;
       }
       
     } catch (e, stackTrace) {
       print('Erro ao capturar screenshot: $e');
       print('Stack trace: $stackTrace');
+      return null;
     }
-
-    return screenshots;
   }
 
   Future<String> _createPdfFromScreenshots(List<Uint8List> screenshots) async {
@@ -388,6 +403,9 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     // Cor castanha do tema para o texto
     final brownColor = PdfColor.fromHex('#5C4033'); // lightTextPrimary do tema classic
     
+    // Carregar fonte que suporta Unicode
+    final robotoFont = await PdfGoogleFonts.robotoRegular();
+    
     for (int i = 0; i < screenshots.length; i++) {
       final screenshot = screenshots[i];
       final image = pw.MemoryImage(screenshot);
@@ -399,9 +417,14 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
           build: (pw.Context context) {
             return pw.Stack(
               children: [
-                // Conteúdo principal (screenshot)
-                pw.Center(
-                  child: pw.Image(image),
+                // Conteúdo principal (screenshot) - ajustado para caber na página
+                pw.Container(
+                  width: PdfPageFormat.a4.width,
+                  height: PdfPageFormat.a4.height - 40, // Deixar espaço para footer
+                  child: pw.Image(
+                    image,
+                    fit: pw.BoxFit.contain,
+                  ),
                 ),
                 
                 // Footer com logo e texto
@@ -428,6 +451,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                         style: pw.TextStyle(
                           fontSize: 10,
                           color: brownColor,
+                          font: robotoFont,
                         ),
                       ),
                     ],
@@ -443,6 +467,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                     style: pw.TextStyle(
                       fontSize: 10,
                       color: brownColor,
+                      font: robotoFont,
                     ),
                   ),
                 ),
