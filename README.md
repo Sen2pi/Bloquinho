@@ -10,7 +10,7 @@
 
 <div align="center">
   <img src="https://img.shields.io/badge/Flutter-3.19%2B-blue?logo=flutter"/>
-  <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Web%20%7C%20Linux%20%7C%20macOS-green"/>
+  <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Web%20%7C%20Linux%20%7C%20macOS-red"/>
   <img src="https://img.shields.io/badge/Internationalization-PT%20%7C%20EN%20%7C%20FR-blueviolet"/>
   <img src="https://img.shields.io/badge/PT-100%25%20Complete-brightgreen"/>
   <img src="https://img.shields.io/badge/EN-68.5%25%20Complete-yellow"/>
