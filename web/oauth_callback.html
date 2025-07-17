@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OAuth Callback</title>
+</head>
+<body>
+  <script>
+    // Function to parse query parameters from the URL
+    function getQueryParams() {
+      const params = {};
+      const queryString = window.location.search.substring(1);
+      const regex = /([^&=]+)=([^&]*)/g;
+      let m;
+      while (m = regex.exec(queryString)) {
+        params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+      }
+      return params;
+    }
+
+    // Get the authentication code or error from the URL
+    const params = getQueryParams();
+    const code = params['code'];
+    const error = params['error'];
+
+    // Send the data back to the main window that opened the popup
+    if (window.opener) {
+      window.opener.postMessage({ 
+        type: 'oauth-callback', 
+        code: code, 
+        error: error 
+      }, 'https://bloquinho.kpsolucoes.pt');
+      
+      // Close the popup window
+      window.close();
+    } else {
+      // Handle the case where the window was not opened by a script
+      document.body.innerHTML = '<h1>Error: This window should be closed.</h1><p>Please return to the main application.</p>';
+    }
+  </script>
+</body>
+</html>
