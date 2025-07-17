@@ -34,6 +34,9 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 /// Widget de visualização markdown com enhancements HTML moderno
 /// Windows version - simplified without webview_flutter
@@ -79,28 +82,30 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     final cachedWidget = _widgetCache.get(cacheKey);
     if (cachedWidget != null) return cachedWidget;
 
-    final widget = Container(
-      color: containerColor,
-      child: Stack(
-        children: [
-          Scrollbar(
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                SliverPadding(
-                  padding: padding,
-                  sliver: SliverToBoxAdapter(
-                    child: SelectionArea(
-                      child: _buildOptimizedMarkdown(context, textStyle, ref, sanitizedMarkdown),
+    final widget = RepaintBoundary(
+      child: Container(
+        color: containerColor,
+        child: Stack(
+          children: [
+            Scrollbar(
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  SliverPadding(
+                    padding: padding,
+                    sliver: SliverToBoxAdapter(
+                      child: SelectionArea(
+                        child: _buildOptimizedMarkdown(context, textStyle, ref, sanitizedMarkdown),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // Botões de ação otimizados
-          _buildOptimizedActionButtons(context, isDark, ref),
-        ],
+            // Botões de ação otimizados
+            _buildOptimizedActionButtons(context, isDark, ref),
+          ],
+        ),
       ),
     );
 
@@ -135,6 +140,13 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
               icon: Icons.copy,
               tooltip: 'Copiar texto formatado',
               onPressed: () => _copyFormattedText(context),
+              isDark: isDark,
+            ),
+            // Botão de exportação PDF
+            _buildActionButton(
+              icon: Icons.picture_as_pdf,
+              tooltip: 'Exportar para PDF',
+              onPressed: () => _exportToPdf(context),
               isDark: isDark,
             ),
           ],
@@ -179,6 +191,340 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  void _exportToPdf(BuildContext context) async {
+    print('Botão PDF clicado!');
+    
+    // Capturar o contexto do Navigator e ScaffoldMessenger antes das operações assíncronas
+    final navigator = Navigator.maybeOf(context);
+    final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
+    
+    if (navigator == null || scaffoldMessenger == null) {
+      print('Navigator ou ScaffoldMessenger não encontrado no contexto');
+      return;
+    }
+    
+    try {
+      print('Mostrando indicador de carregamento...');
+      
+      // Mostrar indicador de carregamento
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      print('Iniciando captura de screenshots...');
+      
+      // Capturar screenshots com scroll
+      final screenshots = await _captureScreenshotsWithScroll(context);
+      
+      print('Screenshots capturados: ${screenshots.length}');
+      
+      // Fechar indicador de carregamento usando o navigator capturado
+      try {
+        navigator.pop();
+      } catch (e) {
+        print('Erro ao fechar dialog: $e');
+      }
+
+      if (screenshots.isNotEmpty) {
+        print('Criando PDF com screenshots...');
+        
+        // Criar PDF com screenshots
+        final pdfPath = await _createPdfFromScreenshots(screenshots);
+        
+        print('PDF criado com sucesso em: $pdfPath');
+        
+        // Usar o scaffoldMessenger capturado
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('PDF exportado com sucesso!\nSalvo em: $pdfPath'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      } else {
+        print('Nenhum screenshot capturado');
+        
+        // Usar o scaffoldMessenger capturado
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(
+            content: Text('Erro ao capturar screenshots'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Erro ao exportar PDF: $e');
+      
+      // Tentar fechar o dialog se ainda estiver aberto
+      try {
+        navigator.pop();
+      } catch (e2) {
+        print('Erro ao fechar dialog: $e2');
+      }
+      
+      // Usar o scaffoldMessenger capturado
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Erro ao exportar PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<List<Uint8List>> _captureScreenshotsWithScroll(BuildContext context) async {
+    final screenshots = <Uint8List>[];
+    
+    try {
+      // Primeiro, vamos capturar apenas a visualização atual como fallback
+      print('Iniciando captura de screenshots...');
+      
+      // Encontrar o RenderObject do widget
+      final renderObject = context.findRenderObject();
+      if (renderObject == null) {
+        print('RenderObject não encontrado');
+        return screenshots;
+      }
+      
+      // Verificar se é um RepaintBoundary
+      if (renderObject is! RenderRepaintBoundary) {
+        print('Widget não é um RepaintBoundary, tentando capturar mesmo assim...');
+      }
+      
+      // Capturar a visualização atual
+      final screenshot = await _captureCurrentView(context);
+      screenshots.addAll(screenshot);
+      
+      print('Capturou ${screenshots.length} screenshots');
+      
+      // Por enquanto, vamos retornar apenas a visualização atual
+      // TODO: Implementar scroll completo posteriormente
+      return screenshots;
+      
+    } catch (e) {
+      print('Erro ao capturar screenshots: $e');
+      return screenshots;
+    }
+  }
+  
+  Future<List<Uint8List>> _captureCurrentView(BuildContext context) async {
+    final screenshots = <Uint8List>[];
+    
+    try {
+      print('Tentando capturar visualização atual...');
+      
+      // Aguardar um frame para garantir que o widget está renderizado
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      final renderObject = context.findRenderObject();
+      if (renderObject == null) {
+        print('RenderObject é null');
+        return screenshots;
+      }
+      
+      print('RenderObject encontrado: ${renderObject.runtimeType}');
+      
+      // Procurar pelo RepaintBoundary
+      RenderRepaintBoundary? boundary;
+      
+      if (renderObject is RenderRepaintBoundary) {
+        print('RenderObject é RepaintBoundary');
+        boundary = renderObject;
+      } else {
+        print('Procurando RepaintBoundary no pai...');
+        RenderObject? current = renderObject;
+        while (current != null) {
+          if (current is RenderRepaintBoundary) {
+            print('RepaintBoundary encontrado no pai: ${current.runtimeType}');
+            boundary = current;
+            break;
+          }
+          current = current.parent;
+        }
+      }
+      
+      if (boundary != null) {
+        print('Capturando imagem do RepaintBoundary...');
+        final image = await boundary.toImage(pixelRatio: 2.0);
+        print('Imagem capturada: ${image.width}x${image.height}');
+        
+        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+        if (byteData != null) {
+          final bytes = byteData.buffer.asUint8List();
+          screenshots.add(bytes);
+          print('Screenshot adicionado à lista (${bytes.length} bytes)');
+        } else {
+          print('Erro: byteData é null');
+        }
+      } else {
+        print('Nenhum RepaintBoundary encontrado');
+      }
+      
+    } catch (e, stackTrace) {
+      print('Erro ao capturar screenshot: $e');
+      print('Stack trace: $stackTrace');
+    }
+
+    return screenshots;
+  }
+
+  Future<String> _createPdfFromScreenshots(List<Uint8List> screenshots) async {
+    final pdf = pw.Document();
+    
+    // Carregar o logo do Bloquinho
+    final logoBytes = await _loadLogoBytes();
+    pw.MemoryImage? logo;
+    if (logoBytes != null) {
+      logo = pw.MemoryImage(logoBytes);
+    }
+    
+    // Cor castanha do tema para o texto
+    final brownColor = PdfColor.fromHex('#5C4033'); // lightTextPrimary do tema classic
+    
+    for (int i = 0; i < screenshots.length; i++) {
+      final screenshot = screenshots[i];
+      final image = pw.MemoryImage(screenshot);
+      final pageNumber = i + 1;
+      
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Stack(
+              children: [
+                // Conteúdo principal (screenshot)
+                pw.Center(
+                  child: pw.Image(image),
+                ),
+                
+                // Footer com logo e texto
+                pw.Positioned(
+                  bottom: 10,
+                  left: 20,
+                  child: pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      // Logo do Bloquinho
+                      if (logo != null)
+                        pw.Container(
+                          width: 16,
+                          height: 16,
+                          child: pw.Image(logo),
+                        ),
+                      
+                      if (logo != null)
+                        pw.SizedBox(width: 8),
+                      
+                      // Texto "Exported with Bloquinho"
+                      pw.Text(
+                        'Exported with Bloquinho',
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          color: brownColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Número da página (canto inferior direito)
+                pw.Positioned(
+                  bottom: 10,
+                  right: 20,
+                  child: pw.Text(
+                    'pág $pageNumber',
+                    style: pw.TextStyle(
+                      fontSize: 10,
+                      color: brownColor,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    }
+
+    // Limpar PDFs antigos antes de criar o novo
+    await _cleanupOldPdfFiles();
+
+    // Obter pasta Downloads do usuário
+    String downloadsPath;
+    try {
+      // Tentar obter a pasta Downloads do usuário
+      final userProfile = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
+      if (userProfile != null) {
+        downloadsPath = '$userProfile\\Downloads';
+      } else {
+        // Fallback para diretório temporário
+        final tempDir = await getTemporaryDirectory();
+        downloadsPath = tempDir.path;
+      }
+    } catch (e) {
+      print('Erro ao obter pasta Downloads: $e');
+      final tempDir = await getTemporaryDirectory();
+      downloadsPath = tempDir.path;
+    }
+
+    // Criar nome do arquivo
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final fileName = 'markdown_export_$timestamp.pdf';
+    final filePath = '$downloadsPath\\$fileName';
+    
+    // Salvar o PDF
+    final file = File(filePath);
+    await file.writeAsBytes(await pdf.save());
+    
+    print('PDF salvo em: $filePath');
+    
+    // Abrir o PDF (opcional)
+    try {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+      );
+    } catch (e) {
+      print('Erro ao abrir PDF: $e');
+    }
+    
+    return filePath;
+  }
+  
+  Future<Uint8List?> _loadLogoBytes() async {
+    try {
+      final byteData = await rootBundle.load('assets/images/logo.png');
+      return byteData.buffer.asUint8List();
+    } catch (e) {
+      print('Erro ao carregar logo: $e');
+      return null;
+    }
+  }
+
+  Future<void> _cleanupOldPdfFiles() async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final files = tempDir.listSync();
+      
+      final now = DateTime.now();
+      final cutoffTime = now.subtract(const Duration(hours: 24)); // Limpar arquivos com mais de 24 horas
+      
+      for (final file in files) {
+        if (file is File && file.path.endsWith('.pdf') && file.path.contains('markdown_export_')) {
+          final stat = await file.stat();
+          if (stat.modified.isBefore(cutoffTime)) {
+            await file.delete();
+          }
+        }
+      }
+    } catch (e) {
+      print('Erro ao limpar arquivos PDF antigos: $e');
     }
   }
 
