@@ -540,7 +540,7 @@ This project is licensed under **CC BY-NC-SA 4.0** - see the [LICENSE](LICENSE) 
 
 - ✅ **Non-commercial use**: Free for personal, educational, and research purposes
 - ❌ **Commercial use**: Prohibited without permission
-- 📧 **Commercial licensing**: Contact [seu-email] for commercial rights
+- 📧 **Commercial licensing**: Contact [dr.karim.patatas@gmail.com] for commercial rights
 
 **Note**: This license change protects the project from unauthorized commercial use while keeping it accessible for the community.
 
