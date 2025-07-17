@@ -29,11 +29,14 @@ import '../../../core/utils/lru_cache.dart';
 import '../../../core/services/enhanced_markdown_parser.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
-import 'package:printing/printing.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'dart:io';
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;
 
 /// Widget de visualização markdown com enhancements HTML moderno
 /// Windows version - simplified without webview_flutter
@@ -53,7 +56,10 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   static final LRUCache<String, List<pw.Widget>> _pdfWidgetCache =
       LRUCache(maxSize: 30);
 
-  const EnhancedMarkdownPreviewWidget({
+  // GlobalKey para captura de screenshots
+  final GlobalKey _previewKey = GlobalKey();
+
+  EnhancedMarkdownPreviewWidget({
     super.key,
     required this.markdown,
     this.showLineNumbers = false,
@@ -79,6 +85,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     if (cachedWidget != null) return cachedWidget;
 
     final widget = RepaintBoundary(
+      key: _previewKey, // Adicionar GlobalKey aqui
       child: Container(
         color: containerColor,
         child: Stack(
@@ -99,7 +106,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
               ),
             ),
             // Botões de ação otimizados
-            _buildOptimizedActionButtons(context, isDark),
+            _buildOptimizedActionButtons(context, isDark, ref),
           ],
         ),
       ),
@@ -123,7 +130,8 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   }
 
   /// Botões de ação otimizados com RepaintBoundary
-  Widget _buildOptimizedActionButtons(BuildContext context, bool isDark) {
+  Widget _buildOptimizedActionButtons(
+      BuildContext context, bool isDark, WidgetRef ref) {
     return Positioned(
       top: 8,
       right: 8,
@@ -138,19 +146,11 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
               isDark: isDark,
             ),
             const SizedBox(width: 4),
-            // Botão de impressão
+            // Botão de exportação visual
             _buildActionButton(
-              icon: Icons.print,
-              tooltip: 'Imprimir documento',
-              onPressed: () => _printDocument(context),
-              isDark: isDark,
-            ),
-            const SizedBox(width: 4),
-            // Botão de exportação PDF
-            _buildActionButton(
-              icon: Icons.picture_as_pdf,
-              tooltip: 'Exportar como PDF',
-              onPressed: () => _exportToPdf(context),
+              icon: Icons.camera,
+              tooltip: 'Exportar visualmente para PDF',
+              onPressed: () => _exportVisualPdf(context),
               isDark: isDark,
             ),
           ],
@@ -179,124 +179,6 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     );
   }
 
-  void _exportToPdf(BuildContext context) async {
-    FocusScope.of(context).unfocus();
-
-    print('[PREVIEW] Iniciando exportação para PDF...');
-    try {
-      // Mostrar dialog de loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-
-      // Exportar PDF com formatação completa (sincronizada com preview)
-      final pdfService = EnhancedPdfExportService();
-      final timestamp =
-          DateTime.now().toString().split('.')[0].replaceAll(':', '-');
-      final title = 'Bloquinho_Document_$timestamp';
-
-      print('[PREVIEW] Chamando exportMarkdownAsPdf com title: $title');
-      final filePath = await pdfService.exportMarkdownAsPdf(
-        markdown: markdown,
-        title: title,
-      );
-
-      // Fechar dialog de loading
-      Navigator.of(context).pop();
-
-      if (filePath != null) {
-        // Mostrar sucesso
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('PDF exportado com sucesso!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Abrir arquivo
-        await pdfService.openExportedFile(filePath);
-      } else {
-        // Mostrar erro
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao exportar PDF'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      // Fechar dialog de loading
-      Navigator.of(context).pop();
-
-      print('[PREVIEW] Erro ao exportar PDF: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao exportar PDF: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  void _printDocument(BuildContext context) async {
-    FocusScope.of(context).unfocus();
-
-    print('[PREVIEW] Iniciando processo de impressão...');
-    try {
-      // Mostrar dialog de loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-
-      final pdfService = EnhancedPdfExportService();
-      final timestamp =
-          DateTime.now().toString().split('.')[0].replaceAll(':', '-');
-      final title = 'Bloquinho_Document_$timestamp';
-
-      print('[PREVIEW] Chamando generatePdfBytes com title: $title');
-      final pdfBytes = await pdfService.generatePdfBytes(
-        markdown: markdown,
-        title: title,
-      );
-
-      // Fechar dialog de loading
-      Navigator.of(context).pop();
-
-      if (pdfBytes != null) {
-        // Mostrar preview de impressão
-        await Printing.layoutPdf(
-          onLayout: (PdfPageFormat format) => pdfBytes,
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao gerar PDF para impressão'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      // Fechar dialog de loading
-      Navigator.of(context).pop();
-
-      print('[PREVIEW] Erro ao gerar bytes do PDF para impressão: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao imprimir: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
   void _copyFormattedText(BuildContext context) async {
     try {
       await Clipboard.setData(ClipboardData(text: markdown));
@@ -312,6 +194,171 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
           content: Text('Erro ao copiar texto: $e'),
           backgroundColor: Colors.red,
         ),
+      );
+    }
+  }
+
+  /// Exporta o preview visual para PDF (captura screenshots A4)
+  Future<void> _exportVisualPdf(BuildContext context) async {
+    try {
+      // Mostra loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Aguarda renderização
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // Encontra o ScrollController do CustomScrollView
+      final scrollView = _previewKey.currentContext
+          ?.findAncestorWidgetOfExactType<CustomScrollView>();
+      if (scrollView == null) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Erro: não foi possível encontrar o scroll!'),
+              backgroundColor: Colors.red),
+        );
+        return;
+      }
+
+      // Captura screenshots de todo o conteúdo
+      List<img.Image> allScreenshots = [];
+      double currentOffset = 0.0;
+      const double viewportHeight = 800.0; // Altura aproximada da viewport
+      const double scrollStep = 600; // Passo de scroll (deixa sobreposição)
+
+      // Primeira captura (topo)
+      RenderRepaintBoundary? boundary = _previewKey.currentContext
+          ?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Erro ao capturar preview!'),
+              backgroundColor: Colors.red),
+        );
+        return;
+      }
+
+      // Captura inicial
+      ui.Image initialImage = await boundary.toImage(pixelRatio: 2.0);
+      ByteData? initialByteData =
+          await initialImage.toByteData(format: ui.ImageByteFormat.png);
+      if (initialByteData != null) {
+        final img.Image? initialImg =
+            img.decodeImage(initialByteData.buffer.asUint8List());
+        if (initialImg != null) {
+          allScreenshots.add(initialImg);
+        }
+      }
+
+      // Simula scroll e captura seções
+      final scrollController = PrimaryScrollController.of(context);
+      if (scrollController != null) {
+        final maxScrollExtent = scrollController.position.maxScrollExtent;
+
+        while (currentOffset < maxScrollExtent) {
+          // Rola para próxima posição
+          await scrollController.animateTo(
+            currentOffset,
+            duration: const Duration(milliseconds: 100),
+            curve: Curves.easeInOut,
+          );
+
+          // Aguarda renderização
+          await Future.delayed(const Duration(milliseconds: 200));
+          // Captura screenshot
+          ui.Image scrollImage = await boundary.toImage(pixelRatio: 2.0);
+          ByteData? scrollByteData =
+              await scrollImage.toByteData(format: ui.ImageByteFormat.png);
+          if (scrollByteData != null) {
+            final img.Image? scrollImg =
+                img.decodeImage(scrollByteData.buffer.asUint8List());
+            if (scrollImg != null) {
+              allScreenshots.add(scrollImg);
+            }
+          }
+
+          currentOffset += scrollStep;
+        }
+
+        // Volta ao topo
+        await scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeInOut,
+        );
+      }
+
+      // Processa screenshots em páginas A4
+      final pdf = pw.Document();
+      const a4Width = 595; // pontos A4
+      const a4Height = 842; // pontos A4
+      int totalPages = 0;
+
+      for (final screenshot in allScreenshots) {
+        // Redimensiona para largura A4
+        double scale = a4Width / screenshot.width;
+        int scaledHeight = (screenshot.height * scale).round();
+        img.Image scaledImg =
+            img.copyResize(screenshot, width: a4Width, height: scaledHeight);
+
+        // Divide em páginas A4 se necessário
+        for (int y = 0; y < scaledImg.height; y += a4Height) {
+          int h = (y + a4Height > scaledImg.height)
+              ? (scaledImg.height - y)
+              : a4Height;
+          img.Image pageImg = img.copyCrop(
+            scaledImg,
+            x: 0,
+            y: y,
+            width: a4Width,
+            height: h,
+          );
+
+          // Adiciona página ao PDF
+          final pageBytes = img.encodePng(pageImg);
+          final pdfImage = pw.MemoryImage(pageBytes);
+          pdf.addPage(
+            pw.Page(
+              pageFormat: PdfPageFormat.a4,
+              build: (context) =>
+                  pw.Center(child: pw.Image(pdfImage, fit: pw.BoxFit.contain)),
+            ),
+          );
+          totalPages++;
+        }
+      }
+
+      // Salva PDF
+      final output = await getTemporaryDirectory();
+      final filePath =
+          '${output.path}/Bloquinho_Visual_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final file = File(filePath);
+      await file.writeAsBytes(await pdf.save());
+
+      Navigator.of(context).pop();
+
+      // Mostra sucesso
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('PDF exportado visualmente!\n$totalPages páginas geradas'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Abre PDF
+      await Process.run('start', [filePath], runInShell: true);
+    } catch (e) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Erro ao exportar visualmente: $e'),
+            backgroundColor: Colors.red),
       );
     }
   }

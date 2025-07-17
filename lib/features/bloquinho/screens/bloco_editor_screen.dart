@@ -1032,8 +1032,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
       final filePath = await pdfExportService.exportMarkdownAsPdf(
         markdown: currentPage.content ?? '',
         title: currentPage.title,
-        author: 'Bloquinho App',
-        subject: 'Documento exportado do Bloquinho',
+        strings: strings,
       );
       if (filePath != null) {
         await pdfExportService.openExportedFile(filePath);

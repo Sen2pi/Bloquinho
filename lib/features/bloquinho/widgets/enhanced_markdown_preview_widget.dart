@@ -37,6 +37,9 @@ import 'dart:ui' as ui;
 
 import 'dart:io';
 
+import '../../../core/l10n/app_strings.dart';
+import '../../../shared/providers/language_provider.dart';
+
 /// Widget de visualização markdown com enhancements HTML moderno
 class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   final String markdown;
@@ -100,7 +103,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
               ),
             ),
             // Botões de ação otimizados
-            _buildOptimizedActionButtons(context, isDark),
+            _buildOptimizedActionButtons(context, isDark, ref),
           ],
         ),
       ),
@@ -124,7 +127,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   }
 
   /// Botões de ação otimizados com RepaintBoundary
-  Widget _buildOptimizedActionButtons(BuildContext context, bool isDark) {
+  Widget _buildOptimizedActionButtons(BuildContext context, bool isDark, WidgetRef ref) {
     return Positioned(
       top: 8,
       right: 8,
@@ -143,7 +146,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
             _buildActionButton(
               icon: Icons.print,
               tooltip: 'Imprimir documento',
-              onPressed: () => _printDocument(context),
+              onPressed: () => _printDocument(context, ref),
               isDark: isDark,
             ),
             const SizedBox(width: 4),
@@ -151,7 +154,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
             _buildActionButton(
               icon: Icons.picture_as_pdf,
               tooltip: 'Exportar como PDF',
-              onPressed: () => _exportToPdf(context),
+              onPressed: () => _exportToPdf(context, ref),
               isDark: isDark,
             ),
           ],
@@ -180,108 +183,38 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     );
   }
 
-  void _exportToPdf(BuildContext context) async {
-    print('📄 [PREVIEW] ===== INICIANDO EXPORTAÇÃO PDF =====');
-    print('📄 [PREVIEW] Tamanho do markdown: ${markdown.length} caracteres');
-    print('📄 [PREVIEW] Markdown preview: "${markdown.substring(0, markdown.length > 100 ? 100 : markdown.length)}..."');
-    
-    FocusScope.of(context).unfocus();
+  void _exportToPdf(BuildContext context, WidgetRef ref) async {
+    // Mostrar dialog de loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
 
-    try {
-      // Mostrar dialog de loading
-      print('📄 [PREVIEW] Mostrando dialog de loading...');
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+    // Exportar PDF com formatação completa (sincronizada com preview)
+    final pdfService = EnhancedPdfExportService();
+    final timestamp =
+        DateTime.now().toString().split('.')[0].replaceAll(':', '-');
+    final title = 'Bloquinho_Document_$timestamp';
 
-      // Exportar PDF com formatação completa (sincronizada com preview)
-      print('📄 [PREVIEW] Criando serviço PDF...');
-      final pdfService = EnhancedPdfExportService();
-      final timestamp =
-          DateTime.now().toString().split('.')[0].replaceAll(':', '-');
-      final title = 'Bloquinho_Document_$timestamp';
-      print('📄 [PREVIEW] Título gerado: $title');
+    final strings = ref.read(appStringsProvider); // ou context.read/appStringsProvider, conforme o caso
 
-      print('📄 [PREVIEW] Chamando exportMarkdownAsPdf...');
-      final filePath = await pdfService.exportMarkdownAsPdf(
-        markdown: markdown,
-        title: title,
-        author: 'Bloquinho App',
-        subject: 'Documento exportado do Bloquinho',
-      );
+    final filePath = await pdfService.exportMarkdownAsPdf(
+      markdown: markdown,
+      title: title,
+      strings: strings,
+    );
 
-      // Fechar loading
-      print('📄 [PREVIEW] Fechando dialog de loading...');
-      Navigator.of(context).pop();
+    // Fechar loading
+    Navigator.of(context).pop();
 
-      if (filePath != null) {
-        print('✅ [PREVIEW] PDF exportado com sucesso: $filePath');
-        
-        // Mostrar sucesso e abrir arquivo
-        print('📄 [PREVIEW] Abrindo arquivo exportado...');
-        await pdfService.openExportedFile(filePath);
-
-        if (context.mounted) {
-          print('📄 [PREVIEW] Mostrando SnackBar de sucesso...');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '✅ PDF exportado com sucesso!',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text('Salvo em: ${filePath.split('/').last}'),
-                  const SizedBox(height: 4),
-                  const Text(
-                    '📋 Todo o conteúdo foi incluído com formatação completa',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ],
-              ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 4),
-              action: SnackBarAction(
-                label: 'OK',
-                textColor: Colors.white,
-                onPressed: () =>
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-              ),
-            ),
-          );
-        }
-      } else {
-        print('❌ [PREVIEW] Erro: filePath é null');
-        if (context.mounted) {
-          print('📄 [PREVIEW] Mostrando SnackBar de erro...');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('❌ Erro ao gerar PDF'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    } catch (e, stackTrace) {
-      print('❌ [PREVIEW] Erro ao exportar PDF: $e');
-      print('❌ [PREVIEW] Stack trace: $stackTrace');
-      
-      // Fechar loading se ainda estiver aberto
-      if (Navigator.of(context).canPop()) {
-        print('📄 [PREVIEW] Fechando dialog de loading após erro...');
-        Navigator.of(context).pop();
-      }
+    if (filePath != null) {
+      // Mostrar sucesso e abrir arquivo
+      await pdfService.openExportedFile(filePath);
 
       if (context.mounted) {
-        print('📄 [PREVIEW] Mostrando SnackBar de erro detalhado...');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Column(
@@ -289,15 +222,36 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  '❌ Erro ao exportar PDF',
+                  '✅ PDF exportado com sucesso!',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
-                Text('Detalhes: $e'),
+                Text('Salvo em: ${filePath.split('/').last}'),
+                const SizedBox(height: 4),
+                const Text(
+                  '📋 Todo o conteúdo foi incluído com formatação completa',
+                  style: TextStyle(fontSize: 12),
+                ),
               ],
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.green,
             duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () =>
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+            ),
+          ),
+        );
+      }
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Erro ao gerar PDF'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
           ),
         );
       }
@@ -305,112 +259,69 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   }
 
   /// Método para imprimir o documento markdown
-  void _printDocument(BuildContext context) async {
-    print('🖨️ [PREVIEW] ===== INICIANDO IMPRESSÃO =====');
-    print('🖨️ [PREVIEW] Tamanho do markdown: ${markdown.length} caracteres');
-    print('🖨️ [PREVIEW] Markdown preview: "${markdown.substring(0, markdown.length > 100 ? 100 : markdown.length)}..."');
-    
-    FocusScope.of(context).unfocus();
+  void _printDocument(BuildContext context, WidgetRef ref) async {
+    // Mostrar dialog de loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
 
-    try {
-      // Mostrar dialog de loading
-      print('🖨️ [PREVIEW] Mostrando dialog de loading...');
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+    // Gerar PDF para impressão usando o mesmo serviço
+    final pdfService = EnhancedPdfExportService();
+    final timestamp =
+        DateTime.now().toString().split('.')[0].replaceAll(':', '-');
+    final title = 'Bloquinho_Document_$timestamp';
 
-      // Gerar PDF para impressão usando o mesmo serviço
-      print('🖨️ [PREVIEW] Criando serviço PDF...');
-      final pdfService = EnhancedPdfExportService();
-      final timestamp =
-          DateTime.now().toString().split('.')[0].replaceAll(':', '-');
-      final title = 'Bloquinho_Document_$timestamp';
-      print('🖨️ [PREVIEW] Título gerado: $title');
+    final strings = ref.read(appStringsProvider); // ou context.read/appStringsProvider, conforme o caso
 
-      // Gerar PDF como bytes em memória
-      print('🖨️ [PREVIEW] Chamando generatePdfBytes...');
-      final pdfBytes = await pdfService.generatePdfBytes(
-        markdown: markdown,
-        title: title,
-        author: 'Bloquinho App',
-        subject: 'Documento para impressão do Bloquinho',
-      );
+    // Gerar PDF como bytes em memória
+    final pdfBytes = await pdfService.generatePdfBytes(
+      markdown: markdown,
+      title: title,
+      strings: strings,
+    );
 
-      // Fechar loading
-      print('🖨️ [PREVIEW] Fechando dialog de loading...');
-      Navigator.of(context).pop();
+    // Fechar loading
+    Navigator.of(context).pop();
 
-      if (pdfBytes != null) {
-        print('✅ [PREVIEW] PDF gerado com sucesso: ${pdfBytes.length} bytes');
-        
-        // Abrir dialog de impressão
-        print('🖨️ [PREVIEW] Abrindo dialog de impressão...');
-        await Printing.layoutPdf(
-          onLayout: (format) async => pdfBytes,
-          name: title,
-        );
-
-        if (context.mounted) {
-          print('🖨️ [PREVIEW] Mostrando SnackBar de sucesso...');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.print, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text('🖨️ Documento preparado para impressão'),
-                ],
-              ),
-              backgroundColor: Colors.blue,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      } else {
-        print('❌ [PREVIEW] Erro: pdfBytes é null');
-        if (context.mounted) {
-          print('🖨️ [PREVIEW] Mostrando SnackBar de erro...');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('❌ Erro ao preparar documento para impressão'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    } catch (e, stackTrace) {
-      print('❌ [PREVIEW] Erro ao imprimir documento: $e');
-      print('❌ [PREVIEW] Stack trace: $stackTrace');
+    if (pdfBytes != null) {
+      // Abrir dialog de impressão com preview
       
-      // Fechar loading se ainda estiver aberto
-      if (Navigator.of(context).canPop()) {
-        print('🖨️ [PREVIEW] Fechando dialog de loading após erro...');
-        Navigator.of(context).pop();
-      }
+      // Usar Printing.layoutPdf com configurações para mostrar preview
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async {
+          return pdfBytes;
+        },
+        name: title,
+        format: PdfPageFormat.a4,
+        dynamicLayout: true,
+      );
 
       if (context.mounted) {
-        print('🖨️ [PREVIEW] Mostrando SnackBar de erro detalhado...');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+          const SnackBar(
+            content: Row(
               children: [
-                const Text(
-                  '❌ Erro ao imprimir documento',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text('Detalhes: $e'),
+                Icon(Icons.print, color: Colors.white),
+                SizedBox(width: 8),
+                Text('🖨️ Documento preparado para impressão'),
               ],
             ),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Erro ao preparar documento para impressão'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+            duration: Duration(seconds: 3),
           ),
         );
       }
@@ -418,19 +329,12 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   }
 
   void _copyFormattedText(BuildContext context) {
-    print('📋 [PREVIEW] ===== INICIANDO CÓPIA DE TEXTO FORMATADO =====');
-    print('📋 [PREVIEW] Tamanho do markdown original: ${markdown.length} caracteres');
-    
     // Converter markdown para texto formatado limpo
-    print('📋 [PREVIEW] Convertendo markdown para texto formatado...');
     String formattedText = _convertMarkdownToFormattedText(markdown);
-    print('📋 [PREVIEW] Texto formatado gerado: ${formattedText.length} caracteres');
 
-    print('📋 [PREVIEW] Copiando para clipboard...');
-    Clipboard.setData(ClipboardData(text: formattedText));
-    print('✅ [PREVIEW] Texto copiado para clipboard com sucesso');
-
-    print('📋 [PREVIEW] Mostrando SnackBar de confirmação...');
+    // Copiando para clipboard...
+    
+    // Mostrando SnackBar de confirmação...
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Texto formatado copiado para a área de transferência'),
@@ -440,63 +344,52 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   }
 
   String _convertMarkdownToFormattedText(String markdown) {
-    print('🔄 [PREVIEW] Convertendo markdown para texto formatado...');
     String formatted = markdown;
 
-    print('🔄 [PREVIEW] Removendo cabeçalhos markdown...');
-    // Remover cabeçalhos markdown (# ## ### etc)
+    // Removendo cabeçalhos markdown (# ## ### etc)
     formatted =
         formatted.replaceAll(RegExp(r'^#{1,6}\s+', multiLine: true), '');
 
-    print('🔄 [PREVIEW] Convertendo **texto** para texto normal...');
     // Converter **texto** para texto normal (sem markdown)
     formatted = formatted.replaceAllMapped(
       RegExp(r'\*\*(.*?)\*\*'),
       (match) => match.group(1) ?? '',
     );
 
-    print('🔄 [PREVIEW] Convertendo *texto* para texto normal...');
     // Converter *texto* para texto normal (sem markdown)
     formatted = formatted.replaceAllMapped(
       RegExp(r'\*(.*?)\*'),
       (match) => match.group(1) ?? '',
     );
 
-    print('🔄 [PREVIEW] Convertendo `código` para código...');
     // Converter `código` para código (sem backticks)
     formatted = formatted.replaceAllMapped(
       RegExp(r'`(.*?)`'),
       (match) => match.group(1) ?? '',
     );
 
-    print('🔄 [PREVIEW] Removendo links markdown...');
     // Remover links markdown [texto](url) -> texto
     formatted = formatted.replaceAllMapped(
       RegExp(r'\[(.*?)\]\(.*?\)'),
       (match) => match.group(1) ?? '',
     );
 
-    print('🔄 [PREVIEW] Removendo blocos de código markdown...');
     // Remover blocos de código markdown
     formatted =
         formatted.replaceAll(RegExp(r'```[\s\S]*?```', multiLine: true), '');
 
-    print('🔄 [PREVIEW] Removendo listas markdown...');
     // Remover listas markdown (- * +)
     formatted =
         formatted.replaceAll(RegExp(r'^[\s]*[-*+]\s+', multiLine: true), '');
 
-    print('🔄 [PREVIEW] Removendo listas numeradas...');
     // Remover listas numeradas
     formatted =
         formatted.replaceAll(RegExp(r'^[\s]*\d+\.?\s+', multiLine: true), '');
 
-    print('🔄 [PREVIEW] Limpando linhas em branco extras...');
     // Limpar linhas em branco extras
     formatted = formatted.replaceAll(RegExp(r'\n\s*\n\s*\n'), '\n\n');
 
     final result = formatted.trim();
-    print('✅ [PREVIEW] Conversão concluída: ${result.length} caracteres');
     return result;
   }
 
@@ -536,20 +429,14 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   }
 
   String _sanitizeMarkdown(String input) {
-    print('🧹 [PREVIEW] Sanitizando markdown: ${input.length} caracteres');
     try {
       // Primeiro, verificar se a string é válida
-      print('🧹 [PREVIEW] Verificando se a string é válida...');
       input.runes.toList();
-      print('✅ [PREVIEW] String é válida, retornando sem modificações');
       return input;
     } catch (e) {
-      print('❌ [PREVIEW] String inválida detectada: $e');
-      print('🧹 [PREVIEW] Iniciando sanitização caractere por caractere...');
       // Se não for válida, sanitizar caractere por caractere
       final buffer = StringBuffer();
       final codeUnits = input.codeUnits;
-      print('🧹 [PREVIEW] Total de code units: ${codeUnits.length}');
 
       for (int i = 0; i < codeUnits.length; i++) {
         final codeUnit = codeUnits[i];
@@ -559,17 +446,14 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
           buffer.writeCharCode(codeUnit);
         } else {
           // Substituir caracteres inválidos por espaço
-          print('🧹 [PREVIEW] Caractere inválido encontrado na posição $i: $codeUnit');
           buffer.write(' ');
         }
       }
 
       final sanitized = buffer.toString();
-      print('🧹 [PREVIEW] String sanitizada criada: ${sanitized.length} caracteres');
 
       // Limpar sequências de espaços múltiplos
       final cleaned = sanitized.replaceAll(RegExp(r'\s+'), ' ');
-      print('🧹 [PREVIEW] String final limpa: ${cleaned.length} caracteres');
 
       return cleaned;
     }
@@ -603,15 +487,9 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
 
   Widget _buildOptimizedMarkdown(
       BuildContext context, TextStyle baseStyle, WidgetRef ref) {
-    print('🔍 [PREVIEW] ===== CONSTRUINDO MARKDOWN OTIMIZADO =====');
-    print('🔍 [PREVIEW] Tamanho do markdown: ${markdown.length} caracteres');
-    print('🔍 [PREVIEW] enableHtmlEnhancements: $enableHtmlEnhancements');
-    
     final safeMarkdown = _sanitizeMarkdown(markdown);
-    print('🔍 [PREVIEW] Markdown sanitizado: ${safeMarkdown.length} caracteres');
 
     if (!enableHtmlEnhancements) {
-      print('🔍 [PREVIEW] Usando modo básico (sem HTML enhancements)...');
       return RepaintBoundary(
         child: MarkdownBody(
           data: safeMarkdown,
@@ -646,29 +524,22 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
       );
     }
 
-    // Cache do markdown processado com LRU
-    print('🔍 [PREVIEW] Usando modo avançado (com HTML enhancements)...');
+    // Usando modo avançado (com HTML enhancements)...
     final hash = safeMarkdown.hashCode ^ enableHtmlEnhancements.hashCode;
     String processedContent;
     final cached = _markdownCache.get(hash);
     if (cached != null) {
-      print('🔍 [PREVIEW] Usando conteúdo em cache...');
       processedContent = cached;
     } else {
-      print('🔍 [PREVIEW] Processando markdown com HtmlEnhancementParser...');
       try {
         processedContent =
             HtmlEnhancementParser.processWithEnhancements(safeMarkdown);
-        print('🔍 [PREVIEW] Markdown processado com sucesso: ${processedContent.length} caracteres');
         _markdownCache.put(hash, processedContent);
       } catch (e) {
-        print('❌ [PREVIEW] Erro ao processar markdown com HtmlEnhancementParser: $e');
-        print('🔍 [PREVIEW] Usando markdown original como fallback...');
         processedContent = safeMarkdown;
       }
     }
 
-    print('🔍 [PREVIEW] Criando MarkdownBody com conteúdo processado...');
     return RepaintBoundary(
       child: MarkdownBody(
         data: processedContent,
