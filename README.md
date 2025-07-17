@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Internationalization-PT%20%7C%20EN%20%7C%20FR-blueviolet"/>
   <img src="https://img.shields.io/badge/Cloud%20Sync-Google%20Drive%20%7C%20OneDrive-yellow"/>
   <img src="https://img.shields.io/badge/100%25%20Self--Hosted-success"/>
-  <img src="https://img.shields.io/badge/Status-68.5%25%20Complete-brightyellow"/>
+  <img src="https://img.shields.io/badge/Status-68.5%25%20Complete-orange"/>
   <img src="https://img.shields.io/badge/Functional-100%25%20Complete-brightgreen"/>
 </div>
 
