@@ -199,11 +199,36 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   void _exportToPdf(BuildContext context) async {
     print('Botão PDF clicado!');
 
+    // Capturar o contexto do Navigator e ScaffoldMessenger antes das operações assíncronas
+    final navigator = Navigator.maybeOf(context);
+    final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
+
+    if (navigator == null || scaffoldMessenger == null) {
+      print('Navigator ou ScaffoldMessenger não encontrado no contexto');
+      return;
+    }
+
     try {
+      print('Mostrando loader personalizado...');
+
+      // Mostrar loader personalizado
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => const BloquinhoLoader(),
+      );
+
       print('Iniciando captura completa com scroll...');
 
       // Capturar múltiplos screenshots com scroll automático
       final screenshots = await _captureFullContentWithScroll();
+
+      // Fechar loader usando o navigator capturado
+      try {
+        navigator.pop();
+      } catch (e) {
+        print('Erro ao fechar dialog: $e');
+      }
 
       if (screenshots.isNotEmpty) {
         print('Capturados ${screenshots.length} screenshots para PDF');
@@ -213,16 +238,35 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
 
         print('PDF criado com sucesso em: $pdfPath');
 
-        // PDF exportado com sucesso - apenas salvar, não abrir impressora
-        print('PDF exportado com sucesso em: $pdfPath');
+        // Usar o scaffoldMessenger capturado
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('PDF exportado com sucesso!\nSalvo em: $pdfPath'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       } else {
         print('Nenhum screenshot capturado, tentando método alternativo...');
         await _exportPdfAlternativeMethod(context);
       }
     } catch (e) {
       print('Erro ao exportar PDF: $e');
-      print('Tentando método alternativo...');
-      await _exportPdfAlternativeMethod(context);
+
+      // Tentar fechar o dialog se ainda estiver aberto
+      try {
+        navigator.pop();
+      } catch (e2) {
+        print('Erro ao fechar dialog: $e2');
+      }
+
+      // Usar o scaffoldMessenger capturado
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Erro ao exportar PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -241,14 +285,17 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
       await Future.delayed(const Duration(milliseconds: 500));
 
       // Obter dimensões da tela e do conteúdo
-      final screenHeight = 750.0; // Altura aproximada da tela visível
+      // Calcular altura dinamicamente baseada na altura da tela
+      final viewportHeight = _scrollController.position.viewportDimension;
       final maxScrollExtent = _scrollController.position.maxScrollExtent;
       final minScrollExtent = _scrollController.position.minScrollExtent;
 
-      print('Conteúdo total: ${maxScrollExtent + screenHeight} pixels');
-      print('Altura da tela: $screenHeight pixels');
-      print(
-          'Páginas estimadas: ${((maxScrollExtent + screenHeight) / screenHeight).ceil()}');
+      // Altura de captura = altura da viewport (tela visível)
+      final captureHeight = viewportHeight;
+
+      print('Altura da viewport: $viewportHeight pixels');
+      print('Conteúdo total: ${maxScrollExtent + captureHeight} pixels');
+      print('Máximo scroll: $maxScrollExtent pixels');
 
       if (maxScrollExtent == 0) {
         // Conteúdo cabe em uma página
@@ -270,22 +317,24 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         double currentPosition = minScrollExtent;
         int pageCount = 0;
 
-        // Altura efetiva da página (usando toda a tela para evitar sobreposição)
-        final effectivePageHeight = screenHeight; // Usar altura total da tela
+        // Calcular avanço dinamicamente: exatamente a altura da viewport
+        // Isso garante que cada captura começa exatamente onde a anterior terminou
+        final scrollAdvance = captureHeight;
 
         while (currentPosition <= maxScrollExtent) {
           pageCount++;
           print('Capturando página $pageCount - posição: $currentPosition');
 
-          // Navegar para a posição atual
+          // Navegar para a posição atual com animação mais suave
           await _scrollController.animateTo(
             currentPosition,
-            duration: const Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 500), // Aumentado para 500ms
             curve: Curves.easeInOut,
           );
 
           // Aguardar estabilização maior para renderização completa
-          await Future.delayed(const Duration(milliseconds: 800));
+          await Future.delayed(const Duration(
+              milliseconds: 1200)); // Aumentado para 1.2 segundos
 
           // Capturar screenshot da posição atual com maior qualidade
           final screenshot = await _screenshotController.capture(
@@ -301,20 +350,21 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
             print('Erro ao capturar screenshot da página $pageCount');
           }
 
-          // Próxima posição: avançar mais que a altura da tela para garantir sem sobreposição
-          final nextPosition =
-              currentPosition + (screenHeight * 1.19); // 20% a mais
+          // Próxima posição: avançar com margem extra para evitar sobreposição
+          final nextPosition = currentPosition + scrollAdvance;
 
           // Se estamos próximos do final, capturar o restante
           if (nextPosition >= maxScrollExtent) {
             print('Capturando página final...');
             await _scrollController.animateTo(
               maxScrollExtent,
-              duration: const Duration(milliseconds: 300),
+              duration:
+                  const Duration(milliseconds: 500), // Aumentado para 500ms
               curve: Curves.easeInOut,
             );
 
-            await Future.delayed(const Duration(milliseconds: 800));
+            await Future.delayed(const Duration(
+                milliseconds: 1200)); // Aumentado para 1.2 segundos
 
             final finalScreenshot = await _screenshotController.capture(
               pixelRatio: 3.0,
@@ -507,11 +557,10 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     // Carregar fonte com suporte Unicode para resolver o aviso
     final robotoFont = await PdfGoogleFonts.robotoRegular();
 
-    // Criar uma página para cada screenshot
+    // Criar uma página por screenshot para evitar sobreposição
     for (int i = 0; i < screenshots.length; i++) {
-      final screenshot = screenshots[i];
-      final image = pw.MemoryImage(screenshot);
       final pageNumber = i + 1;
+      final screenshot = screenshots[i];
 
       pdf.addPage(
         pw.Page(
@@ -519,59 +568,76 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
           build: (pw.Context context) {
             return pw.Stack(
               children: [
-                // Conteúdo principal (screenshot) - otimizado para usar toda a página
-                pw.Container(
-                  width: PdfPageFormat.a4.width,
-                  height:
-                      PdfPageFormat.a4.height - 35, // Espaço mínimo para footer
-                  child: pw.Image(
-                    image,
-                    fit: pw.BoxFit
-                        .fitWidth, // Ajustar largura e cortar altura se necessário
-                    alignment: pw.Alignment.topCenter, // Alinhar no topo
+                // Screenshot completo da tela - sem espaços em branco
+                pw.Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: pw.Container(
+                    height: PdfPageFormat
+                        .a4.height, // Usar altura completa sem margem
+                    child: pw.Image(
+                      pw.MemoryImage(screenshot),
+                      fit: pw.BoxFit.fitWidth,
+                      alignment: pw.Alignment.topCenter,
+                    ),
                   ),
                 ),
 
-                // Footer com logo e texto
+                // Footer com logo e texto - sobreposto ao conteúdo
                 pw.Positioned(
-                  bottom: 10,
+                  bottom: 5,
                   left: 20,
-                  child: pw.Row(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    children: [
-                      // Logo do Bloquinho
-                      if (logo != null)
-                        pw.Container(
-                          width: 16,
-                          height: 16,
-                          child: pw.Image(logo),
-                        ),
+                  child: pw.Container(
+                    padding: pw.EdgeInsets.all(4),
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.white,
+                      borderRadius: pw.BorderRadius.circular(4),
+                    ),
+                    child: pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        // Logo do Bloquinho
+                        if (logo != null)
+                          pw.Container(
+                            width: 12,
+                            height: 12,
+                            child: pw.Image(logo),
+                          ),
 
-                      if (logo != null) pw.SizedBox(width: 8),
+                        if (logo != null) pw.SizedBox(width: 6),
 
-                      // Texto "Exported with Bloquinho"
-                      pw.Text(
-                        'Exported with Bloquinho',
-                        style: pw.TextStyle(
-                          fontSize: 10,
-                          color: brownColor,
-                          font: robotoFont,
+                        // Texto "Exported with Bloquinho"
+                        pw.Text(
+                          'Exported with Bloquinho',
+                          style: pw.TextStyle(
+                            fontSize: 8,
+                            color: brownColor,
+                            font: robotoFont,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
 
-                // Número da página (canto inferior direito)
+                // Número da página (canto inferior direito) - sobreposto ao conteúdo
                 pw.Positioned(
-                  bottom: 10,
+                  bottom: 5,
                   right: 20,
-                  child: pw.Text(
-                    'pág $pageNumber',
-                    style: pw.TextStyle(
-                      fontSize: 10,
-                      color: brownColor,
-                      font: robotoFont,
+                  child: pw.Container(
+                    padding: pw.EdgeInsets.all(4),
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.white,
+                      borderRadius: pw.BorderRadius.circular(4),
+                    ),
+                    child: pw.Text(
+                      'pág $pageNumber',
+                      style: pw.TextStyle(
+                        fontSize: 8,
+                        color: brownColor,
+                        font: robotoFont,
+                      ),
                     ),
                   ),
                 ),
@@ -2872,4 +2938,124 @@ class _ProcessedText {
   final bool isItalic;
 
   _ProcessedText(this.text, this.isBold, this.isItalic);
+}
+
+/// Widget de loader personalizado com logo do Bloquinho
+class BloquinhoLoader extends StatefulWidget {
+  const BloquinhoLoader({super.key});
+
+  @override
+  State<BloquinhoLoader> createState() => _BloquinhoLoaderState();
+}
+
+class _BloquinhoLoaderState extends State<BloquinhoLoader>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat();
+
+    _animation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.linear,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: 200,
+        height: 120,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Logo do Bloquinho
+            Container(
+              width: 48,
+              height: 48,
+              child: Image.asset(
+                'assets/images/logo.png',
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Texto de carregamento
+            const Text(
+              'Exportando PDF...',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Animação de loading
+            SizedBox(
+              width: 90,
+              height: 14,
+              child: AnimatedBuilder(
+                animation: _animation,
+                builder: (context, child) {
+                  return CustomPaint(
+                    painter: BloquinhoLoaderPainter(_animation.value),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Custom painter para a animação do loader
+class BloquinhoLoaderPainter extends CustomPainter {
+  final double progress;
+
+  BloquinhoLoaderPainter(this.progress);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.grey[400]!
+      ..style = PaintingStyle.fill;
+
+    // Desenhar 4 quadrados animados
+    for (int i = 0; i < 4; i++) {
+      final x = (size.width / 4) * i + (progress * size.width * 0.5);
+      final rect = Rect.fromLTWH(x, 0, 16, 14);
+      canvas.drawRect(rect, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
