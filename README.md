@@ -15,6 +15,7 @@
   <img src="https://img.shields.io/badge/Cloud%20Sync-Google%20Drive%20%7C%20OneDrive-yellow"/>
   <img src="https://img.shields.io/badge/100%25%20Self--Hosted-success"/>
   <img src="https://img.shields.io/badge/Status-99.8%25%20Complete-brightgreen"/>
+  <img src="https://img.shields.io/badge/Functional-100%25%20Complete-brightgreen"/>
 </div>
 
 ---
