@@ -429,7 +429,13 @@ class EnhancedPdfExportService {
           case BlockType.code:
             print(
                 '🔄 [PDF] Criando bloco de código: ${block.language ?? 'text'}');
-            widgets.add(_createCodeBlock(block.content, block.language ?? ''));
+            // Verificar se é Mermaid
+            if (block.language?.toLowerCase() == 'mermaid') {
+              widgets.add(_createMermaidPlaceholder(block.content));
+            } else {
+              widgets
+                  .add(_createCodeBlock(block.content, block.language ?? ''));
+            }
             widgets.add(pw.SizedBox(height: 16));
             break;
 
@@ -679,6 +685,229 @@ class EnhancedPdfExportService {
     );
   }
 
+  /// Criar placeholder para diagrama Mermaid
+  pw.Widget _createMermaidPlaceholder(String mermaidCode) {
+    print(
+        '📝 [PDF] Criando placeholder para Mermaid: ${mermaidCode.length} caracteres');
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.all(20),
+      margin: const pw.EdgeInsets.symmetric(vertical: 8),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.blue50,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
+        border: pw.Border.all(color: PdfColors.blue300, width: 2),
+        boxShadow: [
+          pw.BoxShadow(
+            color: PdfColors.blue100,
+            blurRadius: 4,
+            offset: const PdfPoint(0.0, 2.0),
+          ),
+        ],
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          // Cabeçalho do diagrama
+          pw.Row(
+            children: [
+              pw.Container(
+                padding:
+                    const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.blue600,
+                  borderRadius:
+                      const pw.BorderRadius.all(pw.Radius.circular(6)),
+                ),
+                child: pw.Text(
+                  '📊 DIAGRAMA MERMAID',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.white,
+                    font: _getDefaultFont(),
+                    fontFallback: _getFontFallbacks(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 12),
+
+          // Explicação
+          pw.Text(
+            'Este documento contém um diagrama Mermaid interativo.',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.blue800,
+              font: _getDefaultFont(),
+              fontFallback: _getFontFallbacks(),
+            ),
+          ),
+          pw.SizedBox(height: 8),
+          pw.Text(
+            'Para visualizar este diagrama, abra o documento original no Bloquinho.',
+            style: pw.TextStyle(
+              fontSize: 12,
+              color: PdfColors.blue700,
+              font: _getDefaultFont(),
+              fontFallback: _getFontFallbacks(),
+            ),
+          ),
+          pw.SizedBox(height: 12),
+
+          // Código do diagrama
+          pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+              border: pw.Border.all(color: PdfColors.grey300),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'Código Mermaid:',
+                  style: pw.TextStyle(
+                    fontSize: 11,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.grey700,
+                    font: _getDefaultFont(),
+                    fontFallback: _getFontFallbacks(),
+                  ),
+                ),
+                pw.SizedBox(height: 6),
+                pw.Text(
+                  mermaidCode,
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    color: PdfColors.grey800,
+                    height: 1.4,
+                    font: _getDefaultFont(),
+                    fontFallback: _getFontFallbacks(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Criar widget LaTeX renderizado
+  pw.Widget _createLatexWidget(String latexCode, {bool isBlock = false}) {
+    print(
+        '📝 [PDF] Criando LaTeX ${isBlock ? 'bloco' : 'inline'}: ${latexCode.length} caracteres');
+
+    return pw.Container(
+      width: isBlock ? double.infinity : null,
+      padding: isBlock
+          ? const pw.EdgeInsets.all(16)
+          : const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      margin: isBlock
+          ? const pw.EdgeInsets.symmetric(vertical: 8)
+          : pw.EdgeInsets.zero,
+      decoration: isBlock
+          ? pw.BoxDecoration(
+              color: PdfColors.purple50,
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+              border: pw.Border.all(color: PdfColors.purple300),
+            )
+          : null,
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          if (isBlock) ...[
+            pw.Row(
+              children: [
+                pw.Container(
+                  padding:
+                      const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.purple600,
+                    borderRadius:
+                        const pw.BorderRadius.all(pw.Radius.circular(4)),
+                  ),
+                  child: pw.Text(
+                    '∑ LaTeX',
+                    style: pw.TextStyle(
+                      fontSize: 10,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                      font: _getDefaultFont(),
+                      fontFallback: _getFontFallbacks(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 8),
+          ],
+
+          // Fórmula formatada
+          pw.Text(
+            latexCode,
+            style: pw.TextStyle(
+              fontSize: isBlock ? 16 : 14,
+              fontStyle: pw.FontStyle.italic,
+              color: PdfColors.purple800,
+              fontWeight: pw.FontWeight.bold,
+              font: _getDefaultFont(),
+              fontFallback: _getFontFallbacks(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Converter Color do Flutter para PdfColor
+  PdfColor _convertFlutterColorToPdfColor(Color? flutterColor) {
+    if (flutterColor == null) return PdfColors.black;
+
+    // Usar os valores RGB da cor do Flutter
+    final red = flutterColor.red / 255.0;
+    final green = flutterColor.green / 255.0;
+    final blue = flutterColor.blue / 255.0;
+
+    return PdfColor(red, green, blue);
+  }
+
+  /// Converter FontWeight do Flutter para PDF
+  pw.FontWeight _convertFlutterFontWeightToPdf(FontWeight? flutterFontWeight) {
+    if (flutterFontWeight == null) return pw.FontWeight.normal;
+
+    if (flutterFontWeight == FontWeight.bold ||
+        flutterFontWeight.index >= FontWeight.w600.index) {
+      return pw.FontWeight.bold;
+    }
+
+    return pw.FontWeight.normal;
+  }
+
+  /// Converter FontStyle do Flutter para PDF
+  pw.FontStyle _convertFlutterFontStyleToPdf(FontStyle? flutterFontStyle) {
+    if (flutterFontStyle == FontStyle.italic) {
+      return pw.FontStyle.italic;
+    }
+    return pw.FontStyle.normal;
+  }
+
+  /// Converter TextDecoration do Flutter para PDF
+  pw.TextDecoration _convertFlutterTextDecorationToPdf(
+      TextDecoration? flutterDecoration) {
+    if (flutterDecoration == TextDecoration.underline) {
+      return pw.TextDecoration.underline;
+    } else if (flutterDecoration == TextDecoration.lineThrough) {
+      return pw.TextDecoration.lineThrough;
+    }
+    return pw.TextDecoration.none;
+  }
+
   /// Criar span inline
   pw.InlineSpan _createInlineSpan(
       InlineElement element, double fontSize, pw.FontWeight fontWeight) {
@@ -750,14 +979,33 @@ class EnhancedPdfExportService {
             ? EnhancedMarkdownParser.parseStyle(element.style!)
             : <String, dynamic>{};
 
+        // Converter cores do Flutter para PDF corretamente
+        final textColor = styleMap['color'] != null
+            ? _convertFlutterColorToPdfColor(styleMap['color'] as Color?)
+            : PdfColors.black;
+
+        final pdfFontWeight = styleMap['fontWeight'] != null
+            ? _convertFlutterFontWeightToPdf(
+                styleMap['fontWeight'] as FontWeight?)
+            : fontWeight;
+
+        final fontStyle = styleMap['fontStyle'] != null
+            ? _convertFlutterFontStyleToPdf(styleMap['fontStyle'] as FontStyle?)
+            : pw.FontStyle.normal;
+
+        final decoration = styleMap['decoration'] != null
+            ? _convertFlutterTextDecorationToPdf(
+                styleMap['decoration'] as TextDecoration?)
+            : pw.TextDecoration.none;
+
         return pw.TextSpan(
           text: element.content,
           style: pw.TextStyle(
             fontSize: fontSize,
-            fontWeight: fontWeight,
-            color: styleMap['color'] ?? PdfColors.black,
-            fontStyle: styleMap['fontStyle'] ?? pw.FontStyle.normal,
-            decoration: styleMap['decoration'] ?? pw.TextDecoration.none,
+            fontWeight: pdfFontWeight,
+            color: textColor,
+            fontStyle: fontStyle,
+            decoration: decoration,
             font: _getDefaultFont(),
             fontFallback: _getFontFallbacks(),
           ),
