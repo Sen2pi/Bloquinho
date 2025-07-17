@@ -71,6 +71,7 @@ dependencies:
   printing: ^5.11.1  # Temporarily disabled due to PDFium build issues
   open_file: ^3.3.2
   screenshot: ^3.0.0
+  image: ^4.1.7
 
   # Drag & Drop
   flutter_reorderable_list: ^1.3.1

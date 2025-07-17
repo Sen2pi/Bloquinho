@@ -318,15 +318,15 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
           screenshots.add(screenshot);
         }
       } else {
-        // Conteúdo requer scroll - captura sequencial otimizada
-        print('Conteúdo requer scroll, iniciando captura sequencial...');
+        // Conteúdo requer scroll - captura sequencial com sobreposição
+        print('Conteúdo requer scroll, iniciando captura sequencial com sobreposição...');
 
         double currentPosition = 0;
         int pageCount = 0;
 
-        // Calcular avanço dinamicamente: exatamente a altura da viewport
-        // Isso garante que cada captura começa exatamente onde a anterior terminou
-        final scrollAdvance = captureHeight;
+        // Calcular avanço com sobreposição: 80% da altura da viewport
+        // Isso cria 20% de sobreposição entre screenshots consecutivos
+        final scrollAdvance = captureHeight * 0.8;
 
         while (currentPosition <= maxScrollExtent) {
           pageCount++;
@@ -373,7 +373,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         }
       }
 
-      print('Captura completa: ${screenshots.length} screenshots');
+      print('Captura completa finalizada: ${screenshots.length} screenshots');
       return screenshots;
     } catch (e) {
       print('Erro ao capturar screenshots: $e');
@@ -410,6 +410,258 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     }
   }
 
+  /// Combina screenshots verticalmente em uma única imagem longa, removendo sobreposição
+  Future<Uint8List?> _combineScreenshotsVertically(List<Uint8List> screenshots) async {
+    if (screenshots.isEmpty) return null;
+    if (screenshots.length == 1) return screenshots.first;
+
+    try {
+      print('Combinando ${screenshots.length} screenshots verticalmente...');
+      
+      // Decodificar todas as imagens
+      final images = <img.Image>[];
+      int maxWidth = 0;
+      
+      for (final screenshot in screenshots) {
+        final image = img.decodeImage(screenshot);
+        if (image != null) {
+          images.add(image);
+          if (image.width > maxWidth) {
+            maxWidth = image.width;
+          }
+        }
+      }
+      
+      if (images.isEmpty) return null;
+      
+      // Calcular altura total removendo sobreposição
+      // A sobreposição é de 20% (scrollAdvance = captureHeight * 0.8)
+      final overlapRatio = 0.2; // 20% de sobreposição
+      int totalHeight = images.first.height; // Primeira imagem completa
+      
+      // Para as imagens subsequentes, remover a sobreposição
+      for (int i = 1; i < images.length; i++) {
+        final image = images[i];
+        final overlapHeight = (image.height * overlapRatio).round();
+        totalHeight += (image.height - overlapHeight);
+      }
+      
+      // Criar uma nova imagem combinada
+      final combinedImage = img.Image(width: maxWidth, height: totalHeight);
+      
+      // Preencher com fundo branco
+      img.fill(combinedImage, color: img.ColorRgb8(255, 255, 255));
+      
+      // Combinar todas as imagens verticalmente, removendo sobreposição
+      int currentY = 0;
+      
+      // Primeira imagem vai completa
+      img.compositeImage(combinedImage, images.first, dstX: 0, dstY: currentY);
+      currentY += images.first.height;
+      
+      // Para as imagens subsequentes, remover a sobreposição
+      for (int i = 1; i < images.length; i++) {
+        final image = images[i];
+        final overlapHeight = (image.height * overlapRatio).round();
+        
+        // Cortar a parte superior (sobreposição) da imagem
+        final croppedImage = img.copyCrop(
+          image,
+          x: 0,
+          y: overlapHeight,
+          width: image.width,
+          height: image.height - overlapHeight,
+        );
+        
+        // Adicionar a imagem cortada à imagem combinada
+        img.compositeImage(combinedImage, croppedImage, dstX: 0, dstY: currentY);
+        currentY += croppedImage.height;
+      }
+      
+      // Codificar a imagem combinada
+      final combinedBytes = img.encodePng(combinedImage);
+      print('Imagem combinada criada: ${maxWidth}x${totalHeight} pixels (sobreposição removida)');
+      
+      return Uint8List.fromList(combinedBytes);
+    } catch (e) {
+      print('Erro ao combinar screenshots: $e');
+      return null;
+    }
+  }
+  
+  /// Cria páginas PDF a partir de uma imagem combinada longa
+  Future<void> _createPdfPagesFromCombinedImage(
+    pw.Document pdf,
+    Uint8List combinedImageBytes,
+    pw.MemoryImage? logo,
+    PdfColor brownColor,
+    pw.Font robotoFont,
+  ) async {
+    try {
+      // Decodificar a imagem combinada
+      final combinedImage = img.decodeImage(combinedImageBytes);
+      if (combinedImage == null) return;
+      
+      // Calcular dimensões da página PDF
+      final pageWidth = PdfPageFormat.a4.width;
+      final pageHeight = PdfPageFormat.a4.height - 40; // Deixar espaço para footer
+      
+      // Calcular quantas páginas serão necessárias
+      final imageAspectRatio = combinedImage.width / combinedImage.height;
+      final pageAspectRatio = pageWidth / pageHeight;
+      
+      // Calcular altura da imagem que cabe na largura da página
+      final imageHeightInPage = pageWidth / imageAspectRatio;
+      
+      // Se a imagem cabe em uma página
+      if (imageHeightInPage <= pageHeight) {
+        _addSinglePageToPdf(pdf, combinedImageBytes, logo, brownColor, robotoFont, 1);
+        return;
+      }
+      
+      // Dividir a imagem em múltiplas páginas
+      final totalPages = (imageHeightInPage / pageHeight).ceil();
+      final sourceImageHeight = combinedImage.height;
+      final heightPerPage = sourceImageHeight / totalPages;
+      
+      for (int pageNum = 0; pageNum < totalPages; pageNum++) {
+        final startY = (pageNum * heightPerPage).round();
+        final endY = ((pageNum + 1) * heightPerPage).round().clamp(0, sourceImageHeight);
+        final pageImageHeight = endY - startY;
+        
+        // Cortar a porção da imagem para esta página
+        final pageImage = img.copyCrop(
+          combinedImage,
+          x: 0,
+          y: startY,
+          width: combinedImage.width,
+          height: pageImageHeight,
+        );
+        
+        // Codificar a imagem da página
+        final pageImageBytes = img.encodePng(pageImage);
+        
+        // Adicionar página ao PDF
+        _addSinglePageToPdf(pdf, Uint8List.fromList(pageImageBytes), logo, brownColor, robotoFont, pageNum + 1);
+      }
+      
+      print('PDF criado com $totalPages páginas');
+    } catch (e) {
+      print('Erro ao criar páginas PDF: $e');
+    }
+  }
+  
+  /// Adiciona uma única página ao PDF
+  void _addSinglePageToPdf(
+    pw.Document pdf,
+    Uint8List imageBytes,
+    pw.MemoryImage? logo,
+    PdfColor brownColor,
+    pw.Font robotoFont,
+    int pageNumber,
+  ) {
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Stack(
+            children: [
+              // Imagem da página
+              pw.Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: pw.Container(
+                  height: PdfPageFormat.a4.height - 40,
+                  child: pw.Image(
+                    pw.MemoryImage(imageBytes),
+                    fit: pw.BoxFit.contain,
+                    alignment: pw.Alignment.topCenter,
+                  ),
+                ),
+              ),
+
+              // Footer com logo e texto
+              pw.Positioned(
+                bottom: 10,
+                left: 20,
+                child: pw.Row(
+                  mainAxisSize: pw.MainAxisSize.min,
+                  children: [
+                    // Logo do Bloquinho
+                    if (logo != null)
+                      pw.Container(
+                        width: 16,
+                        height: 16,
+                        child: pw.Image(logo),
+                      ),
+
+                    if (logo != null) pw.SizedBox(width: 8),
+
+                    // Texto "Exported with Bloquinho"
+                    pw.Text(
+                      'Exported with Bloquinho',
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        color: brownColor,
+                        font: robotoFont,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Número da página (canto inferior direito)
+              pw.Positioned(
+                bottom: 10,
+                right: 20,
+                child: pw.Text(
+                  'pág $pageNumber',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    color: brownColor,
+                    font: robotoFont,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Corta a área sobreposta de um screenshot baseado na sobreposição esperada
+  Future<Uint8List> _trimOverlappingArea(
+      Uint8List currentScreenshot, 
+      Uint8List previousScreenshot, 
+      double overlapRatio) async {
+    try {
+      // Decodificar imagem atual
+      final currentImage = img.decodeImage(currentScreenshot);
+      if (currentImage == null) return currentScreenshot;
+      
+      // Calcular altura de corte baseada na sobreposição esperada
+      final overlapHeight = (currentImage.height * overlapRatio).round();
+      
+      // Cortar a parte superior que se sobrepõe
+      final trimmedImage = img.copyCrop(
+        currentImage,
+        x: 0,
+        y: overlapHeight,
+        width: currentImage.width,
+        height: currentImage.height - overlapHeight,
+      );
+      
+      // Recodificar para PNG
+      final trimmedBytes = img.encodePng(trimmedImage);
+      return Uint8List.fromList(trimmedBytes);
+    } catch (e) {
+      print('Erro ao cortar sobreposição: $e');
+      return currentScreenshot; // Retornar original em caso de erro
+    }
+  }
+
   Future<String> _createPdfFromScreenshots(List<Uint8List> screenshots) async {
     final pdf = pw.Document();
 
@@ -427,95 +679,12 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     // Carregar fonte que suporta Unicode
     final robotoFont = await PdfGoogleFonts.robotoRegular();
 
-    // Criar uma página por screenshot para evitar sobreposição
-    for (int i = 0; i < screenshots.length; i++) {
-      final pageNumber = i + 1;
-      final screenshot = screenshots[i];
-
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          build: (pw.Context context) {
-            return pw.Stack(
-              children: [
-                // Screenshot completo da tela - sem espaços em branco
-                pw.Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: pw.Container(
-                    height: PdfPageFormat
-                        .a4.height, // Usar altura completa sem margem
-                    child: pw.Image(
-                      pw.MemoryImage(screenshot),
-                      fit: pw.BoxFit.fitWidth,
-                      alignment: pw.Alignment.topCenter,
-                    ),
-                  ),
-                ),
-
-                // Footer com logo e texto - sobreposto ao conteúdo
-                pw.Positioned(
-                  bottom: 5,
-                  left: 20,
-                  child: pw.Container(
-                    padding: pw.EdgeInsets.all(4),
-                    decoration: pw.BoxDecoration(
-                      color: PdfColors.white,
-                      borderRadius: pw.BorderRadius.circular(4),
-                    ),
-                    child: pw.Row(
-                      mainAxisSize: pw.MainAxisSize.min,
-                      children: [
-                        // Logo do Bloquinho
-                        if (logo != null)
-                          pw.Container(
-                            width: 12,
-                            height: 12,
-                            child: pw.Image(logo),
-                          ),
-
-                        if (logo != null) pw.SizedBox(width: 6),
-
-                        // Texto "Exported with Bloquinho"
-                        pw.Text(
-                          'Exported with Bloquinho',
-                          style: pw.TextStyle(
-                            fontSize: 8,
-                            color: brownColor,
-                            font: robotoFont,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Número da página (canto inferior direito) - sobreposto ao conteúdo
-                pw.Positioned(
-                  bottom: 5,
-                  right: 20,
-                  child: pw.Container(
-                    padding: pw.EdgeInsets.all(4),
-                    decoration: pw.BoxDecoration(
-                      color: PdfColors.white,
-                      borderRadius: pw.BorderRadius.circular(4),
-                    ),
-                    child: pw.Text(
-                      'pág $pageNumber',
-                      style: pw.TextStyle(
-                        fontSize: 8,
-                        color: brownColor,
-                        font: robotoFont,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      );
+    // Combinar todos os screenshots em uma única imagem vertical
+    final combinedImageBytes = await _combineScreenshotsVertically(screenshots);
+    
+    if (combinedImageBytes != null) {
+      // Criar páginas PDF a partir da imagem combinada
+      await _createPdfPagesFromCombinedImage(pdf, combinedImageBytes, logo, brownColor, robotoFont);
     }
 
     // Limpar PDFs antigos antes de criar o novo
