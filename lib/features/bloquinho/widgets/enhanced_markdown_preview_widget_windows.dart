@@ -23,12 +23,9 @@ import 'windows_code_block_widget.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'latex_widget.dart';
-import '../../../core/services/enhanced_pdf_export_service.dart';
 import 'mermaid_diagram_widget.dart';
 import '../../../core/utils/lru_cache.dart';
 import '../../../core/services/enhanced_markdown_parser.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:pdf/pdf.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -53,11 +50,6 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   // Cache otimizado para markdown processado
   static final LRUCache<int, String> _markdownCache = LRUCache(maxSize: 100);
   static final LRUCache<int, Widget> _widgetCache = LRUCache(maxSize: 50);
-  static final LRUCache<String, List<pw.Widget>> _pdfWidgetCache =
-      LRUCache(maxSize: 30);
-
-  // GlobalKey para captura de screenshots
-  final GlobalKey _previewKey = GlobalKey();
 
   EnhancedMarkdownPreviewWidget({
     super.key,
@@ -79,36 +71,36 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     final containerColor =
         backgroundColor ?? (isDark ? Colors.transparent : Colors.white);
 
+    // Sanitizar markdown inteiro antes de processar
+    final sanitizedMarkdown = sanitizeUtf16(markdown);
+
     // Cache de widget completo baseado em hash do conteúdo + configurações
     final cacheKey = _generateWidgetCacheKey(isDark);
     final cachedWidget = _widgetCache.get(cacheKey);
     if (cachedWidget != null) return cachedWidget;
 
-    final widget = RepaintBoundary(
-      key: _previewKey, // Adicionar GlobalKey aqui
-      child: Container(
-        color: containerColor,
-        child: Stack(
-          children: [
-            Scrollbar(
-              child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  SliverPadding(
-                    padding: padding,
-                    sliver: SliverToBoxAdapter(
-                      child: SelectionArea(
-                        child: _buildOptimizedMarkdown(context, textStyle, ref),
-                      ),
+    final widget = Container(
+      color: containerColor,
+      child: Stack(
+        children: [
+          Scrollbar(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverPadding(
+                  padding: padding,
+                  sliver: SliverToBoxAdapter(
+                    child: SelectionArea(
+                      child: _buildOptimizedMarkdown(context, textStyle, ref, sanitizedMarkdown),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            // Botões de ação otimizados
-            _buildOptimizedActionButtons(context, isDark, ref),
-          ],
-        ),
+          ),
+          // Botões de ação otimizados
+          _buildOptimizedActionButtons(context, isDark, ref),
+        ],
       ),
     );
 
@@ -143,14 +135,6 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
               icon: Icons.copy,
               tooltip: 'Copiar texto formatado',
               onPressed: () => _copyFormattedText(context),
-              isDark: isDark,
-            ),
-            const SizedBox(width: 4),
-            // Botão de exportação visual
-            _buildActionButton(
-              icon: Icons.camera,
-              tooltip: 'Exportar visualmente para PDF',
-              onPressed: () => _exportVisualPdf(context),
               isDark: isDark,
             ),
           ],
@@ -198,178 +182,14 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     }
   }
 
-  /// Exporta o preview visual para PDF (captura screenshots A4)
-  Future<void> _exportVisualPdf(BuildContext context) async {
-    try {
-      // Mostra loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
-
-      // Aguarda renderização
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      // Encontra o ScrollController do CustomScrollView
-      final scrollView = _previewKey.currentContext
-          ?.findAncestorWidgetOfExactType<CustomScrollView>();
-      if (scrollView == null) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Erro: não foi possível encontrar o scroll!'),
-              backgroundColor: Colors.red),
-        );
-        return;
-      }
-
-      // Captura screenshots de todo o conteúdo
-      List<img.Image> allScreenshots = [];
-      double currentOffset = 0.0;
-      const double viewportHeight = 800.0; // Altura aproximada da viewport
-      const double scrollStep = 600; // Passo de scroll (deixa sobreposição)
-
-      // Primeira captura (topo)
-      RenderRepaintBoundary? boundary = _previewKey.currentContext
-          ?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Erro ao capturar preview!'),
-              backgroundColor: Colors.red),
-        );
-        return;
-      }
-
-      // Captura inicial
-      ui.Image initialImage = await boundary.toImage(pixelRatio: 2.0);
-      ByteData? initialByteData =
-          await initialImage.toByteData(format: ui.ImageByteFormat.png);
-      if (initialByteData != null) {
-        final img.Image? initialImg =
-            img.decodeImage(initialByteData.buffer.asUint8List());
-        if (initialImg != null) {
-          allScreenshots.add(initialImg);
-        }
-      }
-
-      // Simula scroll e captura seções
-      final scrollController = PrimaryScrollController.of(context);
-      if (scrollController != null) {
-        final maxScrollExtent = scrollController.position.maxScrollExtent;
-
-        while (currentOffset < maxScrollExtent) {
-          // Rola para próxima posição
-          await scrollController.animateTo(
-            currentOffset,
-            duration: const Duration(milliseconds: 100),
-            curve: Curves.easeInOut,
-          );
-
-          // Aguarda renderização
-          await Future.delayed(const Duration(milliseconds: 200));
-          // Captura screenshot
-          ui.Image scrollImage = await boundary.toImage(pixelRatio: 2.0);
-          ByteData? scrollByteData =
-              await scrollImage.toByteData(format: ui.ImageByteFormat.png);
-          if (scrollByteData != null) {
-            final img.Image? scrollImg =
-                img.decodeImage(scrollByteData.buffer.asUint8List());
-            if (scrollImg != null) {
-              allScreenshots.add(scrollImg);
-            }
-          }
-
-          currentOffset += scrollStep;
-        }
-
-        // Volta ao topo
-        await scrollController.animateTo(
-          0,
-          duration: const Duration(milliseconds: 100),
-          curve: Curves.easeInOut,
-        );
-      }
-
-      // Processa screenshots em páginas A4
-      final pdf = pw.Document();
-      const a4Width = 595; // pontos A4
-      const a4Height = 842; // pontos A4
-      int totalPages = 0;
-
-      for (final screenshot in allScreenshots) {
-        // Redimensiona para largura A4
-        double scale = a4Width / screenshot.width;
-        int scaledHeight = (screenshot.height * scale).round();
-        img.Image scaledImg =
-            img.copyResize(screenshot, width: a4Width, height: scaledHeight);
-
-        // Divide em páginas A4 se necessário
-        for (int y = 0; y < scaledImg.height; y += a4Height) {
-          int h = (y + a4Height > scaledImg.height)
-              ? (scaledImg.height - y)
-              : a4Height;
-          img.Image pageImg = img.copyCrop(
-            scaledImg,
-            x: 0,
-            y: y,
-            width: a4Width,
-            height: h,
-          );
-
-          // Adiciona página ao PDF
-          final pageBytes = img.encodePng(pageImg);
-          final pdfImage = pw.MemoryImage(pageBytes);
-          pdf.addPage(
-            pw.Page(
-              pageFormat: PdfPageFormat.a4,
-              build: (context) =>
-                  pw.Center(child: pw.Image(pdfImage, fit: pw.BoxFit.contain)),
-            ),
-          );
-          totalPages++;
-        }
-      }
-
-      // Salva PDF
-      final output = await getTemporaryDirectory();
-      final filePath =
-          '${output.path}/Bloquinho_Visual_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final file = File(filePath);
-      await file.writeAsBytes(await pdf.save());
-
-      Navigator.of(context).pop();
-
-      // Mostra sucesso
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text('PDF exportado visualmente!\n$totalPages páginas geradas'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Abre PDF
-      await Process.run('start', [filePath], runInShell: true);
-    } catch (e) {
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Erro ao exportar visualmente: $e'),
-            backgroundColor: Colors.red),
-      );
-    }
-  }
-
   /// Construir markdown otimizado
-  Widget _buildOptimizedMarkdown(
-      BuildContext context, TextStyle textStyle, WidgetRef ref) {
+  Widget _buildOptimizedMarkdown(BuildContext context, TextStyle textStyle,
+      WidgetRef ref, String sanitizedMarkdown) {
     // Cache de markdown processado
-    final cacheKey = markdown.hashCode;
+    final cacheKey = sanitizedMarkdown.hashCode;
     final cachedMarkdown = _markdownCache.get(cacheKey);
-    final processedMarkdown = cachedMarkdown ?? _processMarkdown(markdown);
+    final processedMarkdown =
+        cachedMarkdown ?? _processMarkdown(sanitizedMarkdown);
 
     if (cachedMarkdown == null) {
       _markdownCache.put(cacheKey, processedMarkdown);
@@ -472,11 +292,19 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   }
 }
 
+/// Remove caracteres inválidos de UTF-16 para evitar crash do Flutter
+String sanitizeUtf16(String input) {
+  return input.replaceAll(
+      RegExp(
+          r'([^ -\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF])'),
+      '');
+}
+
 /// Builder para elementos de código
 class CodeElementBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final code = element.textContent;
+    final code = sanitizeUtf16(element.textContent);
     final language =
         element.attributes['class']?.replaceAll('language-', '') ?? '';
 
@@ -492,7 +320,7 @@ class CodeElementBuilder extends MarkdownElementBuilder {
 class PreElementBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final code = element.textContent;
+    final code = sanitizeUtf16(element.textContent);
     return WindowsCodeBlockWidget(
       code: code,
       language: '',
@@ -505,7 +333,7 @@ class PreElementBuilder extends MarkdownElementBuilder {
 class MathElementBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final math = element.textContent;
+    final math = sanitizeUtf16(element.textContent);
     return Math.tex(
       math,
       textStyle: preferredStyle,
@@ -518,7 +346,7 @@ class MathElementBuilder extends MarkdownElementBuilder {
 class DiagramElementBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final diagram = element.textContent;
+    final diagram = sanitizeUtf16(element.textContent);
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -537,7 +365,7 @@ class DiagramElementBuilder extends MarkdownElementBuilder {
 class LatexElementBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final latex = element.textContent;
+    final latex = sanitizeUtf16(element.textContent);
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -556,7 +384,7 @@ class LatexElementBuilder extends MarkdownElementBuilder {
 class MermaidElementBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final mermaid = element.textContent;
+    final mermaid = sanitizeUtf16(element.textContent);
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -575,7 +403,7 @@ class MermaidElementBuilder extends MarkdownElementBuilder {
 class ColoredTextElementBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final text = element.textContent;
+    final text = sanitizeUtf16(element.textContent);
     return Text(
       text,
       style: preferredStyle,
@@ -587,7 +415,7 @@ class ColoredTextElementBuilder extends MarkdownElementBuilder {
 class KbdElementBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final key = element.textContent;
+    final key = sanitizeUtf16(element.textContent);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -610,7 +438,7 @@ class KbdElementBuilder extends MarkdownElementBuilder {
 class MarkElementBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final text = element.textContent;
+    final text = sanitizeUtf16(element.textContent);
     return Container(
       decoration: BoxDecoration(
         color: Colors.yellow.withOpacity(0.3),
@@ -628,7 +456,7 @@ class MarkElementBuilder extends MarkdownElementBuilder {
 class SubscriptElementBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final text = element.textContent;
+    final text = sanitizeUtf16(element.textContent);
     return Text(
       text,
       style: preferredStyle?.copyWith(
@@ -642,7 +470,7 @@ class SubscriptElementBuilder extends MarkdownElementBuilder {
 class SuperscriptElementBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final text = element.textContent;
+    final text = sanitizeUtf16(element.textContent);
     return Text(
       text,
       style: preferredStyle?.copyWith(

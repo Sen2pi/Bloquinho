@@ -25,13 +25,9 @@ import 'windows_code_block_widget.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'latex_widget.dart';
-import '../../../core/services/enhanced_pdf_export_service.dart';
 import 'mermaid_diagram_widget.dart'; // Adicionar import para WindowsMermaidDiagramWidget
 import '../../../core/utils/lru_cache.dart';
 import '../../../core/services/enhanced_markdown_parser.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:pdf/pdf.dart';
-import 'package:printing/printing.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -39,6 +35,9 @@ import 'dart:io';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 /// Widget de visualização markdown com enhancements HTML moderno
 class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
@@ -54,8 +53,6 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   // Cache otimizado para markdown processado
   static final LRUCache<int, String> _markdownCache = LRUCache(maxSize: 100);
   static final LRUCache<int, Widget> _widgetCache = LRUCache(maxSize: 50);
-  static final LRUCache<String, List<pw.Widget>> _pdfWidgetCache =
-      LRUCache(maxSize: 30);
 
   const EnhancedMarkdownPreviewWidget({
     super.key,
@@ -102,7 +99,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                 ],
               ),
             ),
-            // Botões de ação otimizados
+            // Botão de cópia formatada
             _buildOptimizedActionButtons(context, isDark, ref),
           ],
         ),
@@ -127,7 +124,8 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   }
 
   /// Botões de ação otimizados com RepaintBoundary
-  Widget _buildOptimizedActionButtons(BuildContext context, bool isDark, WidgetRef ref) {
+  Widget _buildOptimizedActionButtons(
+      BuildContext context, bool isDark, WidgetRef ref) {
     return Positioned(
       top: 8,
       right: 8,
@@ -141,20 +139,11 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
               onPressed: () => _copyFormattedText(context),
               isDark: isDark,
             ),
-            const SizedBox(width: 4),
-            // Botão de impressão
-            _buildActionButton(
-              icon: Icons.print,
-              tooltip: 'Imprimir documento',
-              onPressed: () => _printDocument(context, ref),
-              isDark: isDark,
-            ),
-            const SizedBox(width: 4),
             // Botão de exportação PDF
             _buildActionButton(
               icon: Icons.picture_as_pdf,
-              tooltip: 'Exportar como PDF',
-              onPressed: () => _exportToPdf(context, ref),
+              tooltip: 'Exportar para PDF',
+              onPressed: () => _exportToPdf(context),
               isDark: isDark,
             ),
           ],
@@ -183,157 +172,12 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     );
   }
 
-  void _exportToPdf(BuildContext context, WidgetRef ref) async {
-    // Mostrar dialog de loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    // Exportar PDF com formatação completa (sincronizada com preview)
-    final pdfService = EnhancedPdfExportService();
-    final timestamp =
-        DateTime.now().toString().split('.')[0].replaceAll(':', '-');
-    final title = 'Bloquinho_Document_$timestamp';
-
-    final strings = ref.read(appStringsProvider); // ou context.read/appStringsProvider, conforme o caso
-
-    final filePath = await pdfService.exportMarkdownAsPdf(
-      markdown: markdown,
-      title: title,
-      strings: strings,
-    );
-
-    // Fechar loading
-    Navigator.of(context).pop();
-
-    if (filePath != null) {
-      // Mostrar sucesso e abrir arquivo
-      await pdfService.openExportedFile(filePath);
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '✅ PDF exportado com sucesso!',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text('Salvo em: ${filePath.split('/').last}'),
-                const SizedBox(height: 4),
-                const Text(
-                  '📋 Todo o conteúdo foi incluído com formatação completa',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'OK',
-              textColor: Colors.white,
-              onPressed: () =>
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-            ),
-          ),
-        );
-      }
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('❌ Erro ao gerar PDF'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
-  /// Método para imprimir o documento markdown
-  void _printDocument(BuildContext context, WidgetRef ref) async {
-    // Mostrar dialog de loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    // Gerar PDF para impressão usando o mesmo serviço
-    final pdfService = EnhancedPdfExportService();
-    final timestamp =
-        DateTime.now().toString().split('.')[0].replaceAll(':', '-');
-    final title = 'Bloquinho_Document_$timestamp';
-
-    final strings = ref.read(appStringsProvider); // ou context.read/appStringsProvider, conforme o caso
-
-    // Gerar PDF como bytes em memória
-    final pdfBytes = await pdfService.generatePdfBytes(
-      markdown: markdown,
-      title: title,
-      strings: strings,
-    );
-
-    // Fechar loading
-    Navigator.of(context).pop();
-
-    if (pdfBytes != null) {
-      // Abrir dialog de impressão com preview
-      
-      // Usar Printing.layoutPdf com configurações para mostrar preview
-      await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async {
-          return pdfBytes;
-        },
-        name: title,
-        format: PdfPageFormat.a4,
-        dynamicLayout: true,
-      );
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.print, color: Colors.white),
-                SizedBox(width: 8),
-                Text('🖨️ Documento preparado para impressão'),
-              ],
-            ),
-            backgroundColor: Colors.blue,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('❌ Erro ao preparar documento para impressão'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
   void _copyFormattedText(BuildContext context) {
     // Converter markdown para texto formatado limpo
     String formattedText = _convertMarkdownToFormattedText(markdown);
 
     // Copiando para clipboard...
-    
+
     // Mostrando SnackBar de confirmação...
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -341,6 +185,52 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         duration: Duration(seconds: 2),
       ),
     );
+  }
+
+  void _exportToPdf(BuildContext context) async {
+    try {
+      // Mostrar indicador de carregamento
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Capturar screenshots com scroll
+      final screenshots = await _captureScreenshotsWithScroll();
+      
+      // Fechar indicador de carregamento
+      Navigator.of(context).pop();
+
+      if (screenshots.isNotEmpty) {
+        // Criar PDF com screenshots
+        await _createPdfFromScreenshots(screenshots);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('PDF exportado com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro ao capturar screenshots'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao exportar PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   String _convertMarkdownToFormattedText(String markdown) {
