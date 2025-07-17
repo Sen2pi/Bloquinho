@@ -51,10 +51,11 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   final Color? backgroundColor;
   final bool showScrollbar;
   final ScrollPhysics? scrollPhysics;
-  
+
   // Screenshot controller para capturar o widget
-  static final ScreenshotController _screenshotController = ScreenshotController();
-  
+  static final ScreenshotController _screenshotController =
+      ScreenshotController();
+
   // ScrollController para controlar o scroll durante a captura
   static final ScrollController _scrollController = ScrollController();
 
@@ -100,7 +101,8 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                       padding: padding,
                       sliver: SliverToBoxAdapter(
                         child: SelectionArea(
-                          child: _buildOptimizedMarkdown(context, textStyle, ref),
+                          child:
+                              _buildOptimizedMarkdown(context, textStyle, ref),
                         ),
                       ),
                     ),
@@ -196,33 +198,23 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
 
   void _exportToPdf(BuildContext context) async {
     print('Botão PDF clicado!');
-    
+
     try {
       print('Iniciando captura completa com scroll...');
-      
+
       // Capturar múltiplos screenshots com scroll automático
       final screenshots = await _captureFullContentWithScroll();
-      
+
       if (screenshots.isNotEmpty) {
         print('Capturados ${screenshots.length} screenshots para PDF');
-        
+
         // Criar PDF com múltiplos screenshots
         final pdfPath = await _createPdfFromMultipleScreenshots(screenshots);
-        
+
         print('PDF criado com sucesso em: $pdfPath');
-        
-        // Tentar abrir o PDF
-        try {
-          await Printing.layoutPdf(
-            onLayout: (PdfPageFormat format) async {
-              final pdf = await _createPdfBytesFromMultipleScreenshots(screenshots);
-              return pdf;
-            },
-          );
-        } catch (e) {
-          print('Erro ao abrir PDF: $e');
-          // Continuar mesmo se não conseguir abrir
-        }
+
+        // PDF exportado com sucesso - apenas salvar, não abrir impressora
+        print('PDF exportado com sucesso em: $pdfPath');
       } else {
         print('Nenhum screenshot capturado, tentando método alternativo...');
         await _exportPdfAlternativeMethod(context);
@@ -233,10 +225,10 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
       await _exportPdfAlternativeMethod(context);
     }
   }
-  
+
   Future<List<Uint8List>> _captureFullContentWithScroll() async {
     final screenshots = <Uint8List>[];
-    
+
     try {
       // Voltar para o início do documento
       await _scrollController.animateTo(
@@ -244,68 +236,100 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-      
+
       // Aguardar estabilização
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       // Obter dimensões da tela e do conteúdo
-      final screenHeight = 800.0; // Altura aproximada da tela visível
+      final screenHeight = 750.0; // Altura aproximada da tela visível
       final maxScrollExtent = _scrollController.position.maxScrollExtent;
       final minScrollExtent = _scrollController.position.minScrollExtent;
-      
+
       print('Conteúdo total: ${maxScrollExtent + screenHeight} pixels');
       print('Altura da tela: $screenHeight pixels');
-      print('Páginas estimadas: ${((maxScrollExtent + screenHeight) / screenHeight).ceil()}');
-      
+      print(
+          'Páginas estimadas: ${((maxScrollExtent + screenHeight) / screenHeight).ceil()}');
+
       if (maxScrollExtent == 0) {
         // Conteúdo cabe em uma página
         print('Conteúdo cabe em uma página, capturando screenshot único...');
         final screenshot = await _screenshotController.capture(
-          pixelRatio: 2.0,
-          delay: const Duration(milliseconds: 200),
+          pixelRatio: 3.0, // Maior resolução
+          delay: const Duration(milliseconds: 300),
         );
-        
+
         if (screenshot != null) {
           screenshots.add(screenshot);
           print('Screenshot único capturado (${screenshot.length} bytes)');
         }
       } else {
-        // Conteúdo precisa de múltiplas páginas
-        print('Conteúdo precisa de múltiplas páginas, iniciando captura com scroll...');
-        
+        // Conteúdo precisa de múltiplas páginas - captura sequencial otimizada
+        print(
+            'Conteúdo precisa de múltiplas páginas, iniciando captura sequencial...');
+
         double currentPosition = minScrollExtent;
         int pageCount = 0;
-        
+
+        // Altura efetiva da página (usando toda a tela para evitar sobreposição)
+        final effectivePageHeight = screenHeight; // Usar altura total da tela
+
         while (currentPosition <= maxScrollExtent) {
           pageCount++;
           print('Capturando página $pageCount - posição: $currentPosition');
-          
+
           // Navegar para a posição atual
           await _scrollController.animateTo(
             currentPosition,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
           );
-          
-          // Aguardar estabilização
-          await Future.delayed(const Duration(milliseconds: 500));
-          
-          // Capturar screenshot da posição atual
+
+          // Aguardar estabilização maior para renderização completa
+          await Future.delayed(const Duration(milliseconds: 800));
+
+          // Capturar screenshot da posição atual com maior qualidade
           final screenshot = await _screenshotController.capture(
-            pixelRatio: 2.0,
-            delay: const Duration(milliseconds: 200),
+            pixelRatio: 3.0, // Maior resolução
+            delay: const Duration(milliseconds: 400),
           );
-          
+
           if (screenshot != null) {
             screenshots.add(screenshot);
-            print('Screenshot $pageCount capturado (${screenshot.length} bytes)');
+            print(
+                'Screenshot $pageCount capturado (${screenshot.length} bytes)');
           } else {
             print('Erro ao capturar screenshot da página $pageCount');
           }
-          
-          // Avançar para a próxima posição
-          currentPosition += screenHeight * 0.8; // Sobreposição de 20% para continuidade
-          
+
+          // Próxima posição: avançar mais que a altura da tela para garantir sem sobreposição
+          final nextPosition =
+              currentPosition + (screenHeight * 1.19); // 20% a mais
+
+          // Se estamos próximos do final, capturar o restante
+          if (nextPosition >= maxScrollExtent) {
+            print('Capturando página final...');
+            await _scrollController.animateTo(
+              maxScrollExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+
+            await Future.delayed(const Duration(milliseconds: 800));
+
+            final finalScreenshot = await _screenshotController.capture(
+              pixelRatio: 3.0,
+              delay: const Duration(milliseconds: 400),
+            );
+
+            if (finalScreenshot != null) {
+              screenshots.add(finalScreenshot);
+              print('Screenshot final capturado');
+            }
+            break;
+          }
+
+          currentPosition = nextPosition;
+
           // Limite de segurança para evitar loop infinito
           if (pageCount >= 20) {
             print('Atingido limite máximo de 20 páginas');
@@ -313,26 +337,25 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
           }
         }
       }
-      
+
       // Voltar para o início
       await _scrollController.animateTo(
         0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-      
+
       print('Captura completa finalizada: ${screenshots.length} screenshots');
-      
     } catch (e) {
       print('Erro na captura completa: $e');
-      
+
       // Tentar capturar pelo menos uma página como fallback
       try {
         final screenshot = await _screenshotController.capture(
           pixelRatio: 2.0,
           delay: const Duration(milliseconds: 200),
         );
-        
+
         if (screenshot != null) {
           screenshots.add(screenshot);
           print('Screenshot fallback capturado (${screenshot.length} bytes)');
@@ -341,26 +364,26 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         print('Erro no fallback: $e2');
       }
     }
-    
+
     return screenshots;
   }
 
   Future<void> _exportPdfAlternativeMethod(BuildContext context) async {
     try {
       print('Usando método alternativo com RepaintBoundary...');
-      
+
       // Aguardar um frame para garantir que o widget está renderizado
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       final renderObject = context.findRenderObject();
       if (renderObject == null) {
         print('RenderObject não encontrado');
         return;
       }
-      
+
       // Procurar pelo RepaintBoundary
       RenderRepaintBoundary? boundary;
-      
+
       if (renderObject is RenderRepaintBoundary) {
         boundary = renderObject;
       } else {
@@ -373,31 +396,22 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
           current = current.parent;
         }
       }
-      
+
       if (boundary != null) {
         print('Capturando imagem do RepaintBoundary...');
         final image = await boundary.toImage(pixelRatio: 2.0);
         print('Imagem capturada: ${image.width}x${image.height}');
-        
+
         final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
         if (byteData != null) {
           final bytes = byteData.buffer.asUint8List();
           print('Screenshot alternativo capturado (${bytes.length} bytes)');
-          
+
           final pdfPath = await _createPdfFromScreenshot(bytes);
           print('PDF criado com sucesso em: $pdfPath');
-          
-          // Tentar abrir o PDF
-          try {
-            await Printing.layoutPdf(
-              onLayout: (PdfPageFormat format) async {
-                final pdf = await _createPdfBytes(bytes);
-                return pdf;
-              },
-            );
-          } catch (e) {
-            print('Erro ao abrir PDF: $e');
-          }
+
+          // PDF exportado com sucesso - apenas salvar, não abrir impressora
+          print('PDF exportado com sucesso em: $pdfPath');
         } else {
           print('Erro: byteData é null');
         }
@@ -409,13 +423,15 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     }
   }
 
-  Future<String> _createPdfFromMultipleScreenshots(List<Uint8List> screenshots) async {
+  Future<String> _createPdfFromMultipleScreenshots(
+      List<Uint8List> screenshots) async {
     final pdfBytes = await _createPdfBytesFromMultipleScreenshots(screenshots);
-    
+
     // Obter pasta Downloads do usuário
     String downloadsPath;
     try {
-      final userProfile = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
+      final userProfile =
+          Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
       if (userProfile != null) {
         downloadsPath = '$userProfile\\Downloads';
       } else {
@@ -432,22 +448,23 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final fileName = 'markdown_export_$timestamp.pdf';
     final filePath = '$downloadsPath\\$fileName';
-    
+
     // Salvar o PDF
     final file = File(filePath);
     await file.writeAsBytes(pdfBytes);
-    
+
     print('PDF salvo em: $filePath');
     return filePath;
   }
 
   Future<String> _createPdfFromScreenshot(Uint8List screenshot) async {
     final pdfBytes = await _createPdfBytes(screenshot);
-    
+
     // Obter pasta Downloads do usuário
     String downloadsPath;
     try {
-      final userProfile = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
+      final userProfile =
+          Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
       if (userProfile != null) {
         downloadsPath = '$userProfile\\Downloads';
       } else {
@@ -464,48 +481,57 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final fileName = 'markdown_export_$timestamp.pdf';
     final filePath = '$downloadsPath\\$fileName';
-    
+
     // Salvar o PDF
     final file = File(filePath);
     await file.writeAsBytes(pdfBytes);
-    
+
     print('PDF salvo em: $filePath');
     return filePath;
   }
-  
-  Future<Uint8List> _createPdfBytesFromMultipleScreenshots(List<Uint8List> screenshots) async {
+
+  Future<Uint8List> _createPdfBytesFromMultipleScreenshots(
+      List<Uint8List> screenshots) async {
     final pdf = pw.Document();
-    
+
     // Carregar o logo do Bloquinho
     final logoBytes = await _loadLogoBytes();
     pw.MemoryImage? logo;
     if (logoBytes != null) {
       logo = pw.MemoryImage(logoBytes);
     }
-    
+
     // Cor castanha do tema para o texto
     final brownColor = PdfColor.fromHex('#5C4033');
-    
+
     // Carregar fonte com suporte Unicode para resolver o aviso
     final robotoFont = await PdfGoogleFonts.robotoRegular();
-    
+
     // Criar uma página para cada screenshot
     for (int i = 0; i < screenshots.length; i++) {
       final screenshot = screenshots[i];
       final image = pw.MemoryImage(screenshot);
       final pageNumber = i + 1;
-      
+
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
           build: (pw.Context context) {
             return pw.Stack(
               children: [
-                // Conteúdo principal (screenshot)
-                pw.Center(
-                  child: pw.Image(image, fit: pw.BoxFit.contain),
+                // Conteúdo principal (screenshot) - otimizado para usar toda a página
+                pw.Container(
+                  width: PdfPageFormat.a4.width,
+                  height:
+                      PdfPageFormat.a4.height - 35, // Espaço mínimo para footer
+                  child: pw.Image(
+                    image,
+                    fit: pw.BoxFit
+                        .fitWidth, // Ajustar largura e cortar altura se necessário
+                    alignment: pw.Alignment.topCenter, // Alinhar no topo
+                  ),
                 ),
-                
+
                 // Footer com logo e texto
                 pw.Positioned(
                   bottom: 10,
@@ -520,10 +546,9 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                           height: 16,
                           child: pw.Image(logo),
                         ),
-                      
-                      if (logo != null)
-                        pw.SizedBox(width: 8),
-                      
+
+                      if (logo != null) pw.SizedBox(width: 8),
+
                       // Texto "Exported with Bloquinho"
                       pw.Text(
                         'Exported with Bloquinho',
@@ -536,7 +561,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                     ],
                   ),
                 ),
-                
+
                 // Número da página (canto inferior direito)
                 pw.Positioned(
                   bottom: 10,
@@ -556,23 +581,23 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         ),
       );
     }
-    
+
     return await pdf.save();
   }
 
   Future<Uint8List> _createPdfBytes(Uint8List screenshot) async {
     final pdf = pw.Document();
-    
+
     // Carregar o logo do Bloquinho
     final logoBytes = await _loadLogoBytes();
     pw.MemoryImage? logo;
     if (logoBytes != null) {
       logo = pw.MemoryImage(logoBytes);
     }
-    
+
     // Cor castanha do tema para o texto
     final brownColor = PdfColor.fromHex('#5C4033');
-    
+
     // Carregar fonte com suporte Unicode para resolver o aviso
     pw.Font? font;
     try {
@@ -581,10 +606,10 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
       print('Erro ao carregar fonte: $e');
       // Usar fonte padrão se não conseguir carregar
     }
-    
+
     // Criar imagem do screenshot
     final image = pw.MemoryImage(screenshot);
-    
+
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
@@ -595,7 +620,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
               pw.Center(
                 child: pw.Image(image, fit: pw.BoxFit.contain),
               ),
-              
+
               // Footer com logo e texto
               pw.Positioned(
                 bottom: 10,
@@ -610,23 +635,22 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                         height: 16,
                         child: pw.Image(logo),
                       ),
-                    
-                    if (logo != null)
-                      pw.SizedBox(width: 8),
-                    
+
+                    if (logo != null) pw.SizedBox(width: 8),
+
                     // Texto "Exported with Bloquinho"
                     pw.Text(
                       'Exported with Bloquinho',
                       style: pw.TextStyle(
                         fontSize: 10,
                         color: brownColor,
-                        font: font,  // em vez de font: robotoFont
+                        font: font, // em vez de font: robotoFont
                       ),
                     ),
                   ],
                 ),
               ),
-              
+
               // Número da página (canto inferior direito)
               pw.Positioned(
                 bottom: 10,
@@ -636,7 +660,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                   style: pw.TextStyle(
                     fontSize: 10,
                     color: brownColor,
-                    font: font,  // em vez de font: robotoFont
+                    font: font, // em vez de font: robotoFont
                   ),
                 ),
               ),
@@ -645,28 +669,29 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         },
       ),
     );
-    
+
     return await pdf.save();
   }
 
   Future<String> _createPdfFromScreenshots(List<Uint8List> screenshots) async {
     final pdf = pw.Document();
-    
+
     // Carregar o logo do Bloquinho
     final logoBytes = await _loadLogoBytes();
     pw.MemoryImage? logo;
     if (logoBytes != null) {
       logo = pw.MemoryImage(logoBytes);
     }
-    
+
     // Cor castanha do tema para o texto
-    final brownColor = PdfColor.fromHex('#5C4033'); // lightTextPrimary do tema classic
-    
+    final brownColor =
+        PdfColor.fromHex('#5C4033'); // lightTextPrimary do tema classic
+
     for (int i = 0; i < screenshots.length; i++) {
       final screenshot = screenshots[i];
       final image = pw.MemoryImage(screenshot);
       final pageNumber = i + 1;
-      
+
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
@@ -676,13 +701,14 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                 // Conteúdo principal (screenshot) - ajustado para caber na página
                 pw.Container(
                   width: PdfPageFormat.a4.width,
-                  height: PdfPageFormat.a4.height - 40, // Deixar espaço para footer
+                  height:
+                      PdfPageFormat.a4.height - 40, // Deixar espaço para footer
                   child: pw.Image(
                     image,
                     fit: pw.BoxFit.contain,
                   ),
                 ),
-                
+
                 // Footer com logo e texto
                 pw.Positioned(
                   bottom: 10,
@@ -697,10 +723,9 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                           height: 16,
                           child: pw.Image(logo),
                         ),
-                      
-                      if (logo != null)
-                        pw.SizedBox(width: 8),
-                      
+
+                      if (logo != null) pw.SizedBox(width: 8),
+
                       // Texto "Exported with Bloquinho"
                       pw.Text(
                         'Exported with Bloquinho',
@@ -712,7 +737,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                     ],
                   ),
                 ),
-                
+
                 // Número da página (canto inferior direito)
                 pw.Positioned(
                   bottom: 10,
@@ -739,7 +764,8 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     String downloadsPath;
     try {
       // Tentar obter a pasta Downloads do usuário
-      final userProfile = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
+      final userProfile =
+          Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
       if (userProfile != null) {
         downloadsPath = '$userProfile\\Downloads';
       } else {
@@ -757,25 +783,19 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final fileName = 'markdown_export_$timestamp.pdf';
     final filePath = '$downloadsPath\\$fileName';
-    
+
     // Salvar o PDF
     final file = File(filePath);
     await file.writeAsBytes(await pdf.save());
-    
+
     print('PDF salvo em: $filePath');
-    
-    // Abrir o PDF (opcional)
-    try {
-      await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
-      );
-    } catch (e) {
-      print('Erro ao abrir PDF: $e');
-    }
-    
+
+    // PDF exportado com sucesso - apenas salvar, não abrir impressora
+    print('PDF exportado com sucesso em: $filePath');
+
     return filePath;
   }
-  
+
   Future<Uint8List?> _loadLogoBytes() async {
     try {
       final byteData = await rootBundle.load('assets/images/logo.png');
@@ -790,12 +810,15 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     try {
       final tempDir = await getTemporaryDirectory();
       final files = tempDir.listSync();
-      
+
       final now = DateTime.now();
-      final cutoffTime = now.subtract(const Duration(hours: 24)); // Limpar arquivos com mais de 24 horas
-      
+      final cutoffTime = now.subtract(
+          const Duration(hours: 24)); // Limpar arquivos com mais de 24 horas
+
       for (final file in files) {
-        if (file is File && file.path.endsWith('.pdf') && file.path.contains('markdown_export_')) {
+        if (file is File &&
+            file.path.endsWith('.pdf') &&
+            file.path.contains('markdown_export_')) {
           final stat = await file.stat();
           if (stat.modified.isBefore(cutoffTime)) {
             await file.delete();

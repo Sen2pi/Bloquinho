@@ -54,9 +54,10 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   // Cache otimizado para markdown processado
   static final LRUCache<int, String> _markdownCache = LRUCache(maxSize: 100);
   static final LRUCache<int, Widget> _widgetCache = LRUCache(maxSize: 50);
-  
+
   // Screenshot controller para captura de imagem
-  static final ScreenshotController _screenshotController = ScreenshotController();
+  static final ScreenshotController _screenshotController =
+      ScreenshotController();
   static final ScrollController _scrollController = ScrollController();
 
   EnhancedMarkdownPreviewWidget({
@@ -104,7 +105,8 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                       padding: padding,
                       sliver: SliverToBoxAdapter(
                         child: SelectionArea(
-                          child: _buildOptimizedMarkdown(context, textStyle, ref, sanitizedMarkdown),
+                          child: _buildOptimizedMarkdown(
+                              context, textStyle, ref, sanitizedMarkdown),
                         ),
                       ),
                     ),
@@ -206,19 +208,19 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
 
   void _exportToPdf(BuildContext context) async {
     print('Botão PDF clicado!');
-    
+
     // Capturar o contexto do Navigator e ScaffoldMessenger antes das operações assíncronas
     final navigator = Navigator.maybeOf(context);
     final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
-    
+
     if (navigator == null || scaffoldMessenger == null) {
       print('Navigator ou ScaffoldMessenger não encontrado no contexto');
       return;
     }
-    
+
     try {
       print('Mostrando indicador de carregamento...');
-      
+
       // Mostrar indicador de carregamento
       showDialog(
         context: context,
@@ -229,12 +231,12 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
       );
 
       print('Iniciando captura de screenshots...');
-      
+
       // Capturar screenshots com scroll
       final screenshots = await _captureScreenshotsWithScroll(context);
-      
+
       print('Screenshots capturados: ${screenshots.length}');
-      
+
       // Fechar indicador de carregamento usando o navigator capturado
       try {
         navigator.pop();
@@ -244,12 +246,12 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
 
       if (screenshots.isNotEmpty) {
         print('Criando PDF com screenshots...');
-        
+
         // Criar PDF com screenshots
         final pdfPath = await _createPdfFromScreenshots(screenshots);
-        
+
         print('PDF criado com sucesso em: $pdfPath');
-        
+
         // Usar o scaffoldMessenger capturado
         scaffoldMessenger.showSnackBar(
           SnackBar(
@@ -260,7 +262,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         );
       } else {
         print('Nenhum screenshot capturado');
-        
+
         // Usar o scaffoldMessenger capturado
         scaffoldMessenger.showSnackBar(
           const SnackBar(
@@ -271,14 +273,14 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
       }
     } catch (e) {
       print('Erro ao exportar PDF: $e');
-      
+
       // Tentar fechar o dialog se ainda estiver aberto
       try {
         navigator.pop();
       } catch (e2) {
         print('Erro ao fechar dialog: $e2');
       }
-      
+
       // Usar o scaffoldMessenger capturado
       scaffoldMessenger.showSnackBar(
         SnackBar(
@@ -289,23 +291,24 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     }
   }
 
-  Future<List<Uint8List>> _captureScreenshotsWithScroll(BuildContext context) async {
+  Future<List<Uint8List>> _captureScreenshotsWithScroll(
+      BuildContext context) async {
     final screenshots = <Uint8List>[];
-    
+
     try {
       print('Iniciando captura completa com scroll...');
-      
+
       // Primeiro, vamos à posição inicial
       _scrollController.jumpTo(0);
       await Future.delayed(const Duration(milliseconds: 300));
-      
+
       // Obter dimensões da tela visível
-      final screenHeight = MediaQuery.of(context).size.height;
+      final screenHeight = 750.0;
       final maxScrollExtent = _scrollController.position.maxScrollExtent;
-      
+
       print('Altura da tela: $screenHeight');
       print('Máximo scroll: $maxScrollExtent');
-      
+
       if (maxScrollExtent <= 0) {
         // Conteúdo cabe em uma tela
         print('Conteúdo cabe em uma tela, capturando único screenshot...');
@@ -314,35 +317,41 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
           screenshots.add(screenshot);
         }
       } else {
-        // Conteúdo requer scroll
-        print('Conteúdo requer scroll, iniciando captura múltipla...');
-        
+        // Conteúdo requer scroll - captura sequencial otimizada
+        print('Conteúdo requer scroll, iniciando captura sequencial...');
+
         double currentPosition = 0;
-        final stepSize = screenHeight * 0.8; // 80% da altura da tela com 20% de sobreposição
-        
+        int pageCount = 0;
+
+        // Altura efetiva da página (usando toda a tela para evitar sobreposição)
+        final effectivePageHeight = screenHeight; // Usar altura total da tela
+
         while (currentPosition <= maxScrollExtent) {
-          print('Capturando na posição: $currentPosition');
-          
+          pageCount++;
+          print('Capturando página $pageCount na posição: $currentPosition');
+
           // Ir para a posição atual
           _scrollController.jumpTo(currentPosition);
-          await Future.delayed(const Duration(milliseconds: 500)); // Aguardar renderização
-          
+          await Future.delayed(const Duration(
+              milliseconds: 800)); // Aguardar renderização completa
+
           // Capturar screenshot
           final screenshot = await _captureCurrentView();
           if (screenshot != null) {
             screenshots.add(screenshot);
-            print('Screenshot ${screenshots.length} capturado');
+            print('Screenshot $pageCount capturado');
           }
-          
-          // Avançar para próxima posição
-          currentPosition += stepSize;
-          
-          // Se chegamos perto do final, capturar o final
-          if (currentPosition > maxScrollExtent && currentPosition - stepSize < maxScrollExtent) {
-            print('Capturando final do documento...');
+
+          // Próxima posição: avançar mais que a altura da tela para garantir sem sobreposição
+          final nextPosition =
+              currentPosition + (screenHeight * 1.19); // 20% a mais
+
+          // Se estamos próximos do final, capturar o restante
+          if (nextPosition >= maxScrollExtent) {
+            print('Capturando página final...');
             _scrollController.jumpTo(maxScrollExtent);
-            await Future.delayed(const Duration(milliseconds: 500));
-            
+            await Future.delayed(const Duration(milliseconds: 800));
+
             final finalScreenshot = await _captureCurrentView();
             if (finalScreenshot != null) {
               screenshots.add(finalScreenshot);
@@ -350,31 +359,40 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
             }
             break;
           }
+
+          currentPosition = nextPosition;
+
+          // Limite de segurança
+          if (pageCount >= 20) {
+            print('Atingido limite máximo de 20 páginas');
+            break;
+          }
         }
       }
-      
+
       print('Captura completa: ${screenshots.length} screenshots');
       return screenshots;
-      
     } catch (e) {
       print('Erro ao capturar screenshots: $e');
       return screenshots;
     }
   }
-  
+
+  /// Remove a função _calculatePreciseNextPosition pois não é mais necessária
+
   Future<Uint8List?> _captureCurrentView() async {
     try {
       print('Capturando screenshot com Screenshot library...');
-      
+
       // Aguardar um frame para garantir que o widget está renderizado
-      await Future.delayed(const Duration(milliseconds: 200));
-      
-      // Usar Screenshot library para capturar
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // Usar Screenshot library para capturar com maior qualidade
       final imageBytes = await _screenshotController.capture(
-        pixelRatio: 2.0,
-        delay: const Duration(milliseconds: 100),
+        pixelRatio: 3.0, // Maior resolução para melhor qualidade
+        delay: const Duration(milliseconds: 300),
       );
-      
+
       if (imageBytes != null) {
         print('Screenshot capturado com sucesso (${imageBytes.length} bytes)');
         return imageBytes;
@@ -382,7 +400,6 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         print('Erro: Screenshot é null');
         return null;
       }
-      
     } catch (e, stackTrace) {
       print('Erro ao capturar screenshot: $e');
       print('Stack trace: $stackTrace');
@@ -392,25 +409,26 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
 
   Future<String> _createPdfFromScreenshots(List<Uint8List> screenshots) async {
     final pdf = pw.Document();
-    
+
     // Carregar o logo do Bloquinho
     final logoBytes = await _loadLogoBytes();
     pw.MemoryImage? logo;
     if (logoBytes != null) {
       logo = pw.MemoryImage(logoBytes);
     }
-    
+
     // Cor castanha do tema para o texto
-    final brownColor = PdfColor.fromHex('#5C4033'); // lightTextPrimary do tema classic
-    
+    final brownColor =
+        PdfColor.fromHex('#5C4033'); // lightTextPrimary do tema classic
+
     // Carregar fonte que suporta Unicode
     final robotoFont = await PdfGoogleFonts.robotoRegular();
-    
+
     for (int i = 0; i < screenshots.length; i++) {
       final screenshot = screenshots[i];
       final image = pw.MemoryImage(screenshot);
       final pageNumber = i + 1;
-      
+
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
@@ -420,13 +438,16 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                 // Conteúdo principal (screenshot) - ajustado para caber na página
                 pw.Container(
                   width: PdfPageFormat.a4.width,
-                  height: PdfPageFormat.a4.height - 40, // Deixar espaço para footer
+                  height:
+                      PdfPageFormat.a4.height - 35, // Espaço mínimo para footer
                   child: pw.Image(
                     image,
-                    fit: pw.BoxFit.contain,
+                    fit: pw.BoxFit
+                        .fitWidth, // Ajustar largura e cortar altura se necessário
+                    alignment: pw.Alignment.topCenter, // Alinhar no topo
                   ),
                 ),
-                
+
                 // Footer com logo e texto
                 pw.Positioned(
                   bottom: 10,
@@ -441,10 +462,9 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                           height: 16,
                           child: pw.Image(logo),
                         ),
-                      
-                      if (logo != null)
-                        pw.SizedBox(width: 8),
-                      
+
+                      if (logo != null) pw.SizedBox(width: 8),
+
                       // Texto "Exported with Bloquinho"
                       pw.Text(
                         'Exported with Bloquinho',
@@ -457,7 +477,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
                     ],
                   ),
                 ),
-                
+
                 // Número da página (canto inferior direito)
                 pw.Positioned(
                   bottom: 10,
@@ -485,7 +505,8 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     String downloadsPath;
     try {
       // Tentar obter a pasta Downloads do usuário
-      final userProfile = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
+      final userProfile =
+          Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
       if (userProfile != null) {
         downloadsPath = '$userProfile\\Downloads';
       } else {
@@ -503,25 +524,19 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final fileName = 'markdown_export_$timestamp.pdf';
     final filePath = '$downloadsPath\\$fileName';
-    
+
     // Salvar o PDF
     final file = File(filePath);
     await file.writeAsBytes(await pdf.save());
-    
+
     print('PDF salvo em: $filePath');
-    
-    // Abrir o PDF (opcional)
-    try {
-      await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
-      );
-    } catch (e) {
-      print('Erro ao abrir PDF: $e');
-    }
-    
+
+    // PDF exportado com sucesso - apenas salvar, não abrir impressora
+    print('PDF exportado com sucesso em: $filePath');
+
     return filePath;
   }
-  
+
   Future<Uint8List?> _loadLogoBytes() async {
     try {
       final byteData = await rootBundle.load('assets/images/logo.png');
@@ -536,12 +551,15 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     try {
       final tempDir = await getTemporaryDirectory();
       final files = tempDir.listSync();
-      
+
       final now = DateTime.now();
-      final cutoffTime = now.subtract(const Duration(hours: 24)); // Limpar arquivos com mais de 24 horas
-      
+      final cutoffTime = now.subtract(
+          const Duration(hours: 24)); // Limpar arquivos com mais de 24 horas
+
       for (final file in files) {
-        if (file is File && file.path.endsWith('.pdf') && file.path.contains('markdown_export_')) {
+        if (file is File &&
+            file.path.endsWith('.pdf') &&
+            file.path.contains('markdown_export_')) {
           final stat = await file.stat();
           if (stat.modified.isBefore(cutoffTime)) {
             await file.delete();
