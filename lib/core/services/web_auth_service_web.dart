@@ -9,7 +9,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:js_interop';
 import 'package:flutter/foundation.dart';
 import 'package:universal_html/html.dart' as html;
 
@@ -74,7 +73,8 @@ class WebAuthService {
 
   Future<AuthResult> authenticateWithProvider(String provider) async {
     if (!kIsWeb) {
-      return AuthResult.error('Autenticação web só está disponível nesta plataforma.');
+      return AuthResult.error(
+          'Autenticação web só está disponível nesta plataforma.');
     }
 
     try {
@@ -83,10 +83,13 @@ class WebAuthService {
       final oauth2Service = oauth2.OAuth2Service();
       final config = await _loadOAuth2Config();
       if (config == null) {
-        return AuthResult.error('As credenciais OAuth2 não estão configuradas. Consulte a documentação.');
+        return AuthResult.error(
+            'As credenciais OAuth2 não estão configuradas. Consulte a documentação.');
       }
       await oauth2Service.initialize(config);
-      final authResult = await oauth2Service.authenticate(provider);
+      final authResult = provider == 'google'
+          ? await oauth2.OAuth2Service.authenticateGoogle()
+          : await oauth2.OAuth2Service.authenticateMicrosoft();
 
       if (authResult.success) {
         _storageSettings = provider == 'google'
@@ -106,8 +109,8 @@ class WebAuthService {
 
         _updateState(WebAuthState.authenticated);
         return AuthResult.success(
-          accountEmail: authResult.userEmail!,
-          accountName: authResult.userName,
+          userEmail: authResult.userEmail!,
+          userName: authResult.userName,
           accountData: authResult.accountData,
         );
       } else {
@@ -225,7 +228,7 @@ class WebAuthService {
           'accountName': _storageSettings!.accountName,
           'status':
               _storageSettings!.isConnected ? 'connected' : 'disconnected',
-                      'accessToken': _storageSettings!.providerConfig['access_token'] ?? '',
+          'accessToken': _storageSettings!.providerConfig['access_token'] ?? '',
           'timestamp': DateTime.now().toIso8601String(),
         },
         'timestamp': DateTime.now().toIso8601String(),
@@ -321,7 +324,8 @@ class WebAuthService {
   Future<oauth2.OAuth2Config?> _loadOAuth2Config() async {
     try {
       return const oauth2.OAuth2Config(
-        googleClientId: '869649040-7sou7ac0k0bpnuebr6e32qr40lfb3ndc.apps.googleusercontent.com',
+        googleClientId:
+            '869649040-7sou7ac0k0bpnuebr6e32qr40lfb3ndc.apps.googleusercontent.com',
         googleClientSecret: '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',
         microsoftClientId: 'ebe4d0f9-ff8a-43b8-b79a-2e44cdde8b94',
       );
@@ -329,8 +333,6 @@ class WebAuthService {
       return null;
     }
   }
-
-  
 
   /// Dispose resources
   void dispose() {
@@ -382,10 +384,11 @@ class _MockCloudStorageService extends CloudStorageService {
   StorageSettings get settings => _settings;
 
   @override
-  Future<AuthResult> authenticate({Map<String, dynamic>? config}) async {
+  Future<AuthResult> authenticate(
+      {Map<String, dynamic>? config}) async {
     return AuthResult.success(
-      accountEmail: _settings.accountEmail ?? 'user@example.com',
-      accountName: _settings.accountName ?? 'User',
+      userEmail: _settings.accountEmail ?? 'user@example.com',
+      userName: _settings.accountName ?? 'User',
     );
   }
 

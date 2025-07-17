@@ -34,20 +34,35 @@ class EnhancedPdfExportService {
     try {
       if (_notoSansFont == null) {
         print('🔤 [PDF] Carregando NotoSans-Regular.ttf...');
-        _notoSansFont = pw.Font.ttf(
-            await rootBundle.load('assets/fonts/NotoSans-Regular.ttf'));
-        print('✅ [PDF] NotoSans-Regular.ttf carregado com sucesso');
+        try {
+          _notoSansFont = pw.Font.ttf(
+              await rootBundle.load('assets/fonts/NotoSans-Regular.ttf'));
+          print('✅ [PDF] NotoSans-Regular.ttf carregado com sucesso');
+        } catch (e) {
+          print('⚠️ [PDF] Erro ao carregar NotoSans-Regular.ttf: $e');
+          print('🔤 [PDF] Usando fonte padrão Helvetica como fallback');
+          _notoSansFont = pw.Font.helvetica();
+        }
       }
       if (_notoEmojiFont == null) {
         print('🔤 [PDF] Carregando NotoColorEmoji.ttf...');
-        _notoEmojiFont = pw.Font.ttf(
-            await rootBundle.load('assets/fonts/NotoColorEmoji.ttf'));
-        print('✅ [PDF] NotoColorEmoji.ttf carregado com sucesso');
+        try {
+          _notoEmojiFont = pw.Font.ttf(
+              await rootBundle.load('assets/fonts/NotoColorEmoji.ttf'));
+          print('✅ [PDF] NotoColorEmoji.ttf carregado com sucesso');
+        } catch (e) {
+          print('⚠️ [PDF] Erro ao carregar NotoColorEmoji.ttf: $e');
+          print(
+              '🔤 [PDF] Emoji font não disponível, usando apenas fonte principal');
+          _notoEmojiFont = null;
+        }
       }
       print('✅ [PDF] Todas as fontes carregadas com sucesso');
     } catch (e) {
-      print('❌ [PDF] Erro ao carregar fontes: $e');
-      rethrow;
+      print('❌ [PDF] Erro crítico ao carregar fontes: $e');
+      print('🔤PDF] Usando fontes padrão do sistema');
+      _notoSansFont = pw.Font.helvetica();
+      _notoEmojiFont = null;
     }
   }
 
@@ -363,9 +378,14 @@ class EnhancedPdfExportService {
       final file = File(filePath);
       final pdfBytes = await pdf.save();
       print('📄 [PDF] PDF gerado: ${pdfBytes.length} bytes');
-
-      await file.writeAsBytes(pdfBytes);
-      print('✅ [PDF] PDF salvo com sucesso: $filePath');
+      try {
+        await file.writeAsBytes(pdfBytes);
+        print('✅ [PDF] PDF salvo com sucesso: $filePath');
+      } catch (e) {
+        print('❌ [PDF] Erro ao salvar PDF no caminho $filePath: $e');
+        print('❌ [PDF] Verifique permissões de diretório ou espaço em disco.');
+        return null;
+      }
 
       return filePath;
     } catch (e, stackTrace) {

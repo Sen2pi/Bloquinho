@@ -17,190 +17,235 @@ class EnhancedMarkdownParser {
   /// Parse markdown para blocos estruturados
   static List<MarkdownBlock> parseMarkdown(String markdown,
       {bool enableHtmlEnhancements = true}) {
+    print('🔍 [PARSER] Iniciando parsing de markdown...');
+    print('🔍 [PARSER] Tamanho do markdown: ${markdown.length} caracteres');
+    print('🔍 [PARSER] HTML enhancements: $enableHtmlEnhancements');
     final blocks = <MarkdownBlock>[];
-    
-    // Sanitizar markdown para evitar problemas UTF-16
-    String sanitizedMarkdown = _sanitizeText(markdown);
-    final lines = sanitizedMarkdown.split('\n');
 
-    bool inCodeBlock = false;
-    String codeBlockContent = '';
-    String codeLanguage = '';
-    bool inList = false;
-    bool inBlockquote = false;
-    String blockquoteContent = '';
-    bool inTable = false;
-    List<String> tableRows = [];
+    try {
+      // Sanitizar markdown para evitar problemas UTF-16
+      print('🔍 [PARSER] Sanitizando markdown...');
+      String sanitizedMarkdown = _sanitizeText(markdown);
+      print(
+          '🔍 [PARSER] Markdown sanitizado: ${sanitizedMarkdown.length} caracteres');
 
-    for (int i = 0; i < lines.length; i++) {
-      final line = lines[i];
+      final lines = sanitizedMarkdown.split('\n');
+      print('🔍 [PARSER] Total de linhas: ${lines.length}');
+      bool inCodeBlock = false;
+      String codeBlockContent = '';
+      String codeLanguage = '';
+      bool inList = false;
+      bool inBlockquote = false;
+      String blockquoteContent = '';
+      bool inTable = false;
+      List<String> tableRows = [];
 
-      // Detectar início/fim de bloco de código
-      if (line.startsWith('```')) {
-        if (inCodeBlock) {
-          // Fim do bloco de código
+      for (int i = 0; i < lines.length; i++) {
+        final line = lines[i];
+
+        try {
+          // Detectar início/fim de bloco de código
+          if (line.startsWith('```')) {
+            if (inCodeBlock) {
+              // Fim do bloco de código
+              blocks.add(MarkdownBlock(
+                type: BlockType.code,
+                content: codeBlockContent.trim(),
+                language: codeLanguage,
+              ));
+              inCodeBlock = false;
+              codeBlockContent = '';
+              codeLanguage = '';
+            } else {
+              // Início do bloco de código
+              inCodeBlock = true;
+              codeLanguage = line.substring(3).trim();
+            }
+            continue;
+          }
+
+          if (inCodeBlock) {
+            codeBlockContent += line + '\n';
+            continue;
+          }
+
+          // Detectar tabelas
+          if (line.contains('|') &&
+              line.trim().startsWith('|') &&
+              line.trim().endsWith('|')) {
+            if (!inTable) {
+              inTable = true;
+              tableRows = [];
+            }
+            tableRows.add(line);
+            continue;
+          } else if (inTable) {
+            // Fim da tabela
+            blocks.add(MarkdownBlock(
+              type: BlockType.table,
+              content: tableRows.join('\n'),
+            ));
+            inTable = false;
+            tableRows = [];
+          }
+
+          // Detectar blockquotes
+          if (line.startsWith('> ')) {
+            if (!inBlockquote) {
+              inBlockquote = true;
+              blockquoteContent = '';
+            }
+            blockquoteContent += line.substring(2) + '\n';
+            continue;
+          } else if (inBlockquote) {
+            // Fim do blockquote
+            blocks.add(MarkdownBlock(
+              type: BlockType.blockquote,
+              content: blockquoteContent.trim(),
+            ));
+            inBlockquote = false;
+            blockquoteContent = '';
+          }
+
+          // Títulos
+          if (line.startsWith('# ')) {
+            blocks.add(MarkdownBlock(
+              type: BlockType.heading,
+              content: line.substring(2),
+              level: 1,
+            ));
+          } else if (line.startsWith('## ')) {
+            blocks.add(MarkdownBlock(
+              type: BlockType.heading,
+              content: line.substring(3),
+              level: 2,
+            ));
+          } else if (line.startsWith('### ')) {
+            blocks.add(MarkdownBlock(
+              type: BlockType.heading,
+              content: line.substring(4),
+              level: 3,
+            ));
+          } else if (line.startsWith('#### ')) {
+            blocks.add(MarkdownBlock(
+              type: BlockType.heading,
+              content: line.substring(5),
+              level: 4,
+            ));
+          } else if (line.startsWith('##### ')) {
+            blocks.add(MarkdownBlock(
+              type: BlockType.heading,
+              content: line.substring(6),
+              level: 5,
+            ));
+          } else if (line.startsWith('###### ')) {
+            blocks.add(MarkdownBlock(
+              type: BlockType.heading,
+              content: line.substring(7),
+              level: 6,
+            ));
+          }
+          // Listas
+          else if (line.startsWith('- ') ||
+              line.startsWith('* ') ||
+              line.startsWith('+ ')) {
+            blocks.add(MarkdownBlock(
+              type: BlockType.listItem,
+              content: line.substring(2),
+              listType: ListType.unordered,
+            ));
+            inList = true;
+          }
+          // Listas numeradas
+          else if (RegExp(r'^\d+\. ').hasMatch(line)) {
+            final match = RegExp(r'^\d+\. (.*)').firstMatch(line);
+            if (match != null) {
+              blocks.add(MarkdownBlock(
+                type: BlockType.listItem,
+                content: match.group(1)!,
+                listType: ListType.ordered,
+              ));
+            }
+          }
+          // Texto normal ou com formatação inline
+          else if (line.trim().isNotEmpty) {
+            if (inList) {
+              inList = false;
+            }
+
+            // Processar enhancements HTML se habilitado
+            String processedContent = line;
+            if (enableHtmlEnhancements) {
+              try {
+                processedContent =
+                    HtmlEnhancementParser.processWithEnhancements(line);
+              } catch (e) {
+                print(
+                    '⚠️ [PARSER] Erro ao processar HTML enhancements na linha $i: $e');
+                processedContent = line; // Usar linha original como fallback
+              }
+            }
+
+            blocks.add(MarkdownBlock(
+              type: BlockType.paragraph,
+              content: processedContent,
+            ));
+          }
+          // Linha em branco
+          else {
+            if (inList) {
+              inList = false;
+            }
+          }
+        } catch (e) {
+          print('❌ [PARSER] Erro ao processar linha $i: $e');
+          print('❌ [PARSER] Conteúdo da linha: "${line}"');
+          // Adicionar bloco de erro como fallback
           blocks.add(MarkdownBlock(
-            type: BlockType.code,
-            content: codeBlockContent.trim(),
-            language: codeLanguage,
+            type: BlockType.paragraph,
+            content: 'Erro ao processar conteúdo',
           ));
-          inCodeBlock = false;
-          codeBlockContent = '';
-          codeLanguage = '';
-        } else {
-          // Início do bloco de código
-          inCodeBlock = true;
-          codeLanguage = line.substring(3).trim();
         }
-        continue;
       }
 
-      if (inCodeBlock) {
-        codeBlockContent += line + '\n';
-        continue;
-      }
-
-      // Detectar tabelas
-      if (line.contains('|') &&
-          line.trim().startsWith('|') &&
-          line.trim().endsWith('|')) {
-        if (!inTable) {
-          inTable = true;
-          tableRows = [];
-        }
-        tableRows.add(line);
-        continue;
-      } else if (inTable) {
-        // Fim da tabela
-        blocks.add(MarkdownBlock(
-          type: BlockType.table,
-          content: tableRows.join('\n'),
-        ));
-        inTable = false;
-        tableRows = [];
-      }
-
-      // Detectar blockquotes
-      if (line.startsWith('> ')) {
-        if (!inBlockquote) {
-          inBlockquote = true;
-          blockquoteContent = '';
-        }
-        blockquoteContent += line.substring(2) + '\n';
-        continue;
-      } else if (inBlockquote) {
-        // Fim do blockquote
+      // Finalizar blockquote se ainda estiver ativo
+      if (inBlockquote) {
         blocks.add(MarkdownBlock(
           type: BlockType.blockquote,
           content: blockquoteContent.trim(),
         ));
-        inBlockquote = false;
-        blockquoteContent = '';
       }
 
-      // Títulos
-      if (line.startsWith('# ')) {
+      // Finalizar tabela se ainda estiver ativa
+      if (inTable && tableRows.isNotEmpty) {
         blocks.add(MarkdownBlock(
-          type: BlockType.heading,
-          content: line.substring(2),
-          level: 1,
-        ));
-      } else if (line.startsWith('## ')) {
-        blocks.add(MarkdownBlock(
-          type: BlockType.heading,
-          content: line.substring(3),
-          level: 2,
-        ));
-      } else if (line.startsWith('### ')) {
-        blocks.add(MarkdownBlock(
-          type: BlockType.heading,
-          content: line.substring(4),
-          level: 3,
-        ));
-      } else if (line.startsWith('#### ')) {
-        blocks.add(MarkdownBlock(
-          type: BlockType.heading,
-          content: line.substring(5),
-          level: 4,
-        ));
-      } else if (line.startsWith('##### ')) {
-        blocks.add(MarkdownBlock(
-          type: BlockType.heading,
-          content: line.substring(6),
-          level: 5,
-        ));
-      } else if (line.startsWith('###### ')) {
-        blocks.add(MarkdownBlock(
-          type: BlockType.heading,
-          content: line.substring(7),
-          level: 6,
+          type: BlockType.table,
+          content: tableRows.join('\n'),
         ));
       }
-      // Listas
-      else if (line.startsWith('- ') ||
-          line.startsWith('* ') ||
-          line.startsWith('+ ')) {
-        blocks.add(MarkdownBlock(
-          type: BlockType.listItem,
-          content: line.substring(2),
-          listType: ListType.unordered,
-        ));
-        inList = true;
-      }
-      // Listas numeradas
-      else if (RegExp(r'^\d+\. ').hasMatch(line)) {
-        final match = RegExp(r'^\d+\. (.*)').firstMatch(line);
-        if (match != null) {
-          blocks.add(MarkdownBlock(
-            type: BlockType.listItem,
-            content: match.group(1)!,
-            listType: ListType.ordered,
-          ));
-        }
-      }
-      // Texto normal ou com formatação inline
-      else if (line.trim().isNotEmpty) {
-        if (inList) {
-          inList = false;
-        }
 
-        // Processar enhancements HTML se habilitado
-        String processedContent = line;
-        if (enableHtmlEnhancements) {
-          processedContent =
-              HtmlEnhancementParser.processWithEnhancements(line);
-        }
-
+      // Finalizar bloco de código se ainda estiver ativo
+      if (inCodeBlock) {
         blocks.add(MarkdownBlock(
+          type: BlockType.code,
+          content: codeBlockContent.trim(),
+          language: codeLanguage,
+        ));
+      }
+
+      print('✅ [PARSER] Parsing concluído: ${blocks.length} blocos criados');
+      return blocks;
+    } catch (e, stackTrace) {
+      print('❌ [PARSER] Erro crítico no parsing: $e');
+      print('❌ [PARSER] Stack trace: $stackTrace');
+      // Retornar bloco de erro como fallback
+      return [
+        MarkdownBlock(
           type: BlockType.paragraph,
-          content: processedContent,
-        ));
-      }
-      // Linha em branco
-      else {
-        if (inList) {
-          inList = false;
-        }
-      }
+          content: 'Erro ao processar markdown: $e',
+        )
+      ];
     }
-
-    // Finalizar blockquote se ainda estiver ativo
-    if (inBlockquote) {
-      blocks.add(MarkdownBlock(
-        type: BlockType.blockquote,
-        content: blockquoteContent.trim(),
-      ));
-    }
-
-    // Finalizar tabela se ainda estiver ativa
-    if (inTable && tableRows.isNotEmpty) {
-      blocks.add(MarkdownBlock(
-        type: BlockType.table,
-        content: tableRows.join('\n'),
-      ));
-    }
-
-    return blocks;
   }
 
   /// Processar texto inline (negrito, itálico, código, links, etc.)
@@ -503,20 +548,21 @@ class EnhancedMarkdownParser {
   /// Sanitizar texto para evitar problemas UTF-16
   static String _sanitizeText(String text) {
     if (text.isEmpty) return text;
-    
+
     try {
       // Verificar se a string é válida UTF-16
       text.codeUnits;
-      
+
       // Remover caracteres de controle problemáticos
-      String sanitized = text.replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]'), '');
-      
+      String sanitized =
+          text.replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]'), '');
+
       // Garantir que não há caracteres nulos
       sanitized = sanitized.replaceAll('\x00', '');
-      
+
       // Verificar novamente se é válida
       sanitized.codeUnits;
-      
+
       return sanitized;
     } catch (e) {
       // Se houver erro, retornar string vazia
@@ -589,5 +635,3 @@ class InlineElement {
     this.attributes,
   });
 }
-
-

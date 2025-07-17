@@ -14,6 +14,7 @@ import 'package:flutter/foundation.dart';
 import 'platform_service.dart';
 import 'cloud_storage_service.dart';
 import '../models/storage_settings.dart';
+import '../models/auth_result.dart';
 
 /// Service for handling web authentication and cloud storage requirements
 class WebAuthService {
@@ -84,8 +85,8 @@ class WebAuthService {
 
       if (authResult.success) {
         _storageSettings = StorageSettings.googleDrive(
-          email: authResult.accountEmail,
-          name: authResult.accountName,
+          email: authResult.userEmail,
+          name: authResult.userName,
           config: authResult.accountData,
         );
 
@@ -122,8 +123,8 @@ class WebAuthService {
 
       if (authResult.success) {
         _storageSettings = StorageSettings.oneDrive(
-          email: authResult.accountEmail,
-          name: authResult.accountName,
+          email: authResult.userEmail,
+          name: authResult.userName,
           config: authResult.accountData,
         );
 
@@ -334,8 +335,8 @@ class WebAuthService {
     await Future.delayed(const Duration(seconds: 2));
 
     return AuthResult.success(
-      accountEmail: 'user@gmail.com',
-      accountName: 'User Name',
+      userEmail: 'user@gmail.com',
+      userName: 'User Name',
       accountData: {
         'access_token': 'mock_access_token',
         'refresh_token': 'mock_refresh_token',
@@ -351,8 +352,8 @@ class WebAuthService {
     await Future.delayed(const Duration(seconds: 2));
 
     return AuthResult.success(
-      accountEmail: 'user@outlook.com',
-      accountName: 'User Name',
+      userEmail: 'user@outlook.com',
+      userName: 'User Name',
       accountData: {
         'access_token': 'mock_access_token',
         'refresh_token': 'mock_refresh_token',
@@ -413,8 +414,8 @@ class _MockCloudStorageService extends CloudStorageService {
   @override
   Future<AuthResult> authenticate({Map<String, dynamic>? config}) async {
     return AuthResult.success(
-      accountEmail: _settings.accountEmail ?? 'user@example.com',
-      accountName: _settings.accountName ?? 'User',
+      userEmail: _settings.accountEmail ?? 'user@example.com',
+      userName: _settings.accountName ?? 'User',
     );
   }
 

@@ -23,7 +23,7 @@ class AuthResult {
   AuthResult.success({
     this.accessToken,
     this.refreshToken,
-    this.userEmail,
+    required this.userEmail,
     this.userName,
     this.avatarUrl,
     this.avatarPath,

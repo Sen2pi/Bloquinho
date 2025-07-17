@@ -774,7 +774,7 @@ class _StorageSettingsScreenState extends ConsumerState<StorageSettingsScreen> {
       final result = await ref.read(storageSettingsProvider.notifier).connect();
       if (!result.success) {
         setState(() {
-          _errorMessage = result.errorMessage;
+          _errorMessage = result.error;
         });
       }
     } catch (e) {

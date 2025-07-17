@@ -9,6 +9,7 @@
 
 import 'dart:io';
 import 'package:bloquinho/core/models/storage_settings.dart';
+import 'package:bloquinho/core/models/auth_result.dart';
 
 /// Interface abstrata para serviços de armazenamento em nuvem
 abstract class CloudStorageService {
@@ -90,58 +91,6 @@ abstract class CloudStorageService {
 
   /// Callback para progresso de sincronização
   Stream<SyncProgress> get syncProgressStream;
-}
-
-/// Resultado de autenticação
-class AuthResult {
-  final bool success;
-  final String? errorMessage;
-  final String? accountEmail;
-  final String? accountName;
-  final Map<String, dynamic>? accountData;
-  final DateTime timestamp;
-
-  const AuthResult({
-    required this.success,
-    this.errorMessage,
-    this.accountEmail,
-    this.accountName,
-    this.accountData,
-    required this.timestamp,
-  });
-
-  /// Criar resultado de sucesso
-  factory AuthResult.success({
-    required String accountEmail,
-    String? accountName,
-    Map<String, dynamic>? accountData,
-  }) {
-    return AuthResult(
-      success: true,
-      accountEmail: accountEmail,
-      accountName: accountName,
-      accountData: accountData,
-      timestamp: DateTime.now(),
-    );
-  }
-
-  /// Criar resultado de erro
-  factory AuthResult.error(String errorMessage) {
-    return AuthResult(
-      success: false,
-      errorMessage: errorMessage,
-      timestamp: DateTime.now(),
-    );
-  }
-
-  @override
-  String toString() {
-    if (success) {
-      return 'AuthResult(success: true, account: $accountEmail)';
-    } else {
-      return 'AuthResult(success: false, error: $errorMessage)';
-    }
-  }
 }
 
 /// Resultado de upload

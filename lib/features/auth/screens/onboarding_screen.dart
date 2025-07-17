@@ -260,7 +260,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             await storageNotifier.connect();
           } else {
             throw Exception(
-                'Falha na autenticação com OneDrive: ${authResult.errorMessage}');
+                'Falha na autenticação com OneDrive: ${authResult.error}');
           }
         }
       }

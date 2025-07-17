@@ -10,10 +10,12 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:bloquinho/core/models/storage_settings.dart';
 import 'package:bloquinho/core/services/cloud_storage_service.dart';
-import 'package:bloquinho/core/services/oauth2_service.dart' as oauth2;
+import 'package:bloquinho/core/models/auth_result.dart';
 import 'package:http/http.dart' as http;
+import 'oauth2_service_web.dart' as oauth2;
 
 /// Serviço para integração com OneDrive
 class OneDriveService extends CloudStorageService {
@@ -219,7 +221,9 @@ class OneDriveService extends CloudStorageService {
       _statusController.add(CloudStorageStatus.connecting);
 
       // Usar OAuth2 real
-      final result = await oauth2.OAuth2Service.authenticateMicrosoft();
+      final result = kIsWeb 
+          ? await oauth2.OAuth2Service.authenticateMicrosoft()
+          : await oauth2.OAuth2Service.authenticateMicrosoft();
 
       if (result.success) {
         // Extrair tokens do resultado
@@ -246,8 +250,8 @@ class OneDriveService extends CloudStorageService {
         await createAppFolder();
 
         return AuthResult.success(
-          accountEmail: result.userEmail!,
-          accountName: result.userName,
+          userEmail: result.userEmail!,
+          userName: result.userName,
           accountData: {
             'email': result.userEmail,
             'name': result.userName,
@@ -361,12 +365,14 @@ class OneDriveService extends CloudStorageService {
     }
 
     try {
-      final file = File(localPath);
-      if (!await file.exists()) {
-        return UploadResult.error('Arquivo local não encontrado: $localPath');
+      final fileSize = kIsWeb ? 1024 : await File(localPath).length();
+      
+      if (!kIsWeb) {
+        final file = File(localPath);
+        if (!await file.exists()) {
+          return UploadResult.error('Arquivo local não encontrado: $localPath');
+        }
       }
-
-      final fileSize = await file.length();
       final fileName = CloudStorageUtils.getFileName(remotePath);
 
       // Simular upload para OneDrive
@@ -400,24 +406,25 @@ class OneDriveService extends CloudStorageService {
     }
 
     try {
-      final localFile = File(localPath);
-
-      if (!overwrite && await localFile.exists()) {
-        return DownloadResult.error('Arquivo local já existe: $localPath');
-      }
-
       // Simular download do OneDrive
       await Future.delayed(const Duration(milliseconds: 600));
 
-      // Criar arquivo simulado
       final mockContent = json.encode({
         'downloaded_from': 'onedrive',
         'remote_path': remotePath,
         'timestamp': DateTime.now().toIso8601String(),
       });
 
-      await localFile.writeAsString(mockContent);
-      final fileSize = await localFile.length();
+      int fileSize = mockContent.length;
+      
+      if (!kIsWeb) {
+        final localFile = File(localPath);
+        if (!overwrite && await localFile.exists()) {
+          return DownloadResult.error('Arquivo local já existe: $localPath');
+        }
+        await localFile.writeAsString(mockContent);
+        fileSize = await localFile.length();
+      }
 
       return DownloadResult.success(
         localPath: localPath,
@@ -680,8 +687,8 @@ class OneDriveService extends CloudStorageService {
         _statusController.add(CloudStorageStatus.connected);
 
         return AuthResult.success(
-          accountEmail: userInfo['email']!,
-          accountName: userInfo['name'],
+          userEmail: userInfo['email']!,
+          userName: userInfo['name'],
           accountData: userInfo,
         );
       } else {

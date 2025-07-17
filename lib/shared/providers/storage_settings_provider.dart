@@ -15,6 +15,7 @@ import 'package:bloquinho/core/services/onedrive_service.dart';
 import 'package:bloquinho/core/services/oauth2_service.dart' as oauth2;
 import 'package:bloquinho/core/services/platform_service.dart';
 import 'package:bloquinho/core/services/web_auth_service.dart';
+import 'package:bloquinho/core/models/auth_result.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:bloquinho/core/services/data_directory_service.dart';
 import 'package:flutter/foundation.dart';

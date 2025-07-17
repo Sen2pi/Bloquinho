@@ -10,7 +10,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:bloquinho/core/services/oauth2_service.dart';
+import 'package:bloquinho/core/services/oauth2_service_web.dart';
 
 
 class OAuthCallbackScreen extends StatefulWidget {

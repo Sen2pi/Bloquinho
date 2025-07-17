@@ -15,10 +15,7 @@ import 'package:bloquinho/core/models/storage_settings.dart';
 import 'package:bloquinho/core/services/cloud_storage_service.dart';
 import 'package:bloquinho/core/models/auth_result.dart';
 import 'package:http/http.dart' as http;
-conditional_import(
-  'oauth2_service_web.dart' if (dart.library.html),
-  'oauth2_service.dart',
-) as oauth2;
+import 'oauth2_service_web.dart' as oauth2;
 
 /// Serviço para integração com Google Drive
 class GoogleDriveService extends CloudStorageService {
@@ -144,8 +141,8 @@ class GoogleDriveService extends CloudStorageService {
         _statusController.add(CloudStorageStatus.connected);
 
         return AuthResult.success(
-          accountEmail: result.userEmail!,
-          accountName: result.userName,
+          userEmail: result.userEmail!,
+          userName: result.userName,
           accountData: {
             'email': result.userEmail,
             'name': result.userName,
@@ -570,8 +567,8 @@ class GoogleDriveService extends CloudStorageService {
         _statusController.add(CloudStorageStatus.connected);
 
         return AuthResult.success(
-          accountEmail: userInfo['email']!,
-          accountName: userInfo['name'],
+          userEmail: userInfo['email']!,
+          userName: userInfo['name'],
           accountData: userInfo,
         );
       } else {
