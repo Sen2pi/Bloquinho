@@ -712,7 +712,8 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   Future<void> _createPdfPagesFromCombinedImageWithCustomTemplate(
     pw.Document pdf,
     Uint8List combinedImageBytes,
-    pw.MemoryImage? logo,
+    pw.MemoryImage? headerLogo,
+    pw.MemoryImage? footerLogo,
     PdfColor brownColor,
     pw.Font robotoFont,
     CustomPdfTemplate customTemplate,
@@ -737,7 +738,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
 
       // Se a imagem cabe em uma página
       if (imageHeightInPage <= pageHeight) {
-        _addSinglePageToPdfWithCustomTemplate(pdf, combinedImageBytes, logo, brownColor,
+        _addSinglePageToPdfWithCustomTemplate(pdf, combinedImageBytes, headerLogo, footerLogo, brownColor,
             robotoFont, 1, customTemplate, 1);
         return;
       }
@@ -766,7 +767,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
         final pageImageBytes = img.encodePng(pageImage);
 
         // Adicionar página ao PDF
-        _addSinglePageToPdfWithCustomTemplate(pdf, Uint8List.fromList(pageImageBytes), logo,
+        _addSinglePageToPdfWithCustomTemplate(pdf, Uint8List.fromList(pageImageBytes), headerLogo, footerLogo,
             brownColor, robotoFont, pageNum + 1, customTemplate, totalPages);
       }
 
@@ -858,7 +859,8 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   void _addSinglePageToPdfWithCustomTemplate(
     pw.Document pdf,
     Uint8List imageBytes,
-    pw.MemoryImage? logo,
+    pw.MemoryImage? headerLogo,
+    pw.MemoryImage? footerLogo,
     PdfColor brownColor,
     pw.Font robotoFont,
     int pageNumber,
@@ -877,7 +879,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
             pageNumber: pageNumber,
             totalPages: totalPages,
             isDark: isDark,
-            logo: logo,
+            logo: headerLogo,
             font: robotoFont,
           );
 
@@ -901,7 +903,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
             pageNumber: pageNumber,
             totalPages: totalPages,
             isDark: isDark,
-            logo: logo,
+            logo: footerLogo,
             font: robotoFont,
           );
 
@@ -967,7 +969,7 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
       List<Uint8List> screenshots, WidgetRef ref) async {
     final pdf = pw.Document();
 
-    // Carregar o logo do Bloquinho
+    // Carregar o logo do Bloquinho (fallback)
     final logoBytes = await _loadLogoBytes();
     pw.MemoryImage? logo;
     if (logoBytes != null) {
@@ -984,31 +986,40 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     final currentTemplateType = ref.read(pdfTemplateProvider);
     final selectedCustomTemplate = ref.read(selectedCustomTemplateProvider);
 
-    // Determinar qual template usar
-    PdfTemplate template;
+    // Determinar qual template usar e qual logo carregar
+    PdfTemplate? template;
     CustomPdfTemplate? customTemplate;
+    pw.MemoryImage? headerLogo;
+    pw.MemoryImage? footerLogo;
 
     if (currentTemplateType == PdfTemplateType.custom && selectedCustomTemplate != null) {
-      // Usar template customizado
+      // Template customizado selecionado - carregar o template completo
       final customTemplates = ref.read(customTemplatesProvider);
       customTemplate = customTemplates.where((t) => t.id == selectedCustomTemplate).firstOrNull;
       
       if (customTemplate != null) {
-        // Criar um template temporário baseado no customizado
-        template = PdfTemplate(
-          type: PdfTemplateType.custom,
-          name: customTemplate.name,
-          description: customTemplate.description,
-          icon: customTemplate.icon,
-          previewColor: customTemplate.previewColor,
-        );
+        // Carregar logos personalizados do template customizado
+        if (customTemplate.header.logoBytes != null) {
+          headerLogo = pw.MemoryImage(customTemplate.header.logoBytes!);
+        }
+        if (customTemplate.footer.logoBytes != null) {
+          footerLogo = pw.MemoryImage(customTemplate.footer.logoBytes!);
+        }
+        
+        // Se não há logos personalizados, usar o logo padrão
+        if (headerLogo == null) headerLogo = logo;
+        if (footerLogo == null) footerLogo = logo;
       } else {
         // Fallback para template padrão
         template = PdfTemplates.getTemplate(PdfTemplateType.bloquinho);
+        headerLogo = logo;
+        footerLogo = logo;
       }
     } else {
       // Usar template predefinido
       template = PdfTemplates.getTemplate(currentTemplateType);
+      headerLogo = logo;
+      footerLogo = logo;
     }
 
     // Combinar todos os screenshots em uma única imagem vertical
@@ -1017,13 +1028,13 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     if (combinedImageBytes != null) {
       // Criar páginas PDF a partir da imagem combinada
       if (customTemplate != null) {
-        // Usar template customizado
+        // Usar template customizado com logos personalizados
         await _createPdfPagesFromCombinedImageWithCustomTemplate(
-            pdf, combinedImageBytes, logo, brownColor, robotoFont, customTemplate);
+            pdf, combinedImageBytes, headerLogo, footerLogo, brownColor, robotoFont, customTemplate);
       } else {
         // Usar template predefinido
         await _createPdfPagesFromCombinedImage(
-            pdf, combinedImageBytes, logo, brownColor, robotoFont, template);
+            pdf, combinedImageBytes, logo, brownColor, robotoFont, template!);
       }
     }
 
