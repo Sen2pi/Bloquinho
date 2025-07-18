@@ -1,0 +1,13 @@
+/* HTML: <div class="loader"></div> */
+.loader {
+  width: 120px;
+  height: 20px;
+  border-radius: 20px;
+  background:
+   linear-gradient(orange 0 0) 0/0% no-repeat
+   lightblue;
+  animation: l2 2s infinite steps(10);
+}
+@keyframes l2 {
+    100% {background-size:110%}
+}

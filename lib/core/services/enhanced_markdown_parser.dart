@@ -17,20 +17,13 @@ class EnhancedMarkdownParser {
   /// Parse markdown para blocos estruturados
   static List<MarkdownBlock> parseMarkdown(String markdown,
       {bool enableHtmlEnhancements = true}) {
-    print('🔍 [PARSER] Iniciando parsing de markdown...');
-    print('🔍 [PARSER] Tamanho do markdown: ${markdown.length} caracteres');
-    print('🔍 [PARSER] HTML enhancements: $enableHtmlEnhancements');
     final blocks = <MarkdownBlock>[];
 
     try {
       // Sanitizar markdown para evitar problemas UTF-16
-      print('🔍 [PARSER] Sanitizando markdown...');
       String sanitizedMarkdown = _sanitizeText(markdown);
-      print(
-          '🔍 [PARSER] Markdown sanitizado: ${sanitizedMarkdown.length} caracteres');
 
       final lines = sanitizedMarkdown.split('\n');
-      print('🔍 [PARSER] Total de linhas: ${lines.length}');
       bool inCodeBlock = false;
       String codeBlockContent = '';
       String codeLanguage = '';
@@ -180,8 +173,6 @@ class EnhancedMarkdownParser {
                 processedContent =
                     HtmlEnhancementParser.processWithEnhancements(line);
               } catch (e) {
-                print(
-                    '⚠️ [PARSER] Erro ao processar HTML enhancements na linha $i: $e');
                 processedContent = line; // Usar linha original como fallback
               }
             }
@@ -198,8 +189,6 @@ class EnhancedMarkdownParser {
             }
           }
         } catch (e) {
-          print('❌ [PARSER] Erro ao processar linha $i: $e');
-          print('❌ [PARSER] Conteúdo da linha: "${line}"');
           // Adicionar bloco de erro como fallback
           blocks.add(MarkdownBlock(
             type: BlockType.paragraph,
@@ -233,7 +222,6 @@ class EnhancedMarkdownParser {
         ));
       }
 
-      print('✅ [PARSER] Parsing concluído: ${blocks.length} blocos criados');
       return blocks;
     } catch (e, stackTrace) {
       print('❌ [PARSER] Erro crítico no parsing: $e');

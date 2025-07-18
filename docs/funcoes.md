@@ -14,6 +14,9 @@ Aqui temos diferentes estilos de texto:
 - <span style="color:white; background-color:red; padding:3px 8px; border-radius:5px">❌ Erro</span>
 - <span style="color:orange; background-color:#fff3cd; padding:3px 8px; border-radius:5px">⚠️ Aviso</span>
 
+## Separador
+---
+
 
 ## 📝 Hierarquia de Títulos
 
@@ -155,7 +158,7 @@ Este documento mostra como escrever matrizes LaTeX que renderizam corretamente n
 
 ## Formato Básico
 
-Para criar matrizes, use o formato LaTeX com `$` simples (recomendado):
+Para criar matrizes, use o formato LaTeX com $ simples (recomendado):
 
 $\begin{pmatrix} a & b \\ c & d \end{pmatrix}$
 
@@ -170,19 +173,20 @@ $
 
 ## Tipos de Matrizes
 
-### 1. Matriz com Parênteses - `pmatrix`
+### 1. Matriz com Parênteses - pmatrix
 $\begin{pmatrix} 1 & 2 \\ 3 & 4 \end{pmatrix}$
 
-### 2. Matriz com Colchetes - `bmatrix`
+### 2. Matriz com Colchetes - bmatrix
 $\begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix}$
 
-### 3. Matriz com Chaves - `Bmatrix`
+### 3. Matriz com Chaves - Bmatrix
 $\begin{Bmatrix} 1 & 2 \\ 3 & 4 \end{Bmatrix}$
 
-### 4. Determinante - `vmatrix`
+
+### 4. Determinante - vmatrix
 $\begin{vmatrix} a & b \\ c & d \end{vmatrix} = ad - bc$
 
-### 5. Determinante Duplo - `Vmatrix`
+### 5. Determinante Duplo - Vmatrix
 
 $\begin{Vmatrix} a & b \\ c & d \end{Vmatrix}$
 
@@ -239,7 +243,6 @@ $\begin{pmatrix} \frac{1}{2} & \frac{3}{4} \\ \frac{5}{6} & \frac{7}{8} \end{pma
 
 ### Matriz com Raízes
 $\begin{pmatrix} \sqrt{2} & \sqrt{3} \\ \sqrt{5} & \sqrt{7} \end{pmatrix}$
-```
 
 ### Matriz com Potências
 $\begin{pmatrix} x^2 & x^3 \\ x^4 & x^5 \end{pmatrix}$
