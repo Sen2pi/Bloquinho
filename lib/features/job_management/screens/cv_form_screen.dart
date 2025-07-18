@@ -662,114 +662,98 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(experience != null ? 'Editar Experiência' : 'Nova Experiência'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: companyController,
-                  decoration: const InputDecoration(labelText: 'Empresa'),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: positionController,
-                  decoration: const InputDecoration(labelText: 'Cargo'),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: locationController,
-                  decoration: const InputDecoration(labelText: 'Localização'),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(labelText: 'Descrição'),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ListTile(
-                        title: const Text('Data de início'),
-                        subtitle: Text(DateFormat('MM/yyyy').format(startDate)),
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: startDate,
-                            firstDate: DateTime(1900),
-                            lastDate: DateTime.now(),
-                          );
-                          if (date != null) {
-                            setDialogState(() {
-                              startDate = date;
-                            });
-                          }
-                        },
-                      ),
+      builder: (context) => AlertDialog(
+        title: Text(experience != null ? 'Editar Experiência' : 'Nova Experiência'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: companyController,
+                decoration: const InputDecoration(labelText: 'Empresa'),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: positionController,
+                decoration: const InputDecoration(labelText: 'Cargo'),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: locationController,
+                decoration: const InputDecoration(labelText: 'Localização'),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(labelText: 'Descrição'),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ListTile(
+                      title: const Text('Data de início'),
+                      subtitle: Text(DateFormat('MM/yyyy').format(startDate)),
+                      onTap: () {
+                        // TODO: Implementar seletor de data
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Seletor de data será implementado')),
+                        );
+                      },
                     ),
-                    Expanded(
-                      child: ListTile(
-                        title: const Text('Data de fim'),
-                        subtitle: Text(endDate != null 
-                            ? DateFormat('MM/yyyy').format(endDate)
-                            : 'Atual'),
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: endDate ?? DateTime.now(),
-                            firstDate: DateTime(1900),
-                            lastDate: DateTime.now(),
-                          );
-                          if (date != null) {
-                            setDialogState(() {
-                              endDate = date;
-                            });
-                          }
-                        },
-                      ),
+                  ),
+                  Expanded(
+                    child: ListTile(
+                      title: const Text('Data de fim'),
+                      subtitle: Text(endDate != null 
+                          ? DateFormat('MM/yyyy').format(endDate)
+                          : 'Atual'),
+                      onTap: () {
+                        // TODO: Implementar seletor de data
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Seletor de data será implementado')),
+                        );
+                      },
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (companyController.text.isNotEmpty && 
-                    positionController.text.isNotEmpty) {
-                  final newExperience = WorkExperience.create(
-                    company: companyController.text,
-                    position: positionController.text,
-                    location: locationController.text.isEmpty ? null : locationController.text,
-                    startDate: startDate,
-                    endDate: endDate,
-                    description: descriptionController.text.isEmpty ? null : descriptionController.text,
-                  );
-
-                  setState(() {
-                    if (index != null) {
-                      _experiences[index] = newExperience;
-                    } else {
-                      _experiences.add(newExperience);
-                    }
-                  });
-
-                  Navigator.pop(context);
-                }
-              },
-              child: Text(experience != null ? 'Atualizar' : 'Adicionar'),
-            ),
-          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (companyController.text.isNotEmpty && 
+                  positionController.text.isNotEmpty) {
+                final newExperience = WorkExperience.create(
+                  company: companyController.text,
+                  position: positionController.text,
+                  location: locationController.text.isEmpty ? null : locationController.text,
+                  startDate: startDate,
+                  endDate: endDate,
+                  description: descriptionController.text.isEmpty ? null : descriptionController.text,
+                );
+
+                setState(() {
+                  if (index != null) {
+                    _experiences[index] = newExperience;
+                  } else {
+                    _experiences.add(newExperience);
+                  }
+                });
+
+                Navigator.pop(context);
+              }
+            },
+            child: Text(experience != null ? 'Atualizar' : 'Adicionar'),
+          ),
+        ],
       ),
     );
   }
@@ -799,114 +783,98 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(education != null ? 'Editar Educação' : 'Nova Educação'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: institutionController,
-                  decoration: const InputDecoration(labelText: 'Instituição'),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: degreeController,
-                  decoration: const InputDecoration(labelText: 'Grau/Diploma'),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: fieldController,
-                  decoration: const InputDecoration(labelText: 'Área'),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(labelText: 'Descrição'),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ListTile(
-                        title: const Text('Data de início'),
-                        subtitle: Text(DateFormat('MM/yyyy').format(startDate)),
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: startDate,
-                            firstDate: DateTime(1900),
-                            lastDate: DateTime.now(),
-                          );
-                          if (date != null) {
-                            setDialogState(() {
-                              startDate = date;
-                            });
-                          }
-                        },
-                      ),
+      builder: (context) => AlertDialog(
+        title: Text(education != null ? 'Editar Educação' : 'Nova Educação'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: institutionController,
+                decoration: const InputDecoration(labelText: 'Instituição'),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: degreeController,
+                decoration: const InputDecoration(labelText: 'Grau/Diploma'),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: fieldController,
+                decoration: const InputDecoration(labelText: 'Área'),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(labelText: 'Descrição'),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ListTile(
+                      title: const Text('Data de início'),
+                      subtitle: Text(DateFormat('MM/yyyy').format(startDate)),
+                      onTap: () {
+                        // TODO: Implementar seletor de data
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Seletor de data será implementado')),
+                        );
+                      },
                     ),
-                    Expanded(
-                      child: ListTile(
-                        title: const Text('Data de fim'),
-                        subtitle: Text(endDate != null 
-                            ? DateFormat('MM/yyyy').format(endDate)
-                            : 'Atual'),
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: endDate ?? DateTime.now(),
-                            firstDate: DateTime(1900),
-                            lastDate: DateTime.now(),
-                          );
-                          if (date != null) {
-                            setDialogState(() {
-                              endDate = date;
-                            });
-                          }
-                        },
-                      ),
+                  ),
+                  Expanded(
+                    child: ListTile(
+                      title: const Text('Data de fim'),
+                      subtitle: Text(endDate != null 
+                          ? DateFormat('MM/yyyy').format(endDate)
+                          : 'Atual'),
+                      onTap: () {
+                        // TODO: Implementar seletor de data
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Seletor de data será implementado')),
+                        );
+                      },
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (institutionController.text.isNotEmpty && 
-                    degreeController.text.isNotEmpty) {
-                  final newEducation = Education.create(
-                    institution: institutionController.text,
-                    degree: degreeController.text,
-                    field: fieldController.text.isEmpty ? null : fieldController.text,
-                    startDate: startDate,
-                    endDate: endDate,
-                    description: descriptionController.text.isEmpty ? null : descriptionController.text,
-                  );
-
-                  setState(() {
-                    if (index != null) {
-                      _education[index] = newEducation;
-                    } else {
-                      _education.add(newEducation);
-                    }
-                  });
-
-                  Navigator.pop(context);
-                }
-              },
-              child: Text(education != null ? 'Atualizar' : 'Adicionar'),
-            ),
-          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (institutionController.text.isNotEmpty && 
+                  degreeController.text.isNotEmpty) {
+                final newEducation = Education.create(
+                  institution: institutionController.text,
+                  degree: degreeController.text,
+                  field: fieldController.text.isEmpty ? null : fieldController.text,
+                  startDate: startDate,
+                  endDate: endDate,
+                  description: descriptionController.text.isEmpty ? null : descriptionController.text,
+                );
+
+                setState(() {
+                  if (index != null) {
+                    _education[index] = newEducation;
+                  } else {
+                    _education.add(newEducation);
+                  }
+                });
+
+                Navigator.pop(context);
+              }
+            },
+            child: Text(education != null ? 'Atualizar' : 'Adicionar'),
+          ),
+        ],
       ),
     );
   }

@@ -710,6 +710,36 @@ class BloquinhoSlashCommand {
           category: 'ia',
           categoryColor: Colors.purple,
         ),
+
+        // ===== NAVEGAÇÃO =====
+        BloquinhoSlashCommand(
+          trigger: 'mencionar',
+          title: 'Mencionar Página',
+          description: 'Inserir link para uma página existente',
+          icon: PhosphorIcons.fileText(),
+          markdownTemplate: '@página',
+          isPopular: true,
+          category: 'navegacao',
+          categoryColor: Colors.indigo,
+        ),
+        BloquinhoSlashCommand(
+          trigger: 'tabela',
+          title: 'Inserir Tabela da Base de Dados',
+          description: 'Inserir visualização de uma tabela existente',
+          icon: PhosphorIcons.table(),
+          markdownTemplate: '@tabela',
+          category: 'navegacao',
+          categoryColor: Colors.indigo,
+        ),
+        BloquinhoSlashCommand(
+          trigger: 'evento',
+          title: 'Inserir Evento da Agenda',
+          description: 'Inserir evento da agenda',
+          icon: PhosphorIcons.calendar(),
+          markdownTemplate: '@evento',
+          category: 'navegacao',
+          categoryColor: Colors.indigo,
+        ),
       ];
 
   /// Filtrar comandos por categoria
@@ -786,6 +816,8 @@ class BloquinhoSlashCommand {
         return strings.advanced;
       case 'ia':
         return strings.artificialIntelligence;
+      case 'navegacao':
+        return 'Navegação';
       default:
         return strings.others;
     }
@@ -820,6 +852,8 @@ class BloquinhoSlashCommand {
         return PhosphorIcons.gear();
       case 'ia':
         return PhosphorIcons.robot();
+      case 'navegacao':
+        return PhosphorIcons.navigationArrow();
       default:
         return PhosphorIcons.circle();
     }

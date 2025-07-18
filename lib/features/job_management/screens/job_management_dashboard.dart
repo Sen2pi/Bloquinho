@@ -31,7 +31,8 @@ class JobManagementDashboard extends ConsumerStatefulWidget {
   const JobManagementDashboard({super.key});
 
   @override
-  ConsumerState<JobManagementDashboard> createState() => _JobManagementDashboardState();
+  ConsumerState<JobManagementDashboard> createState() =>
+      _JobManagementDashboardState();
 }
 
 class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
@@ -71,11 +72,15 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
     return Theme(
       data: isDarkMode ? ThemeData.dark() : ThemeData.light(),
       child: Scaffold(
-        backgroundColor: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+        backgroundColor:
+            isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
         appBar: AppBar(
           elevation: 0,
-          backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-          foregroundColor: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+          backgroundColor:
+              isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+          foregroundColor: isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.lightTextPrimary,
           title: Row(
             children: [
               Icon(
@@ -134,11 +139,14 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
 
   Widget _buildWorkspaceRestrictionScreen(bool isDarkMode, AppStrings strings) {
     return Scaffold(
-      backgroundColor: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-        foregroundColor: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+        backgroundColor:
+            isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+        foregroundColor:
+            isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
         title: Text(strings.jobManagement),
       ),
       body: Center(
@@ -154,16 +162,18 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
             Text(
               strings.jobWorkspaceOnly,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-              ),
+                    color: isDarkMode
+                        ? AppColors.darkTextPrimary
+                        : AppColors.lightTextPrimary,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
               'Mude para o workspace "Trabalho" para acessar esta funcionalidade.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -174,7 +184,8 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],
@@ -191,19 +202,19 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
         children: [
           // Estatísticas principais
           _buildStatsSection(isDarkMode, strings),
-          
+
           const SizedBox(height: 24),
-          
+
           // Ações rápidas
           _buildQuickActionsSection(isDarkMode, strings),
-          
+
           const SizedBox(height: 24),
-          
+
           // Entrevistas recentes
           _buildRecentInterviewsSection(isDarkMode, strings),
-          
+
           const SizedBox(height: 24),
-          
+
           // Resumo mensal
           _buildMonthlySummarySection(isDarkMode, strings),
         ],
@@ -213,16 +224,18 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
 
   Widget _buildStatsSection(bool isDarkMode, AppStrings strings) {
     final statsAsync = ref.watch(jobStatisticsProvider);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           strings.statistics,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-          ),
+                fontWeight: FontWeight.w600,
+                color: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
+              ),
         ),
         const SizedBox(height: 16),
         statsAsync.when(
@@ -239,42 +252,48 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
     );
   }
 
-  Widget _buildStatsGrid(Map<String, dynamic> stats, bool isDarkMode, AppStrings strings) {
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.5,
+  Widget _buildStatsGrid(
+      Map<String, dynamic> stats, bool isDarkMode, AppStrings strings) {
+    return Row(
       children: [
-        JobStatsCard(
-          title: strings.jobTotalInterviews,
-          value: stats['totalInterviews']?.toString() ?? '0',
-          icon: PhosphorIcons.chatCentered(),
-          color: Colors.blue,
-          isDarkMode: isDarkMode,
+        Expanded(
+          child: JobStatsCard(
+            title: strings.jobTotalInterviews,
+            value: stats['totalInterviews']?.toString() ?? '0',
+            icon: PhosphorIcons.chatCentered(),
+            color: Colors.blue,
+            isDarkMode: isDarkMode,
+          ),
         ),
-        JobStatsCard(
-          title: strings.jobTotalCVs,
-          value: stats['totalCVs']?.toString() ?? '0',
-          icon: PhosphorIcons.fileText(),
-          color: Colors.green,
-          isDarkMode: isDarkMode,
+        const SizedBox(width: 8),
+        Expanded(
+          child: JobStatsCard(
+            title: strings.jobTotalCVs,
+            value: stats['totalCVs']?.toString() ?? '0',
+            icon: PhosphorIcons.fileText(),
+            color: Colors.green,
+            isDarkMode: isDarkMode,
+          ),
         ),
-        JobStatsCard(
-          title: strings.jobTotalApplications,
-          value: stats['totalApplications']?.toString() ?? '0',
-          icon: PhosphorIcons.paperPlaneTilt(),
-          color: Colors.orange,
-          isDarkMode: isDarkMode,
+        const SizedBox(width: 8),
+        Expanded(
+          child: JobStatsCard(
+            title: strings.jobTotalApplications,
+            value: stats['totalApplications']?.toString() ?? '0',
+            icon: PhosphorIcons.paperPlaneTilt(),
+            color: Colors.orange,
+            isDarkMode: isDarkMode,
+          ),
         ),
-        JobStatsCard(
-          title: strings.jobThisMonth,
-          value: stats['interviewsThisMonth']?.toString() ?? '0',
-          icon: PhosphorIcons.calendar(),
-          color: Colors.purple,
-          isDarkMode: isDarkMode,
+        const SizedBox(width: 8),
+        Expanded(
+          child: JobStatsCard(
+            title: strings.jobThisMonth,
+            value: stats['interviewsThisMonth']?.toString() ?? '0',
+            icon: PhosphorIcons.calendar(),
+            color: Colors.purple,
+            isDarkMode: isDarkMode,
+          ),
         ),
       ],
     );
@@ -287,9 +306,11 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
         Text(
           'Ações Rápidas',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-          ),
+                fontWeight: FontWeight.w600,
+                color: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
+              ),
         ),
         const SizedBox(height: 16),
         QuickActionsWidget(
@@ -310,9 +331,11 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
             Text(
               strings.jobRecentInterviews,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-              ),
+                    fontWeight: FontWeight.w600,
+                    color: isDarkMode
+                        ? AppColors.darkTextPrimary
+                        : AppColors.lightTextPrimary,
+                  ),
             ),
             TextButton(
               onPressed: () => _tabController.animateTo(1),
@@ -348,9 +371,11 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
           Text(
             'Resumo Mensal',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-            ),
+                  fontWeight: FontWeight.w600,
+                  color: isDarkMode
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
+                ),
           ),
           const SizedBox(height: 12),
           _buildMonthlySummaryContent(isDarkMode, strings),
@@ -361,7 +386,7 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
 
   Widget _buildMonthlySummaryContent(bool isDarkMode, AppStrings strings) {
     final statsAsync = ref.watch(jobStatisticsProvider);
-    
+
     return statsAsync.when(
       data: (stats) {
         return Column(
@@ -410,7 +435,9 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
           child: Text(
             title,
             style: TextStyle(
-              color: isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDarkMode
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
         ),
@@ -418,7 +445,9 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
           value,
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.lightTextPrimary,
           ),
         ),
       ],
@@ -445,7 +474,7 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
 
   void _showQuickActionMenu() {
     final strings = ref.read(appStringsProvider);
-    
+
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
