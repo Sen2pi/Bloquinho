@@ -34,8 +34,25 @@ class BloquinhoSlashCommand {
     this.categoryColor,
   });
 
-  /// Lista de todos os comandos disponíveis
-  static List<BloquinhoSlashCommand> allCommands(AppStrings strings) => [
+  /// Cache para comandos
+  static List<BloquinhoSlashCommand>? _cachedCommands;
+  static AppStrings? _cachedStrings;
+
+  /// Lista de todos os comandos disponíveis com cache
+  static List<BloquinhoSlashCommand> allCommands(AppStrings strings) {
+    // Usar cache se disponível e strings não mudaram
+    if (_cachedCommands != null && _cachedStrings == strings) {
+      return _cachedCommands!;
+    }
+    
+    // Gerar comandos e cachear
+    _cachedStrings = strings;
+    _cachedCommands = _generateCommands(strings);
+    return _cachedCommands!;
+  }
+
+  /// Gera a lista de comandos
+  static List<BloquinhoSlashCommand> _generateCommands(AppStrings strings) => [
         // ===== TÍTULOS =====
         BloquinhoSlashCommand(
           trigger: 'h1',
@@ -750,21 +767,45 @@ class BloquinhoSlashCommand {
         .toList();
   }
 
-  /// Obter comandos populares
+  /// Cache para comandos populares
+  static List<BloquinhoSlashCommand>? _cachedPopularCommands;
+
+  /// Obter comandos populares com cache
   static List<BloquinhoSlashCommand> popularCommands(AppStrings strings) {
-    return allCommands(strings).where((cmd) => cmd.isPopular).toList();
+    if (_cachedPopularCommands != null && _cachedStrings == strings) {
+      return _cachedPopularCommands!;
+    }
+    
+    _cachedPopularCommands = allCommands(strings).where((cmd) => cmd.isPopular).toList();
+    return _cachedPopularCommands!;
   }
 
-  /// Buscar comandos por texto
+  /// Cache para pesquisas
+  static final Map<String, List<BloquinhoSlashCommand>> _searchCache = {};
+
+  /// Buscar comandos por texto com cache
   static List<BloquinhoSlashCommand> search(String query, AppStrings strings) {
     if (query.isEmpty) return popularCommands(strings);
 
+    final cacheKey = '${strings.hashCode}_$query';
+    if (_searchCache.containsKey(cacheKey)) {
+      return _searchCache[cacheKey]!;
+    }
+
     final lowerQuery = query.toLowerCase();
-    return allCommands(strings).where((cmd) {
+    final results = allCommands(strings).where((cmd) {
       return cmd.trigger.toLowerCase().contains(lowerQuery) ||
           cmd.title.toLowerCase().contains(lowerQuery) ||
           cmd.description.toLowerCase().contains(lowerQuery);
     }).toList();
+    
+    // Limitar cache para evitar vazamento de memória
+    if (_searchCache.length > 50) {
+      _searchCache.clear();
+    }
+    _searchCache[cacheKey] = results;
+    
+    return results;
   }
 
   /// Obter comando por trigger
@@ -777,14 +818,32 @@ class BloquinhoSlashCommand {
     }
   }
 
-  /// Categorias disponíveis
+  /// Cache para categorias
+  static List<String>? _cachedCategories;
+
+  /// Categorias disponíveis com cache
   static List<String> categories(AppStrings strings) {
-    return allCommands(strings)
+    if (_cachedCategories != null && _cachedStrings == strings) {
+      return _cachedCategories!;
+    }
+    
+    _cachedCategories = allCommands(strings)
         .map((cmd) => cmd.category)
         .where((cat) => cat != null)
         .cast<String>()
         .toSet()
         .toList();
+    
+    return _cachedCategories!;
+  }
+
+  /// Limpar caches (útil para mudanças de idioma)
+  static void clearCache() {
+    _cachedCommands = null;
+    _cachedPopularCommands = null;
+    _cachedCategories = null;
+    _cachedStrings = null;
+    _searchCache.clear();
   }
 
   /// Nome da categoria

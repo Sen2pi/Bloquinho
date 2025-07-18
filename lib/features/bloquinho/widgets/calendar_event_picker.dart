@@ -89,7 +89,7 @@ class _CalendarEventPickerState extends State<CalendarEventPicker> {
           description: 'Aprender novos conceitos',
           startDate: DateTime.now().add(const Duration(days: 2)),
           color: Colors.green,
-          icon: PhosphorIcons.graduation(),
+          icon: PhosphorIcons.graduationCap(),
         ),
         CalendarEvent(
           id: '3',

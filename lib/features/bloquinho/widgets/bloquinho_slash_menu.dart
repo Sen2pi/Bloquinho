@@ -419,6 +419,69 @@ class _BloquinhoSlashMenuState extends State<BloquinhoSlashMenu> {
       ),
     );
   }
+
+  void _showPageMentionPicker(bool isDarkMode) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: PageMentionPicker(
+          onPageSelected: (page) {
+            Navigator.of(context).pop();
+            widget.onSpecialInsert?.call('[[${page.title}]]');
+            widget.onDismiss();
+          },
+          onDismiss: () {
+            Navigator.of(context).pop();
+            widget.onDismiss();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showDatabaseTablePicker(bool isDarkMode) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: DatabaseTablePicker(
+          onTableSelected: (table) {
+            Navigator.of(context).pop();
+            widget.onSpecialInsert?.call('{{${table.name}}}');
+            widget.onDismiss();
+          },
+          onDismiss: () {
+            Navigator.of(context).pop();
+            widget.onDismiss();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showCalendarEventPicker(bool isDarkMode) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: CalendarEventPicker(
+          onEventSelected: (event) {
+            Navigator.of(context).pop();
+            widget.onSpecialInsert?.call('📅 ${event.title}');
+            widget.onDismiss();
+          },
+          onDismiss: () {
+            Navigator.of(context).pop();
+            widget.onDismiss();
+          },
+        ),
+      ),
+    );
+  }
 }
 
 /// Widget para mostrar preview do comando selecionado
@@ -502,60 +565,6 @@ class BloquinhoSlashPreview extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showPageMentionPicker(bool isDarkMode) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: PageMentionPicker(
-          onPageSelected: (page) {
-            Navigator.of(context).pop();
-            widget.onSpecialInsert?.call('[[${page.title}]]');
-            widget.onDismiss();
-          },
-          onDismiss: () => Navigator.of(context).pop(),
-        ),
-      ),
-    );
-  }
-
-  void _showDatabaseTablePicker(bool isDarkMode) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: DatabaseTablePicker(
-          onTableSelected: (table) {
-            Navigator.of(context).pop();
-            widget.onSpecialInsert?.call('{{tabela:${table.name}}}');
-            widget.onDismiss();
-          },
-          onDismiss: () => Navigator.of(context).pop(),
-        ),
-      ),
-    );
-  }
-
-  void _showCalendarEventPicker(bool isDarkMode) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: CalendarEventPicker(
-          onEventSelected: (event) {
-            Navigator.of(context).pop();
-            widget.onSpecialInsert?.call('{{evento:${event.title}}}');
-            widget.onDismiss();
-          },
-          onDismiss: () => Navigator.of(context).pop(),
-        ),
       ),
     );
   }

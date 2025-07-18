@@ -28,6 +28,7 @@ import 'ai_generation_dialog.dart';
 import 'enhanced_markdown_preview_widget.dart';
 import 'colored_text_widget.dart';
 import 'dynamic_colored_text.dart';
+import 'optimized_content_widget.dart';
 
 class PageContentWidget extends ConsumerStatefulWidget {
   final String pageId;
@@ -46,6 +47,7 @@ class PageContentWidget extends ConsumerStatefulWidget {
 class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
   late TextEditingController _textController;
   Timer? _autoSaveTimer;
+  Timer? _debounceTimer;
   bool _isSaving = false;
   bool _editing = false;
   bool _showLivePreview = true; // Novo: controla se mostra live preview
@@ -58,6 +60,11 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
   TextSelection? _selectedText;
   String _pageContent = ''; // Adicionado para armazenar o conteúdo da página
   Timer? _updateProviderTimer; // Adicionado para debounce
+  
+  // Performance optimizations
+  static const Duration _autoSaveDelay = Duration(seconds: 2);
+  static const Duration _debounceDelay = Duration(milliseconds: 300);
+  static const Duration _renderDelay = Duration(milliseconds: 100);
 
   @override
   void initState() {
@@ -68,7 +75,7 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
     _initializeEditorContent();
     _editorFocusNode.addListener(_onFocusChange);
 
-    // Adicionar listener para detectar seleção de texto
+    // Adicionar listener otimizado para detectar seleção de texto
     _textController.addListener(_onTextSelectionChanged);
   }
 
@@ -133,10 +140,23 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
 
   @override
   void dispose() {
+    // Cancel all timers
     _autoSaveTimer?.cancel();
+    _debounceTimer?.cancel();
     _updateProviderTimer?.cancel();
+    
+    // Remove listeners before disposing
+    _textController.removeListener(_onTextSelectionChanged);
+    _editorFocusNode.removeListener(_onFocusChange);
+    
+    // Dispose controllers
     _textController.dispose();
     _editorFocusNode.dispose();
+    
+    // Remove overlays
+    _removeSlashMenu(force: true);
+    _removeFormatMenu();
+    
     super.dispose();
   }
 
@@ -150,18 +170,18 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
 
   void _onTextChanged(String text) {
     _autoSaveTimer?.cancel();
-    _autoSaveTimer = Timer(const Duration(seconds: 2), () {
+    _autoSaveTimer = Timer(_autoSaveDelay, () {
       _autoSaveContent(text);
     });
 
-    // Debounce para evitar múltiplas atualizações do provider
+    // Debounce otimizado para evitar múltiplas atualizações do provider
     _updateProviderTimer?.cancel();
-    _updateProviderTimer = Timer(const Duration(milliseconds: 300), () {
+    _updateProviderTimer = Timer(_debounceDelay, () {
       if (mounted) {
-        ref.read(editorControllerProvider.notifier).state = ref
-            .read(editorControllerProvider.notifier)
-            .state
-            .copyWith(content: text);
+        final currentState = ref.read(editorControllerProvider);
+        if (currentState.content != text) {
+          ref.read(editorControllerProvider.notifier).state = currentState.copyWith(content: text);
+        }
       }
     });
 
@@ -169,32 +189,49 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
   }
 
   void _onTextSelectionChanged() {
-    final selection = _textController.selection;
-    if (selection.isCollapsed) {
-      // Sem seleção, remover menu de formatação
-      _removeFormatMenu();
-      _selectedText = null;
-    } else {
-      // Há seleção de texto, mostrar menu de formatação
-      _selectedText = selection;
-      _showFormatMenu();
-    }
+    // Debounce para otimizar performance
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(_debounceDelay, () {
+      if (!mounted) return;
+      
+      final selection = _textController.selection;
+      if (selection.isCollapsed) {
+        // Sem seleção, remover menu de formatação
+        _removeFormatMenu();
+        _selectedText = null;
+      } else {
+        // Há seleção de texto, mostrar menu de formatação
+        _selectedText = selection;
+        _showFormatMenu();
+      }
+    });
   }
 
   void _autoSaveContent(String content) async {
+    if (_isSaving || !mounted) return;
+    
     setState(() {
       _isSaving = true;
     });
-    updatePageContent(widget.pageId, content);
-    // Salvar em arquivo .md
-    final state = context.findAncestorStateOfType<BlocoEditorScreenState>();
-    if (state != null) {
-      await state.savePageContent(widget.pageId, content);
+    
+    try {
+      updatePageContent(widget.pageId, content);
+      // Salvar em arquivo .md
+      final state = context.findAncestorStateOfType<BlocoEditorScreenState>();
+      if (state != null) {
+        await state.savePageContent(widget.pageId, content);
+      }
+    } catch (e) {
+      // Handle error silently for better UX
+      debugPrint('Auto-save error: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+          // NÃO alterar _editing aqui - manter no modo edição
+        });
+      }
     }
-    setState(() {
-      _isSaving = false;
-      // NÃO alterar _editing aqui - manter no modo edição
-    });
   }
 
   void _detectSlashCommand() {
@@ -235,6 +272,9 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
             onCommandSelected: (command) {
               _slashMenuLocked = true;
               _insertSlashCommand(command);
+            },
+            onSpecialInsert: (content) {
+              _insertSpecialContent(content);
             },
             onDismiss: () {
               _removeSlashMenu();
@@ -286,6 +326,25 @@ class _PageContentWidgetState extends ConsumerState<PageContentWidget> {
     final newText = before + command.markdownTemplate + after;
     _textController.text = newText;
     final newCursorPosition = slashPos + command.markdownTemplate.length;
+    _textController.selection =
+        TextSelection.collapsed(offset: newCursorPosition);
+    _removeSlashMenu(force: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_editorFocusNode.canRequestFocus) {
+        _editorFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _insertSpecialContent(String content) {
+    final text = _textController.text;
+    final cursor = _textController.selection.baseOffset;
+    final slashPos = _slashPosition >= 0 ? _slashPosition : cursor - 1;
+    final before = text.substring(0, slashPos);
+    final after = text.substring(cursor);
+    final newText = before + content + after;
+    _textController.text = newText;
+    final newCursorPosition = slashPos + content.length;
     _textController.selection =
         TextSelection.collapsed(offset: newCursorPosition);
     _removeSlashMenu(force: true);

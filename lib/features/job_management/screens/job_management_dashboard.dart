@@ -527,17 +527,14 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
   }
 
   void _createNewInterview() {
-    // Implementar criação de nova entrevista
-    // Navegar para tela de criação de entrevista
+    context.push('/job-management/interview/new');
   }
 
   void _createNewCV() {
-    // Implementar criação de novo CV
-    // Navegar para tela de criação de CV
+    context.push('/job-management/cv/new');
   }
 
   void _createNewApplication() {
-    // Implementar criação de nova candidatura
-    // Navegar para tela de criação de candidatura
+    context.push('/job-management/application/new');
   }
 }

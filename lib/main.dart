@@ -47,6 +47,9 @@ import 'features/database/screens/table_editor_screen.dart';
 import 'core/models/database_models.dart';
 import 'shared/providers/database_provider.dart';
 import 'features/job_management/screens/job_management_dashboard.dart';
+import 'features/job_management/screens/interview_form_screen.dart';
+import 'features/job_management/screens/cv_form_screen.dart';
+import 'features/job_management/screens/application_form_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -229,6 +232,27 @@ class BloquinhoApp extends ConsumerWidget {
           path: '/workspace/job-management',
           name: 'workspace_job_management',
           builder: (context, state) => const JobManagementDashboard(),
+        ),
+
+        // Job Management - Interview Routes
+        GoRoute(
+          path: '/job-management/interview/new',
+          name: 'job_management_interview_new',
+          builder: (context, state) => const InterviewFormScreen(),
+        ),
+
+        // Job Management - CV Routes
+        GoRoute(
+          path: '/job-management/cv/new',
+          name: 'job_management_cv_new',
+          builder: (context, state) => const CVFormScreen(),
+        ),
+
+        // Job Management - Application Routes
+        GoRoute(
+          path: '/job-management/application/new',
+          name: 'job_management_application_new',
+          builder: (context, state) => const ApplicationFormScreen(),
         ),
 
         GoRoute(
