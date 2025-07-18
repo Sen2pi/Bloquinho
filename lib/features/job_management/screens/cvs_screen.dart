@@ -19,6 +19,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../models/cv_model.dart';
 import '../providers/job_management_provider.dart';
 import '../services/cv_service.dart';
+import 'cv_form_screen.dart';
 
 class CVsScreen extends ConsumerStatefulWidget {
   const CVsScreen({super.key});
@@ -46,6 +47,11 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
     return Scaffold(
       backgroundColor:
           isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _createNewCV(),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       body: Column(
         children: [
           _buildSearchBar(isDarkMode, strings),
@@ -468,6 +474,15 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
         ),
       );
     }
+  }
+
+  void _createNewCV() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CVFormScreen(),
+      ),
+    );
   }
 
   void _showDeleteConfirmation(CVModel cv) {

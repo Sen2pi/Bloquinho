@@ -18,6 +18,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../models/application_model.dart';
 import '../providers/job_management_provider.dart';
+import 'application_form_screen.dart';
 
 class ApplicationsScreen extends ConsumerStatefulWidget {
   const ApplicationsScreen({super.key});
@@ -46,6 +47,11 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     return Scaffold(
       backgroundColor:
           isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _createNewApplication(),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       body: Column(
         children: [
           _buildSearchAndFilters(isDarkMode, strings),
@@ -506,6 +512,15 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
       case ApplicationStatus.withdrawn:
         return strings.jobWithdrawn;
     }
+  }
+
+  void _createNewApplication() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ApplicationFormScreen(),
+      ),
+    );
   }
 
   Color _getMatchColor(double percentage) {

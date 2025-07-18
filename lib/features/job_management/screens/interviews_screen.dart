@@ -18,6 +18,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../models/interview_model.dart';
 import '../providers/job_management_provider.dart';
+import 'interview_form_screen.dart';
 
 class InterviewsScreen extends ConsumerStatefulWidget {
   const InterviewsScreen({super.key});
@@ -47,6 +48,11 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
     return Scaffold(
       backgroundColor:
           isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _createNewInterview(),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       body: Column(
         children: [
           _buildSearchAndFilters(isDarkMode, strings),
@@ -512,6 +518,15 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
       case InterviewType.teamLead:
         return PhosphorIcons.crown();
     }
+  }
+
+  void _createNewInterview() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const InterviewFormScreen(),
+      ),
+    );
   }
 
   Color _getInterviewTypeColor(InterviewType type) {
