@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Bloquinho Features Tutorial</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="icon" href="public/logo.png">
+  <style>
+    .feature-img {
+      max-width: 950px;
+      width: 100%;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px #0002;
+      margin: 32px 0;
+      display: block;
+    }
+    .feature-step {
+      margin-bottom: 48px;
+    }
+    .feature-step h2 {
+      color: #7c5a2a;
+      margin-bottom: 12px;
+    }
+    .feature-tip {
+      background: #fff8ef;
+      border-left: 4px solid #7c5a2a;
+      padding: 12px 18px;
+      border-radius: 8px;
+      margin: 18px 0;
+      color: #4e3b23;
+      font-size: 1rem;
+    }
+    .feature-code {
+      background: #f3e7d8;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-family: monospace;
+      font-size: 0.98rem;
+      color: #7c5a2a;
+      margin: 10px 0;
+      display: block;
+    }
+    .command-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .command-card {
+      background: #f8f4ed;
+      border: 1px solid #7c5a2a;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(124, 90, 42, 0.1);
+    }
+    .command-trigger {
+      font-weight: bold;
+      color: #7c5a2a;
+      font-family: monospace;
+      font-size: 1.1rem;
+    }
+    .command-title {
+      font-weight: bold;
+      margin: 8px 0 4px 0;
+      color: #4e3b23;
+    }
+    .command-desc {
+      color: #666;
+      font-size: 0.9rem;
+    }
+    .category-header {
+      background: linear-gradient(135deg, #7c5a2a, #b8a07a);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      margin: 32px 0 16px 0;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin: 24px 0;
+    }
+    @media (max-width: 768px) {
+      .two-column {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-left">
+      <img src="public/logo.png" alt="Bloquinho Logo" class="nav-logo">
+      <span class="nav-title">Bloquinho</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="../../index.html">Home</a></li>
+      <li><a href="../../features.html">Features</a></li>
+      <li><a href="../../security.html">Security</a></li>
+      <li><a href="../../architecture.html">Architecture</a></li>
+      <li><a href="../../faq.html">FAQ</a></li>
+      <li><a href="../../downloads_and_donate.html">Downloads & Donate</a></li>
+      <li><a href="../wiki.html" class="active"><img src="../../public/graduation.png" class="wiki-navbar-icon" alt="Wiki">Wiki</a></li>
+    </ul>
+  </nav>
+  
+  <main class="wiki-content" style="max-width: 1000px; margin: 0 auto; padding: 32px 16px;">
+    <h1>Complete Bloquinho Features Tutorial</h1>
+    
+    <p style="font-size:1.15rem; color:#4e3b23; margin-bottom:32px;">This comprehensive guide covers all Bloquinho features including the powerful editor, slash commands, formatting options, color customization, tables, diagrams, and more. Learn how to create professional documents with this Notion-like editor.</p>
+
+    <div class="feature-step">
+      <h2>1. Editor Interface Overview</h2>
+      <img src="public/screenshots/paginaInicialEditor.png" alt="Bloquinho Editor Interface" class="feature-img">
+      <p>
+        The Bloquinho editor provides a clean, professional interface similar to Notion. The main components include:
+        <ul>
+          <li><b>Toolbar:</b> Formatting buttons and export options</li>
+          <li><b>Slash Menu:</b> Access to all block types and commands</li>
+          <li><b>Editor Area:</b> Endless page where you can add content</li>
+          <li><b>Preview Toggle:</b> Switch between edit and preview modes</li>
+          <li><b>Auto-save:</b> Your content is automatically saved as you type</li>
+        </ul>
+      </p>
+      <div class="feature-tip">
+        <b>Pro Tip:</b> The editor supports both light and dark themes. You can switch themes in the settings menu.
+      </div>
+    </div>
+
+    <div class="feature-step">
+      <h2>2. Slash Commands - Your Power Tool</h2>
+      <img src="public/screenshots/slashMenu.png" alt="Slash Commands Menu" class="feature-img">
+      <p>
+        Slash commands are the fastest way to add content to your documents. Simply type <code class="feature-code">/</code> anywhere in the editor to open the command menu. The commands are organized into categories for easy navigation.
+      </p>
+      
+      <div class="category-header">📝 Text & Formatting Commands</div>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">/h1, /h2, /h3, /h4</div>
+          <div class="command-title">Headers</div>
+          <div class="command-desc">Create different levels of headings for document structure</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/texto</div>
+          <div class="command-title">Text</div>
+          <div class="command-desc">Simple paragraph text</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/negrito, /italico, /riscado</div>
+          <div class="command-title">Text Formatting</div>
+          <div class="command-desc">Bold, italic, and strikethrough text</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/codigo</div>
+          <div class="command-title">Inline Code</div>
+          <div class="command-desc">Highlight code within text</div>
+        </div>
+      </div>
+
+      <div class="category-header">📋 List Commands</div>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">/lista</div>
+          <div class="command-title">Bullet List</div>
+          <div class="command-desc">Create unordered lists with bullet points</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/numerada</div>
+          <div class="command-title">Numbered List</div>
+          <div class="command-desc">Create ordered lists with numbers</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/todo</div>
+          <div class="command-title">Checklist</div>
+          <div class="command-desc">Create interactive checkboxes</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/feito</div>
+          <div class="command-title">Checked Item</div>
+          <div class="command-desc">Pre-checked checklist items</div>
+        </div>
+      </div>
+
+      <div class="category-header">💻 Code Commands</div>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">/bloco</div>
+          <div class="command-title">Code Block</div>
+          <div class="command-desc">Multi-line code with syntax highlighting</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/javascript, /python, /dart, /html, /css, /json</div>
+          <div class="command-title">Language-Specific Code</div>
+          <div class="command-desc">Code blocks with specific language syntax highlighting</div>
+        </div>
+      </div>
+
+      <div class="category-header">🔢 Math Commands</div>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">/latex</div>
+          <div class="command-title">LaTeX Equations</div>
+          <div class="command-desc">Mathematical equations and formulas</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/equacao</div>
+          <div class="command-title">Inline Equation</div>
+          <div class="command-desc">Simple inline mathematical expressions</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/matriz</div>
+          <div class="command-title">Matrix</div>
+          <div class="command-desc">Create mathematical matrices</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/integral, /soma, /produto, /limite, /derivada</div>
+          <div class="command-title">Advanced Math</div>
+          <div class="command-desc">Complex mathematical symbols and operations</div>
+        </div>
+      </div>
+
+      <div class="category-header">📊 Table Commands</div>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">/tabela</div>
+          <div class="command-title">Table</div>
+          <div class="command-desc">Create 3-column tables</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/tabela2, /tabela3, /tabela4</div>
+          <div class="command-title">Custom Tables</div>
+          <div class="command-desc">Tables with 2, 3, or 4 columns</div>
+        </div>
+      </div>
+
+      <div class="category-header">🎨 Media Commands</div>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">/imagem</div>
+          <div class="command-title">Image</div>
+          <div class="command-desc">Insert images with captions</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/video, /audio</div>
+          <div class="command-title">Media</div>
+          <div class="command-desc">Embed videos and audio files</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/arquivo</div>
+          <div class="command-title">File</div>
+          <div class="command-desc">Link to external files</div>
+        </div>
+      </div>
+
+      <div class="category-header">🔗 Link Commands</div>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">/link</div>
+          <div class="command-title">External Link</div>
+          <div class="command-desc">Create links to external websites</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/pagina</div>
+          <div class="command-title">Page Link</div>
+          <div class="command-desc">Link to other pages in your workspace</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/email</div>
+          <div class="command-title">Email Link</div>
+          <div class="command-desc">Create mailto links</div>
+        </div>
+      </div>
+
+      <div class="category-header">📐 Layout Commands</div>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">/divisor</div>
+          <div class="command-title">Divider</div>
+          <div class="command-desc">Horizontal line separator</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/espaco</div>
+          <div class="command-title">Space</div>
+          <div class="command-desc">Add vertical spacing</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/coluna</div>
+          <div class="command-title">Columns</div>
+          <div class="command-desc">Create multi-column layouts</div>
+        </div>
+      </div>
+
+      <div class="category-header">📈 Diagram Commands</div>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">/mermaid</div>
+          <div class="command-title">Mermaid Diagram</div>
+          <div class="command-desc">Create various types of diagrams</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/fluxograma, /sequencia, /classe, /er, /gantt</div>
+          <div class="command-title">Specific Diagrams</div>
+          <div class="command-desc">Flowcharts, sequence diagrams, class diagrams, ER diagrams, and Gantt charts</div>
+        </div>
+      </div>
+
+      <div class="category-header">💬 Quote Commands</div>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">/citacao</div>
+          <div class="command-title">Quote</div>
+          <div class="command-desc">Blockquote for citations</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/callout</div>
+          <div class="command-title">Callout</div>
+          <div class="command-desc">Highlighted information boxes</div>
+        </div>
+      </div>
+
+      <div class="category-header">🤖 AI Commands</div>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">/ia</div>
+          <div class="command-title">AI Generation</div>
+          <div class="command-desc">Generate content using artificial intelligence</div>
+        </div>
+      </div>
+
+      <div class="category-header">⚙️ Advanced Commands</div>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">/embed</div>
+          <div class="command-title">Embed</div>
+          <div class="command-desc">Embed external content</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/bookmark</div>
+          <div class="command-title">Bookmark</div>
+          <div class="command-desc">Save and display links with previews</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/indice</div>
+          <div class="command-title">Table of Contents</div>
+          <div class="command-desc">Create automatic document index</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">/nota, /aviso, /erro, /sucesso, /info, /dica</div>
+          <div class="command-title">Status Blocks</div>
+          <div class="command-desc">Different types of information boxes</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-step">
+      <h2>3. Text Color and Background Customization</h2>
+      <div class="two-column">
+        <div>
+          <img src="public/screenshots/TextColor.png" alt="Text Color Options" class="feature-img">
+          <h3>Text Color</h3>
+          <p>Customize text colors to highlight important information or create visual hierarchy. Select any text and choose from a wide range of colors.</p>
+        </div>
+        <div>
+          <img src="public/screenshots/BackgroundColor.png" alt="Background Color Options" class="feature-img">
+          <h3>Background Color</h3>
+          <p>Add background colors to text blocks for emphasis or to create visual sections within your documents.</p>
+        </div>
+      </div>
+      <img src="public/screenshots/colorAndBackgroungConfigs.png" alt="Color Configuration Panel" class="feature-img">
+      <p>The color configuration panel provides advanced options for both text and background colors, allowing you to create professional-looking documents with consistent styling.</p>
+    </div>
+
+    <div class="feature-step">
+      <h2>4. Code Blocks and Syntax Highlighting</h2>
+      <img src="public/screenshots/CodeBlock.png" alt="Code Block with Syntax Highlighting" class="feature-img">
+      <p>
+        Bloquinho supports advanced code blocks with syntax highlighting for multiple programming languages:
+        <ul>
+          <li><b>JavaScript:</b> Full ES6+ support with proper highlighting</li>
+          <li><b>Python:</b> Complete Python syntax including decorators and type hints</li>
+          <li><b>Dart:</b> Flutter and Dart-specific syntax</li>
+          <li><b>HTML/CSS:</b> Web development languages</li>
+          <li><b>JSON:</b> Data format with proper structure highlighting</li>
+          <li><b>Generic:</b> Plain text with basic formatting</li>
+        </ul>
+      </p>
+      <div class="feature-tip">
+        <b>Pro Tip:</b> You can specify the language after the opening backticks for automatic syntax highlighting: <code class="feature-code">```python</code>
+      </div>
+    </div>
+
+    <div class="feature-step">
+      <h2>5. Mathematical Expressions and Matrices</h2>
+      <img src="public/screenshots/Matrizes.png" alt="LaTeX Matrix Examples" class="feature-img">
+      <p>
+        Bloquinho supports comprehensive mathematical notation using LaTeX:
+        <ul>
+          <li><b>Basic Math:</b> Fractions, powers, roots, and basic operations</li>
+          <li><b>Advanced Math:</b> Integrals, summations, limits, derivatives</li>
+          <li><b>Matrices:</b> Various matrix types (pmatrix, bmatrix, vmatrix)</li>
+          <li><b>Equations:</b> Both inline and block equations</li>
+          <li><b>Greek Letters:</b> Full Greek alphabet support</li>
+        </ul>
+      </p>
+      <div class="feature-tip">
+        <b>Example:</b> Use <code class="feature-code">$\begin{pmatrix} a & b \\ c & d \end{pmatrix}$</code> to create a 2x2 matrix.
+      </div>
+    </div>
+
+    <div class="feature-step">
+      <h2>6. Diagrams and Flowcharts</h2>
+      <img src="public/screenshots/DiagramExample.png" alt="Mermaid Diagram Example" class="feature-img">
+      <p>
+        Create professional diagrams using Mermaid syntax:
+        <ul>
+          <li><b>Flowcharts:</b> Process flows and decision trees</li>
+          <li><b>Sequence Diagrams:</b> System interactions and API flows</li>
+          <li><b>Class Diagrams:</b> Object-oriented design</li>
+          <li><b>ER Diagrams:</b> Database relationships</li>
+          <li><b>Gantt Charts:</b> Project timelines and schedules</li>
+        </ul>
+      </p>
+      <div class="feature-tip">
+        <b>Pro Tip:</b> Diagrams are automatically rendered and can be exported as images for presentations.
+      </div>
+    </div>
+
+    <div class="feature-step">
+      <h2>7. Database and Table Features</h2>
+      <div class="two-column">
+        <div>
+          <img src="public/screenshots/databaseMain.png" alt="Database Main Interface" class="feature-img">
+          <h3>Database Overview</h3>
+          <p>The database feature provides Notion-like functionality for organizing and managing structured data.</p>
+        </div>
+        <div>
+          <img src="public/screenshots/databaseTableCreation.png" alt="Database Table Creation" class="feature-img">
+          <h3>Table Creation</h3>
+          <p>Create custom tables with different column types and data validation.</p>
+        </div>
+      </div>
+      <img src="public/screenshots/tableOverview.png" alt="Table Overview" class="feature-img">
+      <p>
+        Database features include:
+        <ul>
+          <li><b>Multiple Views:</b> Table, Kanban, Calendar, and List views</li>
+          <li><b>Column Types:</b> Text, Number, Date, Status, Select, and more</li>
+          <li><b>Filtering:</b> Advanced filtering and sorting options</li>
+          <li><b>Relationships:</b> Link tables and create relationships</li>
+          <li><b>Formulas:</b> Calculated fields and mathematical operations</li>
+        </ul>
+      </p>
+    </div>
+
+    <div class="feature-step">
+      <h2>8. AI Integration</h2>
+      <img src="public/screenshots/promptAI.png" alt="AI Prompt Interface" class="feature-img">
+      <p>
+        Bloquinho includes AI-powered features to enhance your productivity:
+        <ul>
+          <li><b>Content Generation:</b> Generate text, lists, and structured content</li>
+          <li><b>Code Assistance:</b> Get help with programming tasks</li>
+          <li><b>Documentation:</b> Auto-generate documentation from code</li>
+          <li><b>Translation:</b> Translate content between languages</li>
+          <li><b>Summarization:</b> Create summaries of long documents</li>
+        </ul>
+      </p>
+      <div class="feature-tip">
+        <b>Pro Tip:</b> Use the <code class="feature-code">/ia</code> command to quickly access AI features.
+      </div>
+    </div>
+
+    <div class="feature-step">
+      <h2>9. Export and Sharing</h2>
+      <img src="public/screenshots/barraExportacao.png" alt="Export Options" class="feature-img">
+      <p>
+        Bloquinho supports multiple export formats:
+        <ul>
+          <li><b>PDF:</b> Professional PDF export with custom templates</li>
+          <li><b>Markdown:</b> Clean markdown export for version control</li>
+          <li><b>HTML:</b> Web-ready HTML with embedded styles</li>
+          <li><b>Plain Text:</b> Simple text export for compatibility</li>
+          <li><b>Images:</b> Export diagrams and charts as images</li>
+        </ul>
+      </p>
+      <img src="public/screenshots/TemplatesHeaderEFooter.png" alt="PDF Templates" class="feature-img">
+      <p>Custom PDF templates allow you to create professional documents with headers, footers, and custom styling for different use cases.</p>
+    </div>
+
+    <div class="feature-step">
+      <h2>10. Formatting Toolbar</h2>
+      <img src="public/screenshots/barraFormat.png" alt="Formatting Toolbar" class="feature-img">
+      <p>
+        The formatting toolbar provides quick access to common formatting options:
+        <ul>
+          <li><b>Text Formatting:</b> Bold, italic, underline, strikethrough</li>
+          <li><b>Alignment:</b> Left, center, right, and justify alignment</li>
+          <li><b>Lists:</b> Bullet points, numbered lists, and checkboxes</li>
+          <li><b>Links:</b> Insert and edit links</li>
+          <li><b>Preview:</b> Toggle between edit and preview modes</li>
+        </ul>
+      </p>
+    </div>
+
+    <div class="feature-step">
+      <h2>11. Advanced Features</h2>
+      
+      <h3>Page Management</h3>
+      <p>Create, organize, and link pages within your workspace. Use the page tree to navigate between documents and create hierarchical structures.</p>
+      
+      <h3>Version Control</h3>
+      <p>Track changes and revert to previous versions of your documents. The system automatically saves versions as you work.</p>
+      
+      <h3>Collaboration</h3>
+      <p>Share documents with team members and collaborate in real-time. Comments and annotations help with feedback and review processes.</p>
+      
+      <h3>Cloud Sync</h3>
+      <p>All your documents are automatically synced across devices using Google Drive or OneDrive integration.</p>
+      
+      <h3>Search and Navigation</h3>
+      <p>Powerful search functionality helps you find content quickly across all your documents and workspaces.</p>
+    </div>
+
+    <div class="feature-step">
+      <h2>12. Keyboard Shortcuts</h2>
+      <div class="command-grid">
+        <div class="command-card">
+          <div class="command-trigger">Ctrl + B</div>
+          <div class="command-title">Bold</div>
+          <div class="command-desc">Make selected text bold</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">Ctrl + I</div>
+          <div class="command-title">Italic</div>
+          <div class="command-desc">Make selected text italic</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">Ctrl + K</div>
+          <div class="command-title">Link</div>
+          <div class="command-desc">Insert or edit link</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">Ctrl + Shift + P</div>
+          <div class="command-title">Preview</div>
+          <div class="command-desc">Toggle preview mode</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">Ctrl + S</div>
+          <div class="command-title">Save</div>
+          <div class="command-desc">Save current document</div>
+        </div>
+        <div class="command-card">
+          <div class="command-trigger">Ctrl + /</div>
+          <div class="command-title">Slash Menu</div>
+          <div class="command-desc">Open slash command menu</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-step">
+      <h2>13. Best Practices</h2>
+      
+      <h3>Document Organization</h3>
+      <ul>
+        <li>Use clear, descriptive titles for your documents</li>
+        <li>Organize content with proper heading hierarchy (H1, H2, H3)</li>
+        <li>Use tables for structured data and comparisons</li>
+        <li>Include diagrams for complex processes and relationships</li>
+        <li>Add code blocks with appropriate language tags</li>
+      </ul>
+      
+      <h3>Formatting Tips</h3>
+      <ul>
+        <li>Use color sparingly to highlight important information</li>
+        <li>Maintain consistent formatting throughout your documents</li>
+        <li>Use callouts and quotes to emphasize key points</li>
+        <li>Include table of contents for long documents</li>
+        <li>Add links to related content and external resources</li>
+      </ul>
+      
+      <h3>Collaboration</h3>
+      <ul>
+        <li>Use comments to provide feedback and suggestions</li>
+        <li>Create templates for recurring document types</li>
+        <li>Share documents with appropriate permissions</li>
+        <li>Use version control to track important changes</li>
+        <li>Export documents in appropriate formats for different audiences</li>
+      </ul>
+    </div>
+
+    <hr style="margin:48px 0 24px 0;">
+    <p style="color:#b8a07a; font-size:0.98rem;">This tutorial covers all major features of Bloquinho. For more advanced topics, see the other wiki sections including Security, Configurations, and Tutorials. Last updated: July 2025.</p>
+  </main>
+
+  <script src="../../js/navbar.js"></script>
+</body>
+</html> 

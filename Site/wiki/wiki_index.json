@@ -4,6 +4,12 @@
     "type": "folder",
     "children": [
       {
+        "name": "bloquinho_tutorial.html",
+        "type": "file",
+        "path": "1 Guide/bloquinho_tutorial.html",
+        "title": "Complete Bloquinho Features Tutorial"
+      },
+      {
         "name": "onboarding_tutorial.html",
         "type": "file",
         "path": "1 Guide/onboarding_tutorial.html",

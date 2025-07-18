@@ -11,6 +11,11 @@
 /.dart_tool/**
 /.idea
 /.flutter-plugins-dependencies
+/.flutter-plugins-dependencies/**
+/.dart_tool/package_config.json
+/.dart_tool/package_graph.json
+/.dart_tool/package_pubspec.lock
+/.dart_tool/package_resolver.json
 /.flutter-plugins
 /Ozan-main/
 # testing

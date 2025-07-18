@@ -9,8 +9,8 @@ const CONFIG = {
     // 3. Enable Google Drive API
     // 4. Create credentials (OAuth 2.0 Client ID)
     // 5. Add your domain to authorized origins
-    clientId: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
-    apiKey: 'YOUR_GOOGLE_API_KEY',
+    clientId: '869649040-7sou7ac0k0bpnuebr6e32qr40lfb3ndc.apps.googleusercontent.com',
+    apiKey: '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',
     scopes: 'https://www.googleapis.com/auth/drive.file'
   },
   
@@ -22,7 +22,7 @@ const CONFIG = {
     // 4. Create a new registration
     // 5. Add your domain to redirect URIs
     // 6. Grant permissions for Files.ReadWrite
-    clientId: 'YOUR_MICROSOFT_CLIENT_ID',
+    clientId: '341ab3c5-0a36-41dc-b27c-80c56fa37719',
     scopes: ['Files.ReadWrite', 'Files.ReadWrite.All']
   }
 };
