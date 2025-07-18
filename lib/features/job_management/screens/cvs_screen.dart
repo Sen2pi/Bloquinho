@@ -15,6 +15,7 @@ import 'package:intl/intl.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/language_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../models/cv_model.dart';
 import '../providers/job_management_provider.dart';
 import '../services/cv_service.dart';
@@ -43,7 +44,8 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
     final cvsAsync = ref.watch(cvsNotifierProvider);
 
     return Scaffold(
-      backgroundColor: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
       body: Column(
         children: [
           _buildSearchBar(isDarkMode, strings),
@@ -93,7 +95,8 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
             ),
           ),
           filled: true,
-          fillColor: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+          fillColor:
+              isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
         ),
       ),
     );
@@ -115,7 +118,9 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDarkMode
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -219,7 +224,9 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                            color: isDarkMode
+                                ? AppColors.darkTextPrimary
+                                : AppColors.lightTextPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -228,14 +235,17 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
                             cv.targetPosition!,
                             style: TextStyle(
                               fontSize: 14,
-                              color: isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              color: isDarkMode
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
                             ),
                           ),
                       ],
                     ),
                   ),
                   PopupMenuButton<String>(
-                    onSelected: (value) => _handleMenuAction(value, cv, strings),
+                    onSelected: (value) =>
+                        _handleMenuAction(value, cv, strings),
                     itemBuilder: (context) => [
                       PopupMenuItem(
                         value: 'view',
@@ -273,7 +283,8 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
                           children: [
                             Icon(PhosphorIcons.trash(), color: Colors.red),
                             const SizedBox(width: 8),
-                            Text('Excluir', style: TextStyle(color: Colors.red)),
+                            Text('Excluir',
+                                style: TextStyle(color: Colors.red)),
                           ],
                         ),
                       ),
@@ -317,20 +328,24 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
-                children: cv.skills.take(3).map((skill) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    skill,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue,
-                    ),
-                  ),
-                )).toList(),
+                children: cv.skills
+                    .take(3)
+                    .map((skill) => Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            skill,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ))
+                    .toList(),
               ),
               if (cv.skills.length > 3) ...[
                 const SizedBox(height: 4),
@@ -351,12 +366,17 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
 
   List<CVModel> _filterCVs(List<CVModel> cvs) {
     if (_searchQuery.isEmpty) return cvs;
-    
+
     return cvs.where((cv) {
-      final matchesName = cv.name.toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesPosition = cv.targetPosition?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false;
-      final matchesSkills = cv.skills.any((skill) => skill.toLowerCase().contains(_searchQuery.toLowerCase()));
-      
+      final matchesName =
+          cv.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesPosition = cv.targetPosition
+              ?.toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ??
+          false;
+      final matchesSkills = cv.skills.any(
+          (skill) => skill.toLowerCase().contains(_searchQuery.toLowerCase()));
+
       return matchesName || matchesPosition || matchesSkills;
     }).toList();
   }
@@ -373,18 +393,18 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
             children: [
               if (cv.targetPosition != null)
                 Text('Cargo desejado: ${cv.targetPosition}'),
-              if (cv.email != null)
-                Text('Email: ${cv.email}'),
-              if (cv.phone != null)
-                Text('Telefone: ${cv.phone}'),
+              if (cv.email != null) Text('Email: ${cv.email}'),
+              if (cv.phone != null) Text('Telefone: ${cv.phone}'),
               const SizedBox(height: 8),
               Text('Experiências: ${cv.experiences.length}'),
               Text('Habilidades: ${cv.skills.length}'),
               Text('Projetos: ${cv.projects.length}'),
               Text('Educação: ${cv.education.length}'),
               const SizedBox(height: 8),
-              Text('Criado em: ${DateFormat('dd/MM/yyyy').format(cv.createdAt)}'),
-              Text('Atualizado em: ${DateFormat('dd/MM/yyyy').format(cv.updatedAt)}'),
+              Text(
+                  'Criado em: ${DateFormat('dd/MM/yyyy').format(cv.createdAt)}'),
+              Text(
+                  'Atualizado em: ${DateFormat('dd/MM/yyyy').format(cv.updatedAt)}'),
             ],
           ),
         ),
@@ -455,7 +475,8 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Confirmar exclusão'),
-        content: Text('Tem certeza que deseja excluir o currículo "${cv.name}"?'),
+        content:
+            Text('Tem certeza que deseja excluir o currículo "${cv.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

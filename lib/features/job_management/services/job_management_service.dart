@@ -9,34 +9,49 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
+import 'package:bloquinho/core/services/workspace_storage_service.dart';
+import 'package:bloquinho/core/services/data_directory_service.dart';
 
 import '../models/interview_model.dart';
 import '../models/cv_model.dart';
 import '../models/application_model.dart';
-import '../../../core/services/data_directory_service.dart';
 
 class JobManagementService {
-  static const String _interviewsBox = 'job_interviews';
-  static const String _cvsBox = 'job_cvs';
-  static const String _applicationsBox = 'job_applications';
+  static const String _componentName = 'job_management';
 
-  Box<Map>? _interviewsBox;
-  Box<Map>? _cvsBox;
-  Box<Map>? _applicationsBox;
+  static final JobManagementService _instance = JobManagementService._internal();
+  factory JobManagementService() => _instance;
+  JobManagementService._internal();
+
+  final Uuid _uuid = const Uuid();
+  final WorkspaceStorageService _workspaceStorage = WorkspaceStorageService();
+
+  bool _isInitialized = false;
+  String? _currentWorkspaceId;
+  String? _currentProfileName;
 
   Future<void> initialize() async {
+    if (_isInitialized) return;
+
     try {
-      final dataDir = await DataDirectoryService().initialize();
-      final dbPath = await DataDirectoryService().getBasePath();
-      
-      _interviewsBox = await Hive.openBox<Map>(_interviewsBox, path: dbPath);
-      _cvsBox = await Hive.openBox<Map>(_cvsBox, path: dbPath);
-      _applicationsBox = await Hive.openBox<Map>(_applicationsBox, path: dbPath);
+      await _workspaceStorage.initialize();
+      _isInitialized = true;
     } catch (e) {
       throw Exception('Erro ao inicializar JobManagementService: $e');
     }
+  }
+
+  /// Definir contexto completo (perfil + workspace)
+  Future<void> setContext(String profileName, String workspaceId) async {
+    await _ensureInitialized();
+
+    _currentProfileName = profileName;
+    _currentWorkspaceId = workspaceId;
+
+    // Configurar contexto no WorkspaceStorageService
+    _workspaceStorage.setContext(profileName, workspaceId);
   }
 
   // Interview Management
@@ -44,27 +59,31 @@ class JobManagementService {
   Future<List<InterviewModel>> getInterviews() async {
     await _ensureInitialized();
     try {
+      final data = await _workspaceStorage.loadWorkspaceData(_componentName);
+      if (data == null) return [];
+      
       final interviews = <InterviewModel>[];
-      for (var key in _interviewsBox!.keys) {
-        final data = _interviewsBox!.get(key);
-        if (data != null) {
-          interviews.add(InterviewModel.fromJson(Map<String, dynamic>.from(data)));
+      final interviewsData = data['interviews'] as List? ?? [];
+      
+      for (final interviewData in interviewsData) {
+        if (interviewData is Map<String, dynamic>) {
+          interviews.add(InterviewModel.fromJson(interviewData));
         }
       }
+      
       return interviews;
     } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao carregar entrevistas: $e');
+      }
       return [];
     }
   }
 
   Future<InterviewModel?> getInterview(String id) async {
-    await _ensureInitialized();
+    final interviews = await getInterviews();
     try {
-      final data = _interviewsBox!.get(id);
-      if (data != null) {
-        return InterviewModel.fromJson(Map<String, dynamic>.from(data));
-      }
-      return null;
+      return interviews.firstWhere((interview) => interview.id == id);
     } catch (e) {
       return null;
     }
@@ -73,7 +92,29 @@ class JobManagementService {
   Future<void> saveInterview(InterviewModel interview) async {
     await _ensureInitialized();
     try {
-      await _interviewsBox!.put(interview.id, interview.toJson());
+      final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
+      
+      final interviews = <Map<String, dynamic>>[];
+      final interviewsData = data['interviews'] as List? ?? [];
+      
+      // Carregar entrevistas existentes
+      for (final interviewData in interviewsData) {
+        if (interviewData is Map<String, dynamic>) {
+          interviews.add(interviewData);
+        }
+      }
+      
+      // Atualizar ou adicionar entrevista
+      final existingIndex = interviews.indexWhere((i) => i['id'] == interview.id);
+      if (existingIndex != -1) {
+        interviews[existingIndex] = interview.toJson();
+      } else {
+        interviews.add(interview.toJson());
+      }
+      
+      // Salvar de volta
+      data['interviews'] = interviews;
+      await _workspaceStorage.saveWorkspaceData(_componentName, data);
     } catch (e) {
       throw Exception('Erro ao salvar entrevista: $e');
     }
@@ -82,7 +123,21 @@ class JobManagementService {
   Future<void> deleteInterview(String id) async {
     await _ensureInitialized();
     try {
-      await _interviewsBox!.delete(id);
+      final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
+      
+      final interviews = <Map<String, dynamic>>[];
+      final interviewsData = data['interviews'] as List? ?? [];
+      
+      // Carregar entrevistas existentes, excluindo a que deve ser deletada
+      for (final interviewData in interviewsData) {
+        if (interviewData is Map<String, dynamic> && interviewData['id'] != id) {
+          interviews.add(interviewData);
+        }
+      }
+      
+      // Salvar de volta
+      data['interviews'] = interviews;
+      await _workspaceStorage.saveWorkspaceData(_componentName, data);
     } catch (e) {
       throw Exception('Erro ao deletar entrevista: $e');
     }
@@ -109,27 +164,31 @@ class JobManagementService {
   Future<List<CVModel>> getCVs() async {
     await _ensureInitialized();
     try {
+      final data = await _workspaceStorage.loadWorkspaceData(_componentName);
+      if (data == null) return [];
+      
       final cvs = <CVModel>[];
-      for (var key in _cvsBox!.keys) {
-        final data = _cvsBox!.get(key);
-        if (data != null) {
-          cvs.add(CVModel.fromJson(Map<String, dynamic>.from(data)));
+      final cvsData = data['cvs'] as List? ?? [];
+      
+      for (final cvData in cvsData) {
+        if (cvData is Map<String, dynamic>) {
+          cvs.add(CVModel.fromJson(cvData));
         }
       }
+      
       return cvs;
     } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao carregar CVs: $e');
+      }
       return [];
     }
   }
 
   Future<CVModel?> getCV(String id) async {
-    await _ensureInitialized();
+    final cvs = await getCVs();
     try {
-      final data = _cvsBox!.get(id);
-      if (data != null) {
-        return CVModel.fromJson(Map<String, dynamic>.from(data));
-      }
-      return null;
+      return cvs.firstWhere((cv) => cv.id == id);
     } catch (e) {
       return null;
     }
@@ -138,7 +197,29 @@ class JobManagementService {
   Future<void> saveCV(CVModel cv) async {
     await _ensureInitialized();
     try {
-      await _cvsBox!.put(cv.id, cv.toJson());
+      final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
+      
+      final cvs = <Map<String, dynamic>>[];
+      final cvsData = data['cvs'] as List? ?? [];
+      
+      // Carregar CVs existentes
+      for (final cvData in cvsData) {
+        if (cvData is Map<String, dynamic>) {
+          cvs.add(cvData);
+        }
+      }
+      
+      // Atualizar ou adicionar CV
+      final existingIndex = cvs.indexWhere((c) => c['id'] == cv.id);
+      if (existingIndex != -1) {
+        cvs[existingIndex] = cv.toJson();
+      } else {
+        cvs.add(cv.toJson());
+      }
+      
+      // Salvar de volta
+      data['cvs'] = cvs;
+      await _workspaceStorage.saveWorkspaceData(_componentName, data);
     } catch (e) {
       throw Exception('Erro ao salvar CV: $e');
     }
@@ -147,7 +228,21 @@ class JobManagementService {
   Future<void> deleteCV(String id) async {
     await _ensureInitialized();
     try {
-      await _cvsBox!.delete(id);
+      final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
+      
+      final cvs = <Map<String, dynamic>>[];
+      final cvsData = data['cvs'] as List? ?? [];
+      
+      // Carregar CVs existentes, excluindo o que deve ser deletado
+      for (final cvData in cvsData) {
+        if (cvData is Map<String, dynamic> && cvData['id'] != id) {
+          cvs.add(cvData);
+        }
+      }
+      
+      // Salvar de volta
+      data['cvs'] = cvs;
+      await _workspaceStorage.saveWorkspaceData(_componentName, data);
     } catch (e) {
       throw Exception('Erro ao deletar CV: $e');
     }
@@ -158,27 +253,31 @@ class JobManagementService {
   Future<List<ApplicationModel>> getApplications() async {
     await _ensureInitialized();
     try {
+      final data = await _workspaceStorage.loadWorkspaceData(_componentName);
+      if (data == null) return [];
+      
       final applications = <ApplicationModel>[];
-      for (var key in _applicationsBox!.keys) {
-        final data = _applicationsBox!.get(key);
-        if (data != null) {
-          applications.add(ApplicationModel.fromJson(Map<String, dynamic>.from(data)));
+      final applicationsData = data['applications'] as List? ?? [];
+      
+      for (final appData in applicationsData) {
+        if (appData is Map<String, dynamic>) {
+          applications.add(ApplicationModel.fromJson(appData));
         }
       }
+      
       return applications;
     } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao carregar candidaturas: $e');
+      }
       return [];
     }
   }
 
   Future<ApplicationModel?> getApplication(String id) async {
-    await _ensureInitialized();
+    final applications = await getApplications();
     try {
-      final data = _applicationsBox!.get(id);
-      if (data != null) {
-        return ApplicationModel.fromJson(Map<String, dynamic>.from(data));
-      }
-      return null;
+      return applications.firstWhere((app) => app.id == id);
     } catch (e) {
       return null;
     }
@@ -187,7 +286,29 @@ class JobManagementService {
   Future<void> saveApplication(ApplicationModel application) async {
     await _ensureInitialized();
     try {
-      await _applicationsBox!.put(application.id, application.toJson());
+      final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
+      
+      final applications = <Map<String, dynamic>>[];
+      final applicationsData = data['applications'] as List? ?? [];
+      
+      // Carregar candidaturas existentes
+      for (final appData in applicationsData) {
+        if (appData is Map<String, dynamic>) {
+          applications.add(appData);
+        }
+      }
+      
+      // Atualizar ou adicionar candidatura
+      final existingIndex = applications.indexWhere((a) => a['id'] == application.id);
+      if (existingIndex != -1) {
+        applications[existingIndex] = application.toJson();
+      } else {
+        applications.add(application.toJson());
+      }
+      
+      // Salvar de volta
+      data['applications'] = applications;
+      await _workspaceStorage.saveWorkspaceData(_componentName, data);
     } catch (e) {
       throw Exception('Erro ao salvar candidatura: $e');
     }
@@ -196,7 +317,21 @@ class JobManagementService {
   Future<void> deleteApplication(String id) async {
     await _ensureInitialized();
     try {
-      await _applicationsBox!.delete(id);
+      final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
+      
+      final applications = <Map<String, dynamic>>[];
+      final applicationsData = data['applications'] as List? ?? [];
+      
+      // Carregar candidaturas existentes, excluindo a que deve ser deletada
+      for (final appData in applicationsData) {
+        if (appData is Map<String, dynamic> && appData['id'] != id) {
+          applications.add(appData);
+        }
+      }
+      
+      // Salvar de volta
+      data['applications'] = applications;
+      await _workspaceStorage.saveWorkspaceData(_componentName, data);
     } catch (e) {
       throw Exception('Erro ao deletar candidatura: $e');
     }
@@ -336,7 +471,7 @@ class JobManagementService {
   // Private methods
 
   Future<void> _ensureInitialized() async {
-    if (_interviewsBox == null || _cvsBox == null || _applicationsBox == null) {
+    if (!_isInitialized) {
       await initialize();
     }
   }

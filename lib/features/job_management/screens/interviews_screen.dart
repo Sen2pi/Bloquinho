@@ -15,6 +15,7 @@ import 'package:intl/intl.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/language_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../models/interview_model.dart';
 import '../providers/job_management_provider.dart';
 
@@ -44,7 +45,8 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
     final interviewsAsync = ref.watch(interviewsNotifierProvider);
 
     return Scaffold(
-      backgroundColor: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
       body: Column(
         children: [
           _buildSearchAndFilters(isDarkMode, strings),
@@ -55,7 +57,8 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
                 if (filteredInterviews.isEmpty) {
                   return _buildEmptyState(isDarkMode, strings);
                 }
-                return _buildInterviewsList(filteredInterviews, isDarkMode, strings);
+                return _buildInterviewsList(
+                    filteredInterviews, isDarkMode, strings);
               },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) => _buildErrorState(error, isDarkMode),
@@ -92,11 +95,14 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+                  color:
+                      isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
                 ),
               ),
               filled: true,
-              fillColor: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+              fillColor: isDarkMode
+                  ? AppColors.darkBackground
+                  : AppColors.lightBackground,
             ),
           ),
           const SizedBox(height: 12),
@@ -130,7 +136,8 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
           borderRadius: BorderRadius.circular(8),
         ),
         filled: true,
-        fillColor: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+        fillColor:
+            isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
       ),
       items: [
         DropdownMenuItem<InterviewType?>(
@@ -138,9 +145,9 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
           child: Text('Todos os tipos'),
         ),
         ...InterviewType.values.map((type) => DropdownMenuItem(
-          value: type,
-          child: Text(_getTypeLabel(type, strings)),
-        )),
+              value: type,
+              child: Text(_getTypeLabel(type, strings)),
+            )),
       ],
     );
   }
@@ -159,7 +166,8 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
           borderRadius: BorderRadius.circular(8),
         ),
         filled: true,
-        fillColor: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+        fillColor:
+            isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
       ),
       items: [
         DropdownMenuItem<InterviewStatus?>(
@@ -167,9 +175,9 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
           child: Text('Todos os status'),
         ),
         ...InterviewStatus.values.map((status) => DropdownMenuItem(
-          value: status,
-          child: Text(_getStatusLabel(status, strings)),
-        )),
+              value: status,
+              child: Text(_getStatusLabel(status, strings)),
+            )),
       ],
     );
   }
@@ -190,7 +198,9 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDarkMode
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -240,7 +250,8 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
     );
   }
 
-  Widget _buildInterviewsList(List<InterviewModel> interviews, bool isDarkMode, AppStrings strings) {
+  Widget _buildInterviewsList(
+      List<InterviewModel> interviews, bool isDarkMode, AppStrings strings) {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: interviews.length,
@@ -252,7 +263,8 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
     );
   }
 
-  Widget _buildInterviewCard(InterviewModel interview, bool isDarkMode, AppStrings strings) {
+  Widget _buildInterviewCard(
+      InterviewModel interview, bool isDarkMode, AppStrings strings) {
     return Card(
       color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
       elevation: 2,
@@ -275,7 +287,8 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: _getInterviewTypeColor(interview.type).withOpacity(0.1),
+                      color: _getInterviewTypeColor(interview.type)
+                          .withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -294,7 +307,9 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                            color: isDarkMode
+                                ? AppColors.darkTextPrimary
+                                : AppColors.lightTextPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -302,7 +317,9 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
                           interview.company,
                           style: TextStyle(
                             fontSize: 14,
-                            color: isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            color: isDarkMode
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
                           ),
                         ),
                       ],
@@ -328,7 +345,7 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
                     ),
                   ),
                   const Spacer(),
-                  if (interview.proposedSalary != null) ...[
+                  if (interview.salaryProposal != null) ...[
                     Icon(
                       PhosphorIcons.currencyDollar(),
                       size: 16,
@@ -336,7 +353,7 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${interview.proposedSalary}€',
+                      '${interview.salaryProposal}€',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -352,7 +369,9 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
                   interview.description!,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDarkMode
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -368,7 +387,7 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
   Widget _buildStatusBadge(InterviewStatus status, AppStrings strings) {
     Color color;
     String text;
-    
+
     switch (status) {
       case InterviewStatus.scheduled:
         color = Colors.blue;
@@ -382,9 +401,9 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
         color = Colors.red;
         text = strings.jobCancelled;
         break;
-      case InterviewStatus.rescheduled:
+      case InterviewStatus.pending:
         color = Colors.orange;
-        text = strings.jobRescheduled;
+        text = strings.jobPending;
         break;
     }
 
@@ -410,15 +429,18 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
       final matchesSearch = _searchQuery.isEmpty ||
           interview.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           interview.company.toLowerCase().contains(_searchQuery.toLowerCase());
-      
-      final matchesType = _selectedType == null || interview.type == _selectedType;
-      final matchesStatus = _selectedStatus == null || interview.status == _selectedStatus;
-      
+
+      final matchesType =
+          _selectedType == null || interview.type == _selectedType;
+      final matchesStatus =
+          _selectedStatus == null || interview.status == _selectedStatus;
+
       return matchesSearch && matchesType && matchesStatus;
     }).toList();
   }
 
-  void _showInterviewDetails(InterviewModel interview, bool isDarkMode, AppStrings strings) {
+  void _showInterviewDetails(
+      InterviewModel interview, bool isDarkMode, AppStrings strings) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -430,9 +452,10 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
             Text('Empresa: ${interview.company}'),
             Text('Tipo: ${_getTypeLabel(interview.type, strings)}'),
             Text('Status: ${_getStatusLabel(interview.status, strings)}'),
-            Text('Data: ${DateFormat('dd/MM/yyyy - HH:mm').format(interview.dateTime)}'),
-            if (interview.proposedSalary != null)
-              Text('Salário: ${interview.proposedSalary}€'),
+            Text(
+                'Data: ${DateFormat('dd/MM/yyyy - HH:mm').format(interview.dateTime)}'),
+            if (interview.salaryProposal != null)
+              Text('Salário: ${interview.salaryProposal}€'),
             if (interview.description != null) ...[
               const SizedBox(height: 8),
               Text('Descrição: ${interview.description}'),
@@ -458,12 +481,12 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
 
   String _getTypeLabel(InterviewType type, AppStrings strings) {
     switch (type) {
-      case InterviewType.hr:
-        return strings.jobHR;
+      case InterviewType.rh:
+        return strings.jobInterviewTypeRH;
       case InterviewType.technical:
-        return strings.jobTechnical;
+        return strings.jobInterviewTypeTechnical;
       case InterviewType.teamLead:
-        return strings.jobTeamLead;
+        return strings.jobInterviewTypeTeamLead;
     }
   }
 
@@ -475,14 +498,14 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
         return strings.jobCompleted;
       case InterviewStatus.cancelled:
         return strings.jobCancelled;
-      case InterviewStatus.rescheduled:
-        return strings.jobRescheduled;
+      case InterviewStatus.pending:
+        return strings.jobPending;
     }
   }
 
   PhosphorIconData _getInterviewTypeIcon(InterviewType type) {
     switch (type) {
-      case InterviewType.hr:
+      case InterviewType.rh:
         return PhosphorIcons.user();
       case InterviewType.technical:
         return PhosphorIcons.code();
@@ -493,7 +516,7 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
 
   Color _getInterviewTypeColor(InterviewType type) {
     switch (type) {
-      case InterviewType.hr:
+      case InterviewType.rh:
         return Colors.purple;
       case InterviewType.technical:
         return Colors.blue;

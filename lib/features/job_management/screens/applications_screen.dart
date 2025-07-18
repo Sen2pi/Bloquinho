@@ -15,6 +15,7 @@ import 'package:intl/intl.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/language_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../models/application_model.dart';
 import '../providers/job_management_provider.dart';
 
@@ -43,7 +44,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     final applicationsAsync = ref.watch(applicationsNotifierProvider);
 
     return Scaffold(
-      backgroundColor: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
       body: Column(
         children: [
           _buildSearchAndFilters(isDarkMode, strings),
@@ -54,7 +56,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                 if (filteredApplications.isEmpty) {
                   return _buildEmptyState(isDarkMode, strings);
                 }
-                return _buildApplicationsList(filteredApplications, isDarkMode, strings);
+                return _buildApplicationsList(
+                    filteredApplications, isDarkMode, strings);
               },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) => _buildErrorState(error, isDarkMode),
@@ -91,11 +94,14 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+                  color:
+                      isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
                 ),
               ),
               filled: true,
-              fillColor: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+              fillColor: isDarkMode
+                  ? AppColors.darkBackground
+                  : AppColors.lightBackground,
             ),
           ),
           const SizedBox(height: 12),
@@ -119,7 +125,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
           borderRadius: BorderRadius.circular(8),
         ),
         filled: true,
-        fillColor: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+        fillColor:
+            isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
       ),
       items: [
         DropdownMenuItem<ApplicationStatus?>(
@@ -127,9 +134,9 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
           child: Text('Todos os status'),
         ),
         ...ApplicationStatus.values.map((status) => DropdownMenuItem(
-          value: status,
-          child: Text(_getStatusLabel(status, strings)),
-        )),
+              value: status,
+              child: Text(_getStatusLabel(status, strings)),
+            )),
       ],
     );
   }
@@ -150,7 +157,9 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDarkMode
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -200,7 +209,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     );
   }
 
-  Widget _buildApplicationsList(List<ApplicationModel> applications, bool isDarkMode, AppStrings strings) {
+  Widget _buildApplicationsList(List<ApplicationModel> applications,
+      bool isDarkMode, AppStrings strings) {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: applications.length,
@@ -212,7 +222,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     );
   }
 
-  Widget _buildApplicationCard(ApplicationModel application, bool isDarkMode, AppStrings strings) {
+  Widget _buildApplicationCard(
+      ApplicationModel application, bool isDarkMode, AppStrings strings) {
     return Card(
       color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
       elevation: 2,
@@ -254,7 +265,9 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                            color: isDarkMode
+                                ? AppColors.darkTextPrimary
+                                : AppColors.lightTextPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -262,7 +275,9 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                           application.company,
                           style: TextStyle(
                             fontSize: 14,
-                            color: isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            color: isDarkMode
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
                           ),
                         ),
                       ],
@@ -316,7 +331,7 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Match AI: ${application.aiMatchPercentage!.toStringAsFixed(0)}%',
+                      'Match AI: ${application.aiMatchPercentage!}%',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -326,10 +341,14 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: LinearProgressIndicator(
-                        value: application.aiMatchPercentage! / 100,
+                        value:
+                            double.tryParse(application.aiMatchPercentage!) ??
+                                0.0,
                         backgroundColor: Colors.grey[300],
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          _getMatchColor(application.aiMatchPercentage!),
+                          _getMatchColor(
+                              double.tryParse(application.aiMatchPercentage!) ??
+                                  0.0),
                         ),
                       ),
                     ),
@@ -342,7 +361,9 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                   application.description!,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDarkMode
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -358,7 +379,7 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
   Widget _buildStatusBadge(ApplicationStatus status, AppStrings strings) {
     Color color;
     String text;
-    
+
     switch (status) {
       case ApplicationStatus.applied:
         color = Colors.blue;
@@ -368,9 +389,9 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
         color = Colors.orange;
         text = strings.jobInReview;
         break;
-      case ApplicationStatus.interviewed:
+      case ApplicationStatus.interviewScheduled:
         color = Colors.purple;
-        text = strings.jobInterviewed;
+        text = strings.jobInterviewScheduled;
         break;
       case ApplicationStatus.rejected:
         color = Colors.red;
@@ -403,19 +424,26 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     );
   }
 
-  List<ApplicationModel> _filterApplications(List<ApplicationModel> applications) {
+  List<ApplicationModel> _filterApplications(
+      List<ApplicationModel> applications) {
     return applications.where((application) {
       final matchesSearch = _searchQuery.isEmpty ||
-          application.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          application.company.toLowerCase().contains(_searchQuery.toLowerCase());
-      
-      final matchesStatus = _selectedStatus == null || application.status == _selectedStatus;
-      
+          application.title
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          application.company
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase());
+
+      final matchesStatus =
+          _selectedStatus == null || application.status == _selectedStatus;
+
       return matchesSearch && matchesStatus;
     }).toList();
   }
 
-  void _showApplicationDetails(ApplicationModel application, bool isDarkMode, AppStrings strings) {
+  void _showApplicationDetails(
+      ApplicationModel application, bool isDarkMode, AppStrings strings) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -427,13 +455,14 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
             children: [
               Text('Empresa: ${application.company}'),
               Text('Status: ${_getStatusLabel(application.status, strings)}'),
-              Text('Aplicado em: ${DateFormat('dd/MM/yyyy').format(application.appliedDate)}'),
+              Text(
+                  'Aplicado em: ${DateFormat('dd/MM/yyyy').format(application.appliedDate)}'),
               if (application.platform != null)
                 Text('Plataforma: ${application.platform}'),
               if (application.location != null)
                 Text('Localização: ${application.location}'),
               if (application.aiMatchPercentage != null)
-                Text('Match AI: ${application.aiMatchPercentage!.toStringAsFixed(0)}%'),
+                Text('Match AI: ${application.aiMatchPercentage!}%'),
               if (application.description != null) ...[
                 const SizedBox(height: 8),
                 Text('Descrição: ${application.description}'),
@@ -468,8 +497,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
         return strings.jobApplied;
       case ApplicationStatus.inReview:
         return strings.jobInReview;
-      case ApplicationStatus.interviewed:
-        return strings.jobInterviewed;
+      case ApplicationStatus.interviewScheduled:
+        return strings.jobApplicationStatusInterviewScheduled;
       case ApplicationStatus.rejected:
         return strings.jobRejected;
       case ApplicationStatus.accepted:

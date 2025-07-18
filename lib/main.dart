@@ -46,6 +46,7 @@ import 'features/database/screens/database_list_screen.dart';
 import 'features/database/screens/table_editor_screen.dart';
 import 'core/models/database_models.dart';
 import 'shared/providers/database_provider.dart';
+import 'features/job_management/screens/job_management_dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -222,6 +223,12 @@ class BloquinhoApp extends ConsumerWidget {
           path: '/workspace/documents',
           name: 'workspace_documents',
           builder: (context, state) => const DocumentosScreen(),
+        ),
+
+        GoRoute(
+          path: '/workspace/job-management',
+          name: 'workspace_job_management',
+          builder: (context, state) => const JobManagementDashboard(),
         ),
 
         GoRoute(

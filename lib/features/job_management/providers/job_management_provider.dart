@@ -13,10 +13,25 @@ import '../models/interview_model.dart';
 import '../models/cv_model.dart';
 import '../models/application_model.dart';
 import '../services/job_management_service.dart';
+import '../../../shared/providers/workspace_provider.dart';
+import '../../../shared/providers/user_profile_provider.dart';
+import '../../../core/models/workspace.dart';
 
 // Service Provider
 final jobManagementServiceProvider = Provider<JobManagementService>((ref) {
-  return JobManagementService();
+  final service = JobManagementService();
+  
+  // Configurar contexto automaticamente
+  ref.listen<Workspace?>(workspaceProvider, (previous, next) {
+    if (next != null) {
+      final currentProfile = ref.read(currentProfileProvider);
+      if (currentProfile != null) {
+        service.setContext(currentProfile.name, next.id);
+      }
+    }
+  });
+  
+  return service;
 });
 
 // Interview Providers

@@ -184,6 +184,14 @@ class WorkspaceSections {
       itemCount: 0,
       hasSubItems: true,
     ),
+    WorkspaceSection(
+      id: 'job_management',
+      name: 'Gestão de Trabalho',
+      icon: Icons.work_outline,
+      route: '/workspace/job-management',
+      itemCount: 0,
+      hasSubItems: true,
+    ),
   ];
 
   static List<WorkspaceSection> getSectionsForWorkspace(String workspaceId) {

@@ -66,7 +66,9 @@ class RecentInterviewsWidget extends ConsumerWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDarkMode
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -125,7 +127,9 @@ class RecentInterviewsWidget extends ConsumerWidget {
 
   Widget _buildInterviewsList(List<InterviewModel> interviews) {
     return Column(
-      children: interviews.map((interview) => _buildInterviewCard(interview)).toList(),
+      children: interviews
+          .map((interview) => _buildInterviewCard(interview))
+          .toList(),
     );
   }
 
@@ -148,7 +152,8 @@ class RecentInterviewsWidget extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _getInterviewTypeColor(interview.type).withOpacity(0.1),
+                  color:
+                      _getInterviewTypeColor(interview.type).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -167,7 +172,9 @@ class RecentInterviewsWidget extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                        color: isDarkMode
+                            ? AppColors.darkTextPrimary
+                            : AppColors.lightTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -175,7 +182,9 @@ class RecentInterviewsWidget extends ConsumerWidget {
                       interview.company,
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDarkMode
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                     ),
                   ],
@@ -201,7 +210,7 @@ class RecentInterviewsWidget extends ConsumerWidget {
                 ),
               ),
               const Spacer(),
-              if (interview.proposedSalary != null) ...[
+              if (interview.salaryProposal != null) ...[
                 Icon(
                   PhosphorIcons.currencyDollar(),
                   size: 16,
@@ -209,7 +218,7 @@ class RecentInterviewsWidget extends ConsumerWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  '${interview.proposedSalary}€',
+                  '${interview.salaryProposal}€',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -224,7 +233,9 @@ class RecentInterviewsWidget extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+                color: isDarkMode
+                    ? AppColors.darkBackground
+                    : AppColors.lightBackground,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -240,7 +251,9 @@ class RecentInterviewsWidget extends ConsumerWidget {
                       interview.notes!,
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDarkMode
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -258,7 +271,7 @@ class RecentInterviewsWidget extends ConsumerWidget {
   Widget _buildStatusBadge(InterviewStatus status) {
     Color color;
     String text;
-    
+
     switch (status) {
       case InterviewStatus.scheduled:
         color = Colors.blue;
@@ -272,9 +285,9 @@ class RecentInterviewsWidget extends ConsumerWidget {
         color = Colors.red;
         text = strings.jobCancelled;
         break;
-      case InterviewStatus.rescheduled:
+      case InterviewStatus.pending:
         color = Colors.orange;
-        text = strings.jobRescheduled;
+        text = strings.jobPending;
         break;
     }
 
@@ -297,7 +310,7 @@ class RecentInterviewsWidget extends ConsumerWidget {
 
   PhosphorIconData _getInterviewTypeIcon(InterviewType type) {
     switch (type) {
-      case InterviewType.hr:
+      case InterviewType.rh:
         return PhosphorIcons.user();
       case InterviewType.technical:
         return PhosphorIcons.code();
@@ -308,7 +321,7 @@ class RecentInterviewsWidget extends ConsumerWidget {
 
   Color _getInterviewTypeColor(InterviewType type) {
     switch (type) {
-      case InterviewType.hr:
+      case InterviewType.rh:
         return Colors.purple;
       case InterviewType.technical:
         return Colors.blue;

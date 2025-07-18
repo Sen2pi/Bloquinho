@@ -17,6 +17,7 @@ import '../../../shared/providers/workspace_provider.dart';
 import '../../../shared/providers/user_profile_provider.dart';
 import '../../../shared/providers/language_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../providers/job_management_provider.dart';
 import '../models/interview_model.dart';
 import '../widgets/job_stats_card.dart';
