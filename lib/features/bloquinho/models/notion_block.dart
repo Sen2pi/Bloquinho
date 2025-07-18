@@ -38,13 +38,12 @@ class NotionBlock extends BlocoBase {
   }
 
   static NotionBlock create({required BlocoTipo type, String content = ''}) {
-     return NotionBlock(
+    return NotionBlock(
       id: 'new',
       tipo: type,
     );
   }
 }
-
 
 /// Modelo de texto rico do Notion
 class NotionRichText {
@@ -59,11 +58,26 @@ class NotionRichText {
   });
 
   factory NotionRichText.fromJson(Map<String, dynamic> json) {
+    String rawText = json['text'] ?? '';
+    // Validar e limpar texto UTF-16  String cleanText = _sanitizeText(rawText);
+
     return NotionRichText(
-      text: json['text'] ?? '',
+      text: _sanitizeText(rawText),
       format: NotionTextFormat.fromJson(json['format'] ?? {}),
       link: json['link'],
     );
+  }
+
+  /// Sanitizar texto para evitar erros UTF-16
+  static String _sanitizeText(String text) {
+    if (text.isEmpty) return text;
+
+    try {
+      text.codeUnits;
+      return text;
+    } catch (e) {
+      return text.replaceAll(RegExp(r'[\u0000-\u007F]'), '');
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -79,8 +93,10 @@ class NotionRichText {
     NotionTextFormat? format,
     String? link,
   }) {
+    String cleanText = text != null ? _sanitizeText(text) : this.text;
+
     return NotionRichText(
-      text: text ?? this.text,
+      text: cleanText,
       format: format ?? this.format,
       link: link ?? this.link,
     );

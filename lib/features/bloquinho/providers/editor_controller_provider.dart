@@ -369,8 +369,7 @@ class EditorControllerNotifier extends StateNotifier<EditorControllerState> {
         final filePath = await _pdfExportService.exportMarkdownAsPdf(
           markdown: content,
           title: title,
-          author: 'Bloquinho App',
-          subject: 'Documento exportado do Bloquinho',
+          strings: strings,
         );
 
         final file = filePath != null ? File(filePath) : null;

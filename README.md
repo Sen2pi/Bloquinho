@@ -10,11 +10,15 @@
 
 <div align="center">
   <img src="https://img.shields.io/badge/Flutter-3.19%2B-blue?logo=flutter"/>
-  <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Web%20%7C%20Linux%20%7C%20macOS-green"/>
+  <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Web%20%7C%20Linux%20%7C%20macOS-red"/>
   <img src="https://img.shields.io/badge/Internationalization-PT%20%7C%20EN%20%7C%20FR-blueviolet"/>
-  <img src="https://img.shields.io/badge/Cloud%20Sync-Google%20Drive%20%7C%20OneDrive-yellow"/>
+  <img src="https://img.shields.io/badge/PT-100%25%20Complete-brightgreen"/>
+  <img src="https://img.shields.io/badge/EN-68.5%25%20Complete-yellow"/>
+  <img src="https://img.shields.io/badge/FR-68.5%25%20Complete-yellow"/>
+  <img src="https://img.shields.io/badge/Cloud%20Sync-Google%20Drive%20%7C%20OneDrive-blue"/>
   <img src="https://img.shields.io/badge/100%25%20Self--Hosted-success"/>
-  <img src="https://img.shields.io/badge/Status-99.8%25%20Complete-brightgreen"/>
+  <img src="https://img.shields.io/badge/Status-68.5%25%20Complete-orange"/>
+  <img src="https://img.shields.io/badge/Functional-100%25%20Complete-brightgreen"/>
 </div>
 
 ---
@@ -540,7 +544,7 @@ This project is licensed under **CC BY-NC-SA 4.0** - see the [LICENSE](LICENSE) 
 
 - ✅ **Non-commercial use**: Free for personal, educational, and research purposes
 - ❌ **Commercial use**: Prohibited without permission
-- 📧 **Commercial licensing**: Contact [seu-email] for commercial rights
+- 📧 **Commercial licensing**: Contact [dr.karim.patatas@gmail.com] for commercial rights
 
 **Note**: This license change protects the project from unauthorized commercial use while keeping it accessible for the community.
 

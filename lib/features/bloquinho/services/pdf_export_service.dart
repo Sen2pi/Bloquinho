@@ -111,8 +111,11 @@ class PdfExportService {
 
       // Salvar PDF em arquivo temporário
       final output = await getTemporaryDirectory();
+      final now = DateTime.now();
+      final dateString =
+          '${now.day.toString().padLeft(2, '0')}${now.month.toString().padLeft(2, '0')}${now.year}${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
       final file = File(
-          '${output.path}/${page.title.replaceAll(RegExp(r'[^\w\s-]'), '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf');
+          '${output.path}/${page.title.replaceAll(RegExp(r'[^\w\s-]'), '_')}_$dateString.pdf');
 
       await file.writeAsBytes(await pdf.save());
 
@@ -219,8 +222,10 @@ class PdfExportService {
 
       // Salvar PDF em arquivo temporário
       final output = await getTemporaryDirectory();
-      final file = File(
-          '${output.path}/bloquinho_export_${DateTime.now().millisecondsSinceEpoch}.pdf');
+      final now = DateTime.now();
+      final dateString =
+          '${now.day.toString().padLeft(2, '0')}${now.month.toString().padLeft(2, '0')}${now.year}${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
+      final file = File('${output.path}/bloquinho_export_$dateString.pdf');
 
       await file.writeAsBytes(await pdf.save());
 
@@ -317,8 +322,11 @@ class PdfExportService {
 
       // Salvar PDF em arquivo temporário
       final output = await getTemporaryDirectory();
+      final now = DateTime.now();
+      final dateString =
+          '${now.day.toString().padLeft(2, '0')}${now.month.toString().padLeft(2, '0')}${now.year}${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
       final file = File(
-          '${output.path}/${title.replaceAll(RegExp(r'[^\w\s-]'), '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf');
+          '${output.path}/${title.replaceAll(RegExp(r'[^\w\s-]'), '_')}_$dateString.pdf');
 
       await file.writeAsBytes(await pdf.save());
 
@@ -392,8 +400,11 @@ class PdfExportService {
         ),
       );
       final output = await getTemporaryDirectory();
+      final now = DateTime.now();
+      final dateString =
+          '${now.day.toString().padLeft(2, '0')}${now.month.toString().padLeft(2, '0')}${now.year}${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
       final file = File(
-          '${output.path}/${title.replaceAll(RegExp(r'[^ -\u007F]+'), '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf');
+          '${output.path}/${title.replaceAll(RegExp(r'[^ -\u007F]+'), '_')}_$dateString.pdf');
       await file.writeAsBytes(await pdf.save());
       return file;
     } catch (e) {

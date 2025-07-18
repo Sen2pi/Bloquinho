@@ -19,9 +19,16 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path/path.dart' as path;
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/widgets.dart' as fw;
+import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import 'enhanced_markdown_parser.dart';
+import '../../../features/bloquinho/widgets/windows_code_block_widget.dart';
 
 class EnhancedPdfExportService {
   pw.Font? _notoSansFont;
@@ -30,37 +37,24 @@ class EnhancedPdfExportService {
 
   /// Carregar fontes Unicode e emoji
   Future<void> _loadFonts() async {
-    print('🔤 [PDF] Iniciando carregamento de fontes...');
     try {
       if (_notoSansFont == null) {
-        print('🔤 [PDF] Carregando NotoSans-Regular.ttf...');
         try {
           _notoSansFont = pw.Font.ttf(
               await rootBundle.load('assets/fonts/NotoSans-Regular.ttf'));
-          print('✅ [PDF] NotoSans-Regular.ttf carregado com sucesso');
         } catch (e) {
-          print('⚠️ [PDF] Erro ao carregar NotoSans-Regular.ttf: $e');
-          print('🔤 [PDF] Usando fonte padrão Helvetica como fallback');
           _notoSansFont = pw.Font.helvetica();
         }
       }
       if (_notoEmojiFont == null) {
-        print('🔤 [PDF] Carregando NotoColorEmoji.ttf...');
         try {
           _notoEmojiFont = pw.Font.ttf(
               await rootBundle.load('assets/fonts/NotoColorEmoji.ttf'));
-          print('✅ [PDF] NotoColorEmoji.ttf carregado com sucesso');
         } catch (e) {
-          print('⚠️ [PDF] Erro ao carregar NotoColorEmoji.ttf: $e');
-          print(
-              '🔤 [PDF] Emoji font não disponível, usando apenas fonte principal');
           _notoEmojiFont = null;
         }
       }
-      print('✅ [PDF] Todas as fontes carregadas com sucesso');
     } catch (e) {
-      print('❌ [PDF] Erro crítico ao carregar fontes: $e');
-      print('🔤PDF] Usando fontes padrão do sistema');
       _notoSansFont = pw.Font.helvetica();
       _notoEmojiFont = null;
     }
@@ -68,15 +62,12 @@ class EnhancedPdfExportService {
 
   /// Obter fonte padrão com fallback para emoji
   pw.Font _getDefaultFont() {
-    print(
-        '🔤 [PDF] Obtendo fonte padrão: ${_notoSansFont != null ? 'NotoSans' : 'Helvetica'}');
     return _notoSansFont ?? pw.Font.helvetica();
   }
 
   /// Obter fontes de fallback para emoji
   List<pw.Font> _getFontFallbacks() {
     final fallbacks = _notoEmojiFont != null ? [_notoEmojiFont!] : <pw.Font>[];
-    print('🔤 [PDF] Fontes de fallback: ${fallbacks.length} fontes');
     return fallbacks;
   }
 
@@ -85,39 +76,22 @@ class EnhancedPdfExportService {
     required GlobalKey widgetKey,
     required String fileName,
   }) async {
-    print('🖼️ [PDF] Iniciando exportação de widget como imagem...');
     try {
-      print('🖼️ [PDF] Obtendo RenderRepaintBoundary...');
       final RenderRepaintBoundary boundary =
           widgetKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      print('🖼️ [PDF] RenderRepaintBoundary obtido com sucesso');
-
-      print('🖼️ [PDF] Convertendo para imagem...');
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      print('🖼️ [PDF] Imagem convertida com sucesso');
-
-      print('🖼️ [PDF] Convertendo para bytes...');
       final ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List pngBytes = byteData!.buffer.asUint8List();
-      print('🖼️ [PDF] Bytes obtidos: ${pngBytes.length} bytes');
 
-      print('🖼️ [PDF] Obtendo diretório de downloads...');
       final downloadsDir = await _getDownloadsDirectory();
-      print('🖼️ [PDF] Diretório: ${downloadsDir.path}');
-
       final sanitizedFileName = _sanitizeFileName(fileName);
       final filePath = path.join(downloadsDir.path, '$sanitizedFileName.png');
-      print('🖼️ [PDF] Caminho do arquivo: $filePath');
-
-      print('🖼️ [PDF] Salvando arquivo...');
       final file = File(filePath);
       await file.writeAsBytes(pngBytes);
-      print('✅ [PDF] Arquivo salvo com sucesso: $filePath');
 
       return filePath;
     } catch (e) {
-      print('❌ [PDF] Erro ao exportar widget como imagem: $e');
       return null;
     }
   }
@@ -128,13 +102,10 @@ class EnhancedPdfExportService {
     required String title,
     required AppStrings strings,
   }) async {
-    print('📄 [PDF] Iniciando exportação de imagem para PDF...');
     try {
       final pdf = pw.Document();
-      print('📄 [PDF] Documento PDF criado');
 
       final image = pw.MemoryImage(imageBytes);
-      print('📄 [PDF] Imagem carregada: ${imageBytes.length} bytes');
 
       pdf.addPage(
         pw.Page(
@@ -145,20 +116,13 @@ class EnhancedPdfExportService {
           },
         ),
       );
-      print('📄 [PDF] Página adicionada ao PDF');
 
-      print('📄 [PDF] Obtendo diretório temporário...');
       final output = await getTemporaryDirectory();
       final file = File("${output.path}/$title.pdf");
-      print('📄 [PDF] Caminho do arquivo: ${file.path}');
-
-      print('📄 [PDF] Salvando PDF...');
       await file.writeAsBytes(await pdf.save());
-      print('✅ [PDF] PDF salvo com sucesso: ${file.path}');
 
       return file;
     } catch (e) {
-      print('❌ [PDF] Erro ao exportar imagem para PDF: $e');
       rethrow;
     }
   }
@@ -169,63 +133,46 @@ class EnhancedPdfExportService {
     required String language,
     required String fileName,
   }) async {
-    print('📝 [PDF] Iniciando exportação de código como arquivo...');
     try {
-      print('📝 [PDF] Obtendo diretório de downloads...');
       final downloadsDir = await _getDownloadsDirectory();
       final sanitizedFileName = _sanitizeFileName(fileName);
       final extension = _getFileExtension(language);
       final filePath =
           path.join(downloadsDir.path, '$sanitizedFileName.$extension');
-      print('📝 [PDF] Caminho do arquivo: $filePath');
 
-      print('📝 [PDF] Salvando arquivo...');
       final file = File(filePath);
       await file.writeAsString(code);
-      print('✅ [PDF] Arquivo salvo com sucesso: $filePath');
 
       return filePath;
     } catch (e) {
-      print('❌ [PDF] Erro ao exportar código como arquivo: $e');
       return null;
     }
   }
 
   /// Abrir arquivo exportado
   Future<void> openExportedFile(String filePath) async {
-    print('📂 [PDF] Abrindo arquivo: $filePath');
     try {
       await OpenFile.open(filePath);
-      print('✅ [PDF] Arquivo aberto com sucesso');
-    } catch (e) {
-      print('❌ [PDF] Erro ao abrir arquivo: $e');
-    }
+    } catch (e) {}
   }
 
   /// Obter diretório de downloads
   Future<Directory> _getDownloadsDirectory() async {
-    print('📁 [PDF] Obtendo diretório de downloads...');
     Directory downloadsDir;
 
     if (Platform.isAndroid) {
       downloadsDir = Directory('/storage/emulated/0/Download');
-      print('📁 [PDF] Android: $downloadsDir');
     } else if (Platform.isIOS) {
       downloadsDir = await getApplicationDocumentsDirectory();
-      print('📁 [PDF] iOS: $downloadsDir');
     } else if (Platform.isWindows) {
       downloadsDir =
           Directory('${Platform.environment['USERPROFILE']}\\Downloads');
-      print('📁 [PDF] Windows: $downloadsDir');
     } else if (Platform.isMacOS) {
       downloadsDir = Directory('${Platform.environment['HOME']}/Downloads');
-      print('📁 [PDF] macOS: $downloadsDir');
     } else {
       downloadsDir = await getApplicationDocumentsDirectory();
-      print('📁 [PDF] Outro: $downloadsDir');
     }
 
-    print('📁 [PDF] Diretório final: ${downloadsDir.path}');
     return downloadsDir;
   }
 
@@ -235,7 +182,6 @@ class EnhancedPdfExportService {
         .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
         .replaceAll(RegExp(r'\s+'), '_')
         .toLowerCase();
-    print('📝 [PDF] Nome sanitizado: "$fileName" -> "$sanitized"');
     return sanitized;
   }
 
@@ -267,7 +213,6 @@ class EnhancedPdfExportService {
     };
 
     final extension = extensions[language.toLowerCase()] ?? 'txt';
-    print('📝 [PDF] Extensão para linguagem "$language": $extension');
     return extension;
   }
 
@@ -275,933 +220,26 @@ class EnhancedPdfExportService {
   Future<String?> exportMarkdownAsPdf({
     required String markdown,
     required String title,
-    String? author,
-    String? subject,
+    required AppStrings strings,
   }) async {
-    print('📄 [PDF] ===== INICIANDO EXPORTAÇÃO MARKDOWN PARA PDF =====');
-    print('📄 [PDF] Título: $title');
-    print('📄 [PDF] Tamanho do markdown: ${markdown.length} caracteres');
-    print('📄 [PDF] Autor: $author');
-    print('📄 [PDF] Assunto: $subject');
-
     try {
-      print('📄 [PDF] Carregando fontes...');
       await _loadFonts();
-      print('✅ [PDF] Fontes carregadas com sucesso');
 
-      print('📄 [PDF] Criando documento PDF...');
-      final pdf = pw.Document();
-      print('✅ [PDF] Documento PDF criado');
+      final pdf = pw.Document(
+        title: title,
+        author: 'Bloquinho App',
+        subject: 'Documento exportado do Bloquinho',
+      );
 
-      print('📄 [PDF] Sanitizando markdown...');
-      String sanitizedMarkdown = _sanitizeText(markdown);
-      print(
-          '📄 [PDF] Markdown sanitizado: ${sanitizedMarkdown.length} caracteres');
+      final sanitizedMarkdown = _sanitizeText(markdown);
 
-      print('📄 [PDF] Parsing markdown com EnhancedMarkdownParser...');
-      final blocks = EnhancedMarkdownParser.parseMarkdown(sanitizedMarkdown,
-          enableHtmlEnhancements: true);
-      print('📄 [PDF] Blocos parseados: ${blocks.length} blocos');
+      final blocks = EnhancedMarkdownParser.parseMarkdown(sanitizedMarkdown);
 
-      print('📄 [PDF] Convertendo blocos para widgets PDF...');
-      final contentWidgets = await _convertBlocksToPdfWidgets(blocks);
-      print('📄 [PDF] Widgets convertidos: ${contentWidgets.length} widgets');
+      final widgets = await _convertBlocksToPdfWidgets(blocks);
 
-      print('📄 [PDF] Dividindo conteúdo em páginas...');
-      final pages = _splitContentIntoPages(contentWidgets, title);
-      print('📄 [PDF] Páginas criadas: ${pages.length} páginas');
+      final pages = _splitIntoPages(widgets);
 
-      print('📄 [PDF] Adicionando páginas ao PDF...');
       for (int i = 0; i < pages.length; i++) {
-        print('📄 [PDF] Adicionando página ${i + 1}/${pages.length}');
-        pdf.addPage(
-          pw.Page(
-            pageFormat: PdfPageFormat.a4,
-            margin: const pw.EdgeInsets.all(40),
-            build: (context) => pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                // Cabeçalho apenas na primeira página
-                if (i == 0) ...[
-                  pw.Text(
-                    title,
-                    style: pw.TextStyle(
-                      fontSize: 24,
-                      fontWeight: pw.FontWeight.bold,
-                      font: _getDefaultFont(),
-                      fontFallback: _getFontFallbacks(),
-                    ),
-                  ),
-                  pw.SizedBox(height: 20),
-                  pw.Divider(),
-                  pw.SizedBox(height: 20),
-                ],
-
-                // Conteúdo da página
-                pw.Expanded(
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: pages[i],
-                  ),
-                ),
-
-                // Rodapé
-                pw.SizedBox(height: 20),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'Bloquinho - $title',
-                      style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
-                    ),
-                    pw.Text(
-                      'Página ${i + 1} de ${pages.length}',
-                      style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-      print('✅ [PDF] Todas as páginas adicionadas ao PDF');
-
-      print('📄 [PDF] Obtendo diretório de downloads...');
-      final downloadsDir = await _getDownloadsDirectory();
-      final fileName =
-          '${_sanitizeFileName(title)}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final filePath = path.join(downloadsDir.path, fileName);
-      print('📄 [PDF] Caminho do arquivo: $filePath');
-
-      print('📄 [PDF] Salvando PDF...');
-      final file = File(filePath);
-      final pdfBytes = await pdf.save();
-      print('📄 [PDF] PDF gerado: ${pdfBytes.length} bytes');
-      try {
-        await file.writeAsBytes(pdfBytes);
-        print('✅ [PDF] PDF salvo com sucesso: $filePath');
-      } catch (e) {
-        print('❌ [PDF] Erro ao salvar PDF no caminho $filePath: $e');
-        print('❌ [PDF] Verifique permissões de diretório ou espaço em disco.');
-        return null;
-      }
-
-      return filePath;
-    } catch (e, stackTrace) {
-      print('❌ [PDF] Erro ao exportar markdown como PDF: $e');
-      print('❌ [PDF] Stack trace: $stackTrace');
-      return null;
-    }
-  }
-
-  /// Converter blocos markdown para widgets PDF
-  Future<List<pw.Widget>> _convertBlocksToPdfWidgets(
-      List<MarkdownBlock> blocks) async {
-    print('🔄 [PDF] Convertendo ${blocks.length} blocos para widgets PDF...');
-    final widgets = <pw.Widget>[];
-
-    for (int i = 0; i < blocks.length; i++) {
-      final block = blocks[i];
-      print(
-          '🔄 [PDF] Processando bloco ${i + 1}/${blocks.length}: ${block.type}');
-
-      try {
-        switch (block.type) {
-          case BlockType.heading:
-            print('🔄 [PDF] Criando heading nível ${block.level}');
-            widgets.add(_createHeading(block.content, block.level!));
-            widgets.add(pw.SizedBox(height: _getHeadingSpacing(block.level!)));
-            break;
-
-          case BlockType.paragraph:
-            print('🔄 [PDF] Criando parágrafo');
-            widgets.add(_createParagraph(block.content));
-            widgets.add(pw.SizedBox(height: 12));
-            break;
-
-          case BlockType.listItem:
-            print('🔄 [PDF] Criando item de lista');
-            widgets.add(_createListItem(block.content, block.listType!));
-            widgets.add(pw.SizedBox(height: 4));
-            break;
-
-          case BlockType.code:
-            print(
-                '🔄 [PDF] Criando bloco de código: ${block.language ?? 'text'}');
-            // Verificar se é Mermaid
-            if (block.language?.toLowerCase() == 'mermaid') {
-              widgets.add(_createMermaidPlaceholder(block.content));
-            } else {
-              widgets
-                  .add(_createCodeBlock(block.content, block.language ?? ''));
-            }
-            widgets.add(pw.SizedBox(height: 16));
-            break;
-
-          case BlockType.blockquote:
-            print('🔄 [PDF] Criando blockquote');
-            widgets.add(_createBlockquote(block.content));
-            widgets.add(pw.SizedBox(height: 16));
-            break;
-
-          case BlockType.table:
-            print('🔄 [PDF] Criando tabela');
-            widgets.add(_createTable(block.content));
-            widgets.add(pw.SizedBox(height: 16));
-            break;
-
-          case BlockType.horizontalRule:
-            print('🔄 [PDF] Criando linha horizontal');
-            widgets.add(_createHorizontalRule());
-            widgets.add(pw.SizedBox(height: 16));
-            break;
-        }
-      } catch (e) {
-        print('❌ [PDF] Erro ao processar bloco ${i + 1}: $e');
-        // Adicionar widget de erro como fallback
-        widgets.add(pw.Text('Erro ao processar conteúdo'));
-      }
-    }
-
-    print('✅ [PDF] Conversão concluída: ${widgets.length} widgets criados');
-    return widgets;
-  }
-
-  /// Criar título
-  pw.Widget _createHeading(String text, int level) {
-    print(
-        '📝 [PDF] Criando heading nível $level: "${text.substring(0, text.length > 50 ? 50 : text.length)}..."');
-    final fontSize = _getHeadingFontSize(level);
-    final fontWeight = pw.FontWeight.bold;
-
-    // Processar elementos inline
-    final inlineElements = EnhancedMarkdownParser.parseInlineText(text);
-    final spans = <pw.InlineSpan>[];
-
-    for (final element in inlineElements) {
-      spans.add(_createInlineSpan(element, fontSize, fontWeight));
-    }
-
-    return pw.RichText(
-      text: pw.TextSpan(children: spans),
-    );
-  }
-
-  /// Criar parágrafo
-  pw.Widget _createParagraph(String text) {
-    print(
-        '📝 [PDF] Criando parágrafo: "${text.substring(0, text.length > 50 ? 50 : text.length)}..."');
-    // Processar elementos inline
-    final inlineElements = EnhancedMarkdownParser.parseInlineText(text);
-    final spans = <pw.InlineSpan>[];
-
-    for (final element in inlineElements) {
-      spans.add(_createInlineSpan(element, 14, pw.FontWeight.normal));
-    }
-
-    return pw.RichText(
-      text: pw.TextSpan(children: spans),
-    );
-  }
-
-  /// Criar item de lista
-  pw.Widget _createListItem(String text, ListType listType) {
-    print(
-        '📝 [PDF] Criando item de lista: "${text.substring(0, text.length > 50 ? 50 : text.length)}..."');
-    final inlineElements = EnhancedMarkdownParser.parseInlineText(text);
-    final spans = <pw.InlineSpan>[];
-
-    for (final element in inlineElements) {
-      spans.add(_createInlineSpan(element, 14, pw.FontWeight.normal));
-    }
-
-    return pw.Row(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Container(
-          width: 6,
-          height: 6,
-          margin: const pw.EdgeInsets.only(top: 8, right: 12),
-          decoration: const pw.BoxDecoration(
-            color: PdfColors.blue,
-            shape: pw.BoxShape.circle,
-          ),
-        ),
-        pw.Expanded(
-          child: pw.RichText(
-            text: pw.TextSpan(children: spans),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Criar bloco de código
-  pw.Widget _createCodeBlock(String code, String language) {
-    print(
-        '📝 [PDF] Criando bloco de código $language: ${code.length} caracteres');
-    return pw.Container(
-      width: double.infinity,
-      padding: const pw.EdgeInsets.all(16),
-      margin: const pw.EdgeInsets.symmetric(vertical: 8),
-      decoration: pw.BoxDecoration(
-        color: PdfColors.grey900,
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
-        border: pw.Border.all(color: PdfColors.grey700),
-        boxShadow: [
-          pw.BoxShadow(
-            color: PdfColors.black,
-            blurRadius: 8,
-            offset: const PdfPoint(0.0, 2.0),
-          ),
-        ],
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          if (language.isNotEmpty) ...[
-            pw.Container(
-              padding:
-                  const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.grey800,
-                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-              ),
-              child: pw.Text(
-                language.toUpperCase(),
-                style: pw.TextStyle(
-                  fontSize: 11,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.grey300,
-                  font: _getDefaultFont(),
-                  fontFallback: _getFontFallbacks(),
-                ),
-              ),
-            ),
-            pw.SizedBox(height: 12),
-          ],
-          pw.Text(
-            code,
-            style: pw.TextStyle(
-              fontSize: 12,
-              color: PdfColors.grey100,
-              height: 1.4,
-              font: _getDefaultFont(),
-              fontFallback: _getFontFallbacks(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Criar blockquote
-  pw.Widget _createBlockquote(String text) {
-    print(
-        '📝 [PDF] Criando blockquote: "${text.substring(0, text.length > 50 ? 50 : text.length)}..."');
-    final inlineElements = EnhancedMarkdownParser.parseInlineText(text);
-    final spans = <pw.InlineSpan>[];
-
-    for (final element in inlineElements) {
-      spans.add(_createInlineSpan(element, 14, pw.FontWeight.normal));
-    }
-
-    return pw.Container(
-      width: double.infinity,
-      padding: const pw.EdgeInsets.all(16),
-      margin: const pw.EdgeInsets.symmetric(vertical: 8),
-      decoration: pw.BoxDecoration(
-        border: pw.Border(
-          left: pw.BorderSide(
-            color: PdfColors.blue,
-            width: 4,
-          ),
-        ),
-        color: PdfColors.blue50,
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-      ),
-      child: pw.RichText(
-        text: pw.TextSpan(children: spans),
-      ),
-    );
-  }
-
-  /// Criar tabela
-  pw.Widget _createTable(String tableContent) {
-    print('📝 [PDF] Criando tabela: ${tableContent.length} caracteres');
-    final rows = tableContent.split('\n');
-    if (rows.isEmpty) return pw.SizedBox.shrink();
-
-    final tableRows = <pw.TableRow>[];
-
-    for (int i = 0; i < rows.length; i++) {
-      final row = rows[i];
-      final cells = row.split('|').map((cell) => cell.trim()).toList();
-
-      // Remover células vazias no início e fim
-      if (cells.isNotEmpty && cells.first.isEmpty) cells.removeAt(0);
-      if (cells.isNotEmpty && cells.last.isEmpty)
-        cells.removeAt(cells.length - 1);
-
-      final tableCells = <pw.Widget>[];
-      for (final cell in cells) {
-        final isHeader = i == 0; // Primeira linha é cabeçalho
-        tableCells.add(
-          pw.Container(
-            padding: const pw.EdgeInsets.all(8),
-            decoration: pw.BoxDecoration(
-              color: isHeader ? PdfColors.grey100 : null,
-            ),
-            child: pw.Text(
-              cell,
-              style: pw.TextStyle(
-                fontWeight:
-                    isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
-                fontSize: 12,
-                font: _getDefaultFont(),
-                fontFallback: _getFontFallbacks(),
-              ),
-            ),
-          ),
-        );
-      }
-
-      tableRows.add(pw.TableRow(children: tableCells));
-    }
-
-    return pw.Table(
-      border: pw.TableBorder.all(color: PdfColors.grey300),
-      children: tableRows,
-    );
-  }
-
-  /// Criar linha horizontal
-  pw.Widget _createHorizontalRule() {
-    print('📝 [PDF] Criando linha horizontal');
-    return pw.Container(
-      height: 1,
-      color: PdfColors.grey300,
-    );
-  }
-
-  /// Criar placeholder para diagrama Mermaid
-  pw.Widget _createMermaidPlaceholder(String mermaidCode) {
-    print(
-        '📝 [PDF] Criando placeholder para Mermaid: ${mermaidCode.length} caracteres');
-    return pw.Container(
-      width: double.infinity,
-      padding: const pw.EdgeInsets.all(20),
-      margin: const pw.EdgeInsets.symmetric(vertical: 8),
-      decoration: pw.BoxDecoration(
-        color: PdfColors.blue50,
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
-        border: pw.Border.all(color: PdfColors.blue300, width: 2),
-        boxShadow: [
-          pw.BoxShadow(
-            color: PdfColors.blue100,
-            blurRadius: 4,
-            offset: const PdfPoint(0.0, 2.0),
-          ),
-        ],
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          // Cabeçalho do diagrama
-          pw.Row(
-            children: [
-              pw.Container(
-                padding:
-                    const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.blue600,
-                  borderRadius:
-                      const pw.BorderRadius.all(pw.Radius.circular(6)),
-                ),
-                child: pw.Text(
-                  '📊 DIAGRAMA MERMAID',
-                  style: pw.TextStyle(
-                    fontSize: 12,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.white,
-                    font: _getDefaultFont(),
-                    fontFallback: _getFontFallbacks(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          pw.SizedBox(height: 12),
-
-          // Explicação
-          pw.Text(
-            'Este documento contém um diagrama Mermaid interativo.',
-            style: pw.TextStyle(
-              fontSize: 14,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColors.blue800,
-              font: _getDefaultFont(),
-              fontFallback: _getFontFallbacks(),
-            ),
-          ),
-          pw.SizedBox(height: 8),
-          pw.Text(
-            'Para visualizar este diagrama, abra o documento original no Bloquinho.',
-            style: pw.TextStyle(
-              fontSize: 12,
-              color: PdfColors.blue700,
-              font: _getDefaultFont(),
-              fontFallback: _getFontFallbacks(),
-            ),
-          ),
-          pw.SizedBox(height: 12),
-
-          // Código do diagrama
-          pw.Container(
-            width: double.infinity,
-            padding: const pw.EdgeInsets.all(12),
-            decoration: pw.BoxDecoration(
-              color: PdfColors.grey100,
-              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-              border: pw.Border.all(color: PdfColors.grey300),
-            ),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  'Código Mermaid:',
-                  style: pw.TextStyle(
-                    fontSize: 11,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.grey700,
-                    font: _getDefaultFont(),
-                    fontFallback: _getFontFallbacks(),
-                  ),
-                ),
-                pw.SizedBox(height: 6),
-                pw.Text(
-                  mermaidCode,
-                  style: pw.TextStyle(
-                    fontSize: 10,
-                    color: PdfColors.grey800,
-                    height: 1.4,
-                    font: _getDefaultFont(),
-                    fontFallback: _getFontFallbacks(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Criar widget LaTeX renderizado
-  pw.Widget _createLatexWidget(String latexCode, {bool isBlock = false}) {
-    print(
-        '📝 [PDF] Criando LaTeX ${isBlock ? 'bloco' : 'inline'}: ${latexCode.length} caracteres');
-
-    return pw.Container(
-      width: isBlock ? double.infinity : null,
-      padding: isBlock
-          ? const pw.EdgeInsets.all(16)
-          : const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      margin: isBlock
-          ? const pw.EdgeInsets.symmetric(vertical: 8)
-          : pw.EdgeInsets.zero,
-      decoration: isBlock
-          ? pw.BoxDecoration(
-              color: PdfColors.purple50,
-              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-              border: pw.Border.all(color: PdfColors.purple300),
-            )
-          : null,
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          if (isBlock) ...[
-            pw.Row(
-              children: [
-                pw.Container(
-                  padding:
-                      const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: pw.BoxDecoration(
-                    color: PdfColors.purple600,
-                    borderRadius:
-                        const pw.BorderRadius.all(pw.Radius.circular(4)),
-                  ),
-                  child: pw.Text(
-                    '∑ LaTeX',
-                    style: pw.TextStyle(
-                      fontSize: 10,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.white,
-                      font: _getDefaultFont(),
-                      fontFallback: _getFontFallbacks(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            pw.SizedBox(height: 8),
-          ],
-
-          // Fórmula formatada
-          pw.Text(
-            latexCode,
-            style: pw.TextStyle(
-              fontSize: isBlock ? 16 : 14,
-              fontStyle: pw.FontStyle.italic,
-              color: PdfColors.purple800,
-              fontWeight: pw.FontWeight.bold,
-              font: _getDefaultFont(),
-              fontFallback: _getFontFallbacks(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Converter Color do Flutter para PdfColor
-  PdfColor _convertFlutterColorToPdfColor(Color? flutterColor) {
-    if (flutterColor == null) return PdfColors.black;
-
-    // Usar os valores RGB da cor do Flutter
-    final red = flutterColor.red / 255.0;
-    final green = flutterColor.green / 255.0;
-    final blue = flutterColor.blue / 255.0;
-
-    return PdfColor(red, green, blue);
-  }
-
-  /// Converter FontWeight do Flutter para PDF
-  pw.FontWeight _convertFlutterFontWeightToPdf(FontWeight? flutterFontWeight) {
-    if (flutterFontWeight == null) return pw.FontWeight.normal;
-
-    if (flutterFontWeight == FontWeight.bold ||
-        flutterFontWeight.index >= FontWeight.w600.index) {
-      return pw.FontWeight.bold;
-    }
-
-    return pw.FontWeight.normal;
-  }
-
-  /// Converter FontStyle do Flutter para PDF
-  pw.FontStyle _convertFlutterFontStyleToPdf(FontStyle? flutterFontStyle) {
-    if (flutterFontStyle == FontStyle.italic) {
-      return pw.FontStyle.italic;
-    }
-    return pw.FontStyle.normal;
-  }
-
-  /// Converter TextDecoration do Flutter para PDF
-  pw.TextDecoration _convertFlutterTextDecorationToPdf(
-      TextDecoration? flutterDecoration) {
-    if (flutterDecoration == TextDecoration.underline) {
-      return pw.TextDecoration.underline;
-    } else if (flutterDecoration == TextDecoration.lineThrough) {
-      return pw.TextDecoration.lineThrough;
-    }
-    return pw.TextDecoration.none;
-  }
-
-  /// Criar span inline
-  pw.InlineSpan _createInlineSpan(
-      InlineElement element, double fontSize, pw.FontWeight fontWeight) {
-    switch (element.type) {
-      case InlineType.text:
-        return pw.TextSpan(
-          text: element.content,
-          style: pw.TextStyle(
-            fontSize: fontSize,
-            fontWeight: fontWeight,
-            color: PdfColors.black,
-            font: _getDefaultFont(),
-            fontFallback: _getFontFallbacks(),
-          ),
-        );
-
-      case InlineType.bold:
-        return pw.TextSpan(
-          text: element.content,
-          style: pw.TextStyle(
-            fontSize: fontSize,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.black,
-            font: _getDefaultFont(),
-            fontFallback: _getFontFallbacks(),
-          ),
-        );
-
-      case InlineType.italic:
-        return pw.TextSpan(
-          text: element.content,
-          style: pw.TextStyle(
-            fontSize: fontSize,
-            fontWeight: fontWeight,
-            fontStyle: pw.FontStyle.italic,
-            color: PdfColors.black,
-            font: _getDefaultFont(),
-            fontFallback: _getFontFallbacks(),
-          ),
-        );
-
-      case InlineType.code:
-        return pw.TextSpan(
-          text: element.content,
-          style: pw.TextStyle(
-            fontSize: fontSize - 1,
-            fontWeight: fontWeight,
-            color: PdfColors.black,
-            font: _getDefaultFont(),
-            fontFallback: _getFontFallbacks(),
-          ),
-        );
-
-      case InlineType.latex:
-        return pw.TextSpan(
-          text: element.content,
-          style: pw.TextStyle(
-            fontSize: fontSize - 1,
-            fontWeight: fontWeight,
-            fontStyle: pw.FontStyle.italic,
-            color: PdfColors.blue800,
-            font: _getDefaultFont(),
-            fontFallback: _getFontFallbacks(),
-          ),
-        );
-
-      case InlineType.span:
-        final styleMap = element.style != null
-            ? EnhancedMarkdownParser.parseStyle(element.style!)
-            : <String, dynamic>{};
-
-        // Converter cores do Flutter para PDF corretamente
-        final textColor = styleMap['color'] != null
-            ? _convertFlutterColorToPdfColor(styleMap['color'] as Color?)
-            : PdfColors.black;
-
-        final pdfFontWeight = styleMap['fontWeight'] != null
-            ? _convertFlutterFontWeightToPdf(
-                styleMap['fontWeight'] as FontWeight?)
-            : fontWeight;
-
-        final fontStyle = styleMap['fontStyle'] != null
-            ? _convertFlutterFontStyleToPdf(styleMap['fontStyle'] as FontStyle?)
-            : pw.FontStyle.normal;
-
-        final decoration = styleMap['decoration'] != null
-            ? _convertFlutterTextDecorationToPdf(
-                styleMap['decoration'] as TextDecoration?)
-            : pw.TextDecoration.none;
-
-        return pw.TextSpan(
-          text: element.content,
-          style: pw.TextStyle(
-            fontSize: fontSize,
-            fontWeight: pdfFontWeight,
-            color: textColor,
-            fontStyle: fontStyle,
-            decoration: decoration,
-            font: _getDefaultFont(),
-            fontFallback: _getFontFallbacks(),
-          ),
-        );
-
-      case InlineType.kbd:
-        return pw.TextSpan(
-          text: element.content,
-          style: pw.TextStyle(
-            fontSize: fontSize - 1,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.black,
-            font: _getDefaultFont(),
-            fontFallback: _getFontFallbacks(),
-          ),
-        );
-
-      case InlineType.mark:
-        return pw.TextSpan(
-          text: element.content,
-          style: pw.TextStyle(
-            fontSize: fontSize,
-            fontWeight: fontWeight,
-            color: PdfColors.black,
-            font: _getDefaultFont(),
-            fontFallback: _getFontFallbacks(),
-          ),
-        );
-
-      case InlineType.subscript:
-        return pw.TextSpan(
-          text: element.content,
-          style: pw.TextStyle(
-            fontSize: fontSize * 0.7,
-            fontWeight: fontWeight,
-            color: PdfColors.black,
-            font: _getDefaultFont(),
-            fontFallback: _getFontFallbacks(),
-          ),
-        );
-
-      case InlineType.superscript:
-        return pw.TextSpan(
-          text: element.content,
-          style: pw.TextStyle(
-            fontSize: fontSize * 0.7,
-            fontWeight: fontWeight,
-            color: PdfColors.black,
-            font: _getDefaultFont(),
-            fontFallback: _getFontFallbacks(),
-          ),
-        );
-    }
-  }
-
-  /// Obter tamanho da fonte para títulos
-  double _getHeadingFontSize(int level) {
-    switch (level) {
-      case 1:
-        return 28.0;
-      case 2:
-        return 24.0;
-      case 3:
-        return 20.0;
-      case 4:
-        return 18.0;
-      case 5:
-        return 16.0;
-      case 6:
-        return 14.0;
-      default:
-        return 14.0;
-    }
-  }
-
-  /// Obter espaçamento para títulos
-  double _getHeadingSpacing(int level) {
-    switch (level) {
-      case 1:
-        return 20.0;
-      case 2:
-        return 18.0;
-      case 3:
-        return 16.0;
-      case 4:
-        return 14.0;
-      case 5:
-        return 12.0;
-      case 6:
-        return 10.0;
-      default:
-        return 10.0;
-    }
-  }
-
-  /// Dividir conteúdo em páginas A4
-  List<List<pw.Widget>> _splitContentIntoPages(
-      List<pw.Widget> widgets, String title) {
-    print('📄 [PDF] Dividindo ${widgets.length} widgets em páginas...');
-    final pages = <List<pw.Widget>>[];
-    var currentPage = <pw.Widget>[];
-    var currentHeight = 0.0;
-
-    const maxPageHeight = 700.0;
-    const firstPageMaxHeight = 600.0;
-
-    bool isFirstPage = true;
-    double pageLimit = firstPageMaxHeight;
-
-    for (final widget in widgets) {
-      final estimatedHeight = _estimateWidgetHeight(widget);
-
-      if (currentHeight + estimatedHeight > pageLimit &&
-          currentPage.isNotEmpty) {
-        pages.add(List.from(currentPage));
-        currentPage.clear();
-        currentHeight = 0.0;
-        isFirstPage = false;
-        pageLimit = maxPageHeight;
-      }
-
-      currentPage.add(widget);
-      currentHeight += estimatedHeight;
-    }
-
-    if (currentPage.isNotEmpty) {
-      pages.add(currentPage);
-    }
-
-    if (pages.isEmpty) {
-      pages.add([pw.Text('Conteúdo vazio')]);
-    }
-
-    print('📄 [PDF] Páginas criadas: ${pages.length} páginas');
-    return pages;
-  }
-
-  /// Estimar altura de um widget PDF
-  double _estimateWidgetHeight(pw.Widget widget) {
-    if (widget is pw.Text) {
-      return 20.0;
-    } else if (widget is pw.RichText) {
-      return 20.0;
-    } else if (widget is pw.SizedBox) {
-      return 10.0;
-    } else if (widget is pw.Container) {
-      return 60.0; // Blocos de código, blockquotes
-    } else if (widget is pw.Row) {
-      return 20.0; // Lista items
-    } else if (widget is pw.Table) {
-      return 40.0; // Tabelas
-    }
-    return 20.0;
-  }
-
-  /// Gerar PDF como bytes em memória (para impressão)
-  Future<Uint8List?> generatePdfBytes({
-    required String markdown,
-    required String title,
-    String? author,
-    String? subject,
-  }) async {
-    print('🖨️ [PDF] ===== INICIANDO GERAÇÃO DE PDF PARA IMPRESSÃO =====');
-    print('🖨️ [PDF] Título: $title');
-    print('🖨️ [PDF] Tamanho do markdown: ${markdown.length} caracteres');
-
-    try {
-      print('🖨️ [PDF] Carregando fontes...');
-      await _loadFonts();
-      print('✅ [PDF] Fontes carregadas com sucesso');
-
-      print('🖨️ [PDF] Criando documento PDF...');
-      final pdf = pw.Document();
-      print('✅ [PDF] Documento PDF criado');
-
-      print('🖨️ [PDF] Sanitizando markdown...');
-      String sanitizedMarkdown = _sanitizeText(markdown);
-      print(
-          '🖨️ [PDF] Markdown sanitizado: ${sanitizedMarkdown.length} caracteres');
-
-      print('🖨️ [PDF] Parsing markdown...');
-      final blocks = EnhancedMarkdownParser.parseMarkdown(sanitizedMarkdown,
-          enableHtmlEnhancements: true);
-      print('🖨️ [PDF] Blocos parseados: ${blocks.length} blocos');
-
-      print('🖨️ [PDF] Convertendo blocos para widgets PDF...');
-      final contentWidgets = await _convertBlocksToPdfWidgets(blocks);
-      print('🖨️ [PDF] Widgets convertidos: ${contentWidgets.length} widgets');
-
-      print('🖨️ [PDF] Dividindo conteúdo em páginas...');
-      final pages = _splitContentIntoPages(contentWidgets, title);
-      print('🖨️ [PDF] Páginas criadas: ${pages.length} páginas');
-
-      print('🖨️ [PDF] Adicionando páginas ao PDF...');
-      for (int i = 0; i < pages.length; i++) {
-        print('🖨️ [PDF] Adicionando página ${i + 1}/${pages.length}');
         pdf.addPage(
           pw.Page(
             pageFormat: PdfPageFormat.a4,
@@ -1227,7 +265,6 @@ class EnhancedPdfExportService {
                         '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
                         style: pw.TextStyle(
                           fontSize: 12,
-                          color: PdfColors.grey,
                           font: _getDefaultFont(),
                           fontFallback: _getFontFallbacks(),
                         ),
@@ -1251,11 +288,19 @@ class EnhancedPdfExportService {
                   children: [
                     pw.Text(
                       'Bloquinho - $title',
-                      style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        font: _getDefaultFont(),
+                        fontFallback: _getFontFallbacks(),
+                      ),
                     ),
                     pw.Text(
                       'Página ${i + 1} de ${pages.length}',
-                      style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        font: _getDefaultFont(),
+                        fontFallback: _getFontFallbacks(),
+                      ),
                     ),
                   ],
                 ),
@@ -1264,23 +309,975 @@ class EnhancedPdfExportService {
           ),
         );
       }
-      print('✅ [PDF] Todas as páginas adicionadas ao PDF');
 
-      print('🖨️ [PDF] Gerando bytes do PDF...');
+      final downloadsDir = await _getDownloadsDirectory();
+      final fileName =
+          '${_sanitizeFileName(title)}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final filePath = path.join(downloadsDir.path, fileName);
+      final file = File(filePath);
       final pdfBytes = await pdf.save();
-      print('✅ [PDF] PDF gerado com sucesso: ${pdfBytes.length} bytes');
+      try {
+        await file.writeAsBytes(pdfBytes);
+      } catch (e) {
+        return null;
+      }
+
+      return filePath;
+    } catch (e, stackTrace) {
+      return null;
+    }
+  }
+
+  /// Converter blocos markdown para widgets PDF
+  Future<List<pw.Widget>> _convertBlocksToPdfWidgets(
+      List<MarkdownBlock> blocks) async {
+    final widgets = <pw.Widget>[];
+
+    for (int i = 0; i < blocks.length; i++) {
+      final block = blocks[i];
+
+      try {
+        switch (block.type) {
+          case BlockType.heading:
+            widgets.add(_createHeading(
+                _replaceEmojisWithText(block.content), block.level!));
+            widgets.add(pw.SizedBox(height: _getHeadingSpacing(block.level!)));
+            break;
+
+          case BlockType.paragraph:
+            widgets
+                .add(_createParagraph(_replaceEmojisWithText(block.content)));
+            widgets.add(pw.SizedBox(height: 8));
+            break;
+
+          case BlockType.code:
+            widgets.add(_createCodeBlock(block.content, block.language ?? ''));
+            widgets.add(pw.SizedBox(height: 12));
+            break;
+
+          case BlockType.listItem:
+            widgets.add(_createListItem(_replaceEmojisWithText(block.content)));
+            widgets.add(pw.SizedBox(height: 4));
+            break;
+
+          case BlockType.blockquote:
+            widgets
+                .add(_createBlockquote(_replaceEmojisWithText(block.content)));
+            widgets.add(pw.SizedBox(height: 16));
+            break;
+
+          case BlockType.table:
+            widgets.add(_createTable(_replaceEmojisWithText(block.content)));
+            widgets.add(pw.SizedBox(height: 16));
+            break;
+
+          case BlockType.horizontalRule:
+            widgets.add(_createHorizontalRule());
+            widgets.add(pw.SizedBox(height: 16));
+            break;
+
+          default:
+            widgets
+                .add(_createParagraph(_replaceEmojisWithText(block.content)));
+            widgets.add(pw.SizedBox(height: 8));
+            break;
+        }
+      } catch (e) {
+        // Fallback: criar parágrafo simples
+        widgets.add(_createParagraph(_replaceEmojisWithText(block.content)));
+        widgets.add(pw.SizedBox(height: 8));
+      }
+    }
+
+    return widgets;
+  }
+
+  /// Criar heading
+  pw.Widget _createHeading(String content, int level) {
+    final fontSize = _getHeadingFontSize(level);
+    final fontWeight = _getHeadingFontWeight(level);
+
+    return pw.Text(
+      _replaceEmojisWithText(content),
+      style: pw.TextStyle(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        font: _getDefaultFont(),
+        fontFallback: _getFontFallbacks(),
+      ),
+    );
+  }
+
+  /// Criar parágrafo
+  pw.Widget _createParagraph(String content) {
+    return pw.Text(
+      _replaceEmojisWithText(content),
+      style: pw.TextStyle(
+        fontSize: 12,
+        font: _getDefaultFont(),
+        fontFallback: _getFontFallbacks(),
+      ),
+    );
+  }
+
+  /// Criar bloco de código
+  pw.Widget _createCodeBlock(String code, String language) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+        border: pw.Border.all(),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          if (language.isNotEmpty)
+            pw.Text(
+              language.toUpperCase(),
+              style: pw.TextStyle(
+                fontSize: 10,
+                fontWeight: pw.FontWeight.bold,
+                font: _getDefaultFont(),
+                fontFallback: _getFontFallbacks(),
+              ),
+            ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            code,
+            style: pw.TextStyle(
+              fontSize: 10,
+              font: _getDefaultFont(),
+              fontFallback: _getFontFallbacks(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Criar item de lista
+  pw.Widget _createListItem(String content) {
+    return pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Container(
+          width: 6,
+          height: 6,
+          margin: const pw.EdgeInsets.only(top: 8, right: 12),
+          decoration: pw.BoxDecoration(
+            color: PdfColor.fromInt(0xFF007BFF),
+            shape: pw.BoxShape.circle,
+          ),
+        ),
+        pw.Expanded(
+          child: pw.RichText(
+            text: pw.TextSpan(children: [
+              pw.TextSpan(
+                text: '•',
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  font: _getDefaultFont(),
+                  fontFallback: _getFontFallbacks(),
+                ),
+              ),
+              pw.TextSpan(
+                text: _replaceEmojisWithText(content),
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  font: _getDefaultFont(),
+                  fontFallback: _getFontFallbacks(),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Criar blockquote
+  pw.Widget _createBlockquote(String content) {
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.all(16),
+      margin: const pw.EdgeInsets.symmetric(vertical: 8),
+      decoration: pw.BoxDecoration(
+        border: pw.Border(
+          left: pw.BorderSide(
+            color: PdfColor.fromInt(0xFF007BFF),
+            width: 4,
+          ),
+        ),
+        color: PdfColor.fromInt(0xFF282C34),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+      ),
+      child: pw.RichText(
+        text: pw.TextSpan(children: [
+          pw.TextSpan(
+            text: '“',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromInt(0xFF888888),
+              font: _getDefaultFont(),
+              fontFallback: _getFontFallbacks(),
+            ),
+          ),
+          pw.TextSpan(
+            text: _replaceEmojisWithText(content),
+            style: pw.TextStyle(
+              fontSize: 14,
+              color: PdfColor.fromInt(0xFFE0E0E0),
+              height: 1.4,
+              font: _getDefaultFont(),
+              fontFallback: _getFontFallbacks(),
+            ),
+          ),
+          pw.TextSpan(
+            text: '”',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromInt(0xFF888888),
+              font: _getDefaultFont(),
+              fontFallback: _getFontFallbacks(),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  /// Criar linha horizontal
+  pw.Widget _createHorizontalRule() {
+    return pw.Container(
+      height: 1,
+      color: PdfColor.fromInt(0xFF44475A),
+    );
+  }
+
+  /// Criar tabela
+  pw.Widget _createTable(String content) {
+    final rows = content.split('\n');
+    if (rows.isEmpty) return pw.SizedBox.shrink();
+
+    final tableRows = <pw.TableRow>[];
+
+    for (int i = 0; i < rows.length; i++) {
+      final row = rows[i];
+      final cells = row.split('|').map((cell) => cell.trim()).toList();
+
+      // Remover células vazias no início e fim
+      if (cells.isNotEmpty && cells.first.isEmpty) cells.removeAt(0);
+      if (cells.isNotEmpty && cells.last.isEmpty)
+        cells.removeAt(cells.length - 1);
+
+      final tableCells = <pw.Widget>[];
+      for (final cell in cells) {
+        final isHeader = i == 0; // Primeira linha é cabeçalho
+        tableCells.add(
+          pw.Container(
+            padding: const pw.EdgeInsets.all(8),
+            decoration: pw.BoxDecoration(
+              color: isHeader ? PdfColor.fromInt(0xFF44475A) : null,
+            ),
+            child: pw.Text(
+              cell,
+              style: pw.TextStyle(
+                fontWeight:
+                    isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+                fontSize: 12,
+                font: _getDefaultFont(),
+                fontFallback: _getFontFallbacks(),
+              ),
+            ),
+          ),
+        );
+      }
+
+      tableRows.add(pw.TableRow(children: tableCells));
+    }
+
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColor.fromInt(0xFF44475A)),
+      children: tableRows,
+    );
+  }
+
+  /// Substitui emojis por texto alternativo
+  String _replaceEmojisWithText(String text) {
+    String result = text;
+
+    // Primeiro, remover caracteres de controle problemáticos
+    result =
+        result.replaceAll(RegExp(r'\uFE0F\uFE0E'), ''); // Variation Selectors
+
+    // Substituir emojis conhecidos
+    final emojiMap = {
+      '📊': '[DIAGRAMA]',
+      '🎨': '[ARTE]',
+      '💻': '[CÓDIGO]',
+      '🔢': '[MATEMÁTICA]',
+      '📝': '[DOCUMENTO]',
+      '📈': '[GRÁFICO]',
+      '🔧': '[FERRAMENTA]',
+      '✅': '[OK]',
+      '❌': '[ERRO]',
+      '⚠️': '[AVISO]',
+      '💡': '[IDÉIA]',
+      '🚀': '[LANÇAMENTO]',
+      '🎯': '[OBJETIVO]',
+      '📚': '[LIVRO]',
+      '🔍': '[BUSCA]',
+      '⚡': '[RÁPIDO]',
+      '🌟': '[ESTRELA]',
+      '💪': '[FORÇA]',
+      '🎉': '[CELEBRAÇÃO]',
+      '🔥': '[FOGO]',
+      '📱': '[MOBILE]',
+      '💻': '[COMPUTADOR]',
+      '🌐': '[WEB]',
+      '🔐': '[SEGURANÇA]',
+      '📊': '[ESTATÍSTICA]',
+      '🎮': '[JOGO]',
+      '🎵': '[MÚSICA]',
+      '📷': '[FOTO]',
+      '🎬': '[VÍDEO]',
+      '📞': '[TELEFONE]',
+      '📧': '[EMAIL]',
+      '💼': '[TRABALHO]',
+      '🏠': '[CASA]',
+      '🚗': '[CARRO]',
+      '✈️': '[AVIÃO]',
+      '🚇': '[METRÔ]',
+      '🚌': '[ÔNIBUS]',
+      '🚲': '[BICICLETA]',
+      '🏃': '[CORRIDA]',
+      '🏋️': '[MUSCULAÇÃO]',
+      '⚽': '[FUTEBOL]',
+      '🏀': '[BASQUETE]',
+      '🎾': '[TÊNIS]',
+      '🏊': '[NATAÇÃO]',
+      '🎯': '[ALVO]',
+      '🎪': '[CIRCO]',
+      '🎭': '[TEATRO]',
+      '🎤': '[MICROFONE]',
+      '🎧': '[FONES]',
+      '📺': '[TV]',
+      '🎮': '[GAME]',
+      '🖥️': '[MONITOR]',
+      '⌨️': '[TECLADO]',
+      '🖱️': '[MOUSE]',
+      '💾': '[DISCO]',
+      '📀': '[CD]',
+      '💿': '[DVD]',
+      '📼': '[FITA]',
+      '📷': '[CÂMERA]',
+      '📹': '[VÍDEO]',
+      '🎥': '[FILME]',
+      '📺': '[TV]',
+      '📻': '[RÁDIO]',
+      '🎙️': '[MICROFONE]',
+      '🎚️': '[CONTROLE]',
+      '🎛️': '[KNOB]',
+      '📱': '[CELULAR]',
+      '📲': '[SMARTPHONE]',
+      '☎️': '[TELEFONE]',
+      '📞': '[TELEFONE]',
+      '📟': '[PAGER]',
+      '🎞': '[FAX]',
+      '🔋': '[BATERIA]',
+      '🔌': '[PLUG]',
+      '💡': '[LÂMPADA]',
+      '🔦': '[LANTERNA]',
+      '��️': '[VELA]',
+      '🪔': '[DIYA]',
+      '🧯': '[EXTINTOR]',
+      '🛢️': '[ÓLEO]',
+      '💸': '[DINHEIRO]',
+      '💵': '[NOTA]',
+      '💴': '[YEN]',
+      '💶': '[EURO]',
+      '💷': '[LIBRA]',
+      '💰': '[BOLSA]',
+      '💳': '[CARTÃO]',
+      '💎': '[DIAMANTE]',
+      '⚖️': '[BALANÇA]',
+      '🪜': '[ESCADA]',
+      '🛠️': '[FERRAMENTAS]',
+      '🔨': '[MARTELO]',
+      '⚒️': '[MARTELO]',
+      '🪛': '[CHAVE]',
+      '🔧': '[CHAVE]',
+      '⚙️': '[ENGRENAGEM]',
+      '🗜️': '[COMPRESSOR]',
+      '⚗️': '[BALÃO]',
+      '🧪': '[TUBO]',
+      '🧫': '[PLACA]',
+      '��': '[DNA]',
+      '🔬': '[MICROSCÓPIO]',
+      '🔭': '[TELESCÓPIO]',
+      '📡': '[SATELLITE]',
+      '💉': '[SERINGA]',
+      '🩸': '[SANGUE]',
+      '💊': '[PÍLULA]',
+      '🩹': '[CURATIVO]',
+      '🩺': '[ESTETOSCÓPIO]',
+      '🩻': '[RAIO-X]',
+      '🩼': '[MULETA]',
+      '🩽': '[CADEIRA]',
+      '🩾': '[BRAÇO]',
+      '🩿': '[PERNA]',
+      '🪖': '[CAPACETE]',
+      '🪗': '[ACORDEÃO]',
+      '🪘': '[TAMBOR]',
+      '🪙': '[MOEDA]',
+      '🪚': '[SERRA]',
+      '🪛': '[CHAVE]',
+      '🪜': '[ESCADA]',
+      '🪝': '[GANCHO]',
+      '🪞': '[ESPELHO]',
+      '🪟': '[JANELA]',
+      '🪠': '[DESENTUPIDOR]',
+      '🪡': '[AGULHA]',
+      '🪢': '[NÓ]',
+      '🪣': '[BALDE]',
+      '🪤': '[RATOEIRA]',
+      '🪥': '[ESCOVA]',
+      '🪦': '[TÚMULO]',
+      '🪧': '[PLACA]',
+      '🪨': '[ROCHA]',
+      '🪩': '[DISCO]',
+      '🪪': '[IDENTIDADE]',
+      '🪫': '[BATERIA]',
+      '🪬': '[AMULETO]',
+      '🪭': '[LEQUE]',
+      '🪮': '[PENTE]',
+      '🪯': '[RODA]',
+      '🪰': '[MOSCA]',
+      '🪱': '[MINHOCA]',
+      '🪲': '[BESOURO]',
+      '🪳': '[BARATA]',
+      '🪴': '[PLANTA]',
+      '🪵': '[MADEIRA]',
+      '🪶': '[PENA]',
+      '🪷': '[LÓTUS]',
+      '🪸': '[CORAL]',
+      '🪹': '[NINHO]',
+      '🪺': '[OVO]',
+      '🫀': '[CORAÇÃO]',
+      '🫁': '[PULMÃO]',
+      '🫂': '[ABRAÇO]',
+      '🫃': '[GRAVIDEZ]',
+      '🫄': '[GRAVIDEZ]',
+      '🫅': '[PESSOA]',
+      '🫆': '[PESSOA]',
+      '🫇': '[PESSOA]',
+      '🫈': '[PESSOA]',
+      '🫉': '[PESSOA]',
+      '🫊': '[PESSOA]',
+      '🫋': '[PESSOA]',
+      '🫌': '[PESSOA]',
+      '🫍': '[PESSOA]',
+      '🫎': '[PESSOA]',
+      '🫏': '[PESSOA]',
+      '🫐': '[MIRTILO]',
+      '🫑': '[PIMENTÃO]',
+      '🫒': '[AZEITONA]',
+      '🫓': '[PÃO]',
+      '🫔': '[TAMALE]',
+      '🫕': '[FONDUE]',
+      '🫖': '[CHALEIRA]',
+      '🫗': '[BEBIDA]',
+      '🫘': '[FEIJÃO]',
+      '🫙': '[JARRO]',
+      '🫚': '[GENGIBRE]',
+      '🫛': '[ERVILHA]',
+      '🫜': '[FOLHA]',
+      '🫝': '[FOLHA]',
+      '🫞': '[FOLHA]',
+      '🫟': '[FOLHA]',
+      '🫠': '[DERRETENDO]',
+      '🫡': '[SALUTA]',
+      '🫢': '[SURPRESO]',
+      '🫣': '[ESPIANDO]',
+      '🫤': '[NEUTRO]',
+      '🫥': '[LINHA]',
+      '🫦': '[MORDENDO]',
+      '🫧': '[BOLHAS]',
+      '🫨': '[TREMENDO]',
+      '🫩': '[PESSOA]',
+      '🫪': '[PESSOA]',
+      '🫫': '[PESSOA]',
+      '🫬': '[PESSOA]',
+      '🫭': '[PESSOA]',
+      '🫮': '[PESSOA]',
+      '🫯': '[PESSOA]',
+      '🫰': '[PESSOA]',
+      '🫱': '[PESSOA]',
+      '🫲': '[PESSOA]',
+      '🫳': '[PESSOA]',
+      '🫴': '[PESSOA]',
+      '🫵': '[PESSOA]',
+      '🫶': '[PESSOA]',
+      '🫷': '[PESSOA]',
+      '🫸': '[PESSOA]',
+      '🫹': '[PESSOA]',
+      '🫺': '[PESSOA]',
+      '🫻': '[PESSOA]',
+      '🫼': '[PESSOA]',
+      '🫽': '[PESSOA]',
+      '🫾': '[PESSOA]',
+      '🫿': '[PESSOA]',
+      '🬀': '[SÍMBOLO]',
+      '🬁': '[SÍMBOLO]',
+      '🬂': '[SÍMBOLO]',
+      '🬃': '[SÍMBOLO]',
+      '🬄': '[SÍMBOLO]',
+      '🬅': '[SÍMBOLO]',
+      '🬆': '[SÍMBOLO]',
+      '🬇': '[SÍMBOLO]',
+      '🬈': '[SÍMBOLO]',
+      '🬉': '[SÍMBOLO]',
+      '🬊': '[SÍMBOLO]',
+      '🬋': '[SÍMBOLO]',
+      '🬌': '[SÍMBOLO]',
+      '🬍': '[SÍMBOLO]',
+      '🬎': '[SÍMBOLO]',
+      '🬏': '[SÍMBOLO]',
+      '🬐': '[SÍMBOLO]',
+      '🬑': '[SÍMBOLO]',
+      '🬒': '[SÍMBOLO]',
+      '🬓': '[SÍMBOLO]',
+      '🬔': '[SÍMBOLO]',
+      '🬕': '[SÍMBOLO]',
+      '🬖': '[SÍMBOLO]',
+      '🬗': '[SÍMBOLO]',
+      '🬘': '[SÍMBOLO]',
+      '🬙': '[SÍMBOLO]',
+      '🬚': '[SÍMBOLO]',
+      '🬛': '[SÍMBOLO]',
+      '🬜': '[SÍMBOLO]',
+      '🬝': '[SÍMBOLO]',
+      '🬞': '[SÍMBOLO]',
+      '🬟': '[SÍMBOLO]',
+      '🬠': '[SÍMBOLO]',
+      '🬡': '[SÍMBOLO]',
+      '🬢': '[SÍMBOLO]',
+      '🬣': '[SÍMBOLO]',
+      '🬤': '[SÍMBOLO]',
+      '🬥': '[SÍMBOLO]',
+      '🬦': '[SÍMBOLO]',
+      '🬧': '[SÍMBOLO]',
+      '🬨': '[SÍMBOLO]',
+      '🬩': '[SÍMBOLO]',
+      '🬪': '[SÍMBOLO]',
+      '🬫': '[SÍMBOLO]',
+      '🬬': '[SÍMBOLO]',
+      '🬭': '[SÍMBOLO]',
+      '🬮': '[SÍMBOLO]',
+      '🬯': '[SÍMBOLO]',
+      '🬰': '[SÍMBOLO]',
+      '🬱': '[SÍMBOLO]',
+      '🬲': '[SÍMBOLO]',
+      '🬳': '[SÍMBOLO]',
+      '🬴': '[SÍMBOLO]',
+      '🬵': '[SÍMBOLO]',
+      '🬶': '[SÍMBOLO]',
+      '🬷': '[SÍMBOLO]',
+      '🬸': '[SÍMBOLO]',
+      '🬹': '[SÍMBOLO]',
+      '🬺': '[SÍMBOLO]',
+      '🬻': '[SÍMBOLO]',
+      '🬼': '[SÍMBOLO]',
+      '🬽': '[SÍMBOLO]',
+      '🬾': '[SÍMBOLO]',
+      '🬿': '[SÍMBOLO]',
+      '🭀': '[SÍMBOLO]',
+      '🭁': '[SÍMBOLO]',
+      '🭂': '[SÍMBOLO]',
+      '🭃': '[SÍMBOLO]',
+      '🭄': '[SÍMBOLO]',
+      '🭅': '[SÍMBOLO]',
+      '🭆': '[SÍMBOLO]',
+      '🭇': '[SÍMBOLO]',
+      '🭈': '[SÍMBOLO]',
+      '🭉': '[SÍMBOLO]',
+      '🭊': '[SÍMBOLO]',
+      '🭋': '[SÍMBOLO]',
+      '🭌': '[SÍMBOLO]',
+      '🭍': '[SÍMBOLO]',
+      '🭎': '[SÍMBOLO]',
+      '🭏': '[SÍMBOLO]',
+      '🭐': '[SÍMBOLO]',
+      '🭑': '[SÍMBOLO]',
+      '🭒': '[SÍMBOLO]',
+      '🭓': '[SÍMBOLO]',
+      '🭔': '[SÍMBOLO]',
+      '🭕': '[SÍMBOLO]',
+      '🭖': '[SÍMBOLO]',
+      '🭗': '[SÍMBOLO]',
+      '🭘': '[SÍMBOLO]',
+      '🭙': '[SÍMBOLO]',
+      '🭚': '[SÍMBOLO]',
+      '🭛': '[SÍMBOLO]',
+      '🭜': '[SÍMBOLO]',
+      '🭝': '[SÍMBOLO]',
+      '🭞': '[SÍMBOLO]',
+      '🭟': '[SÍMBOLO]',
+      '🭠': '[SÍMBOLO]',
+      '🭡': '[SÍMBOLO]',
+      '🭢': '[SÍMBOLO]',
+      '🭣': '[SÍMBOLO]',
+      '🭤': '[SÍMBOLO]',
+      '🭥': '[SÍMBOLO]',
+      '🭦': '[SÍMBOLO]',
+      '🭧': '[SÍMBOLO]',
+      '🭨': '[SÍMBOLO]',
+      '🭩': '[SÍMBOLO]',
+      '🭪': '[SÍMBOLO]',
+      '🭫': '[SÍMBOLO]',
+      '🭬': '[SÍMBOLO]',
+      '🭭': '[SÍMBOLO]',
+      '🭮': '[SÍMBOLO]',
+      '🭯': '[SÍMBOLO]',
+      '🭰': '[SÍMBOLO]',
+      '🭱': '[SÍMBOLO]',
+      '🭲': '[SÍMBOLO]',
+      '🭳': '[SÍMBOLO]',
+      '🭴': '[SÍMBOLO]',
+      '🭵': '[SÍMBOLO]',
+      '🭶': '[SÍMBOLO]',
+      '🭷': '[SÍMBOLO]',
+      '🭸': '[SÍMBOLO]',
+      '🭹': '[SÍMBOLO]',
+      '🭺': '[SÍMBOLO]',
+      '🭻': '[SÍMBOLO]',
+      '🭼': '[SÍMBOLO]',
+      '🭽': '[SÍMBOLO]',
+      '🭾': '[SÍMBOLO]',
+      '🭿': '[SÍMBOLO]',
+      '🮀': '[SÍMBOLO]',
+      '🮁': '[SÍMBOLO]',
+      '🮂': '[SÍMBOLO]',
+      '🮃': '[SÍMBOLO]',
+      '🮄': '[SÍMBOLO]',
+      '🮅': '[SÍMBOLO]',
+      '🮆': '[SÍMBOLO]',
+      '🮇': '[SÍMBOLO]',
+      '🮈': '[SÍMBOLO]',
+      '🮉': '[SÍMBOLO]',
+      '🮊': '[SÍMBOLO]',
+      '🮋': '[SÍMBOLO]',
+      '🮌': '[SÍMBOLO]',
+      '🮍': '[SÍMBOLO]',
+      '🮎': '[SÍMBOLO]',
+      '🮏': '[SÍMBOLO]',
+      '🮐': '[SÍMBOLO]',
+      '🮑': '[SÍMBOLO]',
+      '🮒': '[SÍMBOLO]',
+      '🮓': '[SÍMBOLO]',
+      '🮔': '[SÍMBOLO]',
+      '🮕': '[SÍMBOLO]',
+      '🮖': '[SÍMBOLO]',
+      '🮗': '[SÍMBOLO]',
+      '🮘': '[SÍMBOLO]',
+      '🮙': '[SÍMBOLO]',
+      '🮚': '[SÍMBOLO]',
+      '🮛': '[SÍMBOLO]',
+      '🮜': '[SÍMBOLO]',
+      '🮝': '[SÍMBOLO]',
+      '🮞': '[SÍMBOLO]',
+      '🮟': '[SÍMBOLO]',
+      '🮠': '[SÍMBOLO]',
+      '🮡': '[SÍMBOLO]',
+      '🮢': '[SÍMBOLO]',
+      '🮣': '[SÍMBOLO]',
+      '🮤': '[SÍMBOLO]',
+      '🮥': '[SÍMBOLO]',
+      '🮦': '[SÍMBOLO]',
+      '🮧': '[SÍMBOLO]',
+      '🮨': '[SÍMBOLO]',
+      '🮩': '[SÍMBOLO]',
+      '🮪': '[SÍMBOLO]',
+      '🮫': '[SÍMBOLO]',
+      '🮬': '[SÍMBOLO]',
+      '🮭': '[SÍMBOLO]',
+      '🮮': '[SÍMBOLO]',
+      '🮯': '[SÍMBOLO]',
+      '🮰': '[SÍMBOLO]',
+      '🮱': '[SÍMBOLO]',
+      '🮲': '[SÍMBOLO]',
+      '🮳': '[SÍMBOLO]',
+      '🮴': '[SÍMBOLO]',
+      '🮵': '[SÍMBOLO]',
+      '🮶': '[SÍMBOLO]',
+      '🮷': '[SÍMBOLO]',
+      '🮸': '[SÍMBOLO]',
+      '🮹': '[SÍMBOLO]',
+      '🮺': '[SÍMBOLO]',
+      '🮻': '[SÍMBOLO]',
+      '🮼': '[SÍMBOLO]',
+      '🮽': '[SÍMBOLO]',
+      '🮾': '[SÍMBOLO]',
+      '🮿': '[SÍMBOLO]',
+      '🯀': '[SÍMBOLO]',
+      '🯁': '[SÍMBOLO]',
+      '🯂': '[SÍMBOLO]',
+      '🯃': '[SÍMBOLO]',
+      '🯄': '[SÍMBOLO]',
+      '🯅': '[SÍMBOLO]',
+      '🯆': '[SÍMBOLO]',
+      '🯇': '[SÍMBOLO]',
+      '🯈': '[SÍMBOLO]',
+      '🯉': '[SÍMBOLO]',
+      '🯊': '[SÍMBOLO]',
+      '🯋': '[SÍMBOLO]',
+      '🯌': '[SÍMBOLO]',
+      '🯍': '[SÍMBOLO]',
+      '🯎': '[SÍMBOLO]',
+      '🯏': '[SÍMBOLO]',
+      '🯐': '[SÍMBOLO]',
+      '🯑': '[SÍMBOLO]',
+      '🯒': '[SÍMBOLO]',
+      '🯓': '[SÍMBOLO]',
+      '🯔': '[SÍMBOLO]',
+      '🯕': '[SÍMBOLO]',
+      '🯖': '[SÍMBOLO]',
+      '🯗': '[SÍMBOLO]',
+      '🯘': '[SÍMBOLO]',
+      '🯙': '[SÍMBOLO]',
+      '🯚': '[SÍMBOLO]',
+      '🯛': '[SÍMBOLO]',
+      '🯜': '[SÍMBOLO]',
+      '🯝': '[SÍMBOLO]',
+      '🯞': '[SÍMBOLO]',
+      '🯟': '[SÍMBOLO]',
+      '🯠': '[SÍMBOLO]',
+      '🯡': '[SÍMBOLO]',
+      '🯢': '[SÍMBOLO]',
+      '🯣': '[SÍMBOLO]',
+      '🯤': '[SÍMBOLO]',
+      '🯥': '[SÍMBOLO]',
+      '🯦': '[SÍMBOLO]',
+      '🯧': '[SÍMBOLO]',
+      '🯨': '[SÍMBOLO]',
+      '🯩': '[SÍMBOLO]',
+      '🯪': '[SÍMBOLO]',
+      '🯫': '[SÍMBOLO]',
+      '🯬': '[SÍMBOLO]',
+      '🯭': '[SÍMBOLO]',
+      '🯮': '[SÍMBOLO]',
+      '🯯': '[SÍMBOLO]',
+      '🯰': '[SÍMBOLO]',
+      '🯱': '[SÍMBOLO]',
+      '🯲': '[SÍMBOLO]',
+      '🯳': '[SÍMBOLO]',
+      '🯴': '[SÍMBOLO]',
+      '🯵': '[SÍMBOLO]',
+      '🯶': '[SÍMBOLO]',
+      '🯷': '[SÍMBOLO]',
+      '🯸': '[SÍMBOLO]',
+      '🯹': '[SÍMBOLO]',
+      '🯺': '[SÍMBOLO]',
+      '🯻': '[SÍMBOLO]',
+      '🯼': '[SÍMBOLO]',
+      '🯽': '[SÍMBOLO]',
+      '🯾': '[SÍMBOLO]',
+      '🯿': '[SÍMBOLO]',
+    };
+
+    emojiMap.forEach((emoji, replacement) {
+      result = result.replaceAll(emoji, replacement);
+    });
+
+    // Remover outros caracteres Unicode problemáticos
+    result = result.replaceAll(
+        RegExp(r'\u{1F600}-\u{1F64F}]'), '[EMOJI]'); // Emojis faciais
+    result = result.replaceAll(
+        RegExp(r'\u{1F300}-\u{1F5FF}]'), '[SÍMBOLO]'); // Misc Symbols
+    result = result.replaceAll(
+        RegExp(r'\u{1F680}-\u{1F6FF}]'), '[TRANSPORTE]'); // Transport
+    result = result.replaceAll(
+        RegExp(r'\u{1F1}-\u{1FF}'), '[BANDEIRA]'); // Regional Indicators
+    result = result.replaceAll(
+        RegExp(r'\u{2600}-\u{26FF}'), '[SÍMBOLO]'); // Misc Symbols
+    result = result.replaceAll(
+        RegExp(r'\u{2700}-\u{27BF}'), '[SÍMBOLO]'); // Dingbats
+
+    return result;
+  }
+
+  /// Obter tamanho da fonte para heading
+  double _getHeadingFontSize(int level) {
+    switch (level) {
+      case 1:
+        return 24.0;
+      case 2:
+        return 20.0;
+      case 3:
+        return 18.0;
+      case 4:
+        return 16.0;
+      case 5:
+        return 14.0;
+      case 6:
+        return 12.0;
+      default:
+        return 12.0;
+    }
+  }
+
+  /// Obter peso da fonte para heading
+  pw.FontWeight _getHeadingFontWeight(int level) {
+    switch (level) {
+      case 1:
+      case 2:
+        return pw.FontWeight.bold;
+      default:
+        return pw.FontWeight.normal;
+    }
+  }
+
+  /// Obter espaçamento para heading
+  double _getHeadingSpacing(int level) {
+    switch (level) {
+      case 1:
+        return 16.0;
+      case 2:
+        return 12.0;
+      default:
+        return 8.0;
+    }
+  }
+
+  /// Dividir widgets em páginas
+  List<List<pw.Widget>> _splitIntoPages(List<pw.Widget> widgets) {
+    final pages = <List<pw.Widget>>[];
+    final currentPage = <pw.Widget>[];
+
+    for (final widget in widgets) {
+      currentPage.add(widget);
+
+      // Simples: dividir a cada 50 widgets (aproximação)
+      if (currentPage.length >= 50) {
+        pages.add(List.from(currentPage));
+        currentPage.clear();
+      }
+    }
+
+    // Adicionar última página se houver conteúdo
+    if (currentPage.isNotEmpty) {
+      pages.add(currentPage);
+    }
+
+    return pages;
+  }
+
+  /// Gerar bytes do PDF para impressão
+  Future<Uint8List?> generatePdfBytes({
+    required String markdown,
+    required String title,
+    required AppStrings strings,
+  }) async {
+    try {
+      await _loadFonts();
+
+      final pdf = pw.Document(
+        title: title,
+        author: 'Bloquinho App',
+        subject: 'Documento para impressão',
+      );
+
+      final sanitizedMarkdown = _sanitizeText(markdown);
+
+      final blocks = EnhancedMarkdownParser.parseMarkdown(sanitizedMarkdown);
+
+      final widgets = await _convertBlocksToPdfWidgets(blocks);
+
+      final pages = _splitIntoPages(widgets);
+
+      for (int i = 0; i < pages.length; i++) {
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat.a4,
+            margin: const pw.EdgeInsets.all(40),
+            build: (pw.Context context) => pw.Column(
+              children: [
+                // Cabeçalho
+                pw.Container(
+                  margin: const pw.EdgeInsets.only(bottom: 20),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        title,
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                          font: _getDefaultFont(),
+                          fontFallback: _getFontFallbacks(),
+                        ),
+                      ),
+                      pw.Text(
+                        '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+                        style: pw.TextStyle(
+                          fontSize: 12,
+                          font: _getDefaultFont(),
+                          fontFallback: _getFontFallbacks(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Conteúdo da página
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: pages[i],
+                  ),
+                ),
+
+                // Rodapé
+                pw.SizedBox(height: 20),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'Bloquinho - $title',
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        font: _getDefaultFont(),
+                        fontFallback: _getFontFallbacks(),
+                      ),
+                    ),
+                    pw.Text(
+                      'Página ${i + 1} de ${pages.length}',
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        font: _getDefaultFont(),
+                        fontFallback: _getFontFallbacks(),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      final pdfBytes = await pdf.save();
 
       return pdfBytes;
     } catch (e, stackTrace) {
-      print('❌ [PDF] Erro ao gerar PDF para impressão: $e');
-      print('❌ [PDF] Stack trace: $stackTrace');
       return null;
     }
   }
 
   /// Sanitizar texto para evitar problemas UTF-16
   String _sanitizeText(String text) {
-    print('🧹 [PDF] Sanitizando texto: ${text.length} caracteres');
     if (text.isEmpty) return text;
 
     try {
@@ -1297,12 +1294,97 @@ class EnhancedPdfExportService {
       // Verificar novamente se é válida
       sanitized.codeUnits;
 
-      print('🧹 [PDF] Texto sanitizado: ${sanitized.length} caracteres');
       return sanitized;
     } catch (e) {
-      print('❌ [PDF] Erro ao sanitizar texto: $e');
       // Se houver erro, retornar string vazia
       return '';
     }
+  }
+
+  /// Cria uma imagem de fórmula LaTeX
+  Future<pw.Widget?> _createLatexImage(String latex) async {
+    // Limpar a fórmula LaTeX
+    String cleanLatex = latex.trim();
+    if (cleanLatex.startsWith('\$') && cleanLatex.endsWith('\$')) {
+      cleanLatex = cleanLatex.substring(1, cleanLatex.length - 1);
+    }
+
+    // Usar API MathJax para renderizar LaTeX como SVG
+    final response = await http.post(
+      Uri.parse('https://mathjax-node.herokuapp.com/mml2svg'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(
+          {'math': cleanLatex, 'format': 'TeX', 'svg': true, 'width': 600}),
+    );
+
+    if (response.statusCode == 200) {
+      final svgData = response.body;
+
+      // Converter SVG para imagem PNG usando API
+      final pngResponse = await http.post(
+        Uri.parse('https://api.kroki.io/svg2png'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'svg': svgData, 'width': 600, 'height': 200}),
+      );
+
+      if (pngResponse.statusCode == 200) {
+        final pngData = pngResponse.bodyBytes;
+        return pw.Image(
+          pw.MemoryImage(pngData),
+          width: 600,
+          height: 200,
+          fit: pw.BoxFit.contain,
+        );
+      }
+    }
+
+    // Fallback: mostrar como texto
+    return pw.Text(
+      'Fórmula: $cleanLatex',
+      style: pw.TextStyle(
+        font: _getDefaultFont(),
+        fontSize: 12,
+        fontStyle: pw.FontStyle.italic,
+      ),
+    );
+  }
+
+  /// Cria uma imagem de diagrama Mermaid
+  Future<pw.Widget?> _createMermaidImage(String mermaidCode) async {
+    // Limpar o código Mermaid
+    String cleanMermaid = mermaidCode.trim();
+
+    // Usar API kroki.io para renderizar Mermaid
+    final encodedDiagram = base64Encode(utf8.encode(cleanMermaid));
+    final url = 'https://kroki.io/mermaid/png/$encodedDiagram';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final pngData = response.bodyBytes;
+
+      return pw.Image(
+        pw.MemoryImage(pngData),
+        width: 600,
+        height: 400,
+        fit: pw.BoxFit.contain,
+      );
+    }
+
+    // Fallback: mostrar como código
+    return pw.Container(
+      padding: pw.EdgeInsets.all(8),
+      decoration: pw.BoxDecoration(
+        color: PdfColor.fromInt(0xFF44475A),
+        border: pw.Border.all(color: PdfColor.fromInt(0xFF888888)),
+      ),
+      child: pw.Text(
+        'Diagrama Mermaid:\n$cleanMermaid',
+        style: pw.TextStyle(
+          font: _getDefaultFont(),
+          fontSize: 10,
+        ),
+      ),
+    );
   }
 }
