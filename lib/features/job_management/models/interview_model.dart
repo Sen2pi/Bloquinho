@@ -51,6 +51,7 @@ class InterviewModel {
   final String? notes;
   final int? rating; // 1-5
   final String? pageId; // Link para página do bloquinho
+  final String? opinion; // Parecer sobre a entrevista
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -72,6 +73,7 @@ class InterviewModel {
     this.notes,
     this.rating,
     this.pageId,
+    this.opinion,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -92,6 +94,7 @@ class InterviewModel {
     String? notes,
     int? rating,
     String? pageId,
+    String? opinion,
   }) {
     final now = DateTime.now();
     return InterviewModel(
@@ -112,6 +115,7 @@ class InterviewModel {
       notes: notes,
       rating: rating,
       pageId: pageId,
+      opinion: opinion,
       createdAt: now,
       updatedAt: now,
     );
@@ -140,6 +144,7 @@ class InterviewModel {
     String? notes,
     int? rating,
     String? pageId,
+    String? opinion,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -161,6 +166,7 @@ class InterviewModel {
       notes: notes ?? this.notes,
       rating: rating ?? this.rating,
       pageId: pageId ?? this.pageId,
+      opinion: opinion ?? this.opinion,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );

@@ -43,7 +43,7 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(isDarkModeProvider);
     final strings = ref.watch(appStringsProvider);
-    final interviewsAsync = ref.watch(interviewsNotifierProvider);
+    final interviewsAsync = ref.watch(interviewsProvider);
 
     return Scaffold(
       backgroundColor:
@@ -370,6 +370,56 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
                   ],
                 ],
               ),
+              const SizedBox(height: 8),
+              // Linha adicional com país, idioma e link
+              Row(
+                children: [
+                  Icon(
+                    PhosphorIcons.globeHemisphereWest(),
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    interview.country,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Icon(
+                    PhosphorIcons.translate(),
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    interview.language,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const Spacer(),
+                  if (interview.companyLink != null) ...[
+                    Icon(
+                      PhosphorIcons.link(),
+                      size: 16,
+                      color: Colors.blue[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Link',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue[600],
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
               if (interview.description != null) ...[
                 const SizedBox(height: 12),
                 Text(
@@ -387,101 +437,6 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(InterviewStatus status, AppStrings strings) {
-    Color color;
-    String text;
-
-    switch (status) {
-      case InterviewStatus.scheduled:
-        color = Colors.blue;
-        text = strings.jobScheduled;
-        break;
-      case InterviewStatus.completed:
-        color = Colors.green;
-        text = strings.jobCompleted;
-        break;
-      case InterviewStatus.cancelled:
-        color = Colors.red;
-        text = strings.jobCancelled;
-        break;
-      case InterviewStatus.pending:
-        color = Colors.orange;
-        text = strings.jobPending;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: color,
-        ),
-      ),
-    );
-  }
-
-  List<InterviewModel> _filterInterviews(List<InterviewModel> interviews) {
-    return interviews.where((interview) {
-      final matchesSearch = _searchQuery.isEmpty ||
-          interview.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          interview.company.toLowerCase().contains(_searchQuery.toLowerCase());
-
-      final matchesType =
-          _selectedType == null || interview.type == _selectedType;
-      final matchesStatus =
-          _selectedStatus == null || interview.status == _selectedStatus;
-
-      return matchesSearch && matchesType && matchesStatus;
-    }).toList();
-  }
-
-  void _showInterviewDetails(
-      InterviewModel interview, bool isDarkMode, AppStrings strings) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(interview.title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Empresa: ${interview.company}'),
-            Text('Tipo: ${_getTypeLabel(interview.type, strings)}'),
-            Text('Status: ${_getStatusLabel(interview.status, strings)}'),
-            Text(
-                'Data: ${DateFormat('dd/MM/yyyy - HH:mm').format(interview.dateTime)}'),
-            if (interview.salaryProposal != null)
-              Text('Salário: ${interview.salaryProposal}€'),
-            if (interview.description != null) ...[
-              const SizedBox(height: 8),
-              Text('Descrição: ${interview.description}'),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Fechar'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Implementar edição
-            },
-            child: Text('Editar'),
-          ),
-        ],
       ),
     );
   }
@@ -521,13 +476,18 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
     }
   }
 
-  void _createNewInterview() {
-    Navigator.push(
+  Future<void> _createNewInterview() async {
+    final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => const InterviewFormScreen(),
       ),
     );
+
+    // Se a entrevista foi criada com sucesso, recarregar a lista
+    if (result == true) {
+      ref.refresh(interviewsProvider);
+    }
   }
 
   Color _getInterviewTypeColor(InterviewType type) {
@@ -539,5 +499,467 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
       case InterviewType.teamLead:
         return Colors.orange;
     }
+  }
+
+  Widget _buildStatusBadge(InterviewStatus status, AppStrings strings) {
+    Color backgroundColor;
+    Color textColor;
+    String text;
+
+    switch (status) {
+      case InterviewStatus.scheduled:
+        backgroundColor = Colors.blue;
+        textColor = Colors.white;
+        text = strings.jobScheduled;
+        break;
+      case InterviewStatus.completed:
+        backgroundColor = Colors.green;
+        textColor = Colors.white;
+        text = strings.jobCompleted;
+        break;
+      case InterviewStatus.cancelled:
+        backgroundColor = Colors.red;
+        textColor = Colors.white;
+        text = strings.jobCancelled;
+        break;
+      case InterviewStatus.pending:
+        backgroundColor = Colors.orange;
+        textColor = Colors.white;
+        text = strings.jobPending;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailSection(
+      String title, List<Widget> children, bool isDarkMode) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.lightTextPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? AppColors.darkSurface.withOpacity(0.5)
+                : AppColors.lightSurface.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: children,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value,
+      {bool isLink = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: Colors.grey[600],
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[700],
+            ),
+          ),
+          Expanded(
+            child: isLink
+                ? GestureDetector(
+                    onTap: () {
+                      // TODO: Implementar abertura do link
+                    },
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.blue[600],
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  )
+                : Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _editInterview(InterviewModel interview) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => InterviewFormScreen(interview: interview),
+      ),
+    ).then((result) {
+      if (result == true) {
+        ref.refresh(interviewsProvider);
+      }
+    });
+  }
+
+  void _showDeleteConfirmation(InterviewModel interview) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar exclusão'),
+        content: Text(
+            'Tem certeza que deseja apagar a entrevista "${interview.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                final service = ref.read(jobManagementServiceProvider);
+                await service.deleteInterview(interview.id);
+                ref.refresh(interviewsProvider);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Entrevista apagada com sucesso'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erro ao apagar entrevista: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Apagar'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<InterviewModel> _filterInterviews(List<InterviewModel> interviews) {
+    return interviews.where((interview) {
+      final matchesSearch = _searchQuery.isEmpty ||
+          interview.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          interview.company.toLowerCase().contains(_searchQuery.toLowerCase());
+
+      final matchesType =
+          _selectedType == null || interview.type == _selectedType;
+      final matchesStatus =
+          _selectedStatus == null || interview.status == _selectedStatus;
+
+      return matchesSearch && matchesType && matchesStatus;
+    }).toList();
+  }
+
+  void _showInterviewDetails(
+      InterviewModel interview, bool isDarkMode, AppStrings strings) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.9,
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color:
+                  isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header com título e status
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            interview.title,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.lightTextPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                PhosphorIcons.buildings(),
+                                size: 16,
+                                color: Colors.grey[600],
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                interview.company,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    _buildStatusBadge(interview.status, strings),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Conteúdo scrollável
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Informações básicas
+                        _buildDetailSection(
+                          'Informações da Entrevista',
+                          [
+                            _buildDetailRow(
+                              PhosphorIcons.calendar(),
+                              'Data e hora',
+                              DateFormat('dd/MM/yyyy - HH:mm')
+                                  .format(interview.dateTime),
+                            ),
+                            _buildDetailRow(
+                              _getInterviewTypeIcon(interview.type),
+                              'Tipo',
+                              _getTypeLabel(interview.type, strings),
+                            ),
+                            _buildDetailRow(
+                              PhosphorIcons.globeHemisphereWest(),
+                              'País',
+                              interview.country,
+                            ),
+                            _buildDetailRow(
+                              PhosphorIcons.translate(),
+                              'Idioma',
+                              interview.language,
+                            ),
+                            if (interview.companyLink != null)
+                              _buildDetailRow(
+                                PhosphorIcons.link(),
+                                'Link da empresa',
+                                interview.companyLink!,
+                                isLink: true,
+                              ),
+                          ],
+                          isDarkMode,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Informações salariais
+                        if (interview.salaryProposal != null ||
+                            interview.annualSalary != null) ...[
+                          _buildDetailSection(
+                            'Informações Salariais',
+                            [
+                              if (interview.salaryProposal != null)
+                                _buildDetailRow(
+                                  PhosphorIcons.currencyDollar(),
+                                  'Proposta salarial',
+                                  '${interview.salaryProposal}€',
+                                ),
+                              if (interview.annualSalary != null)
+                                _buildDetailRow(
+                                  PhosphorIcons.trendUp(),
+                                  'Salário anual',
+                                  '${interview.annualSalary}€',
+                                ),
+                            ],
+                            isDarkMode,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+
+                        // Descrição
+                        if (interview.description != null) ...[
+                          _buildDetailSection(
+                            'Descrição',
+                            [
+                              Text(
+                                interview.description!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDarkMode
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
+                            isDarkMode,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+
+                        // Notas
+                        if (interview.notes != null) ...[
+                          _buildDetailSection(
+                            'Notas Pessoais',
+                            [
+                              Text(
+                                interview.notes!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDarkMode
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
+                            isDarkMode,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+
+                        // Seção de parecer
+                        _buildDetailSection(
+                          'Parecer da Entrevista',
+                          [
+                            TextFormField(
+                              decoration: const InputDecoration(
+                                labelText:
+                                    'Adicionar parecer sobre a entrevista',
+                                border: OutlineInputBorder(),
+                                hintText:
+                                    'Como foi a entrevista? Pontos positivos e negativos...',
+                              ),
+                              maxLines: 4,
+                              initialValue: interview.opinion ?? '',
+                              onChanged: (value) {
+                                // TODO: Implementar salvamento automático do parecer
+                              },
+                            ),
+                          ],
+                          isDarkMode,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Botões de ação
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(PhosphorIcons.x()),
+                        label: const Text('Fechar'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _editInterview(interview);
+                        },
+                        icon: Icon(PhosphorIcons.pencil()),
+                        label: const Text('Editar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showDeleteConfirmation(interview);
+                      },
+                      icon: Icon(PhosphorIcons.trash()),
+                      label: const Text('Apagar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

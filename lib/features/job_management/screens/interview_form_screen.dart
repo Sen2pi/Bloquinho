@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/language_provider.dart';
@@ -20,6 +21,8 @@ import '../models/interview_model.dart';
 import '../models/cv_model.dart';
 import '../models/application_model.dart';
 import '../providers/job_management_provider.dart';
+import '../../agenda/providers/agenda_provider.dart';
+import '../../agenda/models/agenda_item.dart';
 
 class InterviewFormScreen extends ConsumerStatefulWidget {
   final InterviewModel? interview; // null para criar novo, não null para editar
@@ -27,7 +30,8 @@ class InterviewFormScreen extends ConsumerStatefulWidget {
   const InterviewFormScreen({super.key, this.interview});
 
   @override
-  ConsumerState<InterviewFormScreen> createState() => _InterviewFormScreenState();
+  ConsumerState<InterviewFormScreen> createState() =>
+      _InterviewFormScreenState();
 }
 
 class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
@@ -78,7 +82,7 @@ class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
       final service = ref.read(jobManagementServiceProvider);
       final cvs = await service.getCVs();
       final applications = await service.getApplications();
-      
+
       setState(() {
         _availableCVs = cvs;
         _availableApplications = applications;
@@ -117,7 +121,8 @@ class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
       backgroundColor:
           isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
-        title: Text(widget.interview != null ? 'Editar Entrevista' : 'Nova Entrevista'),
+        title: Text(
+            widget.interview != null ? 'Editar Entrevista' : 'Nova Entrevista'),
         backgroundColor:
             isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
         foregroundColor:
@@ -273,10 +278,12 @@ class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
                 labelText: 'Tipo de entrevista',
                 border: OutlineInputBorder(),
               ),
-              items: InterviewType.values.map((type) => DropdownMenuItem(
-                value: type,
-                child: Text(_getTypeLabel(type)),
-              )).toList(),
+              items: InterviewType.values
+                  .map((type) => DropdownMenuItem(
+                        value: type,
+                        child: Text(_getTypeLabel(type)),
+                      ))
+                  .toList(),
               onChanged: (value) {
                 if (value != null) {
                   setState(() {
@@ -292,10 +299,12 @@ class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
                 labelText: 'Status da entrevista',
                 border: OutlineInputBorder(),
               ),
-              items: InterviewStatus.values.map((status) => DropdownMenuItem(
-                value: status,
-                child: Text(_getStatusLabel(status)),
-              )).toList(),
+              items: InterviewStatus.values
+                  .map((status) => DropdownMenuItem(
+                        value: status,
+                        child: Text(_getStatusLabel(status)),
+                      ))
+                  .toList(),
               onChanged: (value) {
                 if (value != null) {
                   setState(() {
@@ -307,7 +316,8 @@ class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
             const SizedBox(height: 16),
             ListTile(
               title: const Text('Data e hora'),
-              subtitle: Text(DateFormat('dd/MM/yyyy - HH:mm').format(_dateTime)),
+              subtitle:
+                  Text(DateFormat('dd/MM/yyyy - HH:mm').format(_dateTime)),
               trailing: const Icon(Icons.calendar_today),
               onTap: () async {
                 final date = await showDatePicker(
@@ -367,7 +377,10 @@ class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String?>(
-              value: _selectedCVId,
+              value: _selectedCVId != null &&
+                      _availableCVs.any((cv) => cv.id == _selectedCVId)
+                  ? _selectedCVId
+                  : null,
               decoration: const InputDecoration(
                 labelText: 'CV utilizado (opcional)',
                 border: OutlineInputBorder(),
@@ -378,9 +391,9 @@ class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
                   child: Text('Nenhum CV selecionado'),
                 ),
                 ..._availableCVs.map((cv) => DropdownMenuItem(
-                  value: cv.id,
-                  child: Text(cv.name),
-                )),
+                      value: cv.id,
+                      child: Text(cv.name),
+                    )),
               ],
               onChanged: (value) {
                 setState(() {
@@ -390,7 +403,11 @@ class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String?>(
-              value: _selectedApplicationId,
+              value: _selectedApplicationId != null &&
+                      _availableApplications
+                          .any((app) => app.id == _selectedApplicationId)
+                  ? _selectedApplicationId
+                  : null,
               decoration: const InputDecoration(
                 labelText: 'Candidatura vinculada (opcional)',
                 border: OutlineInputBorder(),
@@ -401,9 +418,9 @@ class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
                   child: Text('Nenhuma candidatura vinculada'),
                 ),
                 ..._availableApplications.map((app) => DropdownMenuItem(
-                  value: app.id,
-                  child: Text('${app.title} - ${app.company}'),
-                )),
+                      value: app.id,
+                      child: Text('${app.title} - ${app.company}'),
+                    )),
               ],
               onChanged: (value) {
                 setState(() {
@@ -517,8 +534,11 @@ class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
                 ),
               )
             : Text(
-                widget.interview != null ? 'Atualizar Entrevista' : 'Criar Entrevista',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                widget.interview != null
+                    ? 'Atualizar Entrevista'
+                    : 'Criar Entrevista',
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
       ),
     );
@@ -556,35 +576,98 @@ class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
     });
 
     try {
-      final interview = InterviewModel.create(
-        title: _titleController.text,
-        description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
-        type: _selectedType,
-        dateTime: _dateTime,
-        company: _companyController.text,
-        companyLink: _companyLinkController.text.isEmpty ? null : _companyLinkController.text,
-        country: _countryController.text,
-        language: _languageController.text,
-        salaryProposal: _salaryProposal,
-        annualSalary: _annualSalary,
-        cvId: _selectedCVId,
-        applicationId: _selectedApplicationId,
-        notes: _notesController.text.isEmpty ? null : _notesController.text,
-      );
-
       final service = ref.read(jobManagementServiceProvider);
+
+      InterviewModel interview;
+
+      if (widget.interview != null) {
+        // EDITAR entrevista existente
+        interview = widget.interview!.copyWith(
+          title: _titleController.text,
+          description: _descriptionController.text.isEmpty
+              ? null
+              : _descriptionController.text,
+          type: _selectedType,
+          status: _selectedStatus, // IMPORTANTE: Atualizar o status
+          dateTime: _dateTime,
+          company: _companyController.text,
+          companyLink: _companyLinkController.text.isEmpty
+              ? null
+              : _companyLinkController.text,
+          country: _countryController.text,
+          language: _languageController.text,
+          salaryProposal: _salaryProposal,
+          annualSalary: _annualSalary,
+          cvId: _selectedCVId,
+          applicationId: _selectedApplicationId,
+          notes: _notesController.text.isEmpty ? null : _notesController.text,
+        );
+      } else {
+        // CRIAR nova entrevista
+        interview = InterviewModel.create(
+          title: _titleController.text,
+          description: _descriptionController.text.isEmpty
+              ? null
+              : _descriptionController.text,
+          type: _selectedType,
+          dateTime: _dateTime,
+          company: _companyController.text,
+          companyLink: _companyLinkController.text.isEmpty
+              ? null
+              : _companyLinkController.text,
+          country: _countryController.text,
+          language: _languageController.text,
+          salaryProposal: _salaryProposal,
+          annualSalary: _annualSalary,
+          cvId: _selectedCVId,
+          applicationId: _selectedApplicationId,
+          notes: _notesController.text.isEmpty ? null : _notesController.text,
+        );
+
+        // IMPORTANTE: Definir o status correto após criar
+        interview = interview.copyWith(status: _selectedStatus);
+      }
+
       await service.saveInterview(interview);
+
+      // Criar evento na agenda apenas se for uma nova entrevista
+      if (widget.interview == null) {
+        try {
+          final agendaService = ref.read(agendaServiceProvider);
+          final agendaItem = AgendaItem(
+            id: const Uuid().v4(),
+            title: 'Entrevista: ${interview.title}',
+            description:
+                'Entrevista na empresa ${interview.company}\n${interview.description ?? ''}',
+            startDate: interview.dateTime,
+            endDate: interview.dateTime.add(const Duration(hours: 1)),
+            type: AgendaItemType.meeting,
+            status: TaskStatus.todo,
+            priority: Priority.high,
+            tags: ['trabalho', 'entrevista', interview.company.toLowerCase()],
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+          await agendaService.createItem(agendaItem);
+        } catch (e) {
+          // Se falhar ao criar evento na agenda, apenas logar o erro mas não falhar a criação da entrevista
+          print('Erro ao criar evento na agenda: $e');
+        }
+      }
+
+      // Invalidar o provider para forçar reload
+      ref.invalidate(interviewsProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.interview != null 
-                ? 'Entrevista atualizada com sucesso!' 
+            content: Text(widget.interview != null
+                ? 'Entrevista atualizada com sucesso!'
                 : 'Entrevista criada com sucesso!'),
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true); // Retorna true indicando sucesso
       }
     } catch (e) {
       if (mounted) {
@@ -603,4 +686,4 @@ class _InterviewFormScreenState extends ConsumerState<InterviewFormScreen> {
       }
     }
   }
-} 
+}

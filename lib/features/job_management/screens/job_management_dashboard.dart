@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/workspace_provider.dart';
@@ -22,7 +23,8 @@ import '../providers/job_management_provider.dart';
 import '../models/interview_model.dart';
 import '../widgets/job_stats_card.dart';
 import '../widgets/recent_interviews_widget.dart';
-import '../widgets/quick_actions_widget.dart';
+import '../widgets/modern_quick_actions_widget.dart';
+import '../widgets/job_chart_widget.dart';
 import 'interviews_screen.dart';
 import 'cvs_screen.dart';
 import 'applications_screen.dart';
@@ -126,7 +128,7 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
         body: TabBarView(
           controller: _tabController,
           children: [
-            _buildDashboardTab(isDarkMode, strings),
+            _buildModernDashboardTab(isDarkMode, strings),
             const InterviewsScreen(),
             const CVsScreen(),
             const ApplicationsScreen(),
@@ -194,19 +196,31 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
     );
   }
 
-  Widget _buildDashboardTab(bool isDarkMode, AppStrings strings) {
+  Widget _buildModernDashboardTab(bool isDarkMode, AppStrings strings) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Estatísticas principais
-          _buildStatsSection(isDarkMode, strings),
+          // Ações rápidas modernas
+          ModernQuickActionsWidget(
+            isDarkMode: isDarkMode,
+            strings: strings,
+            onNewInterview: () => _createNewInterview(),
+            onNewCV: () => _createNewCV(),
+            onNewApplication: () => _createNewApplication(),
+            onImportData: () => _importData(),
+          ),
 
           const SizedBox(height: 24),
 
-          // Ações rápidas
-          _buildQuickActionsSection(isDarkMode, strings),
+          // Estatísticas principais
+          _buildModernStatsSection(isDarkMode, strings),
+
+          const SizedBox(height: 24),
+
+          // Gráficos
+          _buildChartsSection(isDarkMode, strings),
 
           const SizedBox(height: 24),
 
@@ -215,80 +229,109 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
 
           const SizedBox(height: 24),
 
-          // Resumo mensal
-          _buildMonthlySummarySection(isDarkMode, strings),
+          // Resumo mensal moderno
+          _buildModernMonthlySummarySection(isDarkMode, strings),
         ],
       ),
     );
   }
 
-  Widget _buildStatsSection(bool isDarkMode, AppStrings strings) {
+  Widget _buildModernStatsSection(bool isDarkMode, AppStrings strings) {
     final statsAsync = ref.watch(jobStatisticsProvider);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          strings.statistics,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isDarkMode
-                    ? AppColors.darkTextPrimary
-                    : AppColors.lightTextPrimary,
-              ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+          width: 1,
         ),
-        const SizedBox(height: 16),
-        statsAsync.when(
-          data: (stats) => _buildStatsGrid(stats, isDarkMode, strings),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(
-            child: Text(
-              'Erro ao carregar estatísticas',
-              style: TextStyle(color: Colors.red),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                PhosphorIcons.chartBar(),
+                size: 20,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                strings.statistics,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: isDarkMode
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          statsAsync.when(
+            data: (stats) => _buildModernStatsGrid(stats, isDarkMode, strings),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => Center(
+              child: Text(
+                'Erro ao carregar estatísticas',
+                style: TextStyle(color: Colors.red),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildStatsGrid(
+  Widget _buildModernStatsGrid(
       Map<String, dynamic> stats, bool isDarkMode, AppStrings strings) {
     return Row(
       children: [
         Expanded(
-          child: JobStatsCard(
-            title: strings.jobTotalInterviews,
+          child: _buildModernStatCard(
+            title: 'Entrevistas',
             value: stats['totalInterviews']?.toString() ?? '0',
             icon: PhosphorIcons.chatCentered(),
             color: Colors.blue,
             isDarkMode: isDarkMode,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
         Expanded(
-          child: JobStatsCard(
-            title: strings.jobTotalCVs,
+          child: _buildModernStatCard(
+            title: 'CVs',
             value: stats['totalCVs']?.toString() ?? '0',
             icon: PhosphorIcons.fileText(),
             color: Colors.green,
             isDarkMode: isDarkMode,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
         Expanded(
-          child: JobStatsCard(
-            title: strings.jobTotalApplications,
+          child: _buildModernStatCard(
+            title: 'Candidaturas',
             value: stats['totalApplications']?.toString() ?? '0',
             icon: PhosphorIcons.paperPlaneTilt(),
             color: Colors.orange,
             isDarkMode: isDarkMode,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
         Expanded(
-          child: JobStatsCard(
-            title: strings.jobThisMonth,
+          child: _buildModernStatCard(
+            title: 'Este Mês',
             value: stats['interviewsThisMonth']?.toString() ?? '0',
             icon: PhosphorIcons.calendar(),
             color: Colors.purple,
@@ -299,158 +342,364 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
     );
   }
 
-  Widget _buildQuickActionsSection(bool isDarkMode, AppStrings strings) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Ações Rápidas',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isDarkMode
-                    ? AppColors.darkTextPrimary
-                    : AppColors.lightTextPrimary,
-              ),
-        ),
-        const SizedBox(height: 16),
-        QuickActionsWidget(
-          isDarkMode: isDarkMode,
-          strings: strings,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRecentInterviewsSection(bool isDarkMode, AppStrings strings) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              strings.jobRecentInterviews,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: isDarkMode
-                        ? AppColors.darkTextPrimary
-                        : AppColors.lightTextPrimary,
-                  ),
-            ),
-            TextButton(
-              onPressed: () => _tabController.animateTo(1),
-              child: Text(
-                'Ver todas',
-                style: TextStyle(color: AppColors.primary),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        RecentInterviewsWidget(
-          isDarkMode: isDarkMode,
-          strings: strings,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMonthlySummarySection(bool isDarkMode, AppStrings strings) {
+  Widget _buildModernStatCard({
+    required String title,
+    required String value,
+    required PhosphorIconData icon,
+    required Color color,
+    required bool isDarkMode,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+          color: color.withOpacity(0.3),
+          width: 1,
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Resumo Mensal',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: isDarkMode
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary,
-                ),
+          Icon(
+            icon,
+            color: color,
+            size: 24,
           ),
-          const SizedBox(height: 12),
-          _buildMonthlySummaryContent(isDarkMode, strings),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 10,
+              color: isDarkMode
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMonthlySummaryContent(bool isDarkMode, AppStrings strings) {
-    final statsAsync = ref.watch(jobStatisticsProvider);
-
-    return statsAsync.when(
-      data: (stats) {
-        return Column(
+  Widget _buildChartsSection(bool isDarkMode, AppStrings strings) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            _buildSummaryRow(
-              icon: PhosphorIcons.chatCentered(),
-              title: 'Entrevistas este mês',
-              value: stats['interviewsThisMonth']?.toString() ?? '0',
-              isDarkMode: isDarkMode,
+            Icon(
+              PhosphorIcons.chartLine(),
+              size: 20,
+              color: AppColors.primary,
             ),
-            const SizedBox(height: 8),
-            _buildSummaryRow(
-              icon: PhosphorIcons.paperPlaneTilt(),
-              title: 'Candidaturas este mês',
-              value: stats['applicationsThisMonth']?.toString() ?? '0',
-              isDarkMode: isDarkMode,
+            const SizedBox(width: 8),
+            Text(
+              'Análise Gráfica',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDarkMode
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
+              ),
             ),
           ],
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Text(
-          'Erro ao carregar resumo',
-          style: TextStyle(color: Colors.red),
         ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: JobChartWidget(
+                title: 'Entrevistas (Últimos 7 dias)',
+                data: _generateSampleData(),
+                lineColor: Colors.blue,
+                fillColor: Colors.blue,
+                isDarkMode: isDarkMode,
+                subtitle: 'Tendência semanal',
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildPieChart(isDarkMode),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  List<FlSpot> _generateSampleData() {
+    return [
+      const FlSpot(0, 2),
+      const FlSpot(1, 3),
+      const FlSpot(2, 1),
+      const FlSpot(3, 4),
+      const FlSpot(4, 2),
+      const FlSpot(5, 5),
+      const FlSpot(6, 3),
+    ];
+  }
+
+  Widget _buildPieChart(bool isDarkMode) {
+    return JobPieChartWidget(
+      title: 'Distribuição por Tipo',
+      sections: [
+        PieChartSectionData(
+          color: Colors.blue,
+          value: 40,
+          title: 'Técnica\n40%',
+          radius: 50,
+          titleStyle: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        PieChartSectionData(
+          color: Colors.green,
+          value: 30,
+          title: 'RH\n30%',
+          radius: 50,
+          titleStyle: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        PieChartSectionData(
+          color: Colors.orange,
+          value: 30,
+          title: 'Team Lead\n30%',
+          radius: 50,
+          titleStyle: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ],
+      isDarkMode: isDarkMode,
+    );
+  }
+
+  Widget _buildRecentInterviewsSection(bool isDarkMode, AppStrings strings) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    PhosphorIcons.clock(),
+                    size: 20,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    strings.jobRecentInterviews,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDarkMode
+                          ? AppColors.darkTextPrimary
+                          : AppColors.lightTextPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              TextButton(
+                onPressed: () => _tabController.animateTo(1),
+                child: Text(
+                  'Ver todas',
+                  style: TextStyle(color: AppColors.primary),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          RecentInterviewsWidget(
+            isDarkMode: isDarkMode,
+            strings: strings,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSummaryRow({
+  Widget _buildModernMonthlySummarySection(
+      bool isDarkMode, AppStrings strings) {
+    final statsAsync = ref.watch(jobStatisticsProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                PhosphorIcons.calendar(),
+                size: 20,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Resumo Mensal',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: isDarkMode
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          statsAsync.when(
+            data: (stats) => Column(
+              children: [
+                _buildModernSummaryRow(
+                  icon: PhosphorIcons.chatCentered(),
+                  title: 'Entrevistas este mês',
+                  value: stats['interviewsThisMonth']?.toString() ?? '0',
+                  color: Colors.blue,
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: 12),
+                _buildModernSummaryRow(
+                  icon: PhosphorIcons.paperPlaneTilt(),
+                  title: 'Candidaturas este mês',
+                  value: stats['applicationsThisMonth']?.toString() ?? '0',
+                  color: Colors.orange,
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: 12),
+                _buildModernSummaryRow(
+                  icon: PhosphorIcons.trendUp(),
+                  title: 'Taxa de sucesso',
+                  value: '75%',
+                  color: Colors.green,
+                  isDarkMode: isDarkMode,
+                ),
+              ],
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => Center(
+              child: Text(
+                'Erro ao carregar resumo',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernSummaryRow({
     required PhosphorIconData icon,
     required String title,
     required String value,
+    required Color color,
     required bool isDarkMode,
   }) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: AppColors.primary,
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            title,
-            style: TextStyle(
-              color: isDarkMode
-                  ? AppColors.darkTextSecondary
-                  : AppColors.lightTextSecondary,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: color,
             ),
           ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: isDarkMode
-                ? AppColors.darkTextPrimary
-                : AppColors.lightTextPrimary,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: isDarkMode
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+                fontSize: 14,
+              ),
+            ),
           ),
-        ),
-      ],
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: isDarkMode
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -538,5 +787,15 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
 
   void _createNewApplication() {
     context.push('/job-management/application/new');
+  }
+
+  void _importData() {
+    // Implementar importação de dados
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Funcionalidade de importação em desenvolvimento'),
+        backgroundColor: Colors.orange,
+      ),
+    );
   }
 }
