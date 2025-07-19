@@ -44,7 +44,7 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = ref.watch(isDarkModeProvider);
     final strings = ref.watch(appStringsProvider);
-    final applicationsAsync = ref.watch(applicationsNotifierProvider);
+    final applicationsAsync = ref.watch(applicationsProvider);
 
     return Scaffold(
       backgroundColor:
@@ -796,13 +796,18 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     );
   }
 
-  void _editApplication(ApplicationModel application) {
-    Navigator.push(
+  Future<void> _editApplication(ApplicationModel application) async {
+    final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => ApplicationFormScreen(application: application),
       ),
     );
+    
+    // Se a candidatura foi editada com sucesso, recarregar a lista
+    if (result == true) {
+      ref.refresh(applicationsProvider);
+    }
   }
 
   void _showDeleteConfirmation(ApplicationModel application) {
@@ -823,15 +828,26 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ref.read(applicationsNotifierProvider.notifier).deleteApplication(application.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Candidatura excluída com sucesso'),
-                  backgroundColor: Colors.green,
-                ),
-              );
+              try {
+                final service = ref.read(jobManagementServiceProvider);
+                await service.deleteApplication(application.id);
+                ref.refresh(applicationsProvider);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Candidatura excluída com sucesso'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Erro ao excluir candidatura: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -861,13 +877,18 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     }
   }
 
-  void _createNewApplication() {
-    Navigator.push(
+  Future<void> _createNewApplication() async {
+    final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => const ApplicationFormScreen(),
       ),
     );
+    
+    // Se a candidatura foi criada/editada com sucesso, recarregar a lista
+    if (result == true) {
+      ref.refresh(applicationsProvider);
+    }
   }
 
   Color _getMatchColor(double percentage) {

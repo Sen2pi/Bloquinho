@@ -54,6 +54,13 @@ final jobManagementServiceProvider = Provider<JobManagementService>((ref) {
       await htmlStorageService.setContext(currentProfile.name, currentWorkspace.id);
       await emlParserService.setContext(currentProfile.name, currentWorkspace.id);
       await emailTrackingService.setContext(currentProfile.name, currentWorkspace.id);
+      
+      // Limpeza automática de arquivos .eml órfãos
+      try {
+        await emailTrackingService.cleanOrphanedEmlFiles();
+      } catch (e) {
+        print('Erro na limpeza automática de arquivos órfãos: $e');
+      }
     });
   }
   
@@ -265,22 +272,32 @@ class ApplicationsNotifier extends StateNotifier<AsyncValue<List<ApplicationMode
 
   Future<void> loadApplications() async {
     try {
+      print('ApplicationsNotifier: Carregando candidaturas...');
       state = const AsyncValue.loading();
       final service = ref.read(jobManagementServiceProvider);
       await service.initialize();
       final applications = await service.getApplications();
+      print('ApplicationsNotifier: ${applications.length} candidaturas carregadas');
+      for (final app in applications) {
+        print('  - ${app.title} (${app.company})');
+      }
       state = AsyncValue.data(applications);
     } catch (e, stack) {
+      print('ApplicationsNotifier: Erro ao carregar candidaturas: $e');
       state = AsyncValue.error(e, stack);
     }
   }
 
   Future<void> addApplication(ApplicationModel application) async {
     try {
+      print('ApplicationsNotifier: Adicionando candidatura: ${application.title}');
       final service = ref.read(jobManagementServiceProvider);
       await service.saveApplication(application);
+      print('ApplicationsNotifier: Candidatura salva, recarregando lista...');
       await loadApplications();
+      print('ApplicationsNotifier: Lista recarregada após adicionar');
     } catch (e, stack) {
+      print('ApplicationsNotifier: Erro ao adicionar candidatura: $e');
       state = AsyncValue.error(e, stack);
     }
   }

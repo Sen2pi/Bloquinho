@@ -86,6 +86,28 @@ class EmailTrackingStorageService {
   /// Remover email
   Future<void> deleteEmail(String emailId) async {
     final emails = await getEmails();
+    
+    // Encontrar o email a ser removido para obter o caminho do arquivo .eml
+    final emailToDelete = emails.firstWhere(
+      (email) => email.id == emailId,
+      orElse: () => throw Exception('Email não encontrado'),
+    );
+    
+    // Remover o arquivo .eml se existir
+    if (emailToDelete.emlFilePath != null) {
+      try {
+        final emlFile = File(emailToDelete.emlFilePath!);
+        if (await emlFile.exists()) {
+          await emlFile.delete();
+          print('Arquivo .eml removido: ${emailToDelete.emlFilePath}');
+        }
+      } catch (e) {
+        print('Erro ao remover arquivo .eml: $e');
+        // Continuar com a remoção do registro mesmo se não conseguir apagar o arquivo
+      }
+    }
+    
+    // Remover o email da lista
     emails.removeWhere((email) => email.id == emailId);
     await _saveEmails(emails);
   }
@@ -95,5 +117,76 @@ class EmailTrackingStorageService {
     final file = await _storageFileHandle;
     final jsonList = emails.map((email) => email.toJson()).toList();
     await file.writeAsString(json.encode(jsonList));
+  }
+
+  /// Limpar arquivos .eml órfãos (que não têm correspondência na base de dados)
+  Future<void> cleanOrphanedEmlFiles() async {
+    try {
+      await _workspaceStorage.initialize();
+      final workspacePath = await _workspaceStorage.getCurrentWorkspacePath();
+      if (workspacePath == null) return;
+      
+      final emlDir = Directory(path.join(workspacePath, _storageDir));
+      if (!await emlDir.exists()) return;
+      
+      // Obter todos os emails salvos
+      final emails = await getEmails();
+      final validEmlPaths = emails
+          .where((email) => email.emlFilePath != null)
+          .map((email) => email.emlFilePath!)
+          .toSet();
+      
+      // Listar todos os arquivos .eml no diretório
+      final emlFiles = await emlDir
+          .list()
+          .where((entity) => entity is File && entity.path.endsWith('.eml'))
+          .cast<File>()
+          .toList();
+      
+      // Remover arquivos órfãos
+      int removedCount = 0;
+      for (final emlFile in emlFiles) {
+        if (!validEmlPaths.contains(emlFile.path)) {
+          try {
+            await emlFile.delete();
+            removedCount++;
+            print('Arquivo .eml órfão removido: ${emlFile.path}');
+          } catch (e) {
+            print('Erro ao remover arquivo órfão ${emlFile.path}: $e');
+          }
+        }
+      }
+      
+      if (removedCount > 0) {
+        print('$removedCount arquivos .eml órfãos foram removidos');
+      }
+    } catch (e) {
+      print('Erro na limpeza de arquivos órfãos: $e');
+    }
+  }
+
+  /// Remover todos os emails de uma candidatura (usado quando a candidatura é deletada)
+  Future<void> deleteEmailsByApplicationId(String applicationId) async {
+    final emails = await getEmails();
+    final emailsToDelete = emails.where((email) => email.applicationId == applicationId).toList();
+    
+    // Remover arquivos .eml
+    for (final email in emailsToDelete) {
+      if (email.emlFilePath != null) {
+        try {
+          final emlFile = File(email.emlFilePath!);
+          if (await emlFile.exists()) {
+            await emlFile.delete();
+            print('Arquivo .eml removido: ${email.emlFilePath}');
+          }
+        } catch (e) {
+          print('Erro ao remover arquivo .eml: $e');
+        }
+      }
+    }
+    
+    // Remover registros da base de dados
+    final remainingEmails = emails.where((email) => email.applicationId != applicationId).toList();
+    await _saveEmails(remainingEmails);
   }
 }

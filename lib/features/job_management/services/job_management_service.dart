@@ -17,6 +17,7 @@ import 'package:bloquinho/core/services/data_directory_service.dart';
 import '../models/interview_model.dart';
 import '../models/cv_model.dart';
 import '../models/application_model.dart';
+import 'email_tracking_storage_service.dart';
 
 class JobManagementService {
   static const String _componentName = 'job_management';
@@ -27,6 +28,7 @@ class JobManagementService {
 
   final Uuid _uuid = const Uuid();
   final WorkspaceStorageService _workspaceStorage = WorkspaceStorageService();
+  final EmailTrackingStorageService _emailTrackingService = EmailTrackingStorageService();
 
   bool _isInitialized = false;
   String? _currentWorkspaceId;
@@ -52,6 +54,8 @@ class JobManagementService {
 
     // Configurar contexto no WorkspaceStorageService
     _workspaceStorage.setContext(profileName, workspaceId);
+    // Configurar contexto no EmailTrackingStorageService
+    await _emailTrackingService.setContext(profileName, workspaceId);
   }
 
   // Interview Management
@@ -253,23 +257,34 @@ class JobManagementService {
   Future<List<ApplicationModel>> getApplications() async {
     await _ensureInitialized();
     try {
+      print('JobManagementService: Carregando candidaturas...');
       final data = await _workspaceStorage.loadWorkspaceData(_componentName);
-      if (data == null) return [];
+      if (data == null) {
+        print('JobManagementService: Nenhum dado encontrado');
+        return [];
+      }
       
       final applications = <ApplicationModel>[];
       final applicationsData = data['applications'] as List? ?? [];
       
+      print('JobManagementService: Dados brutos encontrados: ${applicationsData.length} itens');
+      
       for (final appData in applicationsData) {
         if (appData is Map<String, dynamic>) {
-          applications.add(ApplicationModel.fromJson(appData));
+          try {
+            final application = ApplicationModel.fromJson(appData);
+            applications.add(application);
+            print('JobManagementService: Candidatura carregada: ${application.title} (${application.company})');
+          } catch (e) {
+            print('JobManagementService: Erro ao carregar candidatura: $e');
+          }
         }
       }
       
+      print('JobManagementService: Total de candidaturas carregadas: ${applications.length}');
       return applications;
     } catch (e) {
-      if (kDebugMode) {
-        print('Erro ao carregar candidaturas: $e');
-      }
+      print('JobManagementService: Erro ao carregar candidaturas: $e');
       return [];
     }
   }
@@ -286,6 +301,7 @@ class JobManagementService {
   Future<void> saveApplication(ApplicationModel application) async {
     await _ensureInitialized();
     try {
+      print('JobManagementService: Salvando candidatura ${application.title}');
       final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
       
       final applications = <Map<String, dynamic>>[];
@@ -298,18 +314,26 @@ class JobManagementService {
         }
       }
       
+      print('JobManagementService: ${applications.length} candidaturas existentes');
+      
       // Atualizar ou adicionar candidatura
       final existingIndex = applications.indexWhere((a) => a['id'] == application.id);
       if (existingIndex != -1) {
+        print('JobManagementService: Atualizando candidatura existente no índice $existingIndex');
         applications[existingIndex] = application.toJson();
       } else {
+        print('JobManagementService: Adicionando nova candidatura');
         applications.add(application.toJson());
       }
+      
+      print('JobManagementService: Agora temos ${applications.length} candidaturas');
       
       // Salvar de volta
       data['applications'] = applications;
       await _workspaceStorage.saveWorkspaceData(_componentName, data);
+      print('JobManagementService: Candidatura salva com sucesso');
     } catch (e) {
+      print('JobManagementService: Erro ao salvar candidatura: $e');
       throw Exception('Erro ao salvar candidatura: $e');
     }
   }
@@ -317,6 +341,9 @@ class JobManagementService {
   Future<void> deleteApplication(String id) async {
     await _ensureInitialized();
     try {
+      // Primeiro, remover todos os emails associados à candidatura
+      await _emailTrackingService.deleteEmailsByApplicationId(id);
+      
       final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
       
       final applications = <Map<String, dynamic>>[];

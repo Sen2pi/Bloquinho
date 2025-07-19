@@ -461,11 +461,12 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
         );
       }
 
+      // Salvar diretamente via service
       final service = ref.read(jobManagementServiceProvider);
       await service.saveApplication(application);
-
-      // Atualiza a lista de candidaturas
-      ref.invalidate(applicationsNotifierProvider);
+      
+      // Invalidar o provider para forçar reload
+      ref.invalidate(applicationsProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -476,7 +477,7 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true); // Retorna true indicando sucesso
       }
     } catch (e) {
       if (mounted) {
