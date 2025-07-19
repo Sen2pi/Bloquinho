@@ -26,6 +26,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'latex_widget.dart';
 import 'mermaid_diagram_widget.dart'; // Adicionar import para WindowsMermaidDiagramWidget
+import 'page_link_badge.dart';
+import 'editable_table_widget.dart';
 import '../../../core/utils/lru_cache.dart';
 import '../../../core/services/enhanced_markdown_parser.dart';
 import 'dart:typed_data';
@@ -1430,6 +1432,111 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   }
 
   Widget _buildOptimizedMarkdown(
+      BuildContext context, TextStyle baseStyle, WidgetRef ref) {
+    final safeMarkdown = _sanitizeMarkdown(markdown);
+
+    if (!enableHtmlEnhancements) {
+      return RepaintBoundary(
+        child: MarkdownBody(
+          data: safeMarkdown,
+          styleSheet: _createBasicStyleSheet(context, baseStyle),
+          builders: {
+            'code': AdvancedCodeBlockBuilder(),
+            'mark': MarkBuilder(),
+            'kbd': KbdBuilder(),
+            'sub': SubBuilder(),
+            'sup': SupBuilder(),
+            'details': DetailsBuilder(),
+            'summary': SummaryBuilder(),
+            'color': ColorBuilder(ref: ref),
+            'bg': BgBuilder(ref: ref),
+            'badge': BadgeBuilder(ref: ref),
+          },
+          inlineSyntaxes: [
+            LatexInlineSyntax(),
+            ColorSyntax(),
+            BgSyntax(),
+            BadgeSyntax(),
+            KbdInlineSyntax(),
+            MarkInlineSyntax(),
+            SubInlineSyntax(),
+            SupInlineSyntax(),
+          ],
+          blockSyntaxes: [
+            LatexBlockSyntax(),
+          ],
+          selectable: true,
+        ),
+      );
+    }
+
+    // Usando modo avançado (com HTML enhancements)...
+    final hash = safeMarkdown.hashCode ^ enableHtmlEnhancements.hashCode;
+    String processedContent;
+    final cached = _markdownCache.get(hash);
+    if (cached != null) {
+      processedContent = cached;
+    } else {
+      try {
+        processedContent =
+            HtmlEnhancementParser.processWithEnhancements(safeMarkdown);
+        _markdownCache.put(hash, processedContent);
+      } catch (e) {
+        processedContent = safeMarkdown;
+      }
+    }
+
+    return RepaintBoundary(
+      child: MarkdownBody(
+        data: processedContent,
+        styleSheet: _createEnhancedStyleSheet(context, baseStyle),
+        builders: {
+          'code': AdvancedCodeBlockBuilder(),
+          'mark': MarkBuilder(),
+          'kbd': KbdBuilder(),
+          'sub': SubBuilder(),
+          'sup': SupBuilder(),
+          'details': DetailsBuilder(),
+          'summary': SummaryBuilder(),
+          'latex-inline': LatexBuilder(),
+          'latex-block': LatexBuilder(),
+          'span': SpanBuilder(ref: ref),
+          'div': DynamicColoredDivBuilder(ref: ref),
+          'progress': ProgressBuilder(),
+          'mermaid': MermaidBuilder(),
+          'color': ColorBuilder(ref: ref),
+          'bg': BgBuilder(ref: ref),
+          'badge': BadgeBuilder(ref: ref),
+          'bloquinho-color': BloquinhoColorBuilder(ref: ref),
+          'align': AlignBuilder(),
+          'pagelink': PageLinkElementBuilder(),
+          'table': TableElementBuilder(),
+        },
+        inlineSyntaxes: [
+          LatexInlineSyntax(),
+          ColorSyntax(),
+          BgSyntax(),
+          BadgeSyntax(),
+          BloquinhoColorSyntax(),
+          SpanInlineSyntax(), // Para <span style="...">...</span>
+          KbdInlineSyntax(), // Para <kbd>...</kbd>
+          MarkInlineSyntax(), // Para <mark>...</mark>
+          SubInlineSyntax(), // Para <sub>...</sub>
+          SupInlineSyntax(), // Para <sup>...</sup>
+          PageLinkInlineSyntax(), // Para [[pageId]]
+          TableInlineSyntax(), // Para {{tableId}}
+        ],
+        blockSyntaxes: [
+          LatexBlockSyntax(),
+          MermaidBlockSyntax(),
+        ],
+        selectable: true,
+      ),
+    );
+  }
+
+
+  Widget _buildOldOptimizedMarkdown(
       BuildContext context, TextStyle baseStyle, WidgetRef ref) {
     final safeMarkdown = _sanitizeMarkdown(markdown);
 
@@ -3449,4 +3556,173 @@ class BloquinhoLoaderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+/// Inline syntax para PageLink [[pageId]]
+class PageLinkInlineSyntax extends md.InlineSyntax {
+  PageLinkInlineSyntax() : super(r'\[\[([^\]]+)\]\]');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final pageId = match.group(1)!;
+    final element = md.Element.text('pagelink', pageId);
+    parser.addNode(element);
+    return true;
+  }
+}
+
+/// Inline syntax para Table {{tableId}}
+class TableInlineSyntax extends md.InlineSyntax {
+  TableInlineSyntax() : super(r'\{\{([^}]+)\}\}');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final tableId = match.group(1)!;
+    final element = md.Element.text('table', tableId);
+    parser.addNode(element);
+    return true;
+  }
+}
+
+/// Builder para elementos de página
+class PageLinkElementBuilder extends MarkdownElementBuilder {
+  @override
+  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    final pageId = element.textContent;
+
+    return PageLinkBadge(
+      pageTitle: pageId, // Fallback se não encontrar por ID
+      pageId: pageId,
+      onTap: () {
+        // TODO: Implementar navegação para a página
+        print('Navegar para página: $pageId');
+      },
+    );
+  }
+}
+
+/// Builder para elementos de tabela 
+class TableElementBuilder extends MarkdownElementBuilder {
+  @override
+  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    final tableId = element.textContent;
+
+    // Dados de exemplo - em produção, buscar dados reais da tabela por ID
+    final sampleData = [
+      ['Coluna 1', 'Coluna 2', 'Coluna 3'],
+      ['Dado 1', 'Dado 2', 'Dado 3'],
+      ['Dado 4', 'Dado 5', 'Dado 6'],
+    ];
+
+    return Builder(
+      builder: (context) => Container(
+        margin: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[700]!
+                : Colors.grey[300]!,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header da tabela
+            Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[800]
+                    : Colors.grey[100],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : Colors.grey[300]!,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.table_chart,
+                    size: 16,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white70
+                        : Colors.grey[600],
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Tabela: $tableId', // TODO: Buscar nome real por ID
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white70
+                          : Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Conteúdo da tabela
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Table(
+                border: TableBorder.all(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[700]!
+                      : Colors.grey[300]!,
+                ),
+                children: sampleData.asMap().entries.map((entry) {
+                  final rowIndex = entry.key;
+                  final row = entry.value;
+                  final isHeader = rowIndex == 0;
+
+                  return TableRow(
+                    decoration: BoxDecoration(
+                      color: isHeader
+                          ? (Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[800]
+                              : Colors.grey[50])
+                          : null,
+                    ),
+                    children: row.map((cell) {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          cell,
+                          style: TextStyle(
+                            fontWeight: isHeader
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

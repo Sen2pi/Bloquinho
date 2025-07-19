@@ -429,7 +429,7 @@ class _BloquinhoSlashMenuState extends State<BloquinhoSlashMenu> {
         child: PageMentionPicker(
           onPageSelected: (page) {
             Navigator.of(context).pop();
-            widget.onSpecialInsert?.call('[[${page.title}]]');
+            widget.onSpecialInsert?.call('[[${page.id}]]');
             widget.onDismiss();
           },
           onDismiss: () {
@@ -450,7 +450,7 @@ class _BloquinhoSlashMenuState extends State<BloquinhoSlashMenu> {
         child: DatabaseTablePicker(
           onTableSelected: (table) {
             Navigator.of(context).pop();
-            widget.onSpecialInsert?.call('{{${table.name}}}');
+            widget.onSpecialInsert?.call('{{${table.id}}}');
             widget.onDismiss();
           },
           onDismiss: () {
