@@ -58,6 +58,10 @@ class _BlocoRenderWidgetState extends ConsumerState<BlocoRenderWidget> {
   final ScrollController _scrollController = ScrollController();
   final FocusNode _containerFocusNode = FocusNode();
 
+  // Sistema de debounce para eventos de teclado
+  DateTime? _lastKeyEventTime;
+  static const Duration _keyEventDebounce = Duration(milliseconds: 50);
+
   Set<String> _selectedBlockIds = {};
   String? _focusedBlockId;
   bool _isMultiSelecting = false;
@@ -400,6 +404,25 @@ class _BlocoRenderWidgetState extends ConsumerState<BlocoRenderWidget> {
     try {
       if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
+      // Sistema de debounce para evitar eventos duplicados
+      final now = DateTime.now();
+      if (_lastKeyEventTime != null &&
+          now.difference(_lastKeyEventTime!) < _keyEventDebounce) {
+        return KeyEventResult.ignored;
+      }
+      _lastKeyEventTime = now;
+
+      // Verificar se o evento já foi processado
+      if (event is KeyDownEvent) {
+        // Ignorar eventos de teclas especiais que podem causar conflitos
+        if (event.physicalKey == PhysicalKeyboardKey.controlLeft ||
+            event.physicalKey == PhysicalKeyboardKey.controlRight ||
+            event.physicalKey == PhysicalKeyboardKey.shiftLeft ||
+            event.physicalKey == PhysicalKeyboardKey.shiftRight) {
+          return KeyEventResult.ignored;
+        }
+      }
+
       // Atalhos globais
       final keyboard = HardwareKeyboard.instance;
       if (keyboard.isControlPressed || keyboard.isMetaPressed) {
@@ -465,6 +488,8 @@ class _BlocoRenderWidgetState extends ConsumerState<BlocoRenderWidget> {
 
       return KeyEventResult.ignored;
     } catch (e) {
+      // Log do erro para debug
+      print('Erro no handler de teclado: $e');
       return KeyEventResult.ignored;
     }
   }

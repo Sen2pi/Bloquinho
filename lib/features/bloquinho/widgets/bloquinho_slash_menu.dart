@@ -13,17 +13,22 @@ import '../models/bloquinho_slash_command.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/models/app_language.dart';
+import 'page_mention_picker.dart';
+import 'database_table_picker.dart';
+import 'calendar_event_picker.dart';
 
 class BloquinhoSlashMenu extends StatefulWidget {
   final String searchQuery;
   final Function(BloquinhoSlashCommand) onCommandSelected;
   final VoidCallback onDismiss;
+  final Function(String)? onSpecialInsert;
 
   const BloquinhoSlashMenu({
     super.key,
     required this.searchQuery,
     required this.onCommandSelected,
     required this.onDismiss,
+    this.onSpecialInsert,
   });
 
   @override
@@ -317,8 +322,16 @@ class _BloquinhoSlashMenuState extends State<BloquinhoSlashMenu> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          widget.onCommandSelected(command); // Executa ação primeiro
-          // O overlay será removido pelo callback _insertSlashCommand
+          if (command.trigger == 'mencionar') {
+            _showPageMentionPicker(isDarkMode);
+          } else if (command.trigger == 'tabela') {
+            _showDatabaseTablePicker(isDarkMode);
+          } else if (command.trigger == 'evento') {
+            _showCalendarEventPicker(isDarkMode);
+          } else {
+            widget.onCommandSelected(command); // Executa ação primeiro
+            // O overlay será removido pelo callback _insertSlashCommand
+          }
         },
         borderRadius: BorderRadius.circular(8),
         child: Container(
@@ -402,6 +415,69 @@ class _BloquinhoSlashMenuState extends State<BloquinhoSlashMenu> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showPageMentionPicker(bool isDarkMode) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: PageMentionPicker(
+          onPageSelected: (page) {
+            Navigator.of(context).pop();
+            widget.onSpecialInsert?.call('[[${page.id}]]');
+            widget.onDismiss();
+          },
+          onDismiss: () {
+            Navigator.of(context).pop();
+            widget.onDismiss();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showDatabaseTablePicker(bool isDarkMode) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: DatabaseTablePicker(
+          onTableSelected: (table) {
+            Navigator.of(context).pop();
+            widget.onSpecialInsert?.call('{{${table.id}}}');
+            widget.onDismiss();
+          },
+          onDismiss: () {
+            Navigator.of(context).pop();
+            widget.onDismiss();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showCalendarEventPicker(bool isDarkMode) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: CalendarEventPicker(
+          onEventSelected: (event) {
+            Navigator.of(context).pop();
+            widget.onSpecialInsert?.call('📅 ${event.title}');
+            widget.onDismiss();
+          },
+          onDismiss: () {
+            Navigator.of(context).pop();
+            widget.onDismiss();
+          },
         ),
       ),
     );

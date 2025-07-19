@@ -508,16 +508,6 @@ class AppStrings {
   }
 
   // Strings do perfil
-  String get profile {
-    switch (_language) {
-      case AppLanguage.portuguese:
-        return 'Perfil';
-      case AppLanguage.english:
-        return 'Profile';
-      case AppLanguage.french:
-        return 'Profil';
-    }
-  }
 
   String get editProfile {
     switch (_language) {
@@ -1174,17 +1164,6 @@ class AppStrings {
     }
   }
 
-  String get cancel {
-    switch (_language) {
-      case AppLanguage.portuguese:
-        return 'Cancelar';
-      case AppLanguage.english:
-        return 'Cancel';
-      case AppLanguage.french:
-        return 'Annuler';
-    }
-  }
-
   String get back {
     switch (_language) {
       case AppLanguage.portuguese:
@@ -1305,17 +1284,6 @@ class AppStrings {
         return 'System';
       case AppLanguage.french:
         return 'Système';
-    }
-  }
-
-  String get user {
-    switch (_language) {
-      case AppLanguage.portuguese:
-        return 'Usuário';
-      case AppLanguage.english:
-        return 'User';
-      case AppLanguage.french:
-        return 'Utilisateur';
     }
   }
 
@@ -1936,17 +1904,6 @@ class AppStrings {
     }
   }
 
-  String get workspace {
-    switch (_language) {
-      case AppLanguage.portuguese:
-        return 'Workspace';
-      case AppLanguage.english:
-        return 'Workspace';
-      case AppLanguage.french:
-        return 'Espace de travail';
-    }
-  }
-
   String get backupWorkspace {
     switch (_language) {
       case AppLanguage.portuguese:
@@ -2043,6 +2000,1349 @@ class AppStrings {
         return 'Error creating workspace backup: $error';
       case AppLanguage.french:
         return 'Erreur lors de la sauvegarde de l\'espace de travail : $error';
+    }
+  }
+
+  // --- JOB MANAGEMENT STRINGS ---
+  String get jobManagement {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Gestão de Trabalho';
+      case AppLanguage.english:
+        return 'Job Management';
+      case AppLanguage.french:
+        return 'Gestion du Travail';
+    }
+  }
+
+  String get jobDashboard {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Dashboard de Trabalho';
+      case AppLanguage.english:
+        return 'Job Dashboard';
+      case AppLanguage.french:
+        return 'Tableau de Bord Travail';
+    }
+  }
+
+  String get jobInterviews {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Entrevistas';
+      case AppLanguage.english:
+        return 'Interviews';
+      case AppLanguage.french:
+        return 'Entretiens';
+    }
+  }
+
+  String get jobCVs {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'CVs';
+      case AppLanguage.english:
+        return 'CVs';
+      case AppLanguage.french:
+        return 'CVs';
+    }
+  }
+
+  String get jobApplications {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Candidaturas';
+      case AppLanguage.english:
+        return 'Applications';
+      case AppLanguage.french:
+        return 'Candidatures';
+    }
+  }
+
+  String get jobNewInterview {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Nova Entrevista';
+      case AppLanguage.english:
+        return 'New Interview';
+      case AppLanguage.french:
+        return 'Nouvel Entretien';
+    }
+  }
+
+  String get jobNewCV {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Novo CV';
+      case AppLanguage.english:
+        return 'New CV';
+      case AppLanguage.french:
+        return 'Nouveau CV';
+    }
+  }
+
+  String get jobNewApplication {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Nova Candidatura';
+      case AppLanguage.english:
+        return 'New Application';
+      case AppLanguage.french:
+        return 'Nouvelle Candidature';
+    }
+  }
+
+  String get jobInterviewType {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Tipo de Entrevista';
+      case AppLanguage.english:
+        return 'Interview Type';
+      case AppLanguage.french:
+        return 'Type d\'Entretien';
+    }
+  }
+
+  String get jobInterviewTypeRH {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'RH';
+      case AppLanguage.english:
+        return 'HR';
+      case AppLanguage.french:
+        return 'RH';
+    }
+  }
+
+  String get jobInterviewTypeTechnical {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Técnica';
+      case AppLanguage.english:
+        return 'Technical';
+      case AppLanguage.french:
+        return 'Technique';
+    }
+  }
+
+  String get jobInterviewTypeTeamLead {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Team Lead';
+      case AppLanguage.english:
+        return 'Team Lead';
+      case AppLanguage.french:
+        return 'Chef d\'Équipe';
+    }
+  }
+
+  String get jobSalaryProposal {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Proposta Salarial';
+      case AppLanguage.english:
+        return 'Salary Proposal';
+      case AppLanguage.french:
+        return 'Proposition Salariale';
+    }
+  }
+
+  String get jobAnnualSalary {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Salário Anual';
+      case AppLanguage.english:
+        return 'Annual Salary';
+      case AppLanguage.french:
+        return 'Salaire Annuel';
+    }
+  }
+
+  String get jobCompany {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Empresa';
+      case AppLanguage.english:
+        return 'Company';
+      case AppLanguage.french:
+        return 'Entreprise';
+    }
+  }
+
+  String get jobCountry {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'País';
+      case AppLanguage.english:
+        return 'Country';
+      case AppLanguage.french:
+        return 'Pays';
+    }
+  }
+
+  String get jobLanguage {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Idioma';
+      case AppLanguage.english:
+        return 'Language';
+      case AppLanguage.french:
+        return 'Langue';
+    }
+  }
+
+  String get jobDateTime {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Data e Hora';
+      case AppLanguage.english:
+        return 'Date and Time';
+      case AppLanguage.french:
+        return 'Date et Heure';
+    }
+  }
+
+  String get jobInterviewWentWell {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Como correu a entrevista?';
+      case AppLanguage.english:
+        return 'How did the interview go?';
+      case AppLanguage.french:
+        return 'Comment s\'est déroulé l\'entretien ?';
+    }
+  }
+
+  String get jobCompanyLink {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Link da Empresa';
+      case AppLanguage.english:
+        return 'Company Link';
+      case AppLanguage.french:
+        return 'Lien de l\'Entreprise';
+    }
+  }
+
+  String get jobDescription {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Descrição';
+      case AppLanguage.english:
+        return 'Description';
+      case AppLanguage.french:
+        return 'Description';
+    }
+  }
+
+  String get jobJobTitle {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Título da Vaga';
+      case AppLanguage.english:
+        return 'Job Title';
+      case AppLanguage.french:
+        return 'Titre du Poste';
+    }
+  }
+
+  String get jobExperience {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Experiência';
+      case AppLanguage.english:
+        return 'Experience';
+      case AppLanguage.french:
+        return 'Expérience';
+    }
+  }
+
+  String get jobProjects {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Projetos';
+      case AppLanguage.english:
+        return 'Projects';
+      case AppLanguage.french:
+        return 'Projets';
+    }
+  }
+
+  String get jobSkills {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Habilidades';
+      case AppLanguage.english:
+        return 'Skills';
+      case AppLanguage.french:
+        return 'Compétences';
+    }
+  }
+
+  String get jobEducation {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Educação';
+      case AppLanguage.english:
+        return 'Education';
+      case AppLanguage.french:
+        return 'Éducation';
+    }
+  }
+
+  String get jobLanguages {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Idiomas';
+      case AppLanguage.english:
+        return 'Languages';
+      case AppLanguage.french:
+        return 'Langues';
+    }
+  }
+
+  String get jobCertifications {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Certificações';
+      case AppLanguage.english:
+        return 'Certifications';
+      case AppLanguage.french:
+        return 'Certifications';
+    }
+  }
+
+  String get jobTargetPosition {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Cargo Desejado';
+      case AppLanguage.english:
+        return 'Target Position';
+      case AppLanguage.french:
+        return 'Poste Visé';
+    }
+  }
+
+  String get jobPersonalInfo {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Informações Pessoais';
+      case AppLanguage.english:
+        return 'Personal Information';
+      case AppLanguage.french:
+        return 'Informations Personnelles';
+    }
+  }
+
+  String get jobPhone {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Telefone';
+      case AppLanguage.english:
+        return 'Phone';
+      case AppLanguage.french:
+        return 'Téléphone';
+    }
+  }
+
+  String get jobAddress {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Endereço';
+      case AppLanguage.english:
+        return 'Address';
+      case AppLanguage.french:
+        return 'Adresse';
+    }
+  }
+
+  String get jobLinkedIn {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'LinkedIn';
+      case AppLanguage.english:
+        return 'LinkedIn';
+      case AppLanguage.french:
+        return 'LinkedIn';
+    }
+  }
+
+  String get jobGitHub {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'GitHub';
+      case AppLanguage.english:
+        return 'GitHub';
+      case AppLanguage.french:
+        return 'GitHub';
+    }
+  }
+
+  String get jobWebsite {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Website';
+      case AppLanguage.english:
+        return 'Website';
+      case AppLanguage.french:
+        return 'Site Web';
+    }
+  }
+
+  String get jobSummary {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Resumo';
+      case AppLanguage.english:
+        return 'Summary';
+      case AppLanguage.french:
+        return 'Résumé';
+    }
+  }
+
+  String get jobAIIntroduction {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Introdução IA';
+      case AppLanguage.english:
+        return 'AI Introduction';
+      case AppLanguage.french:
+        return 'Introduction IA';
+    }
+  }
+
+  String get jobGenerateAIIntroduction {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Gerar Introdução com IA';
+      case AppLanguage.english:
+        return 'Generate AI Introduction';
+      case AppLanguage.french:
+        return 'Générer Introduction IA';
+    }
+  }
+
+  String get jobExportToPDF {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Exportar para PDF';
+      case AppLanguage.english:
+        return 'Export to PDF';
+      case AppLanguage.french:
+        return 'Exporter en PDF';
+    }
+  }
+
+  String get jobApplicationStatus {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Status da Candidatura';
+      case AppLanguage.english:
+        return 'Application Status';
+      case AppLanguage.french:
+        return 'Statut de la Candidature';
+    }
+  }
+
+  String get jobApplicationStatusApplied {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Candidatado';
+      case AppLanguage.english:
+        return 'Applied';
+      case AppLanguage.french:
+        return 'Postulé';
+    }
+  }
+
+  String get jobApplicationStatusInReview {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Em Análise';
+      case AppLanguage.english:
+        return 'In Review';
+      case AppLanguage.french:
+        return 'En Cours d\'Examen';
+    }
+  }
+
+  String get jobApplicationStatusInterviewScheduled {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Entrevista Agendada';
+      case AppLanguage.english:
+        return 'Interview Scheduled';
+      case AppLanguage.french:
+        return 'Entretien Programmé';
+    }
+  }
+
+  String get jobApplicationStatusRejected {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Rejeitado';
+      case AppLanguage.english:
+        return 'Rejected';
+      case AppLanguage.french:
+        return 'Rejeté';
+    }
+  }
+
+  String get jobApplicationStatusAccepted {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Aceito';
+      case AppLanguage.english:
+        return 'Accepted';
+      case AppLanguage.french:
+        return 'Accepté';
+    }
+  }
+
+  String get jobApplicationStatusWithdrawn {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Retirado';
+      case AppLanguage.english:
+        return 'Withdrawn';
+      case AppLanguage.french:
+        return 'Retiré';
+    }
+  }
+
+  String get jobMotivationLetter {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Carta de Motivação';
+      case AppLanguage.english:
+        return 'Motivation Letter';
+      case AppLanguage.french:
+        return 'Lettre de Motivation';
+    }
+  }
+
+  String get jobGenerateMotivationLetter {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Gerar Carta de Motivação';
+      case AppLanguage.english:
+        return 'Generate Motivation Letter';
+      case AppLanguage.french:
+        return 'Générer Lettre de Motivation';
+    }
+  }
+
+  String get jobMatchPercentage {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Percentagem de Compatibilidade';
+      case AppLanguage.english:
+        return 'Match Percentage';
+      case AppLanguage.french:
+        return 'Pourcentage de Compatibilité';
+    }
+  }
+
+  String get jobPlatform {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Plataforma';
+      case AppLanguage.english:
+        return 'Platform';
+      case AppLanguage.french:
+        return 'Plateforme';
+    }
+  }
+
+  String get jobLocation {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Localização';
+      case AppLanguage.english:
+        return 'Location';
+      case AppLanguage.french:
+        return 'Localisation';
+    }
+  }
+
+  String get jobNotes {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Notas';
+      case AppLanguage.english:
+        return 'Notes';
+      case AppLanguage.french:
+        return 'Notes';
+    }
+  }
+
+  String get jobRating {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Avaliação';
+      case AppLanguage.english:
+        return 'Rating';
+      case AppLanguage.french:
+        return 'Évaluation';
+    }
+  }
+
+  String get jobRecentInterviews {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Entrevistas Recentes';
+      case AppLanguage.english:
+        return 'Recent Interviews';
+      case AppLanguage.french:
+        return 'Entretiens Récents';
+    }
+  }
+
+  String get jobTotalCVs {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Total de CVs';
+      case AppLanguage.english:
+        return 'Total CVs';
+      case AppLanguage.french:
+        return 'Total CVs';
+    }
+  }
+
+  String get jobTotalApplications {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Total de Candidaturas';
+      case AppLanguage.english:
+        return 'Total Applications';
+      case AppLanguage.french:
+        return 'Total Candidatures';
+    }
+  }
+
+  String get jobTotalInterviews {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Total de Entrevistas';
+      case AppLanguage.english:
+        return 'Total Interviews';
+      case AppLanguage.french:
+        return 'Total Entretiens';
+    }
+  }
+
+  String get jobThisMonth {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Este Mês';
+      case AppLanguage.english:
+        return 'This Month';
+      case AppLanguage.french:
+        return 'Ce Mois';
+    }
+  }
+
+  String get jobInterviewStatus {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Status da Entrevista';
+      case AppLanguage.english:
+        return 'Interview Status';
+      case AppLanguage.french:
+        return 'Statut de l\'Entretien';
+    }
+  }
+
+  String get jobInterviewStatusScheduled {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Agendado';
+      case AppLanguage.english:
+        return 'Scheduled';
+      case AppLanguage.french:
+        return 'Programmé';
+    }
+  }
+
+  String get jobInterviewStatusCompleted {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Concluído';
+      case AppLanguage.english:
+        return 'Completed';
+      case AppLanguage.french:
+        return 'Terminé';
+    }
+  }
+
+  String get jobInterviewStatusCancelled {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Cancelado';
+      case AppLanguage.english:
+        return 'Cancelled';
+      case AppLanguage.french:
+        return 'Annulé';
+    }
+  }
+
+  String get jobInterviewStatusPending {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Pendente';
+      case AppLanguage.english:
+        return 'Pending';
+      case AppLanguage.french:
+        return 'En Attente';
+    }
+  }
+
+  String get jobScheduled {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Agendado';
+      case AppLanguage.english:
+        return 'Scheduled';
+      case AppLanguage.french:
+        return 'Programmé';
+    }
+  }
+
+  String get jobCompleted {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Concluído';
+      case AppLanguage.english:
+        return 'Completed';
+      case AppLanguage.french:
+        return 'Terminé';
+    }
+  }
+
+  String get jobCancelled {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Cancelado';
+      case AppLanguage.english:
+        return 'Cancelled';
+      case AppLanguage.french:
+        return 'Annulé';
+    }
+  }
+
+  String get jobPending {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Pendente';
+      case AppLanguage.english:
+        return 'Pending';
+      case AppLanguage.french:
+        return 'En Attente';
+    }
+  }
+
+  String get jobNoInterviews {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Nenhuma entrevista encontrada';
+      case AppLanguage.english:
+        return 'No interviews found';
+      case AppLanguage.french:
+        return 'Aucun entretien trouvé';
+    }
+  }
+
+  String get jobType {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Tipo';
+      case AppLanguage.english:
+        return 'Type';
+      case AppLanguage.french:
+        return 'Type';
+    }
+  }
+
+  String get jobStatus {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Status';
+      case AppLanguage.english:
+        return 'Status';
+      case AppLanguage.french:
+        return 'Statut';
+    }
+  }
+
+  String get jobNoCVs {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Nenhum CV encontrado';
+      case AppLanguage.english:
+        return 'No CVs found';
+      case AppLanguage.french:
+        return 'Aucun CV trouvé';
+    }
+  }
+
+  String get jobNoApplications {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Nenhuma candidatura encontrada';
+      case AppLanguage.english:
+        return 'No applications found';
+      case AppLanguage.french:
+        return 'Aucune candidature trouvée';
+    }
+  }
+
+  String get jobApplied {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Candidatado';
+      case AppLanguage.english:
+        return 'Applied';
+      case AppLanguage.french:
+        return 'Postulé';
+    }
+  }
+
+  String get jobInReview {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Em Análise';
+      case AppLanguage.english:
+        return 'In Review';
+      case AppLanguage.french:
+        return 'En Cours d\'Examen';
+    }
+  }
+
+  String get jobInterviewScheduled {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Entrevista Agendada';
+      case AppLanguage.english:
+        return 'Interview Scheduled';
+      case AppLanguage.french:
+        return 'Entretien Programmé';
+    }
+  }
+
+  String get jobRejected {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Rejeitado';
+      case AppLanguage.english:
+        return 'Rejected';
+      case AppLanguage.french:
+        return 'Rejeté';
+    }
+  }
+
+  String get jobAccepted {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Aceito';
+      case AppLanguage.english:
+        return 'Accepted';
+      case AppLanguage.french:
+        return 'Accepté';
+    }
+  }
+
+  String get jobWithdrawn {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Retirado';
+      case AppLanguage.english:
+        return 'Withdrawn';
+      case AppLanguage.french:
+        return 'Retiré';
+    }
+  }
+
+  String get jobAddExperience {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Adicionar Experiência';
+      case AppLanguage.english:
+        return 'Add Experience';
+      case AppLanguage.french:
+        return 'Ajouter Expérience';
+    }
+  }
+
+  String get jobAddProject {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Adicionar Projeto';
+      case AppLanguage.english:
+        return 'Add Project';
+      case AppLanguage.french:
+        return 'Ajouter Projet';
+    }
+  }
+
+  String get jobAddEducation {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Adicionar Educação';
+      case AppLanguage.english:
+        return 'Add Education';
+      case AppLanguage.french:
+        return 'Ajouter Éducation';
+    }
+  }
+
+  String get jobPosition {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Cargo';
+      case AppLanguage.english:
+        return 'Position';
+      case AppLanguage.french:
+        return 'Poste';
+    }
+  }
+
+  String get jobStartDate {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Data de Início';
+      case AppLanguage.english:
+        return 'Start Date';
+      case AppLanguage.french:
+        return 'Date de Début';
+    }
+  }
+
+  String get jobEndDate {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Data de Fim';
+      case AppLanguage.english:
+        return 'End Date';
+      case AppLanguage.french:
+        return 'Date de Fin';
+    }
+  }
+
+  String get jobCurrentlyWorking {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Trabalhando Atualmente';
+      case AppLanguage.english:
+        return 'Currently Working';
+      case AppLanguage.french:
+        return 'Travaille Actuellement';
+    }
+  }
+
+  String get jobAchievements {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Conquistas';
+      case AppLanguage.english:
+        return 'Achievements';
+      case AppLanguage.french:
+        return 'Réalisations';
+    }
+  }
+
+  String get jobTechnologies {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Tecnologias';
+      case AppLanguage.english:
+        return 'Technologies';
+      case AppLanguage.french:
+        return 'Technologies';
+    }
+  }
+
+  String get jobRepository {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Repositório';
+      case AppLanguage.english:
+        return 'Repository';
+      case AppLanguage.french:
+        return 'Dépôt';
+    }
+  }
+
+  String get jobProjectURL {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'URL do Projeto';
+      case AppLanguage.english:
+        return 'Project URL';
+      case AppLanguage.french:
+        return 'URL du Projet';
+    }
+  }
+
+  String get jobDegree {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Grau';
+      case AppLanguage.english:
+        return 'Degree';
+      case AppLanguage.french:
+        return 'Diplôme';
+    }
+  }
+
+  String get jobInstitution {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Instituição';
+      case AppLanguage.english:
+        return 'Institution';
+      case AppLanguage.french:
+        return 'Institution';
+    }
+  }
+
+  String get jobField {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Área';
+      case AppLanguage.english:
+        return 'Field';
+      case AppLanguage.french:
+        return 'Domaine';
+    }
+  }
+
+  String get jobGrade {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Nota';
+      case AppLanguage.english:
+        return 'Grade';
+      case AppLanguage.french:
+        return 'Note';
+    }
+  }
+
+  String get jobCreatePage {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Criar Página';
+      case AppLanguage.english:
+        return 'Create Page';
+      case AppLanguage.french:
+        return 'Créer Page';
+    }
+  }
+
+  String get jobEditPage {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Editar Página';
+      case AppLanguage.english:
+        return 'Edit Page';
+      case AppLanguage.french:
+        return 'Modifier Page';
+    }
+  }
+
+  String get jobPageCreated {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Página criada com sucesso';
+      case AppLanguage.english:
+        return 'Page created successfully';
+      case AppLanguage.french:
+        return 'Page créée avec succès';
+    }
+  }
+
+  String get jobCVCreated {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'CV criado com sucesso';
+      case AppLanguage.english:
+        return 'CV created successfully';
+      case AppLanguage.french:
+        return 'CV créé avec succès';
+    }
+  }
+
+  String get jobInterviewCreated {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Entrevista criada com sucesso';
+      case AppLanguage.english:
+        return 'Interview created successfully';
+      case AppLanguage.french:
+        return 'Entretien créé avec succès';
+    }
+  }
+
+  String get jobApplicationCreated {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Candidatura criada com sucesso';
+      case AppLanguage.english:
+        return 'Application created successfully';
+      case AppLanguage.french:
+        return 'Candidature créée avec succès';
+    }
+  }
+
+  String get jobErrorCreatingCV {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Erro ao criar CV';
+      case AppLanguage.english:
+        return 'Error creating CV';
+      case AppLanguage.french:
+        return 'Erreur lors de la création du CV';
+    }
+  }
+
+  String get jobErrorCreatingInterview {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Erro ao criar entrevista';
+      case AppLanguage.english:
+        return 'Error creating interview';
+      case AppLanguage.french:
+        return 'Erreur lors de la création de l\'entretien';
+    }
+  }
+
+  String get jobErrorCreatingApplication {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Erro ao criar candidatura';
+      case AppLanguage.english:
+        return 'Error creating application';
+      case AppLanguage.french:
+        return 'Erreur lors de la création de la candidature';
+    }
+  }
+
+  String get jobSelectCV {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Selecionar CV';
+      case AppLanguage.english:
+        return 'Select CV';
+      case AppLanguage.french:
+        return 'Sélectionner CV';
+    }
+  }
+
+  String get jobLinkedCV {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'CV Vinculado';
+      case AppLanguage.english:
+        return 'Linked CV';
+      case AppLanguage.french:
+        return 'CV Lié';
+    }
+  }
+
+  String get jobLinkedApplication {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Candidatura Vinculada';
+      case AppLanguage.english:
+        return 'Linked Application';
+      case AppLanguage.french:
+        return 'Candidature Liée';
+    }
+  }
+
+  String get jobAIGenerating {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Gerando com IA...';
+      case AppLanguage.english:
+        return 'Generating with AI...';
+      case AppLanguage.french:
+        return 'Génération avec IA...';
+    }
+  }
+
+  String get jobAIGenerationComplete {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Geração da IA concluída';
+      case AppLanguage.english:
+        return 'AI generation completed';
+      case AppLanguage.french:
+        return 'Génération IA terminée';
+    }
+  }
+
+  String get jobPDFExported {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'PDF exportado com sucesso';
+      case AppLanguage.english:
+        return 'PDF exported successfully';
+      case AppLanguage.french:
+        return 'PDF exporté avec succès';
+    }
+  }
+
+  String get jobErrorExportingPDF {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Erro ao exportar PDF';
+      case AppLanguage.english:
+        return 'Error exporting PDF';
+      case AppLanguage.french:
+        return 'Erreur lors de l\'exportation PDF';
+    }
+  }
+
+  String get jobViewCV {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Ver CV';
+      case AppLanguage.english:
+        return 'View CV';
+      case AppLanguage.french:
+        return 'Voir CV';
+    }
+  }
+
+  String get jobEditCV {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Editar CV';
+      case AppLanguage.english:
+        return 'Edit CV';
+      case AppLanguage.french:
+        return 'Modifier CV';
+    }
+  }
+
+  String get jobDeleteCV {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Deletar CV';
+      case AppLanguage.english:
+        return 'Delete CV';
+      case AppLanguage.french:
+        return 'Supprimer CV';
+    }
+  }
+
+  String get jobAppliedDate {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Data de Candidatura';
+      case AppLanguage.english:
+        return 'Applied Date';
+      case AppLanguage.french:
+        return 'Date de Candidature';
+    }
+  }
+
+  String get jobCreatedAt {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Criado em';
+      case AppLanguage.english:
+        return 'Created at';
+      case AppLanguage.french:
+        return 'Créé le';
+    }
+  }
+
+  String get jobUpdatedAt {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Atualizado em';
+      case AppLanguage.english:
+        return 'Updated at';
+      case AppLanguage.french:
+        return 'Mis à jour le';
+    }
+  }
+
+  String get jobFilterByType {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Filtrar por Tipo';
+      case AppLanguage.english:
+        return 'Filter by Type';
+      case AppLanguage.french:
+        return 'Filtrer par Type';
+    }
+  }
+
+  String get jobFilterByStatus {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Filtrar por Status';
+      case AppLanguage.english:
+        return 'Filter by Status';
+      case AppLanguage.french:
+        return 'Filtrer par Statut';
+    }
+  }
+
+  String get jobSearchPlaceholder {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Pesquisar...';
+      case AppLanguage.english:
+        return 'Search...';
+      case AppLanguage.french:
+        return 'Rechercher...';
+    }
+  }
+
+  String get jobNoInterviewsFound {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Nenhuma entrevista encontrada';
+      case AppLanguage.english:
+        return 'No interviews found';
+      case AppLanguage.french:
+        return 'Aucun entretien trouvé';
+    }
+  }
+
+  String get jobNoCVsFound {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Nenhum CV encontrado';
+      case AppLanguage.english:
+        return 'No CVs found';
+      case AppLanguage.french:
+        return 'Aucun CV trouvé';
+    }
+  }
+
+  String get jobNoApplicationsFound {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Nenhuma candidatura encontrada';
+      case AppLanguage.english:
+        return 'No applications found';
+      case AppLanguage.french:
+        return 'Aucune candidature trouvée';
+    }
+  }
+
+  String get jobWorkspaceOnly {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Disponível apenas no workspace de trabalho';
+      case AppLanguage.english:
+        return 'Available only in work workspace';
+      case AppLanguage.french:
+        return 'Disponible uniquement dans l\'espace de travail';
     }
   }
 
@@ -3138,17 +4438,6 @@ class AppStrings {
     }
   }
 
-  String get bloquinho {
-    switch (_language) {
-      case AppLanguage.portuguese:
-        return 'Bloquinho';
-      case AppLanguage.english:
-        return 'Bloquinho';
-      case AppLanguage.french:
-        return 'Bloquinho';
-    }
-  }
-
   String get collapse {
     switch (_language) {
       case AppLanguage.portuguese:
@@ -3480,16 +4769,6 @@ class AppStrings {
   }
 
   // --- STRINGS PARA BACKUP ---
-  String get documents {
-    switch (_language) {
-      case AppLanguage.portuguese:
-        return 'Documentos';
-      case AppLanguage.english:
-        return 'Documents';
-      case AppLanguage.french:
-        return 'Documents';
-    }
-  }
 
   String get workspaces {
     switch (_language) {
@@ -5657,6 +6936,94 @@ class AppStrings {
     }
   }
 
+  String get selectSectionToStart {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Selecione uma seção no menu lateral para começar.';
+      case AppLanguage.english:
+        return 'Select a section in the sidebar to get started.';
+      case AppLanguage.french:
+        return 'Sélectionnez une section dans la barre latérale pour commencer.';
+    }
+  }
+
+  String get useButtonsInTabs {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Use os botões + dentro de cada aba para adicionar documentos';
+      case AppLanguage.english:
+        return 'Use the + buttons within each tab to add documents';
+      case AppLanguage.french:
+        return 'Utilisez les boutons + dans chaque onglet pour ajouter des documents';
+    }
+  }
+
+  String get lightTheme {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Tema claro';
+      case AppLanguage.english:
+        return 'Light theme';
+      case AppLanguage.french:
+        return 'Thème clair';
+    }
+  }
+
+  String get darkTheme {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Tema escuro';
+      case AppLanguage.english:
+        return 'Dark theme';
+      case AppLanguage.french:
+        return 'Thème sombre';
+    }
+  }
+
+  String get bloquinhoAIConnected {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Bloquinho AI: Conectado';
+      case AppLanguage.english:
+        return 'Bloquinho AI: Connected';
+      case AppLanguage.french:
+        return 'Bloquinho AI: Connecté';
+    }
+  }
+
+  String get bloquinhoAIDisconnected {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Bloquinho AI: Desconectado';
+      case AppLanguage.english:
+        return 'Bloquinho AI: Disconnected';
+      case AppLanguage.french:
+        return 'Bloquinho AI: Déconnecté';
+    }
+  }
+
+  String get aiOK {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'AI OK';
+      case AppLanguage.english:
+        return 'AI OK';
+      case AppLanguage.french:
+        return 'IA OK';
+    }
+  }
+
+  String get aiKO {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'AI KO';
+      case AppLanguage.english:
+        return 'AI KO';
+      case AppLanguage.french:
+        return 'IA KO';
+    }
+  }
+
   String get breadcrumb {
     switch (_language) {
       case AppLanguage.portuguese:
@@ -5709,6 +7076,183 @@ class AppStrings {
         return 'External Embed';
       case AppLanguage.french:
         return 'Intégration externe';
+    }
+  }
+
+  // --- STRINGS FALTANTES IDENTIFICADAS NOS ERROS ---
+  String get cancel {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Cancelar';
+      case AppLanguage.english:
+        return 'Cancel';
+      case AppLanguage.french:
+        return 'Annuler';
+    }
+  }
+
+  String get documents {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Documentos';
+      case AppLanguage.english:
+        return 'Documents';
+      case AppLanguage.french:
+        return 'Documents';
+    }
+  }
+
+  String get bloquinho {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Bloquinho';
+      case AppLanguage.english:
+        return 'Bloquinho';
+      case AppLanguage.french:
+        return 'Bloquinho';
+    }
+  }
+
+  String get system {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Sistema';
+      case AppLanguage.english:
+        return 'System';
+      case AppLanguage.french:
+        return 'Système';
+    }
+  }
+
+  String get backup {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Backup';
+      case AppLanguage.english:
+        return 'Backup';
+      case AppLanguage.french:
+        return 'Sauvegarde';
+    }
+  }
+
+  String get trash {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Lixeira';
+      case AppLanguage.english:
+        return 'Trash';
+      case AppLanguage.french:
+        return 'Corbeille';
+    }
+  }
+
+  String get searchEverything {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Pesquisar tudo';
+      case AppLanguage.english:
+        return 'Search everything';
+      case AppLanguage.french:
+        return 'Tout rechercher';
+    }
+  }
+
+  String get workspace {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Workspace';
+      case AppLanguage.english:
+        return 'Workspace';
+      case AppLanguage.french:
+        return 'Espace de travail';
+    }
+  }
+
+  String get user {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Usuário';
+      case AppLanguage.english:
+        return 'User';
+      case AppLanguage.french:
+        return 'Utilisateur';
+    }
+  }
+
+  String get profile {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Perfil';
+      case AppLanguage.english:
+        return 'Profile';
+      case AppLanguage.french:
+        return 'Profil';
+    }
+  }
+
+  String get settings {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Configurações';
+      case AppLanguage.english:
+        return 'Settings';
+      case AppLanguage.french:
+        return 'Paramètres';
+    }
+  }
+
+  String get logout {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Sair';
+      case AppLanguage.english:
+        return 'Logout';
+      case AppLanguage.french:
+        return 'Déconnexion';
+    }
+  }
+
+  String get logoutTitle {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Confirmar saída';
+      case AppLanguage.english:
+        return 'Confirm logout';
+      case AppLanguage.french:
+        return 'Confirmer la déconnexion';
+    }
+  }
+
+  String get logoutMessage {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Tem certeza que deseja sair?';
+      case AppLanguage.english:
+        return 'Are you sure you want to logout?';
+      case AppLanguage.french:
+        return 'Êtes-vous sûr de vouloir vous déconnecter?';
+    }
+  }
+
+  String get deleteAndLogout {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Excluir e sair';
+      case AppLanguage.english:
+        return 'Delete and logout';
+      case AppLanguage.french:
+        return 'Supprimer et se déconnecter';
+    }
+  }
+
+  String get searchBloquinhoDatabase {
+    switch (_language) {
+      case AppLanguage.portuguese:
+        return 'Pesquisar no Bloquinho e Base de Dados';
+      case AppLanguage.english:
+        return 'Search in Bloquinho and Database';
+      case AppLanguage.french:
+        return 'Rechercher dans Bloquinho et Base de données';
     }
   }
 }

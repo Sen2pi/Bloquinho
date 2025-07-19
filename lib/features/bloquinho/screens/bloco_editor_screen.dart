@@ -80,8 +80,13 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
   @override
   void initState() {
     super.initState();
+    // Adicionar delay para evitar problemas de inicialização
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeEditor();
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _initializeEditor();
+        }
+      });
     });
   }
 
@@ -99,6 +104,11 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
   // Cache simples para conteúdo de página
   final Map<String, String> _pageContentCache = {};
+
+  // Método para limpar cache quando necessário
+  void _clearCache() {
+    _pageContentCache.clear();
+  }
 
   // Métodos para carregar e salvar conteúdo em arquivos .md
   Future<String> loadPageContent(String pageId) async {
@@ -119,6 +129,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
       _pageContentCache[pageId] = content;
       return content;
     } catch (e) {
+      print('Erro ao carregar conteúdo da página: $e');
       return '';
     }
   }
@@ -153,15 +164,19 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
       await bloquinhoStorage.savePage(
           updatedPage, currentProfile.name, currentWorkspace.name);
     } catch (e) {
-      // Erro ao salvar
+      print('Erro ao salvar conteúdo da página: $e');
     }
   }
 
   @override
   void dispose() {
+    // Remover foco antes de dispor para evitar problemas de teclado
+    _editorFocusNode.unfocus();
     _editorFocusNode.dispose();
     _scrollController.dispose();
     _contentController.dispose();
+    // Limpar cache ao dispor
+    _clearCache();
     super.dispose();
   }
 
@@ -195,23 +210,49 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         _navigationStack = [widget.documentId!];
       }
 
-      // Inicializar o editor controller
-      await ref.read(editorControllerProvider.notifier).initialize(
-            documentId: _currentPageId,
-            documentTitle: widget.documentTitle ?? strings.newPage,
-            isReadOnly: widget.isReadOnly,
-            settings: {
-              'showLineNumbers': _showLineNumbers,
-              'zoomLevel': _zoomLevel,
-            },
-            strings: strings,
-          );
+      // Inicializar o editor controller com tratamento de erro melhorado
+      try {
+        await ref.read(editorControllerProvider.notifier).initialize(
+              documentId: _currentPageId,
+              documentTitle: widget.documentTitle ?? strings.newPage,
+              isReadOnly: widget.isReadOnly,
+              settings: {
+                'showLineNumbers': _showLineNumbers,
+                'zoomLevel': _zoomLevel,
+              },
+              strings: strings,
+            );
+      } catch (e) {
+        // Log do erro para debug
+        print('Erro ao inicializar editor: $e');
+        // Continuar mesmo com erro para evitar tela branca
+      }
     } catch (e) {
-      _showErrorSnackBar('${strings.errorInitializingEditor}: ${e.toString()}');
+      print('Erro geral no _initializeEditor: $e');
+      // Não mostrar snackbar aqui para evitar loops
     }
   }
 
   void _navigateToPage(String pageId) {
+    // Verificar se a página existe antes de navegar
+    final currentProfile = ref.read(currentProfileProvider);
+    final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+    if (currentProfile == null || currentWorkspace == null) {
+      return;
+    }
+
+    final pages = ref.read(pagesProvider((
+      profileName: currentProfile.name,
+      workspaceName: currentWorkspace.name
+    )));
+
+    final pageExists = pages.any((p) => p.id == pageId);
+    if (!pageExists) {
+      print('Página não encontrada: $pageId');
+      return;
+    }
+
     setState(() {
       _currentPageId = pageId;
       if (!_navigationStack.contains(pageId)) {
@@ -229,6 +270,13 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         _navigationStack.removeLast();
         _currentPageId = _navigationStack.last;
       });
+    } else {
+      // Se não há mais páginas para voltar, navegar para o workspace
+      try {
+        context.go('/workspace/bloquinho');
+      } catch (e) {
+        print('Erro ao navegar de volta: $e');
+      }
     }
   }
 
@@ -238,16 +286,20 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     final currentWorkspace = ref.read(currentWorkspaceProvider);
 
     if (currentProfile != null && currentWorkspace != null) {
-      final pagesNotifier = ref.read(pagesNotifierProvider((
-        profileName: currentProfile.name,
-        workspaceName: currentWorkspace.name
-      )));
-      final newPage = PageModel.create(
-        title: strings.newSubpage,
-        parentId: parentId,
-      );
-      pagesNotifier.state = [...pagesNotifier.state, newPage];
-      _navigateToPage(newPage.id);
+      try {
+        final pagesNotifier = ref.read(pagesNotifierProvider((
+          profileName: currentProfile.name,
+          workspaceName: currentWorkspace.name
+        )));
+        final newPage = PageModel.create(
+          title: strings.newSubpage,
+          parentId: parentId,
+        );
+        pagesNotifier.state = [...pagesNotifier.state, newPage];
+        _navigateToPage(newPage.id);
+      } catch (e) {
+        print('Erro ao criar subpágina: $e');
+      }
     }
   }
 
@@ -634,18 +686,23 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
                 return GestureDetector(
                   onTap: () {
-                    final currentProfile = ref.read(currentProfileProvider);
-                    final currentWorkspace = ref.read(currentWorkspaceProvider);
+                    try {
+                      final currentProfile = ref.read(currentProfileProvider);
+                      final currentWorkspace =
+                          ref.read(currentWorkspaceProvider);
 
-                    if (currentProfile != null && currentWorkspace != null) {
-                      final pagesNotifier = ref.read(pagesNotifierProvider((
-                        profileName: currentProfile.name,
-                        workspaceName: currentWorkspace.name
-                      )));
-                      pagesNotifier.updatePage(
-                        page.id,
-                        icon: icon,
-                      );
+                      if (currentProfile != null && currentWorkspace != null) {
+                        final pagesNotifier = ref.read(pagesNotifierProvider((
+                          profileName: currentProfile.name,
+                          workspaceName: currentWorkspace.name
+                        )));
+                        pagesNotifier.updatePage(
+                          page.id,
+                          icon: icon,
+                        );
+                      }
+                    } catch (e) {
+                      print('Erro ao atualizar ícone: $e');
                     }
                     Navigator.of(context).pop();
                   },
@@ -702,6 +759,13 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
             hintText: strings.typeTitle,
           ),
           autofocus: true,
+          // Adicionar onSubmitted para evitar problemas de teclado
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              _updatePageTitle(page, value.trim(), strings);
+              Navigator.of(context).pop();
+            }
+          },
         ),
         actions: [
           TextButton(
@@ -711,19 +775,7 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
           ElevatedButton(
             onPressed: () {
               if (titleController.text.trim().isNotEmpty) {
-                final currentProfile = ref.read(currentProfileProvider);
-                final currentWorkspace = ref.read(currentWorkspaceProvider);
-
-                if (currentProfile != null && currentWorkspace != null) {
-                  final pagesNotifier = ref.read(pagesNotifierProvider((
-                    profileName: currentProfile.name,
-                    workspaceName: currentWorkspace.name
-                  )));
-                  pagesNotifier.updatePage(
-                    page.id,
-                    title: titleController.text.trim(),
-                  );
-                }
+                _updatePageTitle(page, titleController.text.trim(), strings);
                 Navigator.of(context).pop();
               }
             },
@@ -732,13 +784,38 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
         ],
       ),
     ).then((_) {
-      // Após fechar o diálogo, devolver o foco ao editor principal
-      Future.delayed(const Duration(milliseconds: 300), () {
+      // Após fechar o diálogo, devolver o foco ao editor principal com delay maior
+      Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {
-          FocusScope.of(context).requestFocus(_editorFocusNode);
+          // Verificar se o widget ainda está montado antes de focar
+          try {
+            FocusScope.of(context).requestFocus(_editorFocusNode);
+          } catch (e) {
+            print('Erro ao focar editor: $e');
+          }
         }
       });
     });
+  }
+
+  void _updatePageTitle(PageModel page, String newTitle, AppStrings strings) {
+    try {
+      final currentProfile = ref.read(currentProfileProvider);
+      final currentWorkspace = ref.read(currentWorkspaceProvider);
+
+      if (currentProfile != null && currentWorkspace != null) {
+        final pagesNotifier = ref.read(pagesNotifierProvider((
+          profileName: currentProfile.name,
+          workspaceName: currentWorkspace.name
+        )));
+        pagesNotifier.updatePage(
+          page.id,
+          title: newTitle,
+        );
+      }
+    } catch (e) {
+      print('Erro ao atualizar título: $e');
+    }
   }
 
   Widget _buildBody(bool isDarkMode, EditorControllerState editorState,
@@ -753,24 +830,52 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
     }
     if (!editorState.isInitialized) {
       return Center(
-        child: Text(strings.editorNotInitialized),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(strings.editorNotInitialized),
+          ],
+        ),
       );
     }
+
+    // Verificação de segurança para currentPage
+    if (currentPage == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              PhosphorIcons.warning(),
+              size: 64,
+              color: Colors.orange,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Página não encontrada',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+          ],
+        ),
+      );
+    }
+
     // Usar Consumer para granularidade em PageContentWidget
     return Column(
       children: [
-        if (currentPage != null)
-          _SubPagesBar(
-            parentPage: currentPage,
-            onNavigateToPage: _navigateToPage,
-            onCreateSubPage: _createSubPage,
-          ),
+        _SubPagesBar(
+          parentPage: currentPage,
+          onNavigateToPage: _navigateToPage,
+          onCreateSubPage: _createSubPage,
+        ),
         Expanded(
           child: Consumer(
             builder: (context, ref, _) {
               return RepaintBoundary(
                 child: PageContentWidget(
-                  pageId: currentPage?.id ?? '',
+                  pageId: currentPage.id,
                   isEditing: false,
                 ),
               );
@@ -1162,45 +1267,69 @@ class BlocoEditorScreenState extends ConsumerState<BlocoEditorScreen> {
 
   void _showErrorSnackBar(String message) {
     final strings = ref.read(appStringsProvider);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        action: SnackBarAction(
-          label: strings.closeButton,
-          textColor: Colors.white,
-          onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+    // Verificar se o contexto ainda é válido
+    if (!mounted) return;
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: strings.closeButton,
+            textColor: Colors.white,
+            onPressed: () =>
+                ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      print('Erro ao mostrar snackbar: $e');
+    }
   }
 
   void _showSuccessSnackBar(String message) {
     final strings = ref.read(appStringsProvider);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        action: SnackBarAction(
-          label: strings.closeButton,
-          textColor: Colors.white,
-          onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+    // Verificar se o contexto ainda é válido
+    if (!mounted) return;
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+          action: SnackBarAction(
+            label: strings.closeButton,
+            textColor: Colors.white,
+            onPressed: () =>
+                ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      print('Erro ao mostrar snackbar: $e');
+    }
   }
 
   void _showInfoSnackBar(String message) {
     final strings = ref.read(appStringsProvider);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        action: SnackBarAction(
-          label: strings.closeButton,
-          onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+    // Verificar se o contexto ainda é válido
+    if (!mounted) return;
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          action: SnackBarAction(
+            label: strings.closeButton,
+            onPressed: () =>
+                ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      print('Erro ao mostrar snackbar: $e');
+    }
   }
 
   List<Widget> _buildAppBarActions(

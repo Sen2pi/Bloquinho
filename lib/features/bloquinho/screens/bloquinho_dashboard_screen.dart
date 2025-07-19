@@ -106,11 +106,11 @@ class _BloquinhoDashboardScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildOverviewCards(isDarkMode, pages, strings),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 _buildRecentActivity(isDarkMode, pages, strings),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 _buildStorageInfo(isDarkMode, pages, strings),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 _buildQuickActions(isDarkMode, strings),
               ],
             ),
@@ -161,7 +161,7 @@ class _BloquinhoDashboardScreenState
                 fontWeight: FontWeight.bold,
               ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -173,7 +173,7 @@ class _BloquinhoDashboardScreenState
                 Colors.blue,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: _buildStatCard(
                 isDarkMode,
@@ -183,7 +183,7 @@ class _BloquinhoDashboardScreenState
                 Colors.green,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: _buildStatCard(
                 isDarkMode,
@@ -195,7 +195,7 @@ class _BloquinhoDashboardScreenState
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -207,7 +207,7 @@ class _BloquinhoDashboardScreenState
                 Colors.purple,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: _buildStatCard(
                 isDarkMode,
@@ -226,19 +226,19 @@ class _BloquinhoDashboardScreenState
   Widget _buildStatCard(
       bool isDarkMode, String icon, String title, String value, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -247,23 +247,24 @@ class _BloquinhoDashboardScreenState
         children: [
           Row(
             children: [
-              Text(icon, style: const TextStyle(fontSize: 24)),
-              const SizedBox(width: 8),
+              Text(icon, style: const TextStyle(fontSize: 18)),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        fontWeight: FontWeight.w500,
                       ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: color,
                 ),
@@ -290,7 +291,7 @@ class _BloquinhoDashboardScreenState
                 fontWeight: FontWeight.bold,
               ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
             color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
@@ -379,7 +380,7 @@ class _BloquinhoDashboardScreenState
                 fontWeight: FontWeight.bold,
               ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -437,7 +438,7 @@ class _BloquinhoDashboardScreenState
                 fontWeight: FontWeight.bold,
               ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -449,7 +450,7 @@ class _BloquinhoDashboardScreenState
                 () => context.push('/workspace/bloquinho/editor'),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: _buildActionCard(
                 isDarkMode,
@@ -461,7 +462,7 @@ class _BloquinhoDashboardScreenState
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -473,7 +474,7 @@ class _BloquinhoDashboardScreenState
                 () => _showImportDialog(),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: _buildActionCard(
                 isDarkMode,
@@ -494,35 +495,43 @@ class _BloquinhoDashboardScreenState
     return Container(
       decoration: BoxDecoration(
         color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, size: 24, color: AppColors.primary),
-                const SizedBox(height: 12),
+                Icon(icon, size: 20, color: AppColors.primary),
+                const SizedBox(height: 8),
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   subtitle,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.grey[600],
+                        fontSize: 11,
                       ),
                 ),
               ],

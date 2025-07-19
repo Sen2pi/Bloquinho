@@ -22,6 +22,7 @@
         "flutter",
         "flutter_animate",
         "flutter_highlight",
+        "flutter_html",
         "flutter_localizations",
         "flutter_markdown",
         "flutter_markdown_selectionarea",
@@ -597,6 +598,17 @@
         "plugin_platform_interface",
         "web",
         "win32"
+      ]
+    },
+    {
+      "name": "flutter_html",
+      "version": "3.0.0",
+      "dependencies": [
+        "collection",
+        "csslib",
+        "flutter",
+        "html",
+        "list_counter"
       ]
     },
     {
@@ -1907,6 +1919,11 @@
       "dependencies": [
         "flutter"
       ]
+    },
+    {
+      "name": "list_counter",
+      "version": "1.0.2",
+      "dependencies": []
     },
     {
       "name": "quill_native_bridge",

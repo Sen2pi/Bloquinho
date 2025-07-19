@@ -211,6 +211,24 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
           onTap: () => _showAlignmentPicker(context),
           isDarkMode: isDarkMode,
         ),
+        const SizedBox(width: 4),
+
+        // Link de página
+        _buildFormatButton(
+          icon: Icons.link,
+          tooltip: 'Link de página',
+          onTap: () => _showPageLinkDialog(context),
+          isDarkMode: isDarkMode,
+        ),
+        const SizedBox(width: 4),
+
+        // Tabela
+        _buildFormatButton(
+          icon: Icons.table_chart,
+          tooltip: 'Tabela',
+          onTap: () => _showTableDialog(context),
+          isDarkMode: isDarkMode,
+        ),
       ],
     );
   }
@@ -353,38 +371,168 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
     // Combinações otimizadas: cores escuras com fundos claros e vice-versa
     final colorCombinations = [
       // Escuro sobre claro
-      {'text': '#000000', 'bg': '#FFFFFF', 'name': 'Preto / Branco', 'example': 'Aa'},
-      {'text': '#1a1a1a', 'bg': '#f8f9fa', 'name': 'Carvão / Cinza Claro', 'example': 'Aa'},
-      {'text': '#2c3e50', 'bg': '#ecf0f1', 'name': 'Azul Escuro / Cinza Pérola', 'example': 'Aa'},
-      {'text': '#8b0000', 'bg': '#ffe6e6', 'name': 'Vermelho Escuro / Rosa Claro', 'example': 'Aa'},
-      {'text': '#4a5568', 'bg': '#f7fafc', 'name': 'Ardósia / Azul Muito Claro', 'example': 'Aa'},
-      {'text': '#2d3748', 'bg': '#edf2f7', 'name': 'Cinza Escuro / Cinza Gelo', 'example': 'Aa'},
-      {'text': '#744210', 'bg': '#fffaf0', 'name': 'Marrom Escuro / Bege Claro', 'example': 'Aa'},
-      {'text': '#0d5415', 'bg': '#f0fff4', 'name': 'Verde Escuro / Verde Muito Claro', 'example': 'Aa'},
-      
+      {
+        'text': '#000000',
+        'bg': '#FFFFFF',
+        'name': 'Preto / Branco',
+        'example': 'Aa'
+      },
+      {
+        'text': '#1a1a1a',
+        'bg': '#f8f9fa',
+        'name': 'Carvão / Cinza Claro',
+        'example': 'Aa'
+      },
+      {
+        'text': '#2c3e50',
+        'bg': '#ecf0f1',
+        'name': 'Azul Escuro / Cinza Pérola',
+        'example': 'Aa'
+      },
+      {
+        'text': '#8b0000',
+        'bg': '#ffe6e6',
+        'name': 'Vermelho Escuro / Rosa Claro',
+        'example': 'Aa'
+      },
+      {
+        'text': '#4a5568',
+        'bg': '#f7fafc',
+        'name': 'Ardósia / Azul Muito Claro',
+        'example': 'Aa'
+      },
+      {
+        'text': '#2d3748',
+        'bg': '#edf2f7',
+        'name': 'Cinza Escuro / Cinza Gelo',
+        'example': 'Aa'
+      },
+      {
+        'text': '#744210',
+        'bg': '#fffaf0',
+        'name': 'Marrom Escuro / Bege Claro',
+        'example': 'Aa'
+      },
+      {
+        'text': '#0d5415',
+        'bg': '#f0fff4',
+        'name': 'Verde Escuro / Verde Muito Claro',
+        'example': 'Aa'
+      },
+
       // Claro sobre escuro
-      {'text': '#FFFFFF', 'bg': '#000000', 'name': 'Branco / Preto', 'example': 'Aa'},
-      {'text': '#f8f9fa', 'bg': '#2c3e50', 'name': 'Cinza Claro / Azul Escuro', 'example': 'Aa'},
-      {'text': '#ffffff', 'bg': '#1a365d', 'name': 'Branco / Azul Marinho', 'example': 'Aa'},
-      {'text': '#f7fafc', 'bg': '#2d3748', 'name': 'Azul Muito Claro / Cinza Escuro', 'example': 'Aa'},
-      {'text': '#fff5f5', 'bg': '#742a2a', 'name': 'Rosa Claro / Vermelho Escuro', 'example': 'Aa'},
-      {'text': '#f0fff4', 'bg': '#22543d', 'name': 'Verde Muito Claro / Verde Escuro', 'example': 'Aa'},
-      {'text': '#fffaf0', 'bg': '#744210', 'name': 'Bege Claro / Marrom Escuro', 'example': 'Aa'},
-      {'text': '#faf5ff', 'bg': '#553c9a', 'name': 'Roxo Claro / Roxo Escuro', 'example': 'Aa'},
-      
+      {
+        'text': '#FFFFFF',
+        'bg': '#000000',
+        'name': 'Branco / Preto',
+        'example': 'Aa'
+      },
+      {
+        'text': '#f8f9fa',
+        'bg': '#2c3e50',
+        'name': 'Cinza Claro / Azul Escuro',
+        'example': 'Aa'
+      },
+      {
+        'text': '#ffffff',
+        'bg': '#1a365d',
+        'name': 'Branco / Azul Marinho',
+        'example': 'Aa'
+      },
+      {
+        'text': '#f7fafc',
+        'bg': '#2d3748',
+        'name': 'Azul Muito Claro / Cinza Escuro',
+        'example': 'Aa'
+      },
+      {
+        'text': '#fff5f5',
+        'bg': '#742a2a',
+        'name': 'Rosa Claro / Vermelho Escuro',
+        'example': 'Aa'
+      },
+      {
+        'text': '#f0fff4',
+        'bg': '#22543d',
+        'name': 'Verde Muito Claro / Verde Escuro',
+        'example': 'Aa'
+      },
+      {
+        'text': '#fffaf0',
+        'bg': '#744210',
+        'name': 'Bege Claro / Marrom Escuro',
+        'example': 'Aa'
+      },
+      {
+        'text': '#faf5ff',
+        'bg': '#553c9a',
+        'name': 'Roxo Claro / Roxo Escuro',
+        'example': 'Aa'
+      },
+
       // Combinações vibrantes
-      {'text': '#ffffff', 'bg': '#e53e3e', 'name': 'Branco / Vermelho', 'example': '⚠️'},
-      {'text': '#ffffff', 'bg': '#38a169', 'name': 'Branco / Verde', 'example': '✅'},
-      {'text': '#ffffff', 'bg': '#3182ce', 'name': 'Branco / Azul', 'example': 'ℹ️'},
-      {'text': '#ffffff', 'bg': '#d69e2e', 'name': 'Branco / Amarelo Escuro', 'example': '⚡'},
-      {'text': '#ffffff', 'bg': '#805ad5', 'name': 'Branco / Roxo', 'example': '🔮'},
-      {'text': '#ffffff', 'bg': '#dd6b20', 'name': 'Branco / Laranja', 'example': '🔥'},
-      
+      {
+        'text': '#ffffff',
+        'bg': '#e53e3e',
+        'name': 'Branco / Vermelho',
+        'example': '⚠️'
+      },
+      {
+        'text': '#ffffff',
+        'bg': '#38a169',
+        'name': 'Branco / Verde',
+        'example': '✅'
+      },
+      {
+        'text': '#ffffff',
+        'bg': '#3182ce',
+        'name': 'Branco / Azul',
+        'example': 'ℹ️'
+      },
+      {
+        'text': '#ffffff',
+        'bg': '#d69e2e',
+        'name': 'Branco / Amarelo Escuro',
+        'example': '⚡'
+      },
+      {
+        'text': '#ffffff',
+        'bg': '#805ad5',
+        'name': 'Branco / Roxo',
+        'example': '🔮'
+      },
+      {
+        'text': '#ffffff',
+        'bg': '#dd6b20',
+        'name': 'Branco / Laranja',
+        'example': '🔥'
+      },
+
       // Pastéis profissionais
-      {'text': '#2d3748', 'bg': '#bee3f8', 'name': 'Escuro / Azul Pastel', 'example': 'Info'},
-      {'text': '#2d3748', 'bg': '#c6f6d5', 'name': 'Escuro / Verde Pastel', 'example': 'OK'},
-      {'text': '#2d3748', 'bg': '#fed7d7', 'name': 'Escuro / Rosa Pastel', 'example': 'Alert'},
-      {'text': '#2d3748', 'bg': '#fef5e7', 'name': 'Escuro / Amarelo Pastel', 'example': 'Note'},
+      {
+        'text': '#2d3748',
+        'bg': '#bee3f8',
+        'name': 'Escuro / Azul Pastel',
+        'example': 'Info'
+      },
+      {
+        'text': '#2d3748',
+        'bg': '#c6f6d5',
+        'name': 'Escuro / Verde Pastel',
+        'example': 'OK'
+      },
+      {
+        'text': '#2d3748',
+        'bg': '#fed7d7',
+        'name': 'Escuro / Rosa Pastel',
+        'example': 'Alert'
+      },
+      {
+        'text': '#2d3748',
+        'bg': '#fef5e7',
+        'name': 'Escuro / Amarelo Pastel',
+        'example': 'Note'
+      },
     ];
 
     showDialog(
@@ -415,13 +563,14 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
                     final combo = colorCombinations[index];
                     final textColor = _getColorFromName(combo['text']!);
                     final bgColor = _getColorFromName(combo['bg']!);
-                    
+
                     return InkWell(
                       onTap: () {
                         Navigator.of(context).pop();
                         widget.onFormatApplied(
                           'span',
-                          content: '<span style="background-color:${combo['bg']}; color:${combo['text']}">TEXTO_SELECIONADO</span>',
+                          content:
+                              '<span style="background-color:${combo['bg']}; color:${combo['text']}">TEXTO_SELECIONADO</span>',
                         );
                       },
                       borderRadius: BorderRadius.circular(8),
@@ -429,7 +578,8 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
                         decoration: BoxDecoration(
                           color: bgColor,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+                          border: Border.all(
+                              color: Colors.grey.withOpacity(0.3), width: 1),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
@@ -480,7 +630,10 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surfaceVariant
+                      .withOpacity(0.3),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -565,7 +718,7 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
         return Colors.grey;
       }
     }
-    
+
     final colorMap = {
       'red': Colors.red,
       'blue': Colors.blue,
@@ -904,6 +1057,98 @@ class _BloquinhoFormatMenuState extends State<BloquinhoFormatMenu> {
               if (customContent.isNotEmpty) {
                 Navigator.of(context).pop();
                 widget.onFormatApplied('mermaid', content: customContent);
+              }
+            },
+            child: const Text('Inserir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPageLinkDialog(BuildContext context) {
+    final TextEditingController pageTitleController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Inserir Link de Página'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: pageTitleController,
+              decoration: const InputDecoration(
+                labelText: 'Título da página',
+                hintText: 'Digite o título da página',
+              ),
+              autofocus: true,
+              onSubmitted: (value) {
+                Navigator.of(context).pop();
+                if (value.isNotEmpty) {
+                  widget.onFormatApplied('pagelink', content: '[[$value]]');
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final pageTitle = pageTitleController.text.trim();
+              if (pageTitle.isNotEmpty) {
+                Navigator.of(context).pop();
+                widget.onFormatApplied('pagelink', content: '[[$pageTitle]]');
+              }
+            },
+            child: const Text('Inserir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTableDialog(BuildContext context) {
+    final TextEditingController tableNameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Inserir Tabela'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: tableNameController,
+              decoration: const InputDecoration(
+                labelText: 'Nome da tabela',
+                hintText: 'Digite o nome da tabela',
+              ),
+              autofocus: true,
+              onSubmitted: (value) {
+                Navigator.of(context).pop();
+                if (value.isNotEmpty) {
+                  widget.onFormatApplied('table', content: '{{$value}}');
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final tableName = tableNameController.text.trim();
+              if (tableName.isNotEmpty) {
+                Navigator.of(context).pop();
+                widget.onFormatApplied('table', content: '{{$tableName}}');
               }
             },
             child: const Text('Inserir'),

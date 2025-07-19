@@ -24,6 +24,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'latex_widget.dart';
 import 'mermaid_diagram_widget.dart';
+import 'page_link_badge.dart';
+import 'windows_database_table_widget.dart';
+import '../../../shared/providers/database_provider.dart';
 import '../../../core/utils/lru_cache.dart';
 import '../../../core/services/enhanced_markdown_parser.dart';
 import 'dart:typed_data';
@@ -995,31 +998,200 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   /// Construir markdown otimizado
   Widget _buildOptimizedMarkdown(BuildContext context, TextStyle textStyle,
       WidgetRef ref, String sanitizedMarkdown) {
-    // Cache de markdown processado
-    final cacheKey = sanitizedMarkdown.hashCode;
-    final cachedMarkdown = _markdownCache.get(cacheKey);
-    final processedMarkdown =
-        cachedMarkdown ?? _processMarkdown(sanitizedMarkdown);
+    // Processar markdown customizado primeiro
+    final processedContent =
+        _processCustomMarkdown(context, ref, sanitizedMarkdown, textStyle);
 
-    if (cachedMarkdown == null) {
-      _markdownCache.put(cacheKey, processedMarkdown);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: processedContent,
+    );
+  }
+
+  /// Processar markdown customizado
+  List<Widget> _processCustomMarkdown(
+      BuildContext context, WidgetRef ref, String markdown, TextStyle textStyle) {
+    final widgets = <Widget>[];
+    final lines = markdown.split('\n');
+
+    for (final line in lines) {
+      if (line.trim().isEmpty) {
+        widgets.add(const SizedBox(height: 8));
+        continue;
+      }
+
+      // Processar cabeçalhos
+      if (line.startsWith('## ')) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              line.substring(3),
+              style: textStyle.copyWith(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        );
+        continue;
+      }
+
+      // Processar links de página [[título]]
+      if (line.contains('[[', 0) && line.contains(']]')) {
+        final pageLinks = _extractPageLinks(line);
+        if (pageLinks.isNotEmpty) {
+          widgets.add(
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: pageLinks,
+              ),
+            ),
+          );
+          continue;
+        }
+      }
+
+      // Processar tabelas {{nome}}
+      if (line.contains('{{', 0) && line.contains('}}')) {
+        final tables = _extractTables(line);
+        if (tables.isNotEmpty) {
+          widgets.addAll(tables);
+          continue;
+        }
+      }
+
+      // Texto normal
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            line,
+            style: textStyle,
+          ),
+        ),
+      );
     }
 
-    return Markdown(
-      data: processedMarkdown,
-      styleSheet: _buildMarkdownStyleSheet(textStyle),
-      builders: _buildMarkdownBuilders(context, ref),
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-    );
+    return widgets;
+  }
+
+  /// Extrair links de página de uma linha
+  List<Widget> _extractPageLinks(String line) {
+    final widgets = <Widget>[];
+    final regex = RegExp(r'\[\[([^\]]+)\]\]');
+    final matches = regex.allMatches(line);
+
+    if (matches.isEmpty) return widgets;
+
+    for (final match in matches) {
+      final pageIdOrTitle = match.group(1)!;
+      widgets.add(
+        PageLinkBadge(
+          pageTitle: pageIdOrTitle, // Fallback se não encontrar por ID
+          pageId: pageIdOrTitle, // Tentar buscar por ID primeiro
+          onTap: () {
+            // TODO: Implementar navegação para a página
+            print('Navegar para página: $pageIdOrTitle');
+          },
+        ),
+      );
+    }
+
+    return widgets;
+  }
+
+  /// Extrair tabelas de uma linha
+  List<Widget> _extractTables(String line) {
+    final widgets = <Widget>[];
+    final regex = RegExp(r'\{\{([^}]+)\}\}');
+    final matches = regex.allMatches(line);
+
+    if (matches.isEmpty) return widgets;
+
+    for (final match in matches) {
+      final tableId = match.group(1)!;
+
+      widgets.add(
+        Consumer(
+          builder: (context, ref, _) {
+            final tableAsync = ref.watch(databaseTableProvider(tableId));
+            
+            return tableAsync.when(
+              data: (table) {
+                if (table == null) {
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Tabela não encontrada: $tableId',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  );
+                }
+                
+                return WindowsDatabaseTableWidget(
+                  tableId: tableId,
+                );
+              },
+              loading: () => Container(
+                padding: const EdgeInsets.all(12),
+                child: Text('Carregando tabela...', style: TextStyle(fontSize: 12)),
+              ),
+              error: (error, stack) => Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Erro ao carregar tabela: $error',
+                  style: TextStyle(color: Colors.red, fontSize: 12),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    return widgets;
   }
 
   /// Processar markdown com enhancements
   String _processMarkdown(String rawMarkdown) {
     if (!enableHtmlEnhancements) return rawMarkdown;
 
-    // Windows version - simplified processing
-    return rawMarkdown;
+    // Windows version - enhanced processing
+    String processedMarkdown = rawMarkdown;
+
+    // Processar links de página [[título]]
+    processedMarkdown = processedMarkdown.replaceAllMapped(
+      RegExp(r'\[\[([^\]]+)\]\]'),
+      (match) {
+        final pageTitle = match.group(1)!;
+        return '<pagelink>$pageTitle</pagelink>';
+      },
+    );
+
+    // Processar tabelas {{nome}}
+    processedMarkdown = processedMarkdown.replaceAllMapped(
+      RegExp(r'\{\{([^}]+)\}\}'),
+      (match) {
+        final tableName = match.group(1)!;
+        return '<table>$tableName</table>';
+      },
+    );
+
+    return processedMarkdown;
   }
 
   /// Construir style sheet para markdown
@@ -1098,6 +1270,8 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
       'mark': MarkElementBuilder(),
       'sub': SubscriptElementBuilder(),
       'sup': SuperscriptElementBuilder(),
+      'pagelink': PageLinkElementBuilder(),
+      'table': TableElementBuilder(),
     };
   }
 }
@@ -1286,6 +1460,108 @@ class SuperscriptElementBuilder extends MarkdownElementBuilder {
       style: preferredStyle?.copyWith(
         fontSize: (preferredStyle?.fontSize ?? 14) * 0.7,
       ),
+    );
+  }
+}
+
+/// Builder para links de página
+class PageLinkElementBuilder extends MarkdownElementBuilder {
+  @override
+  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    final text = sanitizeUtf16(element.textContent);
+
+    // Extrair ID da página do formato [[id]]
+    final pageIdOrTitle = text.replaceAll(RegExp(r'[\[\]]'), '');
+
+    return PageLinkBadge(
+      pageTitle: pageIdOrTitle, // Fallback se não encontrar por ID
+      pageId: pageIdOrTitle, // Tentar buscar por ID primeiro
+      onTap: () {
+        // TODO: Implementar navegação para a página
+        print('Navegar para página: $pageIdOrTitle');
+      },
+    );
+  }
+}
+
+/// Builder para tabelas
+class TableElementBuilder extends MarkdownElementBuilder {
+  @override
+  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    final text = sanitizeUtf16(element.textContent);
+
+    // Extrair ID da tabela do formato {{id}}
+    final tableId = text.replaceAll(RegExp(r'[{}]'), '');
+
+    return Consumer(
+      builder: (context, ref, _) {
+        final tableAsync = ref.watch(databaseTableProvider(tableId));
+        
+        return tableAsync.when(
+          data: (table) {
+            if (table == null) {
+              // Tabela não encontrada - mostrar placeholder
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.warning, color: Colors.red, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Tabela não encontrada: $tableId',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ],
+                ),
+              );
+            }
+            
+            return WindowsDatabaseTableWidget(
+              tableId: tableId,
+            );
+          },
+          loading: () => Container(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 8),
+                Text('Carregando tabela...', style: TextStyle(fontSize: 12)),
+              ],
+            ),
+          ),
+          error: (error, stack) => Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              border: Border.all(color: Colors.red.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error, color: Colors.red, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'Erro ao carregar tabela: $error',
+                  style: TextStyle(color: Colors.red, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

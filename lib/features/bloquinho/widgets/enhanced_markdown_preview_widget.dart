@@ -26,6 +26,13 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'latex_widget.dart';
 import 'mermaid_diagram_widget.dart'; // Adicionar import para WindowsMermaidDiagramWidget
+import 'page_link_badge.dart';
+import 'windows_database_table_widget.dart';
+import '../../../shared/providers/database_provider.dart';
+import '../providers/pages_provider.dart';
+import '../../../shared/providers/user_profile_provider.dart';
+import '../../../shared/providers/workspace_provider.dart';
+import '../screens/bloco_editor_screen.dart';
 import '../../../core/utils/lru_cache.dart';
 import '../../../core/services/enhanced_markdown_parser.dart';
 import 'dart:typed_data';
@@ -1430,6 +1437,111 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
   }
 
   Widget _buildOptimizedMarkdown(
+      BuildContext context, TextStyle baseStyle, WidgetRef ref) {
+    final safeMarkdown = _sanitizeMarkdown(markdown);
+
+    if (!enableHtmlEnhancements) {
+      return RepaintBoundary(
+        child: MarkdownBody(
+          data: safeMarkdown,
+          styleSheet: _createBasicStyleSheet(context, baseStyle),
+          builders: {
+            'code': AdvancedCodeBlockBuilder(),
+            'mark': MarkBuilder(),
+            'kbd': KbdBuilder(),
+            'sub': SubBuilder(),
+            'sup': SupBuilder(),
+            'details': DetailsBuilder(),
+            'summary': SummaryBuilder(),
+            'color': ColorBuilder(ref: ref),
+            'bg': BgBuilder(ref: ref),
+            'badge': BadgeBuilder(ref: ref),
+          },
+          inlineSyntaxes: [
+            LatexInlineSyntax(),
+            ColorSyntax(),
+            BgSyntax(),
+            BadgeSyntax(),
+            KbdInlineSyntax(),
+            MarkInlineSyntax(),
+            SubInlineSyntax(),
+            SupInlineSyntax(),
+          ],
+          blockSyntaxes: [
+            LatexBlockSyntax(),
+          ],
+          selectable: true,
+        ),
+      );
+    }
+
+    // Usando modo avançado (com HTML enhancements)...
+    final hash = safeMarkdown.hashCode ^ enableHtmlEnhancements.hashCode;
+    String processedContent;
+    final cached = _markdownCache.get(hash);
+    if (cached != null) {
+      processedContent = cached;
+    } else {
+      try {
+        processedContent =
+            HtmlEnhancementParser.processWithEnhancements(safeMarkdown);
+        _markdownCache.put(hash, processedContent);
+      } catch (e) {
+        processedContent = safeMarkdown;
+      }
+    }
+
+    return RepaintBoundary(
+      child: MarkdownBody(
+        data: processedContent,
+        styleSheet: _createEnhancedStyleSheet(context, baseStyle),
+        builders: {
+          'code': AdvancedCodeBlockBuilder(),
+          'mark': MarkBuilder(),
+          'kbd': KbdBuilder(),
+          'sub': SubBuilder(),
+          'sup': SupBuilder(),
+          'details': DetailsBuilder(),
+          'summary': SummaryBuilder(),
+          'latex-inline': LatexBuilder(),
+          'latex-block': LatexBuilder(),
+          'span': SpanBuilder(ref: ref),
+          'div': DynamicColoredDivBuilder(ref: ref),
+          'progress': ProgressBuilder(),
+          'mermaid': MermaidBuilder(),
+          'color': ColorBuilder(ref: ref),
+          'bg': BgBuilder(ref: ref),
+          'badge': BadgeBuilder(ref: ref),
+          'bloquinho-color': BloquinhoColorBuilder(ref: ref),
+          'align': AlignBuilder(),
+          'pagelink': PageLinkElementBuilder(),
+          'table': TableElementBuilder(),
+        },
+        inlineSyntaxes: [
+          LatexInlineSyntax(),
+          ColorSyntax(),
+          BgSyntax(),
+          BadgeSyntax(),
+          BloquinhoColorSyntax(),
+          SpanInlineSyntax(), // Para <span style="...">...</span>
+          KbdInlineSyntax(), // Para <kbd>...</kbd>
+          MarkInlineSyntax(), // Para <mark>...</mark>
+          SubInlineSyntax(), // Para <sub>...</sub>
+          SupInlineSyntax(), // Para <sup>...</sup>
+          PageLinkInlineSyntax(), // Para [[pageId]]
+          TableInlineSyntax(), // Para {{tableId}}
+        ],
+        blockSyntaxes: [
+          LatexBlockSyntax(),
+          MermaidBlockSyntax(),
+        ],
+        selectable: true,
+      ),
+    );
+  }
+
+
+  Widget _buildOldOptimizedMarkdown(
       BuildContext context, TextStyle baseStyle, WidgetRef ref) {
     final safeMarkdown = _sanitizeMarkdown(markdown);
 
@@ -3449,4 +3561,140 @@ class BloquinhoLoaderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+/// Inline syntax para PageLink <bloquinho-pagelink id="pageId"></bloquinho-pagelink>
+class PageLinkInlineSyntax extends md.InlineSyntax {
+  PageLinkInlineSyntax() : super(r'<bloquinho-pagelink id="([^"]+)"></bloquinho-pagelink>');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final pageId = match.group(1)!;
+    final element = md.Element.text('pagelink', pageId);
+    parser.addNode(element);
+    return true;
+  }
+}
+
+/// Inline syntax para Table <bloquinho-table id="tableId"></bloquinho-table>
+class TableInlineSyntax extends md.InlineSyntax {
+  TableInlineSyntax() : super(r'<bloquinho-table id="([^"]+)"></bloquinho-table>');
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final tableId = match.group(1)!;
+    final element = md.Element.text('table', tableId);
+    parser.addNode(element);
+    return true;
+  }
+}
+
+/// Builder para elementos de página
+class PageLinkElementBuilder extends MarkdownElementBuilder {
+  @override
+  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    final pageId = element.textContent;
+
+    return Consumer(
+      builder: (context, ref, _) {
+        return PageLinkBadge(
+          pageTitle: pageId, // Fallback se não encontrar por ID
+          pageId: pageId,
+          onTap: () {
+            // Encontrar o BlocoEditorScreen no widget tree e usar sua navegação
+            try {
+              final editorState = context.findAncestorStateOfType<BlocoEditorScreenState>();
+              if (editorState != null) {
+                // Usar o método de navegação interno do editor
+                editorState.setPage(pageId);
+              } else {
+                print('BlocoEditorScreen não encontrado no widget tree');
+              }
+            } catch (e) {
+              print('Erro ao navegar para página: $e');
+            }
+          },
+        );
+      },
+    );
+  }
+}
+
+/// Builder para elementos de tabela 
+class TableElementBuilder extends MarkdownElementBuilder {
+  @override
+  Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    final tableId = element.textContent;
+
+    return Consumer(
+      builder: (context, ref, _) {
+        final tableAsync = ref.watch(databaseTableProvider(tableId));
+        
+        return tableAsync.when(
+          data: (table) {
+            if (table == null) {
+              // Tabela não encontrada - mostrar placeholder
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.warning, color: Colors.red, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Tabela não encontrada: $tableId',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ],
+                ),
+              );
+            }
+            
+            return WindowsDatabaseTableWidget(
+              tableId: tableId,
+            );
+          },
+          loading: () => Container(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 8),
+                Text('Carregando tabela...', style: TextStyle(fontSize: 12)),
+              ],
+            ),
+          ),
+          error: (error, stack) => Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              border: Border.all(color: Colors.red.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error, color: Colors.red, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'Erro ao carregar tabela: $error',
+                  style: TextStyle(color: Colors.red, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

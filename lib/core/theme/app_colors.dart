@@ -12,9 +12,10 @@ import '../models/app_theme.dart';
 
 class AppColors {
   // Cores primárias azuis (tema clássico)
-  static const Color primary = Color(0xFF2563EB); // Azul primário
-  static const Color primaryLight = Color(0xFF60A5FA);
-  static const Color primaryDark = Color(0xFF1D4ED8);
+  static const Color primary =
+      Color.fromARGB(255, 27, 59, 148); // Azul primário
+  static const Color primaryLight = Color.fromARGB(255, 99, 92, 4);
+  static const Color primaryDark = Color.fromARGB(255, 8, 56, 119);
 
   // Cores secundárias
   static const Color secondary = Color(0xFF64748B);

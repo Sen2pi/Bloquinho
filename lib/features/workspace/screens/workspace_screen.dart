@@ -42,6 +42,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../shared/providers/language_provider.dart';
 import '../../../shared/providers/ai_status_provider.dart';
 import '../../../shared/widgets/animated_theme_toggle.dart';
+import '../../job_management/providers/job_management_provider.dart';
 
 enum Section { bloquinho, agenda, passwords, documentos, database }
 
@@ -96,6 +97,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         await ref
             .read(databaseNotifierProvider.notifier)
             .setContext(currentProfile.name, currentWorkspace.id);
+
+        // Inicializar job management service
+        await ref
+            .read(jobManagementServiceProvider)
+            .setContext(currentProfile.name, currentWorkspace.id);
       }
     } catch (e) {
       // Erro ao inicializar contexto dos providers
@@ -121,6 +127,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
       await ref
           .read(databaseNotifierProvider.notifier)
+          .setContext(profileName, workspaceId);
+
+      // Atualizar job management service
+      await ref
+          .read(jobManagementServiceProvider)
           .setContext(profileName, workspaceId);
     } catch (e) {
       // Erro ao atualizar contexto dos providers
@@ -212,7 +223,22 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 shrinkWrap: true,
                 children: [
                   // Seções principais
-                  ...workspaceSections.map((section) {
+                  ...workspaceSections.where((section) {
+                    // Filtrar seções baseado no workspace atual
+                    final currentWorkspaceId =
+                        currentWorkspace?.id ?? 'personal';
+
+                    // Gestão de Trabalho só deve aparecer no workspace de trabalho
+                    if (section.name
+                            .toLowerCase()
+                            .contains('gestão de trabalho') ||
+                        section.name.toLowerCase().contains('job management')) {
+                      return currentWorkspaceId == 'work';
+                    }
+
+                    // Todas as outras seções aparecem em todos os workspaces
+                    return true;
+                  }).map((section) {
                     if (section.id.contains('database')) {
                       // Sempre usar o ícone dossier.png
                       return Container(
@@ -236,7 +262,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        'Base de Dados',
+                                        appStrings.database,
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyMedium
@@ -284,7 +310,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
-                                            'Bloquinho',
+                                            appStrings.bloquinho,
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyMedium
@@ -352,7 +378,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        'Documentos',
+                                        appStrings.documents,
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyMedium
@@ -382,7 +408,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text(
-                        'Sistema',
+                        appStrings.system,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: Colors.grey[600],
                               fontWeight: FontWeight.w500,
@@ -394,14 +420,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
                   _buildSidebarItem(
                     icon: PhosphorIcons.downloadSimple(),
-                    label: 'Backup',
+                    label: appStrings.backup,
                     sectionId: 'backup',
                     isDarkMode: isDarkMode,
                     onTap: () => context.pushNamed('backup'),
                   ),
                   _buildSidebarItem(
                     icon: PhosphorIcons.trash(),
-                    label: 'Lixeira',
+                    label: appStrings.trash,
                     sectionId: 'trash',
                     isDarkMode: isDarkMode,
                     onTap: () => _handleSectionTap('trash'),
@@ -452,6 +478,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   // Barra de pesquisa para a sidebar
   Widget _buildSidebarSearchBar(bool isDarkMode) {
     final searchState = ref.watch(globalSearchProvider);
+    final appStrings = AppStrings(ref.watch(languageProvider));
 
     return Column(
       children: [
@@ -477,11 +504,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
               Expanded(
                 child: TextField(
                   controller: _searchController,
-                  decoration: const InputDecoration(
-                    hintText: 'Pesquisar em tudo...',
+                  decoration: InputDecoration(
+                    hintText: appStrings.searchEverything,
                     border: InputBorder.none,
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   style: TextStyle(
                     fontSize: 14,
@@ -577,6 +604,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   }
 
   Widget _buildWorkspaceHeader(bool isDarkMode, Workspace? currentWorkspace) {
+    final appStrings = AppStrings(ref.watch(languageProvider));
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -652,7 +680,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        currentWorkspace?.name ?? 'Workspace',
+                        currentWorkspace?.name ?? appStrings.workspace,
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
@@ -910,6 +938,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
   Widget _buildUserProfileFooter(bool isDarkMode, dynamic currentProfile) {
     final aiStatus = ref.watch(aiStatusProvider);
+    final appStrings = AppStrings(ref.watch(languageProvider));
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -957,8 +986,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     padding: const EdgeInsets.only(left: 4),
                     child: Tooltip(
                       message: aiStatus.status == AIStatus.online
-                          ? 'Bloquinho AI: Connected'
-                          : 'Bloquinho AI: Disconnected',
+                          ? appStrings.bloquinhoAIConnected
+                          : appStrings.bloquinhoAIDisconnected,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -970,8 +999,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                           const SizedBox(width: 4),
                           Text(
                             aiStatus.status == AIStatus.online
-                                ? 'AI OK'
-                                : 'AI KO',
+                                ? appStrings.aiOK
+                                : appStrings.aiKO,
                             style: TextStyle(
                               color: aiStatus.status == AIStatus.online
                                   ? Colors.green
@@ -1040,7 +1069,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        currentProfile?.name ?? 'Usuário',
+                        currentProfile?.name ?? appStrings.user,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
@@ -1062,34 +1091,34 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 PopupMenuButton<String>(
                   onSelected: (value) => _handleUserMenuAction(value),
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'profile',
                       child: Row(
                         children: [
-                          Icon(Icons.person),
-                          SizedBox(width: 12),
-                          Text('Perfil'),
+                          const Icon(Icons.person),
+                          const SizedBox(width: 12),
+                          Text(appStrings.profile),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'settings',
                       child: Row(
                         children: [
-                          Icon(Icons.settings),
-                          SizedBox(width: 12),
-                          Text('Configurações'),
+                          const Icon(Icons.settings),
+                          const SizedBox(width: 12),
+                          Text(appStrings.settings),
                         ],
                       ),
                     ),
                     const PopupMenuDivider(),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'logout',
                       child: Row(
                         children: [
-                          Icon(Icons.logout),
-                          SizedBox(width: 12),
-                          Text('Sair'),
+                          const Icon(Icons.logout),
+                          const SizedBox(width: 12),
+                          Text(appStrings.logout),
                         ],
                       ),
                     ),
@@ -1153,7 +1182,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 isDarkMode ? PhosphorIcons.sun() : PhosphorIcons.moon(),
                 size: 20,
               ),
-              tooltip: isDarkMode ? 'Tema claro' : 'Tema escuro',
+              tooltip:
+                  isDarkMode ? appStrings.lightTheme : appStrings.darkTheme,
             ),
           ],
         ],
@@ -1173,11 +1203,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         _selectedSection = Section.database;
       } else if (sectionId.endsWith('bloquinho')) {
         _selectedSection = Section.bloquinho;
+      } else if (sectionId.endsWith('job_management')) {
+        context.push('/workspace/job-management');
       }
     });
   }
 
   void _handleUserMenuAction(String action) async {
+    final appStrings = AppStrings(ref.watch(languageProvider));
     switch (action) {
       case 'profile':
         context.pushNamed('profile');
@@ -1189,20 +1222,19 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Sair e apagar dados locais?'),
-            content: const Text(
-                'Tem certeza que deseja sair? Isso irá remover seu perfil e TODOS os dados locais deste dispositivo.\n\n⚠️ Recomenda-se fazer um backup antes de continuar.\n\nEsta ação não pode ser desfeita.'),
+            title: Text(appStrings.logoutTitle),
+            content: Text(appStrings.logoutMessage),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancelar'),
+                child: Text(appStrings.cancel),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                 ),
                 onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Apagar e Sair'),
+                child: Text(appStrings.deleteAndLogout),
               ),
             ],
           ),
@@ -1231,9 +1263,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   }
 
   void _showCreatePageDialog(BuildContext context) {
+    final appStrings = AppStrings(ref.watch(languageProvider));
     // Implementar diálogo de criação de página
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funcionalidade em desenvolvimento...')),
+      SnackBar(content: Text(appStrings.featureInDevelopment)),
     );
   }
 
@@ -1289,6 +1322,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   }
 
   Widget _buildMainContent(bool isDarkMode, Workspace? currentWorkspace) {
+    final appStrings = AppStrings(ref.watch(languageProvider));
     switch (_selectedSection) {
       case Section.agenda:
         return const AgendaScreen();
@@ -1307,10 +1341,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             children: [
               Image.asset('assets/images/notas.png', width: 64, height: 64),
               const SizedBox(height: 24),
-              Text('Bem-vindo ao Bloquinho!',
+              Text(appStrings.welcomeToBloquinho,
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('Selecione uma seção no menu lateral para começar.'),
+              Text(appStrings.selectSectionToStart),
             ],
           ),
         );
@@ -1318,6 +1352,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   }
 
   Widget _buildSearchBar(bool isDarkMode) {
+    final appStrings = AppStrings(ref.watch(languageProvider));
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1346,7 +1381,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Pesquisar em Bloquinho e Base de Dados...',
+                hintText: appStrings.searchBloquinhoDatabase,
                 hintStyle: TextStyle(
                   color: Colors.grey[500],
                   fontSize: 14,
@@ -1429,13 +1464,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   }
 
   void _showAddDocumentDialog() {
+    final appStrings = AppStrings(ref.watch(languageProvider));
     // Implementar lógica para mostrar o diálogo correto baseado na aba atual
     // Por enquanto, mostrar um snackbar informativo
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-            'Use os botões + dentro de cada aba para adicionar documentos'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(appStrings.useButtonsInTabs),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

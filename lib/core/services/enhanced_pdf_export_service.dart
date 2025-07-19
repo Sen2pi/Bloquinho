@@ -1387,4 +1387,23 @@ class EnhancedPdfExportService {
       ),
     );
   }
+
+  /// Exportar texto como arquivo
+  Future<String?> exportTextAsFile({
+    required String content,
+    required String fileName,
+    String extension = 'txt',
+  }) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/$fileName.$extension');
+      
+      await file.writeAsString(content);
+      
+      return file.path;
+    } catch (e) {
+      print('Erro ao exportar arquivo de texto: $e');
+      return null;
+    }
+  }
 }
