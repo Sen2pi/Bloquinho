@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
 
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/language_provider.dart';
@@ -212,12 +213,14 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: cv.isHtmlCV 
+                          ? Colors.orange.withOpacity(0.1)
+                          : Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      PhosphorIcons.fileText(),
-                      color: Colors.green,
+                      cv.isHtmlCV ? PhosphorIcons.code() : PhosphorIcons.fileText(),
+                      color: cv.isHtmlCV ? Colors.orange : Colors.green,
                       size: 20,
                     ),
                   ),
@@ -264,26 +267,39 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
                           ],
                         ),
                       ),
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(PhosphorIcons.pencil()),
-                            const SizedBox(width: 8),
-                            Text('Editar'),
-                          ],
+                      if (cv.isHtmlCV) ...[
+                        PopupMenuItem(
+                          value: 'browser',
+                          child: Row(
+                            children: [
+                              Icon(PhosphorIcons.browser()),
+                              const SizedBox(width: 8),
+                              Text('Abrir no Navegador'),
+                            ],
+                          ),
                         ),
-                      ),
-                      PopupMenuItem(
-                        value: 'pdf',
-                        child: Row(
-                          children: [
-                            Icon(PhosphorIcons.filePdf()),
-                            const SizedBox(width: 8),
-                            Text('Exportar PDF'),
-                          ],
+                      ] else ...[
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(PhosphorIcons.pencil()),
+                              const SizedBox(width: 8),
+                              Text('Editar'),
+                            ],
+                          ),
                         ),
-                      ),
+                        PopupMenuItem(
+                          value: 'pdf',
+                          child: Row(
+                            children: [
+                              Icon(PhosphorIcons.filePdf()),
+                              const SizedBox(width: 8),
+                              Text('Exportar PDF'),
+                            ],
+                          ),
+                        ),
+                      ],
                       PopupMenuItem(
                         value: 'delete',
                         child: Row(
@@ -389,6 +405,64 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
   }
 
   void _showCVDetails(CVModel cv, bool isDarkMode, AppStrings strings) {
+    if (cv.isHtmlCV) {
+      _showHtmlCVDetails(cv, isDarkMode, strings);
+    } else {
+      _showRegularCVDetails(cv, isDarkMode, strings);
+    }
+  }
+
+  void _showHtmlCVDetails(CVModel cv, bool isDarkMode, AppStrings strings) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(PhosphorIcons.code(), color: Colors.orange),
+            const SizedBox(width: 8),
+            Text('${cv.name} (HTML)'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Tipo: CV HTML'),
+              if (cv.htmlFilePath != null)
+                Text('Arquivo: ${cv.htmlFilePath!.split('/').last}'),
+              const SizedBox(height: 8),
+              Text('Criado em: ${DateFormat('dd/MM/yyyy').format(cv.createdAt)}'),
+              Text('Atualizado em: ${DateFormat('dd/MM/yyyy').format(cv.updatedAt)}'),
+              const SizedBox(height: 16),
+              Text(
+                'Este é um CV HTML. O conteúdo original foi preservado e pode ser visualizado no navegador.',
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Fechar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _openHtmlInBrowser(cv);
+            },
+            child: Text('Abrir no Navegador'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRegularCVDetails(CVModel cv, bool isDarkMode, AppStrings strings) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -437,6 +511,9 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
       case 'view':
         _showCVDetails(cv, ref.watch(isDarkModeProvider), strings);
         break;
+      case 'browser':
+        _openHtmlInBrowser(cv);
+        break;
       case 'edit':
         // TODO: Implementar edição
         break;
@@ -484,6 +561,47 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
         builder: (context) => const CVFormScreen(),
       ),
     );
+  }
+
+  void _openHtmlInBrowser(CVModel cv) async {
+    try {
+      if (cv.htmlFilePath != null) {
+        // Abre o arquivo HTML no navegador padrão
+        final file = File(cv.htmlFilePath!);
+        if (await file.exists()) {
+          // No Windows, usa o comando start para abrir no navegador padrão
+          await Process.run('start', [cv.htmlFilePath!], runInShell: true);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('CV HTML aberto no navegador'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Arquivo HTML não encontrado'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Caminho do arquivo HTML não disponível'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao abrir CV HTML: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _showDeleteConfirmation(CVModel cv) {
