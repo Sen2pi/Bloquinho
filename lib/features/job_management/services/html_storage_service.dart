@@ -10,11 +10,17 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import '../../../core/services/workspace_storage_service.dart';
 
 class HtmlStorageService {
   static const String _htmlFolderName = 'cv_html_files';
+  final WorkspaceStorageService _workspaceStorage = WorkspaceStorageService();
+
+  /// Configurar contexto (perfil + workspace)
+  Future<void> setContext(String profileName, String workspaceId) async {
+    await _workspaceStorage.setContext(profileName, workspaceId);
+  }
   
   /// Salva o conteúdo HTML em um arquivo local e retorna o caminho
   Future<String> saveHtmlFile(String htmlContent, String originalFileName) async {
@@ -40,30 +46,6 @@ class HtmlStorageService {
     return filePath;
   }
   
-  /// Copia uma foto para o mesmo diretório do arquivo HTML
-  Future<String?> copyPhotoToHtmlDirectory(String photoPath, String htmlFilePath) async {
-    try {
-      final photoFile = File(photoPath);
-      if (!await photoFile.exists()) return null;
-      
-      // Obter o diretório do arquivo HTML
-      final htmlDirectory = Directory(path.dirname(htmlFilePath));
-      
-      // Obter a extensão da foto
-      final photoExtension = path.extension(photoPath);
-      
-      // Criar nome único para a foto
-      final photoName = 'photo_${DateTime.now().millisecondsSinceEpoch}$photoExtension';
-      final newPhotoPath = path.join(htmlDirectory.path, photoName);
-      
-      // Copiar a foto
-      await photoFile.copy(newPhotoPath);
-      
-      return photoName; // Retorna apenas o nome do arquivo (caminho relativo)
-    } catch (e) {
-      return null;
-    }
-  }
   
   /// Lê o conteúdo de um arquivo HTML salvo
   Future<String> readHtmlFile(String filePath) async {
@@ -83,10 +65,14 @@ class HtmlStorageService {
     }
   }
   
-  /// Obtém o diretório para armazenamento dos arquivos HTML
+  /// Obtém o diretório para armazenamento dos arquivos HTML no workspace atual
   Future<Directory> _getHtmlStorageDirectory() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final htmlDir = Directory(path.join(appDir.path, _htmlFolderName));
+    await _workspaceStorage.initialize();
+    final workspacePath = await _workspaceStorage.getCurrentWorkspacePath();
+    if (workspacePath == null) {
+      throw Exception('Workspace path not found');
+    }
+    final htmlDir = Directory(path.join(workspacePath, _htmlFolderName));
     
     if (!await htmlDir.exists()) {
       await htmlDir.create(recursive: true);

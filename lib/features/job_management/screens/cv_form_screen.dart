@@ -1775,6 +1775,12 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
           setState(() {
             _photoPath = existingPhotoPath;
           });
+          
+          // Atualizar HTML imediatamente se estiver em modo HTML
+          if (_isHtmlMode && _htmlContent != null) {
+            _updateHtmlWithPhoto(existingPhotoPath);
+          }
+          
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Foto existente carregada automaticamente'),
@@ -1800,6 +1806,12 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
             setState(() {
               _photoPath = savedPhotoPath;
             });
+            
+            // Atualizar HTML imediatamente se estiver em modo HTML
+            if (_isHtmlMode && _htmlContent != null) {
+              _updateHtmlWithPhoto(savedPhotoPath);
+            }
+            
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Foto adicionada com sucesso'),
@@ -1881,16 +1893,22 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
       // Processar HTML para inserir a foto se disponível
       String processedHtmlContent = _htmlContent!;
       if (_photoPath != null) {
-        // Copiar a foto para o mesmo diretório do HTML
-        final photoName = await _htmlStorageService.copyPhotoToHtmlDirectory(_photoPath!, htmlFilePath);
-        if (photoName != null) {
-          // Inserir o nome da foto no HTML
-          processedHtmlContent = _insertPhotoIntoHtml(_htmlContent!, photoName);
-          
-          // Salvar novamente o HTML com a foto inserida
-          final file = File(htmlFilePath);
-          await file.writeAsString(processedHtmlContent);
-        }
+        // Obter apenas o nome da foto guardada
+        final photoName = _photoPath!.split('/').last.split('\\').last;
+        
+        // Criar caminho relativo correto: ../cv_photos/nome_da_foto.jpg
+        final photoRelativePath = '../cv_photos/$photoName';
+        
+        // Inserir o caminho relativo da foto no HTML
+        processedHtmlContent = _insertPhotoIntoHtml(_htmlContent!, photoRelativePath);
+        
+        // Salvar novamente o HTML com a foto inserida
+        final file = File(htmlFilePath);
+        await file.writeAsString(processedHtmlContent);
+        
+        // Debug: verificar se foi atualizado
+        print('DEBUG: HTML atualizado com foto: $photoRelativePath');
+        print('DEBUG: HTML contém profile-photo: ${processedHtmlContent.contains('profile-photo')}');
       }
 
       final cv = CVModel.createHtml(
@@ -2023,51 +2041,53 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
   }
 
   String _insertPhotoIntoHtml(String htmlContent, String photoName) {
-    // Procura por elementos img com a classe profile-photo
-    final RegExp profilePhotoRegex = RegExp(
-      r'<img[^>]*class="[^"]*profile-photo[^"]*"[^>]*>',
+    print('DEBUG: Tentando inserir foto: $photoName');
+    print('DEBUG: HTML original contém profile-photo: ${htmlContent.contains('profile-photo')}');
+    print('DEBUG: HTML original contém <img: ${htmlContent.contains('<img')}');
+    
+    // Primeiro, tentar encontrar qualquer tag img
+    final RegExp anyImgRegex = RegExp(
+      r'<img[^>]*>',
       multiLine: true,
       caseSensitive: false,
     );
 
-    if (profilePhotoRegex.hasMatch(htmlContent)) {
-      // Se encontrou, substitui o src
-      return htmlContent.replaceAllMapped(profilePhotoRegex, (match) {
+    if (anyImgRegex.hasMatch(htmlContent)) {
+      print('DEBUG: Encontrou tag img');
+      // Se encontrou, substitui o src da primeira tag img
+      return htmlContent.replaceFirstMapped(anyImgRegex, (match) {
         String imgTag = match.group(0)!;
+        print('DEBUG: Tag img original: $imgTag');
         
         // Remove src existente se houver
         imgTag = imgTag.replaceAll(RegExp(r'src="[^"]*"'), '');
+        imgTag = imgTag.replaceAll(RegExp(r"src='[^']*'"), '');
         
         // Adiciona o novo src antes do fechamento da tag (caminho relativo)
-        imgTag = imgTag.replaceAll('>', ' src="$photoName">');
+        if (imgTag.endsWith('/>')) {
+          imgTag = imgTag.replaceAll('/>', ' src="$photoName"/>');
+        } else {
+          imgTag = imgTag.replaceAll('>', ' src="$photoName">');
+        }
+        print('DEBUG: Tag img atualizada: $imgTag');
         
         return imgTag;
       });
-    } else {
-      // Se não encontrou classe profile-photo, procura por outros padrões comuns
-      final List<RegExp> photoPatterns = [
-        RegExp(r'<img[^>]*class="[^"]*photo[^"]*"[^>]*>', multiLine: true, caseSensitive: false),
-        RegExp(r'<img[^>]*class="[^"]*avatar[^"]*"[^>]*>', multiLine: true, caseSensitive: false),
-        RegExp(r'<img[^>]*id="[^"]*photo[^"]*"[^>]*>', multiLine: true, caseSensitive: false),
-      ];
-
-      for (RegExp pattern in photoPatterns) {
-        if (pattern.hasMatch(htmlContent)) {
-          return htmlContent.replaceAllMapped(pattern, (match) {
-            String imgTag = match.group(0)!;
-            
-            // Remove src existente se houver
-            imgTag = imgTag.replaceAll(RegExp(r'src="[^"]*"'), '');
-            
-            // Adiciona o novo src antes do fechamento da tag (caminho relativo)
-            imgTag = imgTag.replaceAll('>', ' src="$photoName">');
-            
-            return imgTag;
-          });
-        }
-      }
     }
 
+    print('DEBUG: Nenhuma tag img encontrada no HTML');
     return htmlContent;
+  }
+
+  void _updateHtmlWithPhoto(String photoPath) {
+    if (_htmlContent != null) {
+      // Obter apenas o nome do arquivo da foto guardada (que tem o formato cvname_uuid.jpg)
+      final photoName = photoPath.split('/').last.split('\\').last;
+      
+      // Para preview, usar o caminho correto que será usado no HTML final
+      setState(() {
+        _htmlContent = _insertPhotoIntoHtml(_htmlContent!, '../cv_photos/$photoName');
+      });
+    }
   }
 }

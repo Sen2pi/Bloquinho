@@ -43,6 +43,7 @@ class ApplicationModel {
   final String? aiMatchPercentage;
   final String? notes;
   final List<String> interviewIds;
+  final List<String> emailTrackingIds;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -61,6 +62,7 @@ class ApplicationModel {
     this.aiMatchPercentage,
     this.notes,
     required this.interviewIds,
+    required this.emailTrackingIds,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -78,6 +80,7 @@ class ApplicationModel {
     String? aiMatchPercentage,
     String? notes,
     List<String>? interviewIds,
+    List<String>? emailTrackingIds,
   }) {
     final now = DateTime.now();
     return ApplicationModel(
@@ -95,6 +98,7 @@ class ApplicationModel {
       aiMatchPercentage: aiMatchPercentage,
       notes: notes,
       interviewIds: interviewIds ?? [],
+      emailTrackingIds: emailTrackingIds ?? [],
       createdAt: now,
       updatedAt: now,
     );
@@ -120,6 +124,7 @@ class ApplicationModel {
     String? aiMatchPercentage,
     String? notes,
     List<String>? interviewIds,
+    List<String>? emailTrackingIds,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -138,6 +143,7 @@ class ApplicationModel {
       aiMatchPercentage: aiMatchPercentage ?? this.aiMatchPercentage,
       notes: notes ?? this.notes,
       interviewIds: interviewIds ?? this.interviewIds,
+      emailTrackingIds: emailTrackingIds ?? this.emailTrackingIds,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );

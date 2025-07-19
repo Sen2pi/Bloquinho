@@ -24,6 +24,9 @@ ApplicationModel _$ApplicationModelFromJson(Map<String, dynamic> json) =>
       interviewIds: (json['interviewIds'] as List<dynamic>)
           .map((e) => e as String)
           .toList(),
+      emailTrackingIds: (json['emailTrackingIds'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -44,6 +47,7 @@ Map<String, dynamic> _$ApplicationModelToJson(ApplicationModel instance) =>
       'aiMatchPercentage': instance.aiMatchPercentage,
       'notes': instance.notes,
       'interviewIds': instance.interviewIds,
+      'emailTrackingIds': instance.emailTrackingIds,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
     };

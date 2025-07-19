@@ -8,9 +8,10 @@
  */
 
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
+import 'package:path/path.dart' as path;
+import '../../../core/services/workspace_storage_service.dart';
 
 class CVPhotoService {
   static final CVPhotoService _instance = CVPhotoService._internal();
@@ -18,12 +19,22 @@ class CVPhotoService {
   CVPhotoService._internal();
 
   final ImagePicker _picker = ImagePicker();
+  final WorkspaceStorageService _workspaceStorage = WorkspaceStorageService();
   final String _cvPhotosDir = 'cv_photos';
 
-  /// Obter diretório para fotos dos CVs
+  /// Configurar contexto (perfil + workspace)
+  Future<void> setContext(String profileName, String workspaceId) async {
+    await _workspaceStorage.setContext(profileName, workspaceId);
+  }
+
+  /// Obter diretório para fotos dos CVs no workspace atual
   Future<Directory> get _cvPhotosDirectory async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final cvPhotosDir = Directory('${appDir.path}/$_cvPhotosDir');
+    await _workspaceStorage.initialize();
+    final workspacePath = await _workspaceStorage.getCurrentWorkspacePath();
+    if (workspacePath == null) {
+      throw Exception('Workspace path not found');
+    }
+    final cvPhotosDir = Directory(path.join(workspacePath, _cvPhotosDir));
     if (!await cvPhotosDir.exists()) {
       await cvPhotosDir.create(recursive: true);
     }

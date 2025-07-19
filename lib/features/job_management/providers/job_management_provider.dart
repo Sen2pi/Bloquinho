@@ -13,6 +13,11 @@ import '../models/interview_model.dart';
 import '../models/cv_model.dart';
 import '../models/application_model.dart';
 import '../services/job_management_service.dart';
+import '../services/cv_photo_service.dart';
+import '../services/html_storage_service.dart';
+import '../services/eml_parser_service.dart';
+import '../services/email_tracking_storage_service.dart';
+import '../models/email_tracking_model.dart';
 import '../../../shared/providers/workspace_provider.dart';
 import '../../../shared/providers/user_profile_provider.dart';
 import '../../../core/models/workspace.dart';
@@ -20,16 +25,37 @@ import '../../../core/models/workspace.dart';
 // Service Provider
 final jobManagementServiceProvider = Provider<JobManagementService>((ref) {
   final service = JobManagementService();
+  final cvPhotoService = CVPhotoService();
+  final htmlStorageService = HtmlStorageService();
+  final emlParserService = EmlParserService();
+  final emailTrackingService = EmailTrackingStorageService();
   
-  // Configurar contexto automaticamente
-  ref.listen<Workspace?>(workspaceProvider, (previous, next) {
+  // Configurar contexto automaticamente para todos os serviços
+  ref.listen<Workspace?>(workspaceProvider, (previous, next) async {
     if (next != null) {
       final currentProfile = ref.read(currentProfileProvider);
       if (currentProfile != null) {
-        service.setContext(currentProfile.name, next.id);
+        await service.setContext(currentProfile.name, next.id);
+        await cvPhotoService.setContext(currentProfile.name, next.id);
+        await htmlStorageService.setContext(currentProfile.name, next.id);
+        await emlParserService.setContext(currentProfile.name, next.id);
+        await emailTrackingService.setContext(currentProfile.name, next.id);
       }
     }
   });
+  
+  // Configurar contexto inicial se já houver workspace e perfil
+  final currentWorkspace = ref.read(workspaceProvider);
+  final currentProfile = ref.read(currentProfileProvider);
+  if (currentWorkspace != null && currentProfile != null) {
+    Future.microtask(() async {
+      await service.setContext(currentProfile.name, currentWorkspace.id);
+      await cvPhotoService.setContext(currentProfile.name, currentWorkspace.id);
+      await htmlStorageService.setContext(currentProfile.name, currentWorkspace.id);
+      await emlParserService.setContext(currentProfile.name, currentWorkspace.id);
+      await emailTrackingService.setContext(currentProfile.name, currentWorkspace.id);
+    });
+  }
   
   return service;
 });
@@ -324,3 +350,65 @@ final isLoadingApplicationProvider = StateProvider<bool>((ref) => false);
 final interviewErrorProvider = StateProvider<String?>((ref) => null);
 final cvErrorProvider = StateProvider<String?>((ref) => null);
 final applicationErrorProvider = StateProvider<String?>((ref) => null);
+
+// Email Tracking Service Providers
+final emlParserServiceProvider = Provider<EmlParserService>((ref) {
+  return EmlParserService();
+});
+
+final emailTrackingStorageServiceProvider = Provider<EmailTrackingStorageService>((ref) {
+  return EmailTrackingStorageService();
+});
+
+// Email Tracking Providers
+final emailTrackingProvider = FutureProvider<List<EmailTrackingModel>>((ref) async {
+  final service = ref.watch(emailTrackingStorageServiceProvider);
+  return service.getEmails();
+});
+
+final emailTrackingByApplicationProvider = FutureProvider.family<List<EmailTrackingModel>, String>((ref, applicationId) async {
+  final service = ref.watch(emailTrackingStorageServiceProvider);
+  return service.getEmailsByApplicationId(applicationId);
+});
+
+// Email Tracking Notifier
+class EmailTrackingNotifier extends StateNotifier<AsyncValue<List<EmailTrackingModel>>> {
+  EmailTrackingNotifier(this.ref) : super(const AsyncValue.loading());
+
+  final Ref ref;
+
+  Future<void> loadEmailsForApplication(String applicationId) async {
+    try {
+      state = const AsyncValue.loading();
+      final service = ref.read(emailTrackingStorageServiceProvider);
+      final emails = await service.getEmailsByApplicationId(applicationId);
+      state = AsyncValue.data(emails);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+    }
+  }
+
+  Future<void> addEmail(EmailTrackingModel email) async {
+    try {
+      final service = ref.read(emailTrackingStorageServiceProvider);
+      await service.saveEmail(email);
+      await loadEmailsForApplication(email.applicationId);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+    }
+  }
+
+  Future<void> deleteEmail(String emailId, String applicationId) async {
+    try {
+      final service = ref.read(emailTrackingStorageServiceProvider);
+      await service.deleteEmail(emailId);
+      await loadEmailsForApplication(applicationId);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+    }
+  }
+}
+
+final emailTrackingNotifierProvider = StateNotifierProvider<EmailTrackingNotifier, AsyncValue<List<EmailTrackingModel>>>((ref) {
+  return EmailTrackingNotifier(ref);
+});

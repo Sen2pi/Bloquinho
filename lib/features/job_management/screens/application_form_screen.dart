@@ -412,29 +412,60 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
     });
 
     try {
-      final application = ApplicationModel.create(
-        title: _titleController.text,
-        company: _companyController.text,
-        companyLink: _companyLinkController.text.isEmpty
-            ? null
-            : _companyLinkController.text,
-        description: _descriptionController.text.isEmpty
-            ? null
-            : _descriptionController.text,
-        appliedDate: _appliedDate,
-        location:
-            _locationController.text.isEmpty ? null : _locationController.text,
-        platform:
-            _platformController.text.isEmpty ? null : _platformController.text,
-        cvId: _selectedCVId!,
-        motivationLetter: _motivationLetterController.text.isEmpty
-            ? null
-            : _motivationLetterController.text,
-        notes: _notesController.text.isEmpty ? null : _notesController.text,
-      );
+      final ApplicationModel application;
+      
+      if (widget.application != null) {
+        // Editando candidatura existente
+        application = widget.application!.copyWith(
+          title: _titleController.text,
+          company: _companyController.text,
+          companyLink: _companyLinkController.text.isEmpty
+              ? null
+              : _companyLinkController.text,
+          description: _descriptionController.text.isEmpty
+              ? null
+              : _descriptionController.text,
+          status: _selectedStatus,
+          appliedDate: _appliedDate,
+          location:
+              _locationController.text.isEmpty ? null : _locationController.text,
+          platform:
+              _platformController.text.isEmpty ? null : _platformController.text,
+          cvId: _selectedCVId!,
+          motivationLetter: _motivationLetterController.text.isEmpty
+              ? null
+              : _motivationLetterController.text,
+          notes: _notesController.text.isEmpty ? null : _notesController.text,
+        );
+      } else {
+        // Criando nova candidatura
+        application = ApplicationModel.create(
+          title: _titleController.text,
+          company: _companyController.text,
+          companyLink: _companyLinkController.text.isEmpty
+              ? null
+              : _companyLinkController.text,
+          description: _descriptionController.text.isEmpty
+              ? null
+              : _descriptionController.text,
+          appliedDate: _appliedDate,
+          location:
+              _locationController.text.isEmpty ? null : _locationController.text,
+          platform:
+              _platformController.text.isEmpty ? null : _platformController.text,
+          cvId: _selectedCVId!,
+          motivationLetter: _motivationLetterController.text.isEmpty
+              ? null
+              : _motivationLetterController.text,
+          notes: _notesController.text.isEmpty ? null : _notesController.text,
+        );
+      }
 
       final service = ref.read(jobManagementServiceProvider);
       await service.saveApplication(application);
+
+      // Atualiza a lista de candidaturas
+      ref.invalidate(applicationsNotifierProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

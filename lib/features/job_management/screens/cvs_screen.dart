@@ -643,20 +643,17 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
                   if (await htmlFile.exists()) {
                     await htmlFile.delete();
                   }
-                  
-                  // Eliminar também as fotos do diretório HTML se existirem
-                  final htmlDir = Directory(htmlFile.parent.path);
-                  if (await htmlDir.exists()) {
-                    final files = htmlDir.listSync();
-                    for (final file in files) {
-                      if (file is File && 
-                          (file.path.toLowerCase().endsWith('.jpg') ||
-                           file.path.toLowerCase().endsWith('.jpeg') ||
-                           file.path.toLowerCase().endsWith('.png') ||
-                           file.path.toLowerCase().endsWith('.gif'))) {
-                        await file.delete();
-                      }
-                    }
+                } catch (e) {
+                  // Silenciar erros de eliminação de ficheiros
+                }
+              }
+              
+              // Se tem foto, eliminar do diretório de fotos
+              if (cv.photoPath != null) {
+                try {
+                  final photoFile = File(cv.photoPath!);
+                  if (await photoFile.exists()) {
+                    await photoFile.delete();
                   }
                 } catch (e) {
                   // Silenciar erros de eliminação de ficheiros
