@@ -192,6 +192,14 @@ class WorkspaceSections {
       itemCount: 0,
       hasSubItems: true,
     ),
+    WorkspaceSection(
+      id: 'universidade',
+      name: 'Universidade',
+      icon: Icons.school,
+      route: '/workspace/universidade',
+      itemCount: 0,
+      hasSubItems: true,
+    ),
   ];
 
   static List<WorkspaceSection> getSectionsForWorkspace(String workspaceId) {
@@ -232,6 +240,15 @@ class DefaultWorkspaces {
       description: 'Workspace para materiais de estudo',
       icon: Icons.school_outlined,
       color: Colors.green,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+    Workspace(
+      id: 'escola',
+      name: 'Escola',
+      description: 'Workspace para gestão académica e universitária',
+      icon: Icons.school,
+      color: Colors.purple,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     ),

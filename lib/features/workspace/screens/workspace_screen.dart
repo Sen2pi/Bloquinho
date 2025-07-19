@@ -236,6 +236,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                       return currentWorkspaceId == 'work';
                     }
 
+                    // Universidade só deve aparecer no workspace escola
+                    if (section.name.toLowerCase().contains('universidade')) {
+                      return currentWorkspaceId == 'escola';
+                    }
+
                     // Todas as outras seções aparecem em todos os workspaces
                     return true;
                   }).map((section) {
@@ -379,6 +384,46 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                                     Expanded(
                                       child: Text(
                                         appStrings.documents,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              fontSize: 14,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    if (section.id.contains('universidade')) {
+                      // Exibir Universidade com ícone escola
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 2),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () => context.push('/workspace/universidade'),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.school,
+                                    size: 20,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  if (_isSidebarExpanded) ...[
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'Universidade',
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyMedium

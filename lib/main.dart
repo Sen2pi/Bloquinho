@@ -50,6 +50,11 @@ import 'features/job_management/screens/job_management_dashboard.dart';
 import 'features/job_management/screens/interview_form_screen.dart';
 import 'features/job_management/screens/cv_form_screen.dart';
 import 'features/job_management/screens/application_form_screen.dart';
+import 'features/universidade/screens/universidade_dashboard_screen.dart';
+import 'features/universidade/screens/universidades_screen.dart';
+import 'features/universidade/screens/cursos_screen.dart';
+import 'features/universidade/screens/unidades_curriculares_screen.dart';
+import 'features/universidade/screens/avaliacoes_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -253,6 +258,37 @@ class BloquinhoApp extends ConsumerWidget {
           path: '/job-management/application/new',
           name: 'job_management_application_new',
           builder: (context, state) => const ApplicationFormScreen(),
+        ),
+
+        // Universidade Routes
+        GoRoute(
+          path: '/workspace/universidade',
+          name: 'workspace_universidade',
+          builder: (context, state) => const UniversidadeDashboardScreen(),
+        ),
+
+        GoRoute(
+          path: '/universidade/universidades',
+          name: 'universidade_universidades',
+          builder: (context, state) => const UniversidadesScreen(),
+        ),
+
+        GoRoute(
+          path: '/universidade/cursos',
+          name: 'universidade_cursos',
+          builder: (context, state) => const CursosScreen(),
+        ),
+
+        GoRoute(
+          path: '/universidade/unidades',
+          name: 'universidade_unidades',
+          builder: (context, state) => const UnidadesCurricularesScreen(),
+        ),
+
+        GoRoute(
+          path: '/universidade/avaliacoes',
+          name: 'universidade_avaliacoes',
+          builder: (context, state) => const AvaliacoesScreen(),
         ),
 
         GoRoute(
