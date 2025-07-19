@@ -11,8 +11,6 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'tipo_curso_enum.dart';
 
-part 'curso_model.g.dart';
-
 @JsonSerializable()
 class CursoModel {
   final String id;
@@ -94,10 +92,51 @@ class CursoModel {
     );
   }
 
-  factory CursoModel.fromJson(Map<String, dynamic> json) =>
-      _$CursoModelFromJson(json);
+  factory CursoModel.fromJson(Map<String, dynamic> json) {
+    return CursoModel(
+      id: json['id'] as String,
+      nome: json['nome'] as String,
+      universidadeId: json['universidadeId'] as String,
+      tipo: TipoCurso.values.firstWhere((e) => e.toString() == 'TipoCurso.${json['tipo']}'),
+      codigo: json['codigo'] as String?,
+      descricao: json['descricao'] as String?,
+      duracaoSemestres: json['duracaoSemestres'] as int?,
+      mediaMinima: (json['mediaMinima'] as num?)?.toDouble(),
+      mediaMaxima: (json['mediaMaxima'] as num?)?.toDouble(),
+      mediaAtual: (json['mediaAtual'] as num?)?.toDouble(),
+      unidadeCurricularIds: List<String>.from(json['unidadeCurricularIds'] ?? []),
+      pageIds: List<String>.from(json['pageIds'] ?? []),
+      fileIds: List<String>.from(json['fileIds'] ?? []),
+      dataInicio: json['dataInicio'] != null ? DateTime.parse(json['dataInicio']) : null,
+      dataFim: json['dataFim'] != null ? DateTime.parse(json['dataFim']) : null,
+      ativo: json['ativo'] as bool? ?? true,
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$CursoModelToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nome': nome,
+      'universidadeId': universidadeId,
+      'tipo': tipo.name,
+      'codigo': codigo,
+      'descricao': descricao,
+      'duracaoSemestres': duracaoSemestres,
+      'mediaMinima': mediaMinima,
+      'mediaMaxima': mediaMaxima,
+      'mediaAtual': mediaAtual,
+      'unidadeCurricularIds': unidadeCurricularIds,
+      'pageIds': pageIds,
+      'fileIds': fileIds,
+      'dataInicio': dataInicio?.toIso8601String(),
+      'dataFim': dataFim?.toIso8601String(),
+      'ativo': ativo,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
 
   double calcularMedia(List<double> medias) {
     if (medias.isEmpty) return 0.0;

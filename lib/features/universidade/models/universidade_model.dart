@@ -10,8 +10,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
-part 'universidade_model.g.dart';
-
 @JsonSerializable()
 class UniversidadeModel {
   final String id;
@@ -66,10 +64,37 @@ class UniversidadeModel {
     );
   }
 
-  factory UniversidadeModel.fromJson(Map<String, dynamic> json) =>
-      _$UniversidadeModelFromJson(json);
+  factory UniversidadeModel.fromJson(Map<String, dynamic> json) {
+    return UniversidadeModel(
+      id: json['id'] as String,
+      nome: json['nome'] as String,
+      sigla: json['sigla'] as String?,
+      pais: json['pais'] as String?,
+      cidade: json['cidade'] as String?,
+      website: json['website'] as String?,
+      logo: json['logo'] as String?,
+      descricao: json['descricao'] as String?,
+      cursoIds: List<String>.from(json['cursoIds'] ?? []),
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$UniversidadeModelToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nome': nome,
+      'sigla': sigla,
+      'pais': pais,
+      'cidade': cidade,
+      'website': website,
+      'logo': logo,
+      'descricao': descricao,
+      'cursoIds': cursoIds,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
 
   UniversidadeModel copyWith({
     String? id,

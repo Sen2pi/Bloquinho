@@ -10,8 +10,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
-part 'universidade_page_model.g.dart';
-
 enum TipoContextoPage {
   @JsonValue('universidade')
   universidade,
@@ -82,10 +80,39 @@ class UniversidadePageModel {
     );
   }
 
-  factory UniversidadePageModel.fromJson(Map<String, dynamic> json) =>
-      _$UniversidadePageModelFromJson(json);
+  factory UniversidadePageModel.fromJson(Map<String, dynamic> json) {
+    return UniversidadePageModel(
+      id: json['id'] as String,
+      titulo: json['titulo'] as String,
+      icon: json['icon'] as String?,
+      parentId: json['parentId'] as String?,
+      childrenIds: List<String>.from(json['childrenIds'] ?? []),
+      conteudo: json['conteudo'] as String? ?? '',
+      blocks: json['blocks'] ?? [],
+      tipoContexto: TipoContextoPage.values.firstWhere((e) => e.name == json['tipoContexto']),
+      contextoId: json['contextoId'] as String?,
+      metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$UniversidadePageModelToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'titulo': titulo,
+      'icon': icon,
+      'parentId': parentId,
+      'childrenIds': childrenIds,
+      'conteudo': conteudo,
+      'blocks': blocks,
+      'tipoContexto': tipoContexto.name,
+      'contextoId': contextoId,
+      'metadata': metadata,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
 
   bool get isRoot => parentId == null;
   bool get hasChildren => childrenIds.isNotEmpty;

@@ -10,8 +10,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
-part 'avaliacao_model.g.dart';
-
 enum TipoAvaliacao {
   @JsonValue('teste')
   teste,
@@ -124,10 +122,45 @@ class AvaliacaoModel {
     );
   }
 
-  factory AvaliacaoModel.fromJson(Map<String, dynamic> json) =>
-      _$AvaliacaoModelFromJson(json);
+  factory AvaliacaoModel.fromJson(Map<String, dynamic> json) {
+    return AvaliacaoModel(
+      id: json['id'] as String,
+      nome: json['nome'] as String,
+      unidadeCurricularId: json['unidadeCurricularId'] as String,
+      tipo: TipoAvaliacao.values.firstWhere((e) => e.name == json['tipo']),
+      nota: (json['nota'] as num?)?.toDouble(),
+      notaMaxima: (json['notaMaxima'] as num).toDouble(),
+      peso: (json['peso'] as num).toDouble(),
+      dataAvaliacao: json['dataAvaliacao'] != null ? DateTime.parse(json['dataAvaliacao']) : null,
+      dataEntrega: json['dataEntrega'] != null ? DateTime.parse(json['dataEntrega']) : null,
+      descricao: json['descricao'] as String?,
+      observacoes: json['observacoes'] as String?,
+      realizada: json['realizada'] as bool? ?? false,
+      entregue: json['entregue'] as bool? ?? false,
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$AvaliacaoModelToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nome': nome,
+      'unidadeCurricularId': unidadeCurricularId,
+      'tipo': tipo.name,
+      'nota': nota,
+      'notaMaxima': notaMaxima,
+      'peso': peso,
+      'dataAvaliacao': dataAvaliacao?.toIso8601String(),
+      'dataEntrega': dataEntrega?.toIso8601String(),
+      'descricao': descricao,
+      'observacoes': observacoes,
+      'realizada': realizada,
+      'entregue': entregue,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
 
   double get percentualNota {
     if (nota == null || notaMaxima == 0) return 0.0;

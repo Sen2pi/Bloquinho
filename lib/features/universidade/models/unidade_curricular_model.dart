@@ -10,8 +10,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
-part 'unidade_curricular_model.g.dart';
-
 @JsonSerializable()
 class ConfiguracaoMedia {
   final Map<String, double> percentagens;
@@ -24,10 +22,21 @@ class ConfiguracaoMedia {
     required this.notaMaxima,
   });
 
-  factory ConfiguracaoMedia.fromJson(Map<String, dynamic> json) =>
-      _$ConfiguracaoMediaFromJson(json);
+  factory ConfiguracaoMedia.fromJson(Map<String, dynamic> json) {
+    return ConfiguracaoMedia(
+      percentagens: Map<String, double>.from(json['percentagens'] ?? {}),
+      notaMinima: (json['notaMinima'] as num).toDouble(),
+      notaMaxima: (json['notaMaxima'] as num).toDouble(),
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$ConfiguracaoMediaToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'percentagens': percentagens,
+      'notaMinima': notaMinima,
+      'notaMaxima': notaMaxima,
+    };
+  }
 
   ConfiguracaoMedia copyWith({
     Map<String, double>? percentagens,
@@ -124,10 +133,49 @@ class UnidadeCurricularModel {
     );
   }
 
-  factory UnidadeCurricularModel.fromJson(Map<String, dynamic> json) =>
-      _$UnidadeCurricularModelFromJson(json);
+  factory UnidadeCurricularModel.fromJson(Map<String, dynamic> json) {
+    return UnidadeCurricularModel(
+      id: json['id'] as String,
+      nome: json['nome'] as String,
+      cursoId: json['cursoId'] as String,
+      codigo: json['codigo'] as String?,
+      professor: json['professor'] as String?,
+      descricao: json['descricao'] as String?,
+      creditos: json['creditos'] as int?,
+      semestre: json['semestre'] as int?,
+      anoLetivo: json['anoLetivo'] as int?,
+      configuracaoMedia: ConfiguracaoMedia.fromJson(json['configuracaoMedia']),
+      mediaAtual: (json['mediaAtual'] as num?)?.toDouble(),
+      avaliacaoIds: List<String>.from(json['avaliacaoIds'] ?? []),
+      pageIds: List<String>.from(json['pageIds'] ?? []),
+      fileIds: List<String>.from(json['fileIds'] ?? []),
+      ativo: json['ativo'] as bool? ?? true,
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$UnidadeCurricularModelToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nome': nome,
+      'cursoId': cursoId,
+      'codigo': codigo,
+      'professor': professor,
+      'descricao': descricao,
+      'creditos': creditos,
+      'semestre': semestre,
+      'anoLetivo': anoLetivo,
+      'configuracaoMedia': configuracaoMedia.toJson(),
+      'mediaAtual': mediaAtual,
+      'avaliacaoIds': avaliacaoIds,
+      'pageIds': pageIds,
+      'fileIds': fileIds,
+      'ativo': ativo,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
 
   bool get aprovado {
     if (mediaAtual == null) return false;
