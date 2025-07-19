@@ -22,6 +22,7 @@ import '../models/cv_model.dart';
 import '../providers/job_management_provider.dart';
 import '../services/html_cv_parser.dart';
 import '../services/html_storage_service.dart';
+import '../services/cv_photo_service.dart';
 
 class CVFormScreen extends ConsumerStatefulWidget {
   final CVModel? cv; // null para criar novo, não null para editar
@@ -57,7 +58,9 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
   String? _selectedFileName;
   bool _isHtmlMode = false;
   String? _htmlContent;
+  String? _photoPath;
   final _htmlStorageService = HtmlStorageService();
+  final _cvPhotoService = CVPhotoService();
 
   @override
   void initState() {
@@ -93,6 +96,7 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
         _selectedFileName = cv.htmlFilePath != null
             ? cv.htmlFilePath!.split('/').last
             : 'cv_${cv.name}.html';
+        _photoPath = cv.photoPath;
       });
     } else {
       _nameController.text = cv.name;
@@ -110,6 +114,7 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
       _experiences = List.from(cv.experiences);
       _education = List.from(cv.education);
       _projects = List.from(cv.projects);
+      _photoPath = cv.photoPath;
     }
   }
 
@@ -150,6 +155,8 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
               const SizedBox(height: 24),
               if (_isHtmlMode) ...[
                 _buildHtmlNameSection(isDarkMode, strings),
+                const SizedBox(height: 24),
+                _buildHtmlPhotoSection(isDarkMode, strings),
                 const SizedBox(height: 24),
                 _buildHtmlPreviewSection(isDarkMode, strings),
                 const SizedBox(height: 24),
@@ -1455,6 +1462,76 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
     );
   }
 
+  Widget _buildHtmlPhotoSection(bool isDarkMode, AppStrings strings) {
+    return Card(
+      color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Foto do CV',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            if (_photoPath != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  File(_photoPath!),
+                  height: 150,
+                  width: 150,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Foto atual: ${_photoPath!.split('/').last}',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ] else ...[
+              Text(
+                'Nenhuma foto carregada. Clique em "Adicionar Foto" para selecionar.',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _pickPhoto,
+                    icon: const Icon(Icons.add_photo_alternate),
+                    label: const Text('Adicionar Foto'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _removePhoto,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Remover Foto'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHtmlPreviewSection(bool isDarkMode, AppStrings strings) {
     return Card(
       color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
@@ -1617,7 +1694,7 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
         } else {
           throw Exception('Não foi possível ler o arquivo');
         }
-        
+
         await _processHtmlContent(htmlContent, file.name);
       }
     } catch (e) {
@@ -1686,6 +1763,91 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
     }
   }
 
+  Future<void> _pickPhoto() async {
+    try {
+      // Verificar se já existe uma foto para este CV
+      final photoExists = await _cvPhotoService.photoExists(_nameController.text);
+      
+      if (photoExists) {
+        // Se já existe, usar a foto existente
+        final existingPhotoPath = await _cvPhotoService.getPhotoPath(_nameController.text);
+        if (existingPhotoPath != null) {
+          setState(() {
+            _photoPath = existingPhotoPath;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto existente carregada automaticamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          return;
+        }
+      }
+
+      // Se não existe, permitir seleção de nova foto
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.single;
+        if (file.path != null) {
+          // Salvar a foto usando o serviço
+          final savedPhotoPath = await _cvPhotoService.uploadPhotoFromGallery(_nameController.text);
+          if (savedPhotoPath != null) {
+            setState(() {
+              _photoPath = savedPhotoPath;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Foto adicionada com sucesso'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao carregar foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _removePhoto() async {
+    try {
+      if (_photoPath != null) {
+        // Remover a foto usando o serviço
+        await _cvPhotoService.removePhoto(_nameController.text);
+        setState(() {
+          _photoPath = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Foto removida com sucesso'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao remover foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _saveCV() async {
     if (_isHtmlMode) {
       await _saveHtmlCV();
@@ -1712,18 +1874,37 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
     });
 
     try {
-      // Salvar arquivo HTML no armazenamento local
+      // Primeiro salvar o HTML sem a foto
       final htmlFilePath = await _htmlStorageService.saveHtmlFile(_htmlContent!,
           _selectedFileName ?? 'cv_${_nameController.text}.html');
 
+      // Processar HTML para inserir a foto se disponível
+      String processedHtmlContent = _htmlContent!;
+      if (_photoPath != null) {
+        // Copiar a foto para o mesmo diretório do HTML
+        final photoName = await _htmlStorageService.copyPhotoToHtmlDirectory(_photoPath!, htmlFilePath);
+        if (photoName != null) {
+          // Inserir o nome da foto no HTML
+          processedHtmlContent = _insertPhotoIntoHtml(_htmlContent!, photoName);
+          
+          // Salvar novamente o HTML com a foto inserida
+          final file = File(htmlFilePath);
+          await file.writeAsString(processedHtmlContent);
+        }
+      }
+
       final cv = CVModel.createHtml(
         name: _nameController.text,
-        htmlContent: _htmlContent!,
+        htmlContent: processedHtmlContent,
         htmlFilePath: htmlFilePath,
+        photoPath: _photoPath,
       );
 
       final service = ref.read(jobManagementServiceProvider);
       await service.saveCV(cv);
+
+      // Atualiza a lista de CVs
+      ref.refresh(cvsNotifierProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1803,10 +1984,14 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
         skills: skills,
         languages: languages,
         certifications: certifications,
+        photoPath: _photoPath,
       );
 
       final service = ref.read(jobManagementServiceProvider);
       await service.saveCV(cv);
+
+      // Atualiza a lista de CVs
+      ref.refresh(cvsNotifierProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1835,5 +2020,54 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
         });
       }
     }
+  }
+
+  String _insertPhotoIntoHtml(String htmlContent, String photoName) {
+    // Procura por elementos img com a classe profile-photo
+    final RegExp profilePhotoRegex = RegExp(
+      r'<img[^>]*class="[^"]*profile-photo[^"]*"[^>]*>',
+      multiLine: true,
+      caseSensitive: false,
+    );
+
+    if (profilePhotoRegex.hasMatch(htmlContent)) {
+      // Se encontrou, substitui o src
+      return htmlContent.replaceAllMapped(profilePhotoRegex, (match) {
+        String imgTag = match.group(0)!;
+        
+        // Remove src existente se houver
+        imgTag = imgTag.replaceAll(RegExp(r'src="[^"]*"'), '');
+        
+        // Adiciona o novo src antes do fechamento da tag (caminho relativo)
+        imgTag = imgTag.replaceAll('>', ' src="$photoName">');
+        
+        return imgTag;
+      });
+    } else {
+      // Se não encontrou classe profile-photo, procura por outros padrões comuns
+      final List<RegExp> photoPatterns = [
+        RegExp(r'<img[^>]*class="[^"]*photo[^"]*"[^>]*>', multiLine: true, caseSensitive: false),
+        RegExp(r'<img[^>]*class="[^"]*avatar[^"]*"[^>]*>', multiLine: true, caseSensitive: false),
+        RegExp(r'<img[^>]*id="[^"]*photo[^"]*"[^>]*>', multiLine: true, caseSensitive: false),
+      ];
+
+      for (RegExp pattern in photoPatterns) {
+        if (pattern.hasMatch(htmlContent)) {
+          return htmlContent.replaceAllMapped(pattern, (match) {
+            String imgTag = match.group(0)!;
+            
+            // Remove src existente se houver
+            imgTag = imgTag.replaceAll(RegExp(r'src="[^"]*"'), '');
+            
+            // Adiciona o novo src antes do fechamento da tag (caminho relativo)
+            imgTag = imgTag.replaceAll('>', ' src="$photoName">');
+            
+            return imgTag;
+          });
+        }
+      }
+    }
+
+    return htmlContent;
   }
 }

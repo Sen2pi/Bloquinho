@@ -248,6 +248,7 @@ class CVModel {
   final String? pdfPath;
   final String? htmlContent;
   final String? htmlFilePath;
+  final String? photoPath;
   final bool isHtmlCV;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -274,6 +275,7 @@ class CVModel {
     this.pdfPath,
     this.htmlContent,
     this.htmlFilePath,
+    this.photoPath,
     required this.isHtmlCV,
     required this.createdAt,
     required this.updatedAt,
@@ -300,6 +302,7 @@ class CVModel {
     String? pdfPath,
     String? htmlContent,
     String? htmlFilePath,
+    String? photoPath,
     bool? isHtmlCV,
   }) {
     final now = DateTime.now();
@@ -325,6 +328,7 @@ class CVModel {
       pdfPath: pdfPath,
       htmlContent: htmlContent,
       htmlFilePath: htmlFilePath,
+      photoPath: photoPath,
       isHtmlCV: isHtmlCV ?? false,
       createdAt: now,
       updatedAt: now,
@@ -335,6 +339,7 @@ class CVModel {
     required String name,
     required String htmlContent,
     String? htmlFilePath,
+    String? photoPath,
   }) {
     final now = DateTime.now();
     return CVModel(
@@ -359,6 +364,7 @@ class CVModel {
       pdfPath: null,
       htmlContent: htmlContent,
       htmlFilePath: htmlFilePath,
+      photoPath: photoPath,
       isHtmlCV: true,
       createdAt: now,
       updatedAt: now,
@@ -392,6 +398,7 @@ class CVModel {
     String? pdfPath,
     String? htmlContent,
     String? htmlFilePath,
+    String? photoPath,
     bool? isHtmlCV,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -418,6 +425,7 @@ class CVModel {
       pdfPath: pdfPath ?? this.pdfPath,
       htmlContent: htmlContent ?? this.htmlContent,
       htmlFilePath: htmlFilePath ?? this.htmlFilePath,
+      photoPath: photoPath ?? this.photoPath,
       isHtmlCV: isHtmlCV ?? this.isHtmlCV,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),

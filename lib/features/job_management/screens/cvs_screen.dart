@@ -20,6 +20,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../models/cv_model.dart';
 import '../providers/job_management_provider.dart';
 import '../services/cv_service.dart';
+import '../services/cv_photo_service.dart';
 import 'cv_form_screen.dart';
 
 class CVsScreen extends ConsumerStatefulWidget {
@@ -30,6 +31,9 @@ class CVsScreen extends ConsumerStatefulWidget {
 }
 
 class _CVsScreenState extends ConsumerState<CVsScreen> {
+  final _cvService = CVService();
+  final _cvPhotoService = CVPhotoService();
+  bool _isLoading = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -210,20 +214,32 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: cv.isHtmlCV 
-                          ? Colors.orange.withOpacity(0.1)
-                          : Colors.green.withOpacity(0.1),
+                  if (cv.photoPath != null && File(cv.photoPath!).existsSync()) ...[
+                    ClipRRect(
                       borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        File(cv.photoPath!),
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                    child: Icon(
-                      cv.isHtmlCV ? PhosphorIcons.code() : PhosphorIcons.fileText(),
-                      color: cv.isHtmlCV ? Colors.orange : Colors.green,
-                      size: 20,
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: cv.isHtmlCV 
+                            ? Colors.orange.withOpacity(0.1)
+                            : Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        cv.isHtmlCV ? PhosphorIcons.code() : PhosphorIcons.fileText(),
+                        color: cv.isHtmlCV ? Colors.orange : Colors.green,
+                        size: 20,
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -617,8 +633,36 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
             child: Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
+              
+              // Se é um CV HTML, eliminar o ficheiro
+              if (cv.isHtmlCV && cv.htmlFilePath != null) {
+                try {
+                  final htmlFile = File(cv.htmlFilePath!);
+                  if (await htmlFile.exists()) {
+                    await htmlFile.delete();
+                  }
+                  
+                  // Eliminar também as fotos do diretório HTML se existirem
+                  final htmlDir = Directory(htmlFile.parent.path);
+                  if (await htmlDir.exists()) {
+                    final files = htmlDir.listSync();
+                    for (final file in files) {
+                      if (file is File && 
+                          (file.path.toLowerCase().endsWith('.jpg') ||
+                           file.path.toLowerCase().endsWith('.jpeg') ||
+                           file.path.toLowerCase().endsWith('.png') ||
+                           file.path.toLowerCase().endsWith('.gif'))) {
+                        await file.delete();
+                      }
+                    }
+                  }
+                } catch (e) {
+                  // Silenciar erros de eliminação de ficheiros
+                }
+              }
+              
               ref.read(cvsNotifierProvider.notifier).deleteCV(cv.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

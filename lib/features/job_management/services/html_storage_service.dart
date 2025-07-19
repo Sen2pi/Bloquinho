@@ -40,6 +40,31 @@ class HtmlStorageService {
     return filePath;
   }
   
+  /// Copia uma foto para o mesmo diretório do arquivo HTML
+  Future<String?> copyPhotoToHtmlDirectory(String photoPath, String htmlFilePath) async {
+    try {
+      final photoFile = File(photoPath);
+      if (!await photoFile.exists()) return null;
+      
+      // Obter o diretório do arquivo HTML
+      final htmlDirectory = Directory(path.dirname(htmlFilePath));
+      
+      // Obter a extensão da foto
+      final photoExtension = path.extension(photoPath);
+      
+      // Criar nome único para a foto
+      final photoName = 'photo_${DateTime.now().millisecondsSinceEpoch}$photoExtension';
+      final newPhotoPath = path.join(htmlDirectory.path, photoName);
+      
+      // Copiar a foto
+      await photoFile.copy(newPhotoPath);
+      
+      return photoName; // Retorna apenas o nome do arquivo (caminho relativo)
+    } catch (e) {
+      return null;
+    }
+  }
+  
   /// Lê o conteúdo de um arquivo HTML salvo
   Future<String> readHtmlFile(String filePath) async {
     final file = File(filePath);
