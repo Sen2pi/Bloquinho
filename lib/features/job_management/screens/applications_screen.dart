@@ -981,87 +981,133 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
   Widget _buildEmailCard(EmailTrackingModel email, bool isDarkMode) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+      child: InkWell(
+        onTap: () => _showEmailDetails(email, isDarkMode),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: email.direction == EmailDirection.sent 
-                      ? Colors.blue.withOpacity(0.1)
-                      : Colors.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  email.direction == EmailDirection.sent ? 'ENVIADO' : 'RECEBIDO',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: email.direction == EmailDirection.sent ? Colors.blue : Colors.green,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                DateFormat('dd/MM/yyyy HH:mm').format(email.sentDate),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: () => _deleteEmail(email),
-                child: Icon(
-                  PhosphorIcons.trash(),
-                  size: 16,
-                  color: Colors.red,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            email.subject,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
             ),
           ),
-          const SizedBox(height: 4),
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(PhosphorIcons.user(), size: 12, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                'De: ${email.fromEmail}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: email.direction == EmailDirection.sent 
+                          ? Colors.blue.withOpacity(0.1)
+                          : Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      email.direction == EmailDirection.sent ? 'ENVIADO' : 'RECEBIDO',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: email.direction == EmailDirection.sent ? Colors.blue : Colors.green,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    DateFormat('dd/MM/yyyy HH:mm').format(email.sentDate),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () => _deleteEmail(email),
+                    child: Icon(
+                      PhosphorIcons.trash(),
+                      size: 16,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      email.subject,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    PhosphorIcons.eye(),
+                    size: 14,
+                    color: Colors.grey[500],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(PhosphorIcons.user(), size: 12, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'De: ${email.fromEmail}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  Icon(PhosphorIcons.userCircle(), size: 12, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Para: ${email.toEmail}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              if (email.body != null && email.body!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    email.body!.length > 100 
+                        ? '${email.body!.substring(0, 100)}...'
+                        : email.body!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: 2),
-          Row(
-            children: [
-              Icon(PhosphorIcons.userCircle(), size: 12, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                'Para: ${email.toEmail}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1159,6 +1205,373 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
               foregroundColor: Colors.white,
             ),
             child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<EmailDirection?> _showDirectionSelectionDialog(EmailTrackingModel email) async {
+    return await showDialog<EmailDirection>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(PhosphorIcons.envelope(), color: AppColors.primary),
+            const SizedBox(width: 8),
+            const Text('Direção do Email'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Assunto: ${email.subject}',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            Text('De: ${email.fromEmail}'),
+            Text('Para: ${email.toEmail}'),
+            const SizedBox(height: 16),
+            const Text('Selecione a direção deste email:'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context, EmailDirection.received),
+            icon: Icon(PhosphorIcons.arrowDown(), size: 16),
+            label: const Text('Recebido'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context, EmailDirection.sent),
+            icon: Icon(PhosphorIcons.arrowUp(), size: 16),
+            label: const Text('Enviado'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEmailDetails(EmailTrackingModel email, bool isDarkMode) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.9,
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Icon(
+                      PhosphorIcons.envelope(),
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Detalhes do Email',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode
+                              ? AppColors.darkTextPrimary
+                              : AppColors.lightTextPrimary,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: email.direction == EmailDirection.sent 
+                            ? Colors.blue.withOpacity(0.1)
+                            : Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        email.direction == EmailDirection.sent ? 'ENVIADO' : 'RECEBIDO',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: email.direction == EmailDirection.sent ? Colors.blue : Colors.green,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Conteúdo scrollável
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Informações do email
+                        _buildEmailDetailSection(
+                          'Informações do Email',
+                          [
+                            _buildEmailDetailRow(
+                              PhosphorIcons.textT(),
+                              'Assunto',
+                              email.subject,
+                            ),
+                            _buildEmailDetailRow(
+                              PhosphorIcons.calendar(),
+                              'Data',
+                              DateFormat('dd/MM/yyyy HH:mm').format(email.sentDate),
+                            ),
+                            _buildEmailDetailRow(
+                              PhosphorIcons.user(),
+                              'De',
+                              email.fromEmail,
+                            ),
+                            _buildEmailDetailRow(
+                              PhosphorIcons.userCircle(),
+                              'Para',
+                              email.toEmail,
+                            ),
+                            if (email.ccEmail != null)
+                              _buildEmailDetailRow(
+                                PhosphorIcons.users(),
+                                'CC',
+                                email.ccEmail!,
+                              ),
+                            if (email.bccEmail != null)
+                              _buildEmailDetailRow(
+                                PhosphorIcons.usersThree(),
+                                'BCC',
+                                email.bccEmail!,
+                              ),
+                          ],
+                          isDarkMode,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Conteúdo do email
+                        if (email.body != null && email.body!.isNotEmpty) ...[
+                          _buildEmailDetailSection(
+                            'Conteúdo do Email',
+                            [
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode 
+                                      ? AppColors.darkBackground.withOpacity(0.3)
+                                      : AppColors.lightBackground.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+                                  ),
+                                ),
+                                child: SelectableText(
+                                  email.body!,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDarkMode
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.lightTextSecondary,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            isDarkMode,
+                          ),
+                        ] else ...[
+                          _buildEmailDetailSection(
+                            'Conteúdo do Email',
+                            [
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey[300]!),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(PhosphorIcons.info(), color: Colors.grey[500], size: 20),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Conteúdo do email não disponível',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 14,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            isDarkMode,
+                          ),
+                        ],
+
+                        // Anexos (se houver)
+                        if (email.attachments.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+                          _buildEmailDetailSection(
+                            'Anexos',
+                            email.attachments.map((attachment) => 
+                              Row(
+                                children: [
+                                  Icon(PhosphorIcons.paperclip(), size: 16, color: Colors.grey[600]),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      attachment,
+                                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ).toList(),
+                            isDarkMode,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Botões de ação
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(PhosphorIcons.x()),
+                        label: const Text('Fechar'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _deleteEmail(email);
+                      },
+                      icon: Icon(PhosphorIcons.trash()),
+                      label: const Text('Excluir'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmailDetailSection(String title, List<Widget> children, bool isDarkMode) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDarkMode 
+                ? AppColors.darkBackground.withOpacity(0.5)
+                : AppColors.lightBackground.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: children,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmailDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: Colors.grey[600],
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                SelectableText(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

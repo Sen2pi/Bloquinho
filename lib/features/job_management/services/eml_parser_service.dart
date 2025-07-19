@@ -33,13 +33,24 @@ class EmlParserService {
   ) async {
     try {
       final file = File(emlFilePath);
-      if (!await file.exists()) return null;
+      if (!await file.exists()) {
+        print('Arquivo EML não existe: $emlFilePath');
+        return null;
+      }
 
       final content = await file.readAsString(encoding: latin1);
+      print('Conteúdo do arquivo EML lido: ${content.length} caracteres');
+      
+      // Debug: mostrar início do conteúdo
+      print('Primeiras linhas do EML:\n${content.split('\n').take(10).join('\n')}');
       
       // Parsear headers do email
       final headers = _parseHeaders(content);
+      print('Headers parseados: ${headers.keys.join(', ')}');
+      
       final body = _parseBody(content);
+      print('Corpo do email parseado: ${body.length} caracteres');
+      print('Primeiros 200 caracteres do corpo: ${body.length > 200 ? body.substring(0, 200) : body}');
 
       // Determinar direção do email (simplificado)
       final direction = _determineDirection(headers);
@@ -55,7 +66,7 @@ class EmlParserService {
         ccEmail: headers['cc'] != null ? _cleanEmail(headers['cc']!) : null,
         bccEmail: headers['bcc'] != null ? _cleanEmail(headers['bcc']!) : null,
         sentDate: _parseDate(headers['date']),
-        body: body,
+        body: body.isEmpty ? null : body,
         direction: direction,
         emlFilePath: savedEmlPath,
       );
@@ -133,35 +144,187 @@ class EmlParserService {
 
   /// Parsear corpo do email
   String _parseBody(String content) {
-    final parts = content.split('\n\n');
-    if (parts.length > 1) {
-      // Pegar tudo após os headers
-      final body = parts.sublist(1).join('\n\n');
+    try {
+      // Separar headers do corpo usando dupla quebra de linha
+      final headerBodySplit = content.indexOf('\n\n');
+      if (headerBodySplit == -1) {
+        // Tentar com \r\n\r\n
+        final headerBodySplitCRLF = content.indexOf('\r\n\r\n');
+        if (headerBodySplitCRLF == -1) {
+          return 'Conteúdo não encontrado';
+        }
+        final body = content.substring(headerBodySplitCRLF + 4);
+        return _decodeEmailBody(body);
+      }
       
-      // Decodificar se for base64 ou quoted-printable (simplificado)
-      if (body.contains('Content-Transfer-Encoding: base64')) {
-        try {
-          final base64Lines = body.split('\n').where((line) => 
-            line.trim().isNotEmpty && 
-            !line.contains('Content-') && 
-            !line.contains('MIME-Version')
-          ).join('');
-          return utf8.decode(base64.decode(base64Lines));
-        } catch (e) {
-          return body;
+      final body = content.substring(headerBodySplit + 2);
+      return _decodeEmailBody(body);
+    } catch (e) {
+      print('Erro ao parsear corpo do email: $e');
+      return 'Erro ao processar conteúdo do email';
+    }
+  }
+
+  /// Decodificar corpo do email baseado no encoding
+  String _decodeEmailBody(String body) {
+    if (body.trim().isEmpty) {
+      return 'Conteúdo vazio';
+    }
+
+    // Verificar se é multipart
+    if (body.contains('Content-Type: multipart/')) {
+      return _parseMultipartBody(body);
+    }
+
+    // Verificar encoding
+    if (body.contains('Content-Transfer-Encoding: base64')) {
+      return _decodeBase64Body(body);
+    } else if (body.contains('Content-Transfer-Encoding: quoted-printable')) {
+      return _decodeQuotedPrintableBody(body);
+    }
+
+    // Se não tem encoding especial, retornar como está (limpando headers extras)
+    return _cleanPlainTextBody(body);
+  }
+
+  /// Parsear corpo multipart
+  String _parseMultipartBody(String body) {
+    try {
+      // Procurar por boundary
+      final boundaryMatch = RegExp(r'boundary[=\s]*([^;\s\n\r]+)').firstMatch(body);
+      if (boundaryMatch == null) {
+        return _cleanPlainTextBody(body);
+      }
+
+      final boundary = '--${boundaryMatch.group(1)}';
+      final parts = body.split(boundary);
+
+      for (final part in parts) {
+        if (part.trim().isEmpty || part.trim() == '--') continue;
+        
+        // Procurar por parte text/plain ou text/html
+        if (part.contains('Content-Type: text/plain') || 
+            part.contains('Content-Type: text/html')) {
+          
+          final partBodySplit = part.indexOf('\n\n');
+          if (partBodySplit != -1) {
+            final partBody = part.substring(partBodySplit + 2);
+            
+            if (part.contains('Content-Transfer-Encoding: base64')) {
+              return _decodeBase64Body(partBody);
+            } else if (part.contains('Content-Transfer-Encoding: quoted-printable')) {
+              return _decodeQuotedPrintableBody(partBody);
+            } else {
+              return _cleanPlainTextBody(partBody);
+            }
+          }
         }
       }
       
-      return body;
+      return 'Conteúdo multipart não suportado';
+    } catch (e) {
+      return 'Erro ao processar email multipart';
     }
-    return '';
+  }
+
+  /// Decodificar base64
+  String _decodeBase64Body(String body) {
+    try {
+      // Extrair apenas as linhas base64 (sem headers)
+      final lines = body.split('\n');
+      final base64Lines = <String>[];
+      
+      bool foundBody = false;
+      for (final line in lines) {
+        if (line.trim().isEmpty && !foundBody) {
+          foundBody = true;
+          continue;
+        }
+        
+        if (foundBody && line.trim().isNotEmpty && 
+            !line.contains('Content-') && 
+            !line.contains('MIME-Version') &&
+            !line.startsWith('--')) {
+          base64Lines.add(line.trim());
+        }
+      }
+      
+      if (base64Lines.isEmpty) {
+        return 'Conteúdo base64 não encontrado';
+      }
+      
+      final base64String = base64Lines.join('');
+      final decoded = utf8.decode(base64.decode(base64String));
+      return _cleanPlainTextBody(decoded);
+    } catch (e) {
+      return 'Erro ao decodificar base64: ${body.substring(0, 100)}...';
+    }
+  }
+
+  /// Decodificar quoted-printable (simplificado)
+  String _decodeQuotedPrintableBody(String body) {
+    try {
+      final lines = body.split('\n');
+      final textLines = <String>[];
+      
+      bool foundBody = false;
+      for (final line in lines) {
+        if (line.trim().isEmpty && !foundBody) {
+          foundBody = true;
+          continue;
+        }
+        
+        if (foundBody && !line.contains('Content-')) {
+          textLines.add(line);
+        }
+      }
+      
+      final text = textLines.join('\n');
+      // Decodificação básica do quoted-printable
+      return text.replaceAll('=\n', '').replaceAllMapped(RegExp(r'=([0-9A-F]{2})'), (match) {
+        try {
+          return String.fromCharCode(int.parse(match.group(1)!, radix: 16));
+        } catch (e) {
+          return match.group(0)!;
+        }
+      });
+    } catch (e) {
+      return 'Erro ao decodificar quoted-printable';
+    }
+  }
+
+  /// Limpar texto simples
+  String _cleanPlainTextBody(String body) {
+    final lines = body.split('\n');
+    final textLines = <String>[];
+    
+    bool foundBody = false;
+    for (final line in lines) {
+      // Pular headers MIME
+      if (line.startsWith('Content-') || 
+          line.startsWith('MIME-Version') ||
+          line.startsWith('--')) {
+        continue;
+      }
+      
+      if (line.trim().isEmpty && !foundBody) {
+        foundBody = true;
+        continue;
+      }
+      
+      if (foundBody || !line.contains(':')) {
+        textLines.add(line);
+      }
+    }
+    
+    final result = textLines.join('\n').trim();
+    return result.isEmpty ? 'Conteúdo de texto não encontrado' : result;
   }
 
   /// Determinar direção do email
   EmailDirection _determineDirection(Map<String, String> headers) {
     // Lógica simplificada - poderia ser melhorada com configuração do usuário
     final from = headers['from']?.toLowerCase() ?? '';
-    final to = headers['to']?.toLowerCase() ?? '';
     
     // Se contém domínios comuns de empresas, provavelmente foi recebido
     if (from.contains('@company.com') || from.contains('@empresa.pt')) {
