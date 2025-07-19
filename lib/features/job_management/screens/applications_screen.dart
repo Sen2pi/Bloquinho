@@ -465,255 +465,263 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+              color:
+                  isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              // Header com título e status
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
+                // Header com título e status
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            application.title,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.lightTextPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                PhosphorIcons.buildings(),
+                                size: 16,
+                                color: Colors.grey[600],
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                application.company,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    _buildStatusBadge(application.status, strings),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Conteúdo scrollável
+                Flexible(
+                  child: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          application.title,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: isDarkMode
-                                ? AppColors.darkTextPrimary
-                                : AppColors.lightTextPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              PhosphorIcons.buildings(),
-                              size: 16,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              application.company,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  _buildStatusBadge(application.status, strings),
-                ],
-              ),
-              const SizedBox(height: 24),
-              
-              // Conteúdo scrollável
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Informações básicas
-                      _buildDetailSection(
-                        'Informações Básicas',
-                        [
-                          _buildDetailRow(
-                            PhosphorIcons.calendar(),
-                            'Data da candidatura',
-                            DateFormat('dd/MM/yyyy').format(application.appliedDate),
-                          ),
-                          if (application.platform != null)
-                            _buildDetailRow(
-                              PhosphorIcons.globe(),
-                              'Plataforma',
-                              application.platform!,
-                            ),
-                          if (application.location != null)
-                            _buildDetailRow(
-                              PhosphorIcons.mapPin(),
-                              'Localização',
-                              application.location!,
-                            ),
-                          if (application.companyLink != null)
-                            _buildDetailRow(
-                              PhosphorIcons.link(),
-                              'Link da empresa',
-                              application.companyLink!,
-                              isLink: true,
-                            ),
-                        ],
-                        isDarkMode,
-                      ),
-                      
-                      const SizedBox(height: 20),
-                      
-                      // Match AI
-                      if (application.aiMatchPercentage != null) ...[
+                        // Informações básicas
                         _buildDetailSection(
-                          'Análise AI',
+                          'Informações Básicas',
                           [
-                            Row(
-                              children: [
-                                Icon(
-                                  PhosphorIcons.sparkle(),
-                                  size: 20,
-                                  color: Colors.purple,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Match: ${application.aiMatchPercentage!}%',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
+                            _buildDetailRow(
+                              PhosphorIcons.calendar(),
+                              'Data da candidatura',
+                              DateFormat('dd/MM/yyyy')
+                                  .format(application.appliedDate),
+                            ),
+                            if (application.platform != null)
+                              _buildDetailRow(
+                                PhosphorIcons.globe(),
+                                'Plataforma',
+                                application.platform!,
+                              ),
+                            if (application.location != null)
+                              _buildDetailRow(
+                                PhosphorIcons.mapPin(),
+                                'Localização',
+                                application.location!,
+                              ),
+                            if (application.companyLink != null)
+                              _buildDetailRow(
+                                PhosphorIcons.link(),
+                                'Link da empresa',
+                                application.companyLink!,
+                                isLink: true,
+                              ),
+                          ],
+                          isDarkMode,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Match AI
+                        if (application.aiMatchPercentage != null) ...[
+                          _buildDetailSection(
+                            'Análise AI',
+                            [
+                              Row(
+                                children: [
+                                  Icon(
+                                    PhosphorIcons.sparkle(),
+                                    size: 20,
                                     color: Colors.purple,
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: LinearProgressIndicator(
-                                    value: double.tryParse(application.aiMatchPercentage!) ?? 0.0,
-                                    backgroundColor: Colors.grey[300],
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      _getMatchColor(double.tryParse(application.aiMatchPercentage!) ?? 0.0),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Match: ${application.aiMatchPercentage!}%',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.purple,
                                     ),
                                   ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: LinearProgressIndicator(
+                                      value: double.tryParse(
+                                              application.aiMatchPercentage!) ??
+                                          0.0,
+                                      backgroundColor: Colors.grey[300],
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        _getMatchColor(double.tryParse(
+                                                application
+                                                    .aiMatchPercentage!) ??
+                                            0.0),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            isDarkMode,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+
+                        // Descrição
+                        if (application.description != null) ...[
+                          _buildDetailSection(
+                            'Descrição da Vaga',
+                            [
+                              Text(
+                                application.description!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDarkMode
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
+                                  height: 1.5,
                                 ),
-                              ],
-                            ),
-                          ],
-                          isDarkMode,
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                      
-                      // Descrição
-                      if (application.description != null) ...[
-                        _buildDetailSection(
-                          'Descrição da Vaga',
-                          [
-                            Text(
-                              application.description!,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDarkMode
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary,
-                                height: 1.5,
                               ),
-                            ),
-                          ],
-                          isDarkMode,
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                      
-                      // Carta de motivação
-                      if (application.motivationLetter != null) ...[
-                        _buildDetailSection(
-                          'Carta de Motivação',
-                          [
-                            Text(
-                              application.motivationLetter!,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDarkMode
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary,
-                                height: 1.5,
+                            ],
+                            isDarkMode,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+
+                        // Carta de motivação
+                        if (application.motivationLetter != null) ...[
+                          _buildDetailSection(
+                            'Carta de Motivação',
+                            [
+                              Text(
+                                application.motivationLetter!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDarkMode
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
+                                  height: 1.5,
+                                ),
                               ),
-                            ),
-                          ],
-                          isDarkMode,
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                      
-                      // Notas
-                      if (application.notes != null) ...[
-                        _buildDetailSection(
-                          'Notas Pessoais',
-                          [
-                            Text(
-                              application.notes!,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDarkMode
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary,
-                                height: 1.5,
+                            ],
+                            isDarkMode,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+
+                        // Notas
+                        if (application.notes != null) ...[
+                          _buildDetailSection(
+                            'Notas Pessoais',
+                            [
+                              Text(
+                                application.notes!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDarkMode
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
+                                  height: 1.5,
+                                ),
                               ),
-                            ),
-                          ],
-                          isDarkMode,
-                        ),
-                        const SizedBox(height: 20),
+                            ],
+                            isDarkMode,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+
+                        // Email Tracking
+                        _buildEmailTrackingSection(
+                            application, isDarkMode, strings),
                       ],
-                      
-                      // Email Tracking
-                      _buildEmailTrackingSection(application, isDarkMode, strings),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Botões de ação
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(PhosphorIcons.x()),
-                      label: const Text('Fechar'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
+                ),
+
+                const SizedBox(height: 24),
+
+                // Botões de ação
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(PhosphorIcons.x()),
+                        label: const Text('Fechar'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _editApplication(application);
+                        },
+                        icon: Icon(PhosphorIcons.pencil()),
+                        label: const Text('Editar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        _editApplication(application);
+                        _showDeleteConfirmation(application);
                       },
-                      icon: Icon(PhosphorIcons.pencil()),
-                      label: const Text('Editar'),
+                      icon: Icon(PhosphorIcons.trash()),
+                      label: const Text('Apagar'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _showDeleteConfirmation(application);
-                    },
-                    icon: Icon(PhosphorIcons.trash()),
-                    label: const Text('Apagar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -721,7 +729,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     );
   }
 
-  Widget _buildDetailSection(String title, List<Widget> children, bool isDarkMode) {
+  Widget _buildDetailSection(
+      String title, List<Widget> children, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -730,7 +739,9 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.lightTextPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -738,7 +749,7 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDarkMode 
+            color: isDarkMode
                 ? AppColors.darkBackground.withOpacity(0.5)
                 : AppColors.lightBackground.withOpacity(0.5),
             borderRadius: BorderRadius.circular(8),
@@ -755,7 +766,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value, {bool isLink = false}) {
+  Widget _buildDetailRow(IconData icon, String label, String value,
+      {bool isLink = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -803,10 +815,14 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
         builder: (context) => ApplicationFormScreen(application: application),
       ),
     );
-    
+
     // Se a candidatura foi editada com sucesso, recarregar a lista
     if (result == true) {
       ref.refresh(applicationsProvider);
+      // Invalidar providers de gráficos para atualizar dados
+      ref.invalidate(applicationsChartDataProvider);
+      ref.invalidate(applicationsByStatusPieDataProvider);
+      ref.invalidate(jobStatisticsProvider);
     }
   }
 
@@ -821,7 +837,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
             const Text('Confirmar exclusão'),
           ],
         ),
-        content: Text('Tem certeza que deseja excluir a candidatura "${application.title}"?'),
+        content: Text(
+            'Tem certeza que deseja excluir a candidatura "${application.title}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -834,6 +851,10 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                 final service = ref.read(jobManagementServiceProvider);
                 await service.deleteApplication(application.id);
                 ref.refresh(applicationsProvider);
+                // Invalidar providers de gráficos para atualizar dados
+                ref.invalidate(applicationsChartDataProvider);
+                ref.invalidate(applicationsByStatusPieDataProvider);
+                ref.invalidate(jobStatisticsProvider);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Candidatura excluída com sucesso'),
@@ -884,10 +905,14 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
         builder: (context) => const ApplicationFormScreen(),
       ),
     );
-    
+
     // Se a candidatura foi criada/editada com sucesso, recarregar a lista
     if (result == true) {
       ref.refresh(applicationsProvider);
+      // Invalidar providers de gráficos para atualizar dados
+      ref.invalidate(applicationsChartDataProvider);
+      ref.invalidate(applicationsByStatusPieDataProvider);
+      ref.invalidate(jobStatisticsProvider);
     }
   }
 
@@ -898,12 +923,14 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     return Colors.red;
   }
 
-  Widget _buildEmailTrackingSection(ApplicationModel application, bool isDarkMode, AppStrings strings) {
+  Widget _buildEmailTrackingSection(
+      ApplicationModel application, bool isDarkMode, AppStrings strings) {
     return Consumer(
       builder: (context, ref, child) {
         // Load emails for this application
-        final emailsAsync = ref.watch(emailTrackingByApplicationProvider(application.id));
-        
+        final emailsAsync =
+            ref.watch(emailTrackingByApplicationProvider(application.id));
+
         return _buildDetailSection(
           'Rastreamento de Emails',
           [
@@ -928,7 +955,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     textStyle: const TextStyle(fontSize: 12),
                   ),
                 ),
@@ -947,7 +975,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(PhosphorIcons.envelope(), color: Colors.grey[500], size: 20),
+                        Icon(PhosphorIcons.envelope(),
+                            color: Colors.grey[500], size: 20),
                         const SizedBox(width: 8),
                         Text(
                           'Nenhum email adicionado ainda',
@@ -960,9 +989,11 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                     ),
                   );
                 }
-                
+
                 return Column(
-                  children: emails.map((email) => _buildEmailCard(email, isDarkMode)).toList(),
+                  children: emails
+                      .map((email) => _buildEmailCard(email, isDarkMode))
+                      .toList(),
                 );
               },
               loading: () => const Center(
@@ -1008,7 +1039,9 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isDarkMode ? AppColors.darkBackground : AppColors.lightBackground,
+            color: isDarkMode
+                ? AppColors.darkBackground
+                : AppColors.lightBackground,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
@@ -1020,19 +1053,24 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: email.direction == EmailDirection.sent 
+                      color: email.direction == EmailDirection.sent
                           ? Colors.blue.withOpacity(0.1)
                           : Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      email.direction == EmailDirection.sent ? 'ENVIADO' : 'RECEBIDO',
+                      email.direction == EmailDirection.sent
+                          ? 'ENVIADO'
+                          : 'RECEBIDO',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color: email.direction == EmailDirection.sent ? Colors.blue : Colors.green,
+                        color: email.direction == EmailDirection.sent
+                            ? Colors.blue
+                            : Colors.green,
                       ),
                     ),
                   ),
@@ -1064,7 +1102,9 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                        color: isDarkMode
+                            ? AppColors.darkTextPrimary
+                            : AppColors.lightTextPrimary,
                       ),
                     ),
                   ),
@@ -1093,7 +1133,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
               const SizedBox(height: 2),
               Row(
                 children: [
-                  Icon(PhosphorIcons.userCircle(), size: 12, color: Colors.grey[600]),
+                  Icon(PhosphorIcons.userCircle(),
+                      size: 12, color: Colors.grey[600]),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -1113,7 +1154,7 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    email.body!.length > 100 
+                    email.body!.length > 100
                         ? '${email.body!.substring(0, 100)}...'
                         : email.body!,
                     style: TextStyle(
@@ -1145,22 +1186,26 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
         final file = result.files.first;
         if (file.path != null) {
           final emlParserService = ref.read(emlParserServiceProvider);
-          final emailTracking = await emlParserService.parseEmlFile(file.path!, applicationId);
-          
+          final emailTracking =
+              await emlParserService.parseEmlFile(file.path!, applicationId);
+
           if (emailTracking != null) {
             // Mostrar diálogo para escolher direção do email
-            final selectedDirection = await _showDirectionSelectionDialog(emailTracking);
-            
+            final selectedDirection =
+                await _showDirectionSelectionDialog(emailTracking);
+
             if (selectedDirection != null) {
               // Atualizar email com a direção selecionada
-              final updatedEmail = emailTracking.copyWith(direction: selectedDirection);
-              
-              final emailTrackingStorage = ref.read(emailTrackingStorageServiceProvider);
+              final updatedEmail =
+                  emailTracking.copyWith(direction: selectedDirection);
+
+              final emailTrackingStorage =
+                  ref.read(emailTrackingStorageServiceProvider);
               await emailTrackingStorage.saveEmail(updatedEmail);
-              
+
               // Invalidar e recarregar a lista de emails para esta candidatura
               ref.invalidate(emailTrackingByApplicationProvider(applicationId));
-              
+
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Email adicionado com sucesso!'),
@@ -1199,7 +1244,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
             const Text('Confirmar exclusão'),
           ],
         ),
-        content: Text('Tem certeza que deseja excluir o email "${email.subject}"?'),
+        content:
+            Text('Tem certeza que deseja excluir o email "${email.subject}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -1208,12 +1254,14 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              final emailTrackingStorage = ref.read(emailTrackingStorageServiceProvider);
+              final emailTrackingStorage =
+                  ref.read(emailTrackingStorageServiceProvider);
               await emailTrackingStorage.deleteEmail(email.id);
-              
+
               // Invalidar e recarregar a lista de emails para esta candidatura
-              ref.invalidate(emailTrackingByApplicationProvider(email.applicationId));
-              
+              ref.invalidate(
+                  emailTrackingByApplicationProvider(email.applicationId));
+
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Email excluído com sucesso'),
@@ -1232,7 +1280,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     );
   }
 
-  Future<EmailDirection?> _showDirectionSelectionDialog(EmailTrackingModel email) async {
+  Future<EmailDirection?> _showDirectionSelectionDialog(
+      EmailTrackingModel email) async {
     return await showDialog<EmailDirection>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1300,7 +1349,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+              color:
+                  isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -1329,19 +1379,24 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: email.direction == EmailDirection.sent 
+                        color: email.direction == EmailDirection.sent
                             ? Colors.blue.withOpacity(0.1)
                             : Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        email.direction == EmailDirection.sent ? 'ENVIADO' : 'RECEBIDO',
+                        email.direction == EmailDirection.sent
+                            ? 'ENVIADO'
+                            : 'RECEBIDO',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: email.direction == EmailDirection.sent ? Colors.blue : Colors.green,
+                          color: email.direction == EmailDirection.sent
+                              ? Colors.blue
+                              : Colors.green,
                         ),
                       ),
                     ),
@@ -1367,7 +1422,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                             _buildEmailDetailRow(
                               PhosphorIcons.calendar(),
                               'Data',
-                              DateFormat('dd/MM/yyyy HH:mm').format(email.sentDate),
+                              DateFormat('dd/MM/yyyy HH:mm')
+                                  .format(email.sentDate),
                             ),
                             _buildEmailDetailRow(
                               PhosphorIcons.user(),
@@ -1406,12 +1462,16 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: isDarkMode 
-                                      ? AppColors.darkBackground.withOpacity(0.3)
-                                      : AppColors.lightBackground.withOpacity(0.3),
+                                  color: isDarkMode
+                                      ? AppColors.darkBackground
+                                          .withOpacity(0.3)
+                                      : AppColors.lightBackground
+                                          .withOpacity(0.3),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+                                    color: isDarkMode
+                                        ? AppColors.darkBorder
+                                        : AppColors.lightBorder,
                                   ),
                                 ),
                                 child: SelectableText(
@@ -1442,7 +1502,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(PhosphorIcons.info(), color: Colors.grey[500], size: 20),
+                                    Icon(PhosphorIcons.info(),
+                                        color: Colors.grey[500], size: 20),
                                     const SizedBox(width: 8),
                                     Text(
                                       'Conteúdo do email não disponível',
@@ -1465,20 +1526,25 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
                           const SizedBox(height: 20),
                           _buildEmailDetailSection(
                             'Anexos',
-                            email.attachments.map((attachment) => 
-                              Row(
-                                children: [
-                                  Icon(PhosphorIcons.paperclip(), size: 16, color: Colors.grey[600]),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      attachment,
-                                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                                    ),
+                            email.attachments
+                                .map(
+                                  (attachment) => Row(
+                                    children: [
+                                      Icon(PhosphorIcons.paperclip(),
+                                          size: 16, color: Colors.grey[600]),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          attachment,
+                                          style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[600]),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            ).toList(),
+                                )
+                                .toList(),
                             isDarkMode,
                           ),
                         ],
@@ -1526,7 +1592,8 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
     );
   }
 
-  Widget _buildEmailDetailSection(String title, List<Widget> children, bool isDarkMode) {
+  Widget _buildEmailDetailSection(
+      String title, List<Widget> children, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1535,7 +1602,9 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: isDarkMode ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color: isDarkMode
+                ? AppColors.darkTextPrimary
+                : AppColors.lightTextPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -1543,7 +1612,7 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDarkMode 
+            color: isDarkMode
                 ? AppColors.darkBackground.withOpacity(0.5)
                 : AppColors.lightBackground.withOpacity(0.5),
             borderRadius: BorderRadius.circular(8),

@@ -487,6 +487,10 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
     // Se a entrevista foi criada com sucesso, recarregar a lista
     if (result == true) {
       ref.refresh(interviewsProvider);
+      // Invalidar providers de gráficos para atualizar dados
+      ref.invalidate(interviewsChartDataProvider);
+      ref.invalidate(interviewsByTypePieDataProvider);
+      ref.invalidate(jobStatisticsProvider);
     }
   }
 
@@ -640,6 +644,10 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
     ).then((result) {
       if (result == true) {
         ref.refresh(interviewsProvider);
+        // Invalidar providers de gráficos para atualizar dados
+        ref.invalidate(interviewsChartDataProvider);
+        ref.invalidate(interviewsByTypePieDataProvider);
+        ref.invalidate(jobStatisticsProvider);
       }
     });
   }
@@ -663,6 +671,10 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
                 final service = ref.read(jobManagementServiceProvider);
                 await service.deleteInterview(interview.id);
                 ref.refresh(interviewsProvider);
+                // Invalidar providers de gráficos para atualizar dados
+                ref.invalidate(interviewsChartDataProvider);
+                ref.invalidate(interviewsByTypePieDataProvider);
+                ref.invalidate(jobStatisticsProvider);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

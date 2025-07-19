@@ -8,6 +8,7 @@
  */
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 import '../models/interview_model.dart';
 import '../models/cv_model.dart';
@@ -29,32 +30,31 @@ final jobManagementServiceProvider = Provider<JobManagementService>((ref) {
   final htmlStorageService = HtmlStorageService();
   final emlParserService = EmlParserService();
   final emailTrackingService = EmailTrackingStorageService();
-  
+
   // Configurar contexto automaticamente para todos os serviços
   ref.listen<Workspace?>(workspaceProvider, (previous, next) async {
     if (next != null) {
       final currentProfile = ref.read(currentProfileProvider);
       if (currentProfile != null) {
         await service.setContext(currentProfile.name, next.id);
-        await cvPhotoService.setContext(currentProfile.name, next.id);
-        await htmlStorageService.setContext(currentProfile.name, next.id);
         await emlParserService.setContext(currentProfile.name, next.id);
         await emailTrackingService.setContext(currentProfile.name, next.id);
       }
     }
   });
-  
+
   // Configurar contexto inicial se já houver workspace e perfil
   final currentWorkspace = ref.read(workspaceProvider);
   final currentProfile = ref.read(currentProfileProvider);
   if (currentWorkspace != null && currentProfile != null) {
     Future.microtask(() async {
       await service.setContext(currentProfile.name, currentWorkspace.id);
-      await cvPhotoService.setContext(currentProfile.name, currentWorkspace.id);
-      await htmlStorageService.setContext(currentProfile.name, currentWorkspace.id);
-      await emlParserService.setContext(currentProfile.name, currentWorkspace.id);
-      await emailTrackingService.setContext(currentProfile.name, currentWorkspace.id);
-      
+
+      await emlParserService.setContext(
+          currentProfile.name, currentWorkspace.id);
+      await emailTrackingService.setContext(
+          currentProfile.name, currentWorkspace.id);
+
       // Limpeza automática de arquivos .eml órfãos
       try {
         await emailTrackingService.cleanOrphanedEmlFiles();
@@ -63,7 +63,7 @@ final jobManagementServiceProvider = Provider<JobManagementService>((ref) {
       }
     });
   }
-  
+
   return service;
 });
 
@@ -74,25 +74,31 @@ final interviewsProvider = FutureProvider<List<InterviewModel>>((ref) async {
   return service.getInterviews();
 });
 
-final interviewProvider = FutureProvider.family<InterviewModel?, String>((ref, id) async {
+final interviewProvider =
+    FutureProvider.family<InterviewModel?, String>((ref, id) async {
   final service = ref.watch(jobManagementServiceProvider);
   await service.initialize();
   return service.getInterview(id);
 });
 
-final recentInterviewsProvider = FutureProvider.family<List<InterviewModel>, int>((ref, limit) async {
+final recentInterviewsProvider =
+    FutureProvider.family<List<InterviewModel>, int>((ref, limit) async {
   final service = ref.watch(jobManagementServiceProvider);
   await service.initialize();
   return service.getRecentInterviews(limit: limit);
 });
 
-final interviewsByTypeProvider = FutureProvider.family<List<InterviewModel>, InterviewType>((ref, type) async {
+final interviewsByTypeProvider =
+    FutureProvider.family<List<InterviewModel>, InterviewType>(
+        (ref, type) async {
   final service = ref.watch(jobManagementServiceProvider);
   await service.initialize();
   return service.getInterviewsByType(type);
 });
 
-final interviewsByStatusProvider = FutureProvider.family<List<InterviewModel>, InterviewStatus>((ref, status) async {
+final interviewsByStatusProvider =
+    FutureProvider.family<List<InterviewModel>, InterviewStatus>(
+        (ref, status) async {
   final service = ref.watch(jobManagementServiceProvider);
   await service.initialize();
   return service.getInterviewsByStatus(status);
@@ -112,25 +118,30 @@ final cvProvider = FutureProvider.family<CVModel?, String>((ref, id) async {
 });
 
 // Application Providers
-final applicationsProvider = FutureProvider<List<ApplicationModel>>((ref) async {
+final applicationsProvider =
+    FutureProvider<List<ApplicationModel>>((ref) async {
   final service = ref.watch(jobManagementServiceProvider);
   await service.initialize();
   return service.getApplications();
 });
 
-final applicationProvider = FutureProvider.family<ApplicationModel?, String>((ref, id) async {
+final applicationProvider =
+    FutureProvider.family<ApplicationModel?, String>((ref, id) async {
   final service = ref.watch(jobManagementServiceProvider);
   await service.initialize();
   return service.getApplication(id);
 });
 
-final applicationsByStatusProvider = FutureProvider.family<List<ApplicationModel>, ApplicationStatus>((ref, status) async {
+final applicationsByStatusProvider =
+    FutureProvider.family<List<ApplicationModel>, ApplicationStatus>(
+        (ref, status) async {
   final service = ref.watch(jobManagementServiceProvider);
   await service.initialize();
   return service.getApplicationsByStatus(status);
 });
 
-final applicationsByCVProvider = FutureProvider.family<List<ApplicationModel>, String>((ref, cvId) async {
+final applicationsByCVProvider =
+    FutureProvider.family<List<ApplicationModel>, String>((ref, cvId) async {
   final service = ref.watch(jobManagementServiceProvider);
   await service.initialize();
   return service.getApplicationsByCV(cvId);
@@ -144,26 +155,30 @@ final jobStatisticsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
 });
 
 // Search Providers
-final searchInterviewsProvider = FutureProvider.family<List<InterviewModel>, String>((ref, query) async {
+final searchInterviewsProvider =
+    FutureProvider.family<List<InterviewModel>, String>((ref, query) async {
   final service = ref.watch(jobManagementServiceProvider);
   await service.initialize();
   return service.searchInterviews(query);
 });
 
-final searchCVsProvider = FutureProvider.family<List<CVModel>, String>((ref, query) async {
+final searchCVsProvider =
+    FutureProvider.family<List<CVModel>, String>((ref, query) async {
   final service = ref.watch(jobManagementServiceProvider);
   await service.initialize();
   return service.searchCVs(query);
 });
 
-final searchApplicationsProvider = FutureProvider.family<List<ApplicationModel>, String>((ref, query) async {
+final searchApplicationsProvider =
+    FutureProvider.family<List<ApplicationModel>, String>((ref, query) async {
   final service = ref.watch(jobManagementServiceProvider);
   await service.initialize();
   return service.searchApplications(query);
 });
 
 // Notifier Classes for State Management
-class InterviewsNotifier extends StateNotifier<AsyncValue<List<InterviewModel>>> {
+class InterviewsNotifier
+    extends StateNotifier<AsyncValue<List<InterviewModel>>> {
   InterviewsNotifier(this.ref) : super(const AsyncValue.loading()) {
     loadInterviews();
   }
@@ -263,7 +278,8 @@ class CVsNotifier extends StateNotifier<AsyncValue<List<CVModel>>> {
   }
 }
 
-class ApplicationsNotifier extends StateNotifier<AsyncValue<List<ApplicationModel>>> {
+class ApplicationsNotifier
+    extends StateNotifier<AsyncValue<List<ApplicationModel>>> {
   ApplicationsNotifier(this.ref) : super(const AsyncValue.loading()) {
     loadApplications();
   }
@@ -277,7 +293,8 @@ class ApplicationsNotifier extends StateNotifier<AsyncValue<List<ApplicationMode
       final service = ref.read(jobManagementServiceProvider);
       await service.initialize();
       final applications = await service.getApplications();
-      print('ApplicationsNotifier: ${applications.length} candidaturas carregadas');
+      print(
+          'ApplicationsNotifier: ${applications.length} candidaturas carregadas');
       for (final app in applications) {
         print('  - ${app.title} (${app.company})');
       }
@@ -290,7 +307,8 @@ class ApplicationsNotifier extends StateNotifier<AsyncValue<List<ApplicationMode
 
   Future<void> addApplication(ApplicationModel application) async {
     try {
-      print('ApplicationsNotifier: Adicionando candidatura: ${application.title}');
+      print(
+          'ApplicationsNotifier: Adicionando candidatura: ${application.title}');
       final service = ref.read(jobManagementServiceProvider);
       await service.saveApplication(application);
       print('ApplicationsNotifier: Candidatura salva, recarregando lista...');
@@ -324,26 +342,32 @@ class ApplicationsNotifier extends StateNotifier<AsyncValue<List<ApplicationMode
 }
 
 // Notifier Providers
-final interviewsNotifierProvider = StateNotifierProvider<InterviewsNotifier, AsyncValue<List<InterviewModel>>>((ref) {
+final interviewsNotifierProvider =
+    StateNotifierProvider<InterviewsNotifier, AsyncValue<List<InterviewModel>>>(
+        (ref) {
   return InterviewsNotifier(ref);
 });
 
-final cvsNotifierProvider = StateNotifierProvider<CVsNotifier, AsyncValue<List<CVModel>>>((ref) {
+final cvsNotifierProvider =
+    StateNotifierProvider<CVsNotifier, AsyncValue<List<CVModel>>>((ref) {
   return CVsNotifier(ref);
 });
 
-final applicationsNotifierProvider = StateNotifierProvider<ApplicationsNotifier, AsyncValue<List<ApplicationModel>>>((ref) {
+final applicationsNotifierProvider = StateNotifierProvider<ApplicationsNotifier,
+    AsyncValue<List<ApplicationModel>>>((ref) {
   return ApplicationsNotifier(ref);
 });
 
 // UI State Providers
 final selectedInterviewProvider = StateProvider<InterviewModel?>((ref) => null);
 final selectedCVProvider = StateProvider<CVModel?>((ref) => null);
-final selectedApplicationProvider = StateProvider<ApplicationModel?>((ref) => null);
+final selectedApplicationProvider =
+    StateProvider<ApplicationModel?>((ref) => null);
 
 // Filter Providers
 final interviewFilterProvider = StateProvider<InterviewType?>((ref) => null);
-final applicationFilterProvider = StateProvider<ApplicationStatus?>((ref) => null);
+final applicationFilterProvider =
+    StateProvider<ApplicationStatus?>((ref) => null);
 
 // Search Query Providers
 final interviewSearchQueryProvider = StateProvider<String>((ref) => '');
@@ -373,23 +397,61 @@ final emlParserServiceProvider = Provider<EmlParserService>((ref) {
   return EmlParserService();
 });
 
-final emailTrackingStorageServiceProvider = Provider<EmailTrackingStorageService>((ref) {
+final emailTrackingStorageServiceProvider =
+    Provider<EmailTrackingStorageService>((ref) {
   return EmailTrackingStorageService();
 });
 
 // Email Tracking Providers
-final emailTrackingProvider = FutureProvider<List<EmailTrackingModel>>((ref) async {
+final emailTrackingProvider =
+    FutureProvider<List<EmailTrackingModel>>((ref) async {
   final service = ref.watch(emailTrackingStorageServiceProvider);
   return service.getEmails();
 });
 
-final emailTrackingByApplicationProvider = FutureProvider.family<List<EmailTrackingModel>, String>((ref, applicationId) async {
+final emailTrackingByApplicationProvider =
+    FutureProvider.family<List<EmailTrackingModel>, String>(
+        (ref, applicationId) async {
   final service = ref.watch(emailTrackingStorageServiceProvider);
   return service.getEmailsByApplicationId(applicationId);
 });
 
+// Chart Data Providers
+final interviewsChartDataProvider = FutureProvider<List<FlSpot>>((ref) async {
+  final service = ref.watch(jobManagementServiceProvider);
+  await service.initialize();
+  return service.getInterviewsChartData();
+});
+
+final applicationsChartDataProvider = FutureProvider<List<FlSpot>>((ref) async {
+  final service = ref.watch(jobManagementServiceProvider);
+  await service.initialize();
+  return service.getApplicationsChartData();
+});
+
+final interviewsByTypePieDataProvider =
+    FutureProvider<List<PieChartSectionData>>((ref) async {
+  final service = ref.watch(jobManagementServiceProvider);
+  await service.initialize();
+  return service.getInterviewsByTypePieData();
+});
+
+final applicationsByStatusPieDataProvider =
+    FutureProvider<List<PieChartSectionData>>((ref) async {
+  final service = ref.watch(jobManagementServiceProvider);
+  await service.initialize();
+  return service.getApplicationsByStatusPieData();
+});
+
+final monthlyTrendDataProvider = FutureProvider<List<FlSpot>>((ref) async {
+  final service = ref.watch(jobManagementServiceProvider);
+  await service.initialize();
+  return service.getMonthlyTrendData();
+});
+
 // Email Tracking Notifier
-class EmailTrackingNotifier extends StateNotifier<AsyncValue<List<EmailTrackingModel>>> {
+class EmailTrackingNotifier
+    extends StateNotifier<AsyncValue<List<EmailTrackingModel>>> {
   EmailTrackingNotifier(this.ref) : super(const AsyncValue.loading());
 
   final Ref ref;
@@ -426,6 +488,7 @@ class EmailTrackingNotifier extends StateNotifier<AsyncValue<List<EmailTrackingM
   }
 }
 
-final emailTrackingNotifierProvider = StateNotifierProvider<EmailTrackingNotifier, AsyncValue<List<EmailTrackingModel>>>((ref) {
+final emailTrackingNotifierProvider = StateNotifierProvider<
+    EmailTrackingNotifier, AsyncValue<List<EmailTrackingModel>>>((ref) {
   return EmailTrackingNotifier(ref);
 });

@@ -214,7 +214,8 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
             children: [
               Row(
                 children: [
-                  if (cv.photoPath != null && File(cv.photoPath!).existsSync()) ...[
+                  if (cv.photoPath != null &&
+                      File(cv.photoPath!).existsSync()) ...[
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.file(
@@ -228,13 +229,15 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: cv.isHtmlCV 
+                        color: cv.isHtmlCV
                             ? Colors.orange.withOpacity(0.1)
                             : Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        cv.isHtmlCV ? PhosphorIcons.code() : PhosphorIcons.fileText(),
+                        cv.isHtmlCV
+                            ? PhosphorIcons.code()
+                            : PhosphorIcons.fileText(),
                         color: cv.isHtmlCV ? Colors.orange : Colors.green,
                         size: 20,
                       ),
@@ -448,8 +451,10 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
               if (cv.htmlFilePath != null)
                 Text('Arquivo: ${cv.htmlFilePath!.split('/').last}'),
               const SizedBox(height: 8),
-              Text('Criado em: ${DateFormat('dd/MM/yyyy').format(cv.createdAt)}'),
-              Text('Atualizado em: ${DateFormat('dd/MM/yyyy').format(cv.updatedAt)}'),
+              Text(
+                  'Criado em: ${DateFormat('dd/MM/yyyy').format(cv.createdAt)}'),
+              Text(
+                  'Atualizado em: ${DateFormat('dd/MM/yyyy').format(cv.updatedAt)}'),
               const SizedBox(height: 16),
               Text(
                 'Este é um CV HTML. O conteúdo original foi preservado e pode ser visualizado no navegador.',
@@ -576,7 +581,13 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
       MaterialPageRoute(
         builder: (context) => const CVFormScreen(),
       ),
-    );
+    ).then((result) {
+      if (result == true) {
+        ref.refresh(cvsNotifierProvider);
+        // Invalidar providers de gráficos para atualizar dados
+        ref.invalidate(jobStatisticsProvider);
+      }
+    });
   }
 
   void _openHtmlInBrowser(CVModel cv) async {
@@ -587,7 +598,7 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
         if (await file.exists()) {
           // No Windows, usa o comando start para abrir no navegador padrão
           await Process.run('start', [cv.htmlFilePath!], runInShell: true);
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('CV HTML aberto no navegador'),
@@ -635,7 +646,7 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              
+
               // Se é um CV HTML, eliminar o ficheiro
               if (cv.isHtmlCV && cv.htmlFilePath != null) {
                 try {
@@ -647,7 +658,7 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
                   // Silenciar erros de eliminação de ficheiros
                 }
               }
-              
+
               // Se tem foto, eliminar do diretório de fotos
               if (cv.photoPath != null) {
                 try {
@@ -659,8 +670,10 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
                   // Silenciar erros de eliminação de ficheiros
                 }
               }
-              
+
               ref.read(cvsNotifierProvider.notifier).deleteCV(cv.id);
+              // Invalidar providers de gráficos para atualizar dados
+              ref.invalidate(jobStatisticsProvider);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Currículo excluído com sucesso'),

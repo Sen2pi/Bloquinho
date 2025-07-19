@@ -423,18 +423,23 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
         Row(
           children: [
             Expanded(
-              child: JobChartWidget(
-                title: 'Entrevistas (Últimos 7 dias)',
-                data: _generateSampleData(),
-                lineColor: Colors.blue,
-                fillColor: Colors.blue,
-                isDarkMode: isDarkMode,
-                subtitle: 'Tendência semanal',
-              ),
+              child: _buildInterviewsChart(isDarkMode),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: _buildPieChart(isDarkMode),
+              child: _buildApplicationsChart(isDarkMode),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildInterviewsPieChart(isDarkMode),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildApplicationsPieChart(isDarkMode),
             ),
           ],
         ),
@@ -442,57 +447,173 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
     );
   }
 
-  List<FlSpot> _generateSampleData() {
-    return [
-      const FlSpot(0, 2),
-      const FlSpot(1, 3),
-      const FlSpot(2, 1),
-      const FlSpot(3, 4),
-      const FlSpot(4, 2),
-      const FlSpot(5, 5),
-      const FlSpot(6, 3),
-    ];
+  Widget _buildInterviewsChart(bool isDarkMode) {
+    final interviewsDataAsync = ref.watch(interviewsChartDataProvider);
+
+    return interviewsDataAsync.when(
+      data: (data) => JobChartWidget(
+        title: 'Entrevistas (Últimos 7 dias)',
+        data: data,
+        lineColor: Colors.blue,
+        fillColor: Colors.blue,
+        isDarkMode: isDarkMode,
+        subtitle: 'Tendência semanal',
+      ),
+      loading: () => Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
+          ),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            'Erro ao carregar dados',
+            style: TextStyle(color: Colors.red),
+          ),
+        ),
+      ),
+    );
   }
 
-  Widget _buildPieChart(bool isDarkMode) {
-    return JobPieChartWidget(
-      title: 'Distribuição por Tipo',
-      sections: [
-        PieChartSectionData(
-          color: Colors.blue,
-          value: 40,
-          title: 'Técnica\n40%',
-          radius: 50,
-          titleStyle: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+  Widget _buildApplicationsChart(bool isDarkMode) {
+    final applicationsDataAsync = ref.watch(applicationsChartDataProvider);
+
+    return applicationsDataAsync.when(
+      data: (data) => JobChartWidget(
+        title: 'Candidaturas (Últimos 7 dias)',
+        data: data,
+        lineColor: Colors.orange,
+        fillColor: Colors.orange,
+        isDarkMode: isDarkMode,
+        subtitle: 'Tendência semanal',
+      ),
+      loading: () => Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
           ),
         ),
-        PieChartSectionData(
-          color: Colors.green,
-          value: 30,
-          title: 'RH\n30%',
-          radius: 50,
-          titleStyle: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+        child: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
           ),
         ),
-        PieChartSectionData(
-          color: Colors.orange,
-          value: 30,
-          title: 'Team Lead\n30%',
-          radius: 50,
-          titleStyle: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+        child: Center(
+          child: Text(
+            'Erro ao carregar dados',
+            style: TextStyle(color: Colors.red),
           ),
         ),
-      ],
-      isDarkMode: isDarkMode,
+      ),
+    );
+  }
+
+  Widget _buildInterviewsPieChart(bool isDarkMode) {
+    final pieDataAsync = ref.watch(interviewsByTypePieDataProvider);
+
+    return pieDataAsync.when(
+      data: (sections) => JobPieChartWidget(
+        title: 'Entrevistas por Tipo',
+        sections: sections,
+        isDarkMode: isDarkMode,
+      ),
+      loading: () => Container(
+        height: 150,
+        decoration: BoxDecoration(
+          color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
+          ),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Container(
+        height: 150,
+        decoration: BoxDecoration(
+          color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            'Erro ao carregar dados',
+            style: TextStyle(color: Colors.red),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildApplicationsPieChart(bool isDarkMode) {
+    final pieDataAsync = ref.watch(applicationsByStatusPieDataProvider);
+
+    return pieDataAsync.when(
+      data: (sections) => JobPieChartWidget(
+        title: 'Candidaturas por Status',
+        sections: sections,
+        isDarkMode: isDarkMode,
+      ),
+      loading: () => Container(
+        height: 150,
+        decoration: BoxDecoration(
+          color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
+          ),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Container(
+        height: 150,
+        decoration: BoxDecoration(
+          color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            'Erro ao carregar dados',
+            style: TextStyle(color: Colors.red),
+          ),
+        ),
+      ),
     );
   }
 
@@ -797,5 +918,15 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
         backgroundColor: Colors.orange,
       ),
     );
+  }
+
+  void _refreshChartData() {
+    // Invalidar todos os providers de gráficos para forçar reload
+    ref.invalidate(interviewsChartDataProvider);
+    ref.invalidate(applicationsChartDataProvider);
+    ref.invalidate(interviewsByTypePieDataProvider);
+    ref.invalidate(applicationsByStatusPieDataProvider);
+    ref.invalidate(monthlyTrendDataProvider);
+    ref.invalidate(jobStatisticsProvider);
   }
 }

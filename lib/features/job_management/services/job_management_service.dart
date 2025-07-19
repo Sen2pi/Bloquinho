@@ -11,6 +11,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:bloquinho/core/services/workspace_storage_service.dart';
 import 'package:bloquinho/core/services/data_directory_service.dart';
 
@@ -22,13 +24,15 @@ import 'email_tracking_storage_service.dart';
 class JobManagementService {
   static const String _componentName = 'job_management';
 
-  static final JobManagementService _instance = JobManagementService._internal();
+  static final JobManagementService _instance =
+      JobManagementService._internal();
   factory JobManagementService() => _instance;
   JobManagementService._internal();
 
   final Uuid _uuid = const Uuid();
   final WorkspaceStorageService _workspaceStorage = WorkspaceStorageService();
-  final EmailTrackingStorageService _emailTrackingService = EmailTrackingStorageService();
+  final EmailTrackingStorageService _emailTrackingService =
+      EmailTrackingStorageService();
 
   bool _isInitialized = false;
   String? _currentWorkspaceId;
@@ -65,16 +69,16 @@ class JobManagementService {
     try {
       final data = await _workspaceStorage.loadWorkspaceData(_componentName);
       if (data == null) return [];
-      
+
       final interviews = <InterviewModel>[];
       final interviewsData = data['interviews'] as List? ?? [];
-      
+
       for (final interviewData in interviewsData) {
         if (interviewData is Map<String, dynamic>) {
           interviews.add(InterviewModel.fromJson(interviewData));
         }
       }
-      
+
       return interviews;
     } catch (e) {
       if (kDebugMode) {
@@ -96,26 +100,28 @@ class JobManagementService {
   Future<void> saveInterview(InterviewModel interview) async {
     await _ensureInitialized();
     try {
-      final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
-      
+      final data =
+          await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
+
       final interviews = <Map<String, dynamic>>[];
       final interviewsData = data['interviews'] as List? ?? [];
-      
+
       // Carregar entrevistas existentes
       for (final interviewData in interviewsData) {
         if (interviewData is Map<String, dynamic>) {
           interviews.add(interviewData);
         }
       }
-      
+
       // Atualizar ou adicionar entrevista
-      final existingIndex = interviews.indexWhere((i) => i['id'] == interview.id);
+      final existingIndex =
+          interviews.indexWhere((i) => i['id'] == interview.id);
       if (existingIndex != -1) {
         interviews[existingIndex] = interview.toJson();
       } else {
         interviews.add(interview.toJson());
       }
-      
+
       // Salvar de volta
       data['interviews'] = interviews;
       await _workspaceStorage.saveWorkspaceData(_componentName, data);
@@ -127,18 +133,20 @@ class JobManagementService {
   Future<void> deleteInterview(String id) async {
     await _ensureInitialized();
     try {
-      final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
-      
+      final data =
+          await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
+
       final interviews = <Map<String, dynamic>>[];
       final interviewsData = data['interviews'] as List? ?? [];
-      
+
       // Carregar entrevistas existentes, excluindo a que deve ser deletada
       for (final interviewData in interviewsData) {
-        if (interviewData is Map<String, dynamic> && interviewData['id'] != id) {
+        if (interviewData is Map<String, dynamic> &&
+            interviewData['id'] != id) {
           interviews.add(interviewData);
         }
       }
-      
+
       // Salvar de volta
       data['interviews'] = interviews;
       await _workspaceStorage.saveWorkspaceData(_componentName, data);
@@ -158,7 +166,8 @@ class JobManagementService {
     return interviews.where((interview) => interview.type == type).toList();
   }
 
-  Future<List<InterviewModel>> getInterviewsByStatus(InterviewStatus status) async {
+  Future<List<InterviewModel>> getInterviewsByStatus(
+      InterviewStatus status) async {
     final interviews = await getInterviews();
     return interviews.where((interview) => interview.status == status).toList();
   }
@@ -170,16 +179,16 @@ class JobManagementService {
     try {
       final data = await _workspaceStorage.loadWorkspaceData(_componentName);
       if (data == null) return [];
-      
+
       final cvs = <CVModel>[];
       final cvsData = data['cvs'] as List? ?? [];
-      
+
       for (final cvData in cvsData) {
         if (cvData is Map<String, dynamic>) {
           cvs.add(CVModel.fromJson(cvData));
         }
       }
-      
+
       return cvs;
     } catch (e) {
       if (kDebugMode) {
@@ -201,18 +210,19 @@ class JobManagementService {
   Future<void> saveCV(CVModel cv) async {
     await _ensureInitialized();
     try {
-      final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
-      
+      final data =
+          await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
+
       final cvs = <Map<String, dynamic>>[];
       final cvsData = data['cvs'] as List? ?? [];
-      
+
       // Carregar CVs existentes
       for (final cvData in cvsData) {
         if (cvData is Map<String, dynamic>) {
           cvs.add(cvData);
         }
       }
-      
+
       // Atualizar ou adicionar CV
       final existingIndex = cvs.indexWhere((c) => c['id'] == cv.id);
       if (existingIndex != -1) {
@@ -220,7 +230,7 @@ class JobManagementService {
       } else {
         cvs.add(cv.toJson());
       }
-      
+
       // Salvar de volta
       data['cvs'] = cvs;
       await _workspaceStorage.saveWorkspaceData(_componentName, data);
@@ -232,18 +242,19 @@ class JobManagementService {
   Future<void> deleteCV(String id) async {
     await _ensureInitialized();
     try {
-      final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
-      
+      final data =
+          await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
+
       final cvs = <Map<String, dynamic>>[];
       final cvsData = data['cvs'] as List? ?? [];
-      
+
       // Carregar CVs existentes, excluindo o que deve ser deletado
       for (final cvData in cvsData) {
         if (cvData is Map<String, dynamic> && cvData['id'] != id) {
           cvs.add(cvData);
         }
       }
-      
+
       // Salvar de volta
       data['cvs'] = cvs;
       await _workspaceStorage.saveWorkspaceData(_componentName, data);
@@ -263,25 +274,28 @@ class JobManagementService {
         print('JobManagementService: Nenhum dado encontrado');
         return [];
       }
-      
+
       final applications = <ApplicationModel>[];
       final applicationsData = data['applications'] as List? ?? [];
-      
-      print('JobManagementService: Dados brutos encontrados: ${applicationsData.length} itens');
-      
+
+      print(
+          'JobManagementService: Dados brutos encontrados: ${applicationsData.length} itens');
+
       for (final appData in applicationsData) {
         if (appData is Map<String, dynamic>) {
           try {
             final application = ApplicationModel.fromJson(appData);
             applications.add(application);
-            print('JobManagementService: Candidatura carregada: ${application.title} (${application.company})');
+            print(
+                'JobManagementService: Candidatura carregada: ${application.title} (${application.company})');
           } catch (e) {
             print('JobManagementService: Erro ao carregar candidatura: $e');
           }
         }
       }
-      
-      print('JobManagementService: Total de candidaturas carregadas: ${applications.length}');
+
+      print(
+          'JobManagementService: Total de candidaturas carregadas: ${applications.length}');
       return applications;
     } catch (e) {
       print('JobManagementService: Erro ao carregar candidaturas: $e');
@@ -302,32 +316,37 @@ class JobManagementService {
     await _ensureInitialized();
     try {
       print('JobManagementService: Salvando candidatura ${application.title}');
-      final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
-      
+      final data =
+          await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
+
       final applications = <Map<String, dynamic>>[];
       final applicationsData = data['applications'] as List? ?? [];
-      
+
       // Carregar candidaturas existentes
       for (final appData in applicationsData) {
         if (appData is Map<String, dynamic>) {
           applications.add(appData);
         }
       }
-      
-      print('JobManagementService: ${applications.length} candidaturas existentes');
-      
+
+      print(
+          'JobManagementService: ${applications.length} candidaturas existentes');
+
       // Atualizar ou adicionar candidatura
-      final existingIndex = applications.indexWhere((a) => a['id'] == application.id);
+      final existingIndex =
+          applications.indexWhere((a) => a['id'] == application.id);
       if (existingIndex != -1) {
-        print('JobManagementService: Atualizando candidatura existente no índice $existingIndex');
+        print(
+            'JobManagementService: Atualizando candidatura existente no índice $existingIndex');
         applications[existingIndex] = application.toJson();
       } else {
         print('JobManagementService: Adicionando nova candidatura');
         applications.add(application.toJson());
       }
-      
-      print('JobManagementService: Agora temos ${applications.length} candidaturas');
-      
+
+      print(
+          'JobManagementService: Agora temos ${applications.length} candidaturas');
+
       // Salvar de volta
       data['applications'] = applications;
       await _workspaceStorage.saveWorkspaceData(_componentName, data);
@@ -343,19 +362,20 @@ class JobManagementService {
     try {
       // Primeiro, remover todos os emails associados à candidatura
       await _emailTrackingService.deleteEmailsByApplicationId(id);
-      
-      final data = await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
-      
+
+      final data =
+          await _workspaceStorage.loadWorkspaceData(_componentName) ?? {};
+
       final applications = <Map<String, dynamic>>[];
       final applicationsData = data['applications'] as List? ?? [];
-      
+
       // Carregar candidaturas existentes, excluindo a que deve ser deletada
       for (final appData in applicationsData) {
         if (appData is Map<String, dynamic> && appData['id'] != id) {
           applications.add(appData);
         }
       }
-      
+
       // Salvar de volta
       data['applications'] = applications;
       await _workspaceStorage.saveWorkspaceData(_componentName, data);
@@ -364,7 +384,8 @@ class JobManagementService {
     }
   }
 
-  Future<List<ApplicationModel>> getApplicationsByStatus(ApplicationStatus status) async {
+  Future<List<ApplicationModel>> getApplicationsByStatus(
+      ApplicationStatus status) async {
     final applications = await getApplications();
     return applications.where((app) => app.status == status).toList();
   }
@@ -384,27 +405,30 @@ class JobManagementService {
     // Interview statistics
     final interviewsByType = <InterviewType, int>{};
     final interviewsByStatus = <InterviewStatus, int>{};
-    
+
     for (final interview in interviews) {
-      interviewsByType[interview.type] = (interviewsByType[interview.type] ?? 0) + 1;
-      interviewsByStatus[interview.status] = (interviewsByStatus[interview.status] ?? 0) + 1;
+      interviewsByType[interview.type] =
+          (interviewsByType[interview.type] ?? 0) + 1;
+      interviewsByStatus[interview.status] =
+          (interviewsByStatus[interview.status] ?? 0) + 1;
     }
 
     // Application statistics
     final applicationsByStatus = <ApplicationStatus, int>{};
-    
+
     for (final application in applications) {
-      applicationsByStatus[application.status] = (applicationsByStatus[application.status] ?? 0) + 1;
+      applicationsByStatus[application.status] =
+          (applicationsByStatus[application.status] ?? 0) + 1;
     }
 
     // Monthly statistics
     final now = DateTime.now();
     final thisMonth = DateTime(now.year, now.month);
-    
+
     final interviewsThisMonth = interviews.where((interview) {
       return interview.dateTime.isAfter(thisMonth);
     }).length;
-    
+
     final applicationsThisMonth = applications.where((app) {
       return app.appliedDate.isAfter(thisMonth);
     }).length;
@@ -422,9 +446,193 @@ class JobManagementService {
     };
   }
 
+  // Chart Data Methods
+
+  Future<List<FlSpot>> getInterviewsChartData() async {
+    final interviews = await getInterviews();
+    final now = DateTime.now();
+    final spots = <FlSpot>[];
+
+    // Últimos 7 dias
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final dayStart = DateTime(date.year, date.month, date.day);
+      final dayEnd = dayStart.add(const Duration(days: 1));
+
+      final interviewsOnDay = interviews.where((interview) {
+        return interview.dateTime.isAfter(dayStart) &&
+            interview.dateTime.isBefore(dayEnd);
+      }).length;
+
+      spots.add(FlSpot((6 - i).toDouble(), interviewsOnDay.toDouble()));
+    }
+
+    return spots;
+  }
+
+  Future<List<FlSpot>> getApplicationsChartData() async {
+    final applications = await getApplications();
+    final now = DateTime.now();
+    final spots = <FlSpot>[];
+
+    // Últimos 7 dias
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final dayStart = DateTime(date.year, date.month, date.day);
+      final dayEnd = dayStart.add(const Duration(days: 1));
+
+      final applicationsOnDay = applications.where((app) {
+        return app.appliedDate.isAfter(dayStart) &&
+            app.appliedDate.isBefore(dayEnd);
+      }).length;
+
+      spots.add(FlSpot((6 - i).toDouble(), applicationsOnDay.toDouble()));
+    }
+
+    return spots;
+  }
+
+  Future<List<PieChartSectionData>> getInterviewsByTypePieData() async {
+    final interviews = await getInterviews();
+    final typeCounts = <InterviewType, int>{};
+
+    for (final interview in interviews) {
+      typeCounts[interview.type] = (typeCounts[interview.type] ?? 0) + 1;
+    }
+
+    final total = interviews.length;
+    if (total == 0) return [];
+
+    final sections = <PieChartSectionData>[];
+    final colors = [Colors.blue, Colors.green, Colors.orange];
+    int colorIndex = 0;
+
+    typeCounts.forEach((type, count) {
+      final percentage = (count / total * 100).round();
+      final label = _getInterviewTypeLabel(type);
+
+      sections.add(PieChartSectionData(
+        color: colors[colorIndex % colors.length],
+        value: count.toDouble(),
+        title: '$label\n$percentage%',
+        radius: 50,
+        titleStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ));
+      colorIndex++;
+    });
+
+    return sections;
+  }
+
+  Future<List<PieChartSectionData>> getApplicationsByStatusPieData() async {
+    final applications = await getApplications();
+    final statusCounts = <ApplicationStatus, int>{};
+
+    for (final application in applications) {
+      statusCounts[application.status] =
+          (statusCounts[application.status] ?? 0) + 1;
+    }
+
+    final total = applications.length;
+    if (total == 0) return [];
+
+    final sections = <PieChartSectionData>[];
+    final colors = [
+      Colors.blue,
+      Colors.orange,
+      Colors.purple,
+      Colors.red,
+      Colors.green,
+      Colors.grey
+    ];
+    int colorIndex = 0;
+
+    statusCounts.forEach((status, count) {
+      final percentage = (count / total * 100).round();
+      final label = _getApplicationStatusLabel(status);
+
+      sections.add(PieChartSectionData(
+        color: colors[colorIndex % colors.length],
+        value: count.toDouble(),
+        title: '$label\n$percentage%',
+        radius: 50,
+        titleStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ));
+      colorIndex++;
+    });
+
+    return sections;
+  }
+
+  Future<List<FlSpot>> getMonthlyTrendData() async {
+    final interviews = await getInterviews();
+    final applications = await getApplications();
+    final now = DateTime.now();
+    final spots = <FlSpot>[];
+
+    // Últimos 6 meses
+    for (int i = 5; i >= 0; i--) {
+      final month = DateTime(now.year, now.month - i);
+      final monthStart = DateTime(month.year, month.month, 1);
+      final monthEnd = DateTime(month.year, month.month + 1, 1);
+
+      final interviewsInMonth = interviews.where((interview) {
+        return interview.dateTime.isAfter(monthStart) &&
+            interview.dateTime.isBefore(monthEnd);
+      }).length;
+
+      final applicationsInMonth = applications.where((app) {
+        return app.appliedDate.isAfter(monthStart) &&
+            app.appliedDate.isBefore(monthEnd);
+      }).length;
+
+      spots.add(FlSpot((5 - i).toDouble(),
+          (interviewsInMonth + applicationsInMonth).toDouble()));
+    }
+
+    return spots;
+  }
+
+  String _getInterviewTypeLabel(InterviewType type) {
+    switch (type) {
+      case InterviewType.rh:
+        return 'RH';
+      case InterviewType.technical:
+        return 'Técnica';
+      case InterviewType.teamLead:
+        return 'Team Lead';
+    }
+  }
+
+  String _getApplicationStatusLabel(ApplicationStatus status) {
+    switch (status) {
+      case ApplicationStatus.applied:
+        return 'Aplicada';
+      case ApplicationStatus.inReview:
+        return 'Em Revisão';
+      case ApplicationStatus.interviewScheduled:
+        return 'Entrevista';
+      case ApplicationStatus.rejected:
+        return 'Rejeitada';
+      case ApplicationStatus.accepted:
+        return 'Aceita';
+      case ApplicationStatus.withdrawn:
+        return 'Retirada';
+    }
+  }
+
   // Link Management
 
-  Future<void> linkInterviewToApplication(String interviewId, String applicationId) async {
+  Future<void> linkInterviewToApplication(
+      String interviewId, String applicationId) async {
     final interview = await getInterview(interviewId);
     if (interview != null) {
       final updatedInterview = interview.copyWith(applicationId: applicationId);
@@ -436,7 +644,8 @@ class JobManagementService {
       final updatedIds = List<String>.from(application.interviewIds);
       if (!updatedIds.contains(interviewId)) {
         updatedIds.add(interviewId);
-        final updatedApplication = application.copyWith(interviewIds: updatedIds);
+        final updatedApplication =
+            application.copyWith(interviewIds: updatedIds);
         await saveApplication(updatedApplication);
       }
     }
@@ -465,33 +674,34 @@ class JobManagementService {
   Future<List<InterviewModel>> searchInterviews(String query) async {
     final interviews = await getInterviews();
     final lowercaseQuery = query.toLowerCase();
-    
+
     return interviews.where((interview) {
       return interview.title.toLowerCase().contains(lowercaseQuery) ||
-             interview.company.toLowerCase().contains(lowercaseQuery) ||
-             interview.description?.toLowerCase().contains(lowercaseQuery) == true;
+          interview.company.toLowerCase().contains(lowercaseQuery) ||
+          interview.description?.toLowerCase().contains(lowercaseQuery) == true;
     }).toList();
   }
 
   Future<List<CVModel>> searchCVs(String query) async {
     final cvs = await getCVs();
     final lowercaseQuery = query.toLowerCase();
-    
+
     return cvs.where((cv) {
       return cv.name.toLowerCase().contains(lowercaseQuery) ||
-             cv.targetPosition?.toLowerCase().contains(lowercaseQuery) == true ||
-             cv.skills.any((skill) => skill.toLowerCase().contains(lowercaseQuery));
+          cv.targetPosition?.toLowerCase().contains(lowercaseQuery) == true ||
+          cv.skills
+              .any((skill) => skill.toLowerCase().contains(lowercaseQuery));
     }).toList();
   }
 
   Future<List<ApplicationModel>> searchApplications(String query) async {
     final applications = await getApplications();
     final lowercaseQuery = query.toLowerCase();
-    
+
     return applications.where((app) {
       return app.title.toLowerCase().contains(lowercaseQuery) ||
-             app.company.toLowerCase().contains(lowercaseQuery) ||
-             app.description?.toLowerCase().contains(lowercaseQuery) == true;
+          app.company.toLowerCase().contains(lowercaseQuery) ||
+          app.description?.toLowerCase().contains(lowercaseQuery) == true;
     }).toList();
   }
 
@@ -523,7 +733,7 @@ class JobManagementService {
   Future<void> importData(String jsonData) async {
     try {
       final data = jsonDecode(jsonData);
-      
+
       // Import interviews
       if (data['interviews'] != null) {
         for (final interviewData in data['interviews']) {
@@ -531,7 +741,7 @@ class JobManagementService {
           await saveInterview(interview);
         }
       }
-      
+
       // Import CVs
       if (data['cvs'] != null) {
         for (final cvData in data['cvs']) {
@@ -539,7 +749,7 @@ class JobManagementService {
           await saveCV(cv);
         }
       }
-      
+
       // Import applications
       if (data['applications'] != null) {
         for (final applicationData in data['applications']) {
