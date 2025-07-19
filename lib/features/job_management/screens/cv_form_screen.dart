@@ -7,10 +7,12 @@
  * Commercial use prohibited without permission.
  */
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/providers/language_provider.dart';
@@ -18,6 +20,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../models/cv_model.dart';
 import '../providers/job_management_provider.dart';
+import '../services/html_cv_parser.dart';
+import '../services/html_storage_service.dart';
 
 class CVFormScreen extends ConsumerStatefulWidget {
   final CVModel? cv; // null para criar novo, não null para editar
@@ -42,12 +46,18 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
   final _skillsController = TextEditingController();
   final _languagesController = TextEditingController();
   final _certificationsController = TextEditingController();
+  final _htmlInputController = TextEditingController();
 
   List<WorkExperience> _experiences = [];
   List<Education> _education = [];
   List<Project> _projects = [];
 
   bool _isLoading = false;
+  bool _showHtmlInput = false;
+  String? _selectedFileName;
+  bool _isHtmlMode = false;
+  String? _htmlContent;
+  final _htmlStorageService = HtmlStorageService();
 
   @override
   void initState() {
@@ -71,25 +81,36 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
     _skillsController.dispose();
     _languagesController.dispose();
     _certificationsController.dispose();
+    _htmlInputController.dispose();
     super.dispose();
   }
 
   void _loadCVData(CVModel cv) {
-    _nameController.text = cv.name;
-    _targetPositionController.text = cv.targetPosition ?? '';
-    _emailController.text = cv.email ?? '';
-    _phoneController.text = cv.phone ?? '';
-    _addressController.text = cv.address ?? '';
-    _linkedinController.text = cv.linkedin ?? '';
-    _githubController.text = cv.github ?? '';
-    _websiteController.text = cv.website ?? '';
-    _personalSummaryController.text = cv.personalSummary ?? '';
-    _skillsController.text = cv.skills.join(', ');
-    _languagesController.text = cv.languages.join(', ');
-    _certificationsController.text = cv.certifications.join(', ');
-    _experiences = List.from(cv.experiences);
-    _education = List.from(cv.education);
-    _projects = List.from(cv.projects);
+    if (cv.isHtmlCV) {
+      setState(() {
+        _isHtmlMode = true;
+        _htmlContent = cv.htmlContent;
+        _selectedFileName = cv.htmlFilePath != null
+            ? cv.htmlFilePath!.split('/').last
+            : 'cv_${cv.name}.html';
+      });
+    } else {
+      _nameController.text = cv.name;
+      _targetPositionController.text = cv.targetPosition ?? '';
+      _emailController.text = cv.email ?? '';
+      _phoneController.text = cv.phone ?? '';
+      _addressController.text = cv.address ?? '';
+      _linkedinController.text = cv.linkedin ?? '';
+      _githubController.text = cv.github ?? '';
+      _websiteController.text = cv.website ?? '';
+      _personalSummaryController.text = cv.personalSummary ?? '';
+      _skillsController.text = cv.skills.join(', ');
+      _languagesController.text = cv.languages.join(', ');
+      _certificationsController.text = cv.certifications.join(', ');
+      _experiences = List.from(cv.experiences);
+      _education = List.from(cv.education);
+      _projects = List.from(cv.projects);
+    }
   }
 
   @override
@@ -125,17 +146,29 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildBasicInfoSection(isDarkMode, strings),
+              _buildHtmlImportSection(isDarkMode, strings),
               const SizedBox(height: 24),
-              _buildContactInfoSection(isDarkMode, strings),
-              const SizedBox(height: 24),
-              _buildExperienceSection(isDarkMode, strings),
-              const SizedBox(height: 24),
-              _buildEducationSection(isDarkMode, strings),
-              const SizedBox(height: 24),
-              _buildProjectsSection(isDarkMode, strings),
-              const SizedBox(height: 24),
-              _buildSkillsSection(isDarkMode, strings),
+              if (_isHtmlMode) ...[
+                _buildHtmlNameSection(isDarkMode, strings),
+                const SizedBox(height: 24),
+                _buildHtmlPreviewSection(isDarkMode, strings),
+                const SizedBox(height: 24),
+                _buildHtmlActionsSection(isDarkMode, strings),
+              ] else ...[
+                _buildBasicInfoSection(isDarkMode, strings),
+                const SizedBox(height: 24),
+                _buildContactInfoSection(isDarkMode, strings),
+                const SizedBox(height: 24),
+                _buildExperienceSection(isDarkMode, strings),
+                const SizedBox(height: 24),
+                _buildEducationSection(isDarkMode, strings),
+                const SizedBox(height: 24),
+                _buildProjectsSection(isDarkMode, strings),
+                const SizedBox(height: 24),
+                _buildSkillsSection(isDarkMode, strings),
+                const SizedBox(height: 24),
+                _buildPreviewSection(isDarkMode, strings),
+              ],
               const SizedBox(height: 32),
               _buildSaveButton(isDarkMode, strings),
             ],
@@ -637,6 +670,398 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
     );
   }
 
+  Widget _buildHtmlImportSection(bool isDarkMode, AppStrings strings) {
+    return Card(
+      color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Importar CV HTML',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isHtmlMode ? null : _pickHtmlFile,
+                    icon: const Icon(Icons.upload_file),
+                    label: Text(_selectedFileName ?? 'Selecionar arquivo HTML'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton.icon(
+                  onPressed: _isHtmlMode
+                      ? null
+                      : () {
+                          setState(() {
+                            _showHtmlInput = !_showHtmlInput;
+                          });
+                        },
+                  icon: Icon(
+                      _showHtmlInput ? Icons.keyboard_hide : Icons.keyboard),
+                  label: Text(_showHtmlInput ? 'Ocultar' : 'Colar HTML'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+                if (_isHtmlMode) ...[
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _isHtmlMode = false;
+                        _htmlContent = null;
+                        _selectedFileName = null;
+                      });
+                    },
+                    icon: const Icon(Icons.close),
+                    label: const Text('Modo Normal'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (_showHtmlInput) ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _htmlInputController,
+                decoration: const InputDecoration(
+                  labelText: 'Cole o código HTML do CV aqui',
+                  border: OutlineInputBorder(),
+                  hintText: '<html>...</html>',
+                ),
+                maxLines: 8,
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _parseHtmlFromText,
+                  icon: const Icon(Icons.transform),
+                  label: const Text('Processar HTML'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPreviewSection(bool isDarkMode, AppStrings strings) {
+    return Card(
+      color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Visualização do CV',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: isDarkMode ? Colors.grey[600]! : Colors.grey[300]!,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                color: isDarkMode ? Colors.grey[900] : Colors.white,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Cabeçalho do CV
+                  _buildCvHeader(),
+                  const SizedBox(height: 16),
+
+                  // Informações de contato
+                  if (_emailController.text.isNotEmpty ||
+                      _phoneController.text.isNotEmpty ||
+                      _addressController.text.isNotEmpty) ...[
+                    _buildCvContactInfo(),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Resumo pessoal
+                  if (_personalSummaryController.text.isNotEmpty) ...[
+                    _buildCvSection(
+                        'Resumo Pessoal', _personalSummaryController.text),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Experiências
+                  if (_experiences.isNotEmpty) ...[
+                    _buildCvExperiencesPreview(),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Educação
+                  if (_education.isNotEmpty) ...[
+                    _buildCvEducationPreview(),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Projetos
+                  if (_projects.isNotEmpty) ...[
+                    _buildCvProjectsPreview(),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Habilidades
+                  if (_skillsController.text.isNotEmpty) ...[
+                    _buildCvSection('Habilidades', _skillsController.text),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Idiomas
+                  if (_languagesController.text.isNotEmpty) ...[
+                    _buildCvSection('Idiomas', _languagesController.text),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCvHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_nameController.text.isNotEmpty)
+          Text(
+            _nameController.text,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        if (_targetPositionController.text.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            _targetPositionController.text,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildCvContactInfo() {
+    final contacts = <String>[];
+
+    if (_emailController.text.isNotEmpty) contacts.add(_emailController.text);
+    if (_phoneController.text.isNotEmpty) contacts.add(_phoneController.text);
+    if (_addressController.text.isNotEmpty)
+      contacts.add(_addressController.text);
+    if (_linkedinController.text.isNotEmpty)
+      contacts.add('LinkedIn: ${_linkedinController.text}');
+    if (_githubController.text.isNotEmpty)
+      contacts.add('GitHub: ${_githubController.text}');
+    if (_websiteController.text.isNotEmpty)
+      contacts.add('Website: ${_websiteController.text}');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Contato',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...contacts.map((contact) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(contact),
+            )),
+      ],
+    );
+  }
+
+  Widget _buildCvSection(String title, String content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(content),
+      ],
+    );
+  }
+
+  Widget _buildCvExperiencesPreview() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Experiência Profissional',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...(_experiences.take(3).map((exp) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${exp.position} - ${exp.company}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    '${DateFormat('MM/yyyy').format(exp.startDate)} - ${exp.endDate != null ? DateFormat('MM/yyyy').format(exp.endDate!) : 'Atual'}',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                  if (exp.description != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      exp.description!.length > 100
+                          ? '${exp.description!.substring(0, 100)}...'
+                          : exp.description!,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ],
+              ),
+            ))),
+        if (_experiences.length > 3)
+          Text(
+            'E mais ${_experiences.length - 3} experiência(s)...',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontStyle: FontStyle.italic,
+              fontSize: 12,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildCvEducationPreview() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Educação',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...(_education.take(2).map((edu) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${edu.degree} - ${edu.institution}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    DateFormat('yyyy').format(edu.startDate),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
+              ),
+            ))),
+        if (_education.length > 2)
+          Text(
+            'E mais ${_education.length - 2} formação(ões)...',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontStyle: FontStyle.italic,
+              fontSize: 12,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildCvProjectsPreview() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Projetos',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...(_projects.take(2).map((project) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    project.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  if (project.description != null)
+                    Text(
+                      project.description!.length > 60
+                          ? '${project.description!.substring(0, 60)}...'
+                          : project.description!,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                ],
+              ),
+            ))),
+        if (_projects.length > 2)
+          Text(
+            'E mais ${_projects.length - 2} projeto(s)...',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontStyle: FontStyle.italic,
+              fontSize: 12,
+            ),
+          ),
+      ],
+    );
+  }
+
   // Métodos para gerenciar experiências
   void _addExperience() {
     _showExperienceDialog();
@@ -653,17 +1078,22 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
   }
 
   void _showExperienceDialog({WorkExperience? experience, int? index}) {
-    final companyController = TextEditingController(text: experience?.company ?? '');
-    final positionController = TextEditingController(text: experience?.position ?? '');
-    final locationController = TextEditingController(text: experience?.location ?? '');
-    final descriptionController = TextEditingController(text: experience?.description ?? '');
+    final companyController =
+        TextEditingController(text: experience?.company ?? '');
+    final positionController =
+        TextEditingController(text: experience?.position ?? '');
+    final locationController =
+        TextEditingController(text: experience?.location ?? '');
+    final descriptionController =
+        TextEditingController(text: experience?.description ?? '');
     DateTime startDate = experience?.startDate ?? DateTime.now();
     DateTime? endDate = experience?.endDate;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(experience != null ? 'Editar Experiência' : 'Nova Experiência'),
+        title: Text(
+            experience != null ? 'Editar Experiência' : 'Nova Experiência'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -698,7 +1128,9 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
                       onTap: () {
                         // TODO: Implementar seletor de data
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Seletor de data será implementado')),
+                          const SnackBar(
+                              content:
+                                  Text('Seletor de data será implementado')),
                         );
                       },
                     ),
@@ -706,13 +1138,15 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
                   Expanded(
                     child: ListTile(
                       title: const Text('Data de fim'),
-                      subtitle: Text(endDate != null 
+                      subtitle: Text(endDate != null
                           ? DateFormat('MM/yyyy').format(endDate)
                           : 'Atual'),
                       onTap: () {
                         // TODO: Implementar seletor de data
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Seletor de data será implementado')),
+                          const SnackBar(
+                              content:
+                                  Text('Seletor de data será implementado')),
                         );
                       },
                     ),
@@ -729,15 +1163,19 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              if (companyController.text.isNotEmpty && 
+              if (companyController.text.isNotEmpty &&
                   positionController.text.isNotEmpty) {
                 final newExperience = WorkExperience.create(
                   company: companyController.text,
                   position: positionController.text,
-                  location: locationController.text.isEmpty ? null : locationController.text,
+                  location: locationController.text.isEmpty
+                      ? null
+                      : locationController.text,
                   startDate: startDate,
                   endDate: endDate,
-                  description: descriptionController.text.isEmpty ? null : descriptionController.text,
+                  description: descriptionController.text.isEmpty
+                      ? null
+                      : descriptionController.text,
                 );
 
                 setState(() {
@@ -774,10 +1212,13 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
   }
 
   void _showEducationDialog({Education? education, int? index}) {
-    final institutionController = TextEditingController(text: education?.institution ?? '');
-    final degreeController = TextEditingController(text: education?.degree ?? '');
+    final institutionController =
+        TextEditingController(text: education?.institution ?? '');
+    final degreeController =
+        TextEditingController(text: education?.degree ?? '');
     final fieldController = TextEditingController(text: education?.field ?? '');
-    final descriptionController = TextEditingController(text: education?.description ?? '');
+    final descriptionController =
+        TextEditingController(text: education?.description ?? '');
     DateTime startDate = education?.startDate ?? DateTime.now();
     DateTime? endDate = education?.endDate;
 
@@ -819,7 +1260,9 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
                       onTap: () {
                         // TODO: Implementar seletor de data
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Seletor de data será implementado')),
+                          const SnackBar(
+                              content:
+                                  Text('Seletor de data será implementado')),
                         );
                       },
                     ),
@@ -827,13 +1270,15 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
                   Expanded(
                     child: ListTile(
                       title: const Text('Data de fim'),
-                      subtitle: Text(endDate != null 
+                      subtitle: Text(endDate != null
                           ? DateFormat('MM/yyyy').format(endDate)
                           : 'Atual'),
                       onTap: () {
                         // TODO: Implementar seletor de data
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Seletor de data será implementado')),
+                          const SnackBar(
+                              content:
+                                  Text('Seletor de data será implementado')),
                         );
                       },
                     ),
@@ -850,15 +1295,19 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              if (institutionController.text.isNotEmpty && 
+              if (institutionController.text.isNotEmpty &&
                   degreeController.text.isNotEmpty) {
                 final newEducation = Education.create(
                   institution: institutionController.text,
                   degree: degreeController.text,
-                  field: fieldController.text.isEmpty ? null : fieldController.text,
+                  field: fieldController.text.isEmpty
+                      ? null
+                      : fieldController.text,
                   startDate: startDate,
                   endDate: endDate,
-                  description: descriptionController.text.isEmpty ? null : descriptionController.text,
+                  description: descriptionController.text.isEmpty
+                      ? null
+                      : descriptionController.text,
                 );
 
                 setState(() {
@@ -970,7 +1419,342 @@ class _CVFormScreenState extends ConsumerState<CVFormScreen> {
     );
   }
 
+  Widget _buildHtmlNameSection(bool isDarkMode, AppStrings strings) {
+    return Card(
+      color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Nome do CV',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Nome do CV',
+                hintText: 'Ex: CV Karim Santos - Desenvolvedor',
+                border: OutlineInputBorder(),
+                helperText: 'Digite um nome para identificar este CV',
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Nome do CV é obrigatório';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHtmlPreviewSection(bool isDarkMode, AppStrings strings) {
+    return Card(
+      color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Preview do CV HTML',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            if (_htmlContent != null) ...[
+              Container(
+                height: 300,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: SelectableText(
+                      _htmlContent!,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: isDarkMode
+                            ? AppColors.darkTextPrimary
+                            : AppColors.lightTextPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ] else ...[
+              Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
+                  child: Text(
+                    'Nenhum conteúdo HTML carregado',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHtmlActionsSection(bool isDarkMode, AppStrings strings) {
+    return Card(
+      color: isDarkMode ? AppColors.darkSurface : AppColors.lightSurface,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Ações do CV HTML',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isHtmlMode ? null : _pickHtmlFile,
+                    icon: const Icon(Icons.upload_file),
+                    label: const Text('Carregar Arquivo HTML'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          isDarkMode ? AppColors.primary : AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isHtmlMode
+                        ? null
+                        : () {
+                            setState(() {
+                              _showHtmlInput = true;
+                            });
+                          },
+                    icon: const Icon(Icons.paste),
+                    label: const Text('Colar HTML'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          isDarkMode ? AppColors.primary : AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: _isHtmlMode
+                  ? () {
+                      setState(() {
+                        _isHtmlMode = false;
+                        _htmlContent = null;
+                        _selectedFileName = null;
+                        _showHtmlInput = false;
+                        _htmlInputController.clear();
+                      });
+                    }
+                  : null,
+              icon: const Icon(Icons.swap_horiz),
+              label: const Text('Voltar ao Modo Normal'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDarkMode ? Colors.orange : Colors.orange,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickHtmlFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['html', 'htm'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.single;
+        setState(() {
+          _selectedFileName = file.name;
+        });
+
+        String htmlContent;
+        if (file.bytes != null) {
+          htmlContent = String.fromCharCodes(file.bytes!);
+        } else if (file.path != null) {
+          final fileContent = File(file.path!);
+          htmlContent = await fileContent.readAsString();
+        } else {
+          throw Exception('Não foi possível ler o arquivo');
+        }
+        
+        await _processHtmlContent(htmlContent, file.name);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao carregar arquivo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _parseHtmlFromText() async {
+    if (_htmlInputController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, cole o código HTML primeiro'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    await _processHtmlContent(_htmlInputController.text, 'html_colado.html');
+  }
+
+  Future<void> _processHtmlContent(String htmlContent, String fileName) async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      setState(() {
+        _isHtmlMode = true;
+        _htmlContent = htmlContent;
+        _selectedFileName = fileName;
+        _showHtmlInput = false;
+        _htmlInputController.clear();
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('CV HTML carregado com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao processar HTML: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   Future<void> _saveCV() async {
+    if (_isHtmlMode) {
+      await _saveHtmlCV();
+    } else {
+      await _saveRegularCV();
+    }
+  }
+
+  Future<void> _saveHtmlCV() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_htmlContent == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nenhum conteúdo HTML foi carregado'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Salvar arquivo HTML no armazenamento local
+      final htmlFilePath = await _htmlStorageService.saveHtmlFile(_htmlContent!,
+          _selectedFileName ?? 'cv_${_nameController.text}.html');
+
+      final cv = CVModel.createHtml(
+        name: _nameController.text,
+        htmlContent: _htmlContent!,
+        htmlFilePath: htmlFilePath,
+      );
+
+      final service = ref.read(jobManagementServiceProvider);
+      await service.saveCV(cv);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.cv != null
+                ? 'CV HTML atualizado com sucesso!'
+                : 'CV HTML criado com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao salvar CV HTML: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _saveRegularCV() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {

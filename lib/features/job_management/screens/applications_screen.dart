@@ -50,6 +50,7 @@ class _ApplicationsScreenState extends ConsumerState<ApplicationsScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _createNewApplication(),
         backgroundColor: AppColors.primary,
+        heroTag: "applications_screen_fab",
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(

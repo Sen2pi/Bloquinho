@@ -25,7 +25,8 @@ import 'package:http/http.dart' as http;
 import 'latex_widget.dart';
 import 'mermaid_diagram_widget.dart';
 import 'page_link_badge.dart';
-import 'editable_table_widget.dart';
+import 'windows_database_table_widget.dart';
+import '../../../shared/providers/database_provider.dart';
 import '../../../core/utils/lru_cache.dart';
 import '../../../core/services/enhanced_markdown_parser.dart';
 import 'dart:typed_data';
@@ -1112,22 +1113,51 @@ class EnhancedMarkdownPreviewWidget extends ConsumerWidget {
     if (matches.isEmpty) return widgets;
 
     for (final match in matches) {
-      final tableIdOrName = match.group(1)!;
-
-      // Dados de exemplo - em produção, buscar dados reais da tabela por ID
-      final sampleData = [
-        ['Coluna 1', 'Coluna 2', 'Coluna 3'],
-        ['Dado 1', 'Dado 2', 'Dado 3'],
-        ['Dado 4', 'Dado 5', 'Dado 6'],
-      ];
+      final tableId = match.group(1)!;
 
       widgets.add(
-        EditableTableWidget(
-          tableName: tableIdOrName, // TODO: Buscar nome real da tabela por ID
-          data: sampleData, // TODO: Buscar dados reais da tabela por ID
-          onDataChanged: (newData) {
-            // TODO: Implementar salvamento dos dados da tabela
-            print('Dados da tabela alterados: $newData');
+        Consumer(
+          builder: (context, ref, _) {
+            final tableAsync = ref.watch(databaseTableProvider(tableId));
+            
+            return tableAsync.when(
+              data: (table) {
+                if (table == null) {
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Tabela não encontrada: $tableId',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  );
+                }
+                
+                return WindowsDatabaseTableWidget(
+                  tableId: tableId,
+                );
+              },
+              loading: () => Container(
+                padding: const EdgeInsets.all(12),
+                child: Text('Carregando tabela...', style: TextStyle(fontSize: 12)),
+              ),
+              error: (error, stack) => Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Erro ao carregar tabela: $error',
+                  style: TextStyle(color: Colors.red, fontSize: 12),
+                ),
+              ),
+            );
           },
         ),
       );
@@ -1461,21 +1491,76 @@ class TableElementBuilder extends MarkdownElementBuilder {
     final text = sanitizeUtf16(element.textContent);
 
     // Extrair ID da tabela do formato {{id}}
-    final tableIdOrName = text.replaceAll(RegExp(r'[{}]'), '');
+    final tableId = text.replaceAll(RegExp(r'[{}]'), '');
 
-    // Dados de exemplo - em produção, buscar dados reais da tabela por ID
-    final sampleData = [
-      ['Coluna 1', 'Coluna 2', 'Coluna 3'],
-      ['Dado 1', 'Dado 2', 'Dado 3'],
-      ['Dado 4', 'Dado 5', 'Dado 6'],
-    ];
-
-    return EditableTableWidget(
-      tableName: tableIdOrName, // TODO: Buscar nome real da tabela por ID
-      data: sampleData, // TODO: Buscar dados reais da tabela por ID
-      onDataChanged: (newData) {
-        // TODO: Implementar salvamento dos dados da tabela
-        print('Dados da tabela alterados: $newData');
+    return Consumer(
+      builder: (context, ref, _) {
+        final tableAsync = ref.watch(databaseTableProvider(tableId));
+        
+        return tableAsync.when(
+          data: (table) {
+            if (table == null) {
+              // Tabela não encontrada - mostrar placeholder
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.warning, color: Colors.red, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Tabela não encontrada: $tableId',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ],
+                ),
+              );
+            }
+            
+            return WindowsDatabaseTableWidget(
+              tableId: tableId,
+            );
+          },
+          loading: () => Container(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 8),
+                Text('Carregando tabela...', style: TextStyle(fontSize: 12)),
+              ],
+            ),
+          ),
+          error: (error, stack) => Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              border: Border.all(color: Colors.red.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error, color: Colors.red, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'Erro ao carregar tabela: $error',
+                  style: TextStyle(color: Colors.red, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        );
       },
     );
   }

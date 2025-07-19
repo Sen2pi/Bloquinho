@@ -51,6 +51,10 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
   BlocoCategory? _selectedCategory;
   int _selectedIndex = 0;
 
+  // Sistema de debounce para eventos de teclado
+  DateTime? _lastKeyEventTime;
+  static const Duration _keyEventDebounce = Duration(milliseconds: 50);
+
   @override
   void initState() {
     super.initState();
@@ -689,6 +693,25 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
       if (event is! RawKeyDownEvent) return;
       if (filteredBlocks.isEmpty) return;
 
+      // Sistema de debounce para evitar eventos duplicados
+      final now = DateTime.now();
+      if (_lastKeyEventTime != null &&
+          now.difference(_lastKeyEventTime!) < _keyEventDebounce) {
+        return;
+      }
+      _lastKeyEventTime = now;
+
+      // Verificar se o evento já foi processado
+      if (event is RawKeyDownEvent) {
+        // Ignorar eventos de teclas especiais que podem causar conflitos
+        if (event.physicalKey == PhysicalKeyboardKey.controlLeft ||
+            event.physicalKey == PhysicalKeyboardKey.controlRight ||
+            event.physicalKey == PhysicalKeyboardKey.shiftLeft ||
+            event.physicalKey == PhysicalKeyboardKey.shiftRight) {
+          return;
+        }
+      }
+
       switch (event.logicalKey) {
         case LogicalKeyboardKey.arrowDown:
           setState(() {
@@ -711,6 +734,8 @@ class _BlocoMenuWidgetState extends ConsumerState<BlocoMenuWidget> {
           break;
       }
     } catch (e) {
+      // Log do erro para debug
+      print('Erro no handler de teclado do menu: $e');
       // Fallback: reset selected index to prevent out-of-bounds errors
       if (filteredBlocks.isNotEmpty) {
         _selectedIndex = 0;

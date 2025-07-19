@@ -246,6 +246,9 @@ class CVModel {
   final List<String> certifications;
   final List<String> interviewIds;
   final String? pdfPath;
+  final String? htmlContent;
+  final String? htmlFilePath;
+  final bool isHtmlCV;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -269,6 +272,9 @@ class CVModel {
     required this.certifications,
     required this.interviewIds,
     this.pdfPath,
+    this.htmlContent,
+    this.htmlFilePath,
+    required this.isHtmlCV,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -292,6 +298,9 @@ class CVModel {
     List<String>? certifications,
     List<String>? interviewIds,
     String? pdfPath,
+    String? htmlContent,
+    String? htmlFilePath,
+    bool? isHtmlCV,
   }) {
     final now = DateTime.now();
     return CVModel(
@@ -314,6 +323,43 @@ class CVModel {
       certifications: certifications ?? [],
       interviewIds: interviewIds ?? [],
       pdfPath: pdfPath,
+      htmlContent: htmlContent,
+      htmlFilePath: htmlFilePath,
+      isHtmlCV: isHtmlCV ?? false,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
+  factory CVModel.createHtml({
+    required String name,
+    required String htmlContent,
+    String? htmlFilePath,
+  }) {
+    final now = DateTime.now();
+    return CVModel(
+      id: const Uuid().v4(),
+      name: name,
+      targetPosition: null,
+      aiIntroduction: null,
+      personalSummary: null,
+      email: null,
+      phone: null,
+      address: null,
+      linkedin: null,
+      github: null,
+      website: null,
+      experiences: [],
+      education: [],
+      projects: [],
+      skills: [],
+      languages: [],
+      certifications: [],
+      interviewIds: [],
+      pdfPath: null,
+      htmlContent: htmlContent,
+      htmlFilePath: htmlFilePath,
+      isHtmlCV: true,
       createdAt: now,
       updatedAt: now,
     );
@@ -344,6 +390,9 @@ class CVModel {
     List<String>? certifications,
     List<String>? interviewIds,
     String? pdfPath,
+    String? htmlContent,
+    String? htmlFilePath,
+    bool? isHtmlCV,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -367,6 +416,9 @@ class CVModel {
       certifications: certifications ?? this.certifications,
       interviewIds: interviewIds ?? this.interviewIds,
       pdfPath: pdfPath ?? this.pdfPath,
+      htmlContent: htmlContent ?? this.htmlContent,
+      htmlFilePath: htmlFilePath ?? this.htmlFilePath,
+      isHtmlCV: isHtmlCV ?? this.isHtmlCV,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );

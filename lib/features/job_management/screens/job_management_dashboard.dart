@@ -460,6 +460,7 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
       return FloatingActionButton(
         onPressed: _showQuickActionMenu,
         backgroundColor: AppColors.primary,
+        heroTag: "job_dashboard_fab",
         child: Icon(PhosphorIcons.plus(), color: Colors.white),
       );
     } else {
@@ -467,6 +468,7 @@ class _JobManagementDashboardState extends ConsumerState<JobManagementDashboard>
       return FloatingActionButton(
         onPressed: () => _handleTabSpecificAction(_currentIndex),
         backgroundColor: AppColors.primary,
+        heroTag: "job_tab_fab_$_currentIndex",
         child: Icon(PhosphorIcons.plus(), color: Colors.white),
       );
     }

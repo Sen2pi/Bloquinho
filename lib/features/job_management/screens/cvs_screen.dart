@@ -50,6 +50,7 @@ class _CVsScreenState extends ConsumerState<CVsScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _createNewCV(),
         backgroundColor: AppColors.primary,
+        heroTag: "cvs_screen_fab",
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(

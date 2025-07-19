@@ -98,6 +98,10 @@ class HtmlEnhancementParser {
     content = _processBackgroundColors(content);
     // Processar alinhamentos
     content = _processAlignments(content);
+    // Processar tabelas
+    content = _processTables(content);
+    // Processar páginas
+    content = _processPageLinks(content);
     // Processar elementos HTML matemáticos e especiais
     content = _processHtmlElements(content);
     // Processar combinações aninhadas
@@ -343,6 +347,28 @@ class HtmlEnhancementParser {
           return '<div style="text-align: $alignValue">$text</div>';
         }
         return match.group(0)!;
+      },
+    );
+  }
+
+  /// Processa tabelas {{tableId}}
+  static String _processTables(String content) {
+    return content.replaceAllMapped(
+      RegExp(r'\{\{([^}]+)\}\}'),
+      (match) {
+        final tableId = match.group(1)!;
+        return '<bloquinho-table id="$tableId"></bloquinho-table>';
+      },
+    );
+  }
+
+  /// Processa links de páginas [[pageId]]
+  static String _processPageLinks(String content) {
+    return content.replaceAllMapped(
+      RegExp(r'\[\[([^\]]+)\]\]'),
+      (match) {
+        final pageId = match.group(1)!;
+        return '<bloquinho-pagelink id="$pageId"></bloquinho-pagelink>';
       },
     );
   }

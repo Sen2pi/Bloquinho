@@ -27,7 +27,12 @@ import 'package:http/http.dart' as http;
 import 'latex_widget.dart';
 import 'mermaid_diagram_widget.dart'; // Adicionar import para WindowsMermaidDiagramWidget
 import 'page_link_badge.dart';
-import 'editable_table_widget.dart';
+import 'windows_database_table_widget.dart';
+import '../../../shared/providers/database_provider.dart';
+import '../providers/pages_provider.dart';
+import '../../../shared/providers/user_profile_provider.dart';
+import '../../../shared/providers/workspace_provider.dart';
+import '../screens/bloco_editor_screen.dart';
 import '../../../core/utils/lru_cache.dart';
 import '../../../core/services/enhanced_markdown_parser.dart';
 import 'dart:typed_data';
@@ -3558,9 +3563,9 @@ class BloquinhoLoaderPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-/// Inline syntax para PageLink [[pageId]]
+/// Inline syntax para PageLink <bloquinho-pagelink id="pageId"></bloquinho-pagelink>
 class PageLinkInlineSyntax extends md.InlineSyntax {
-  PageLinkInlineSyntax() : super(r'\[\[([^\]]+)\]\]');
+  PageLinkInlineSyntax() : super(r'<bloquinho-pagelink id="([^"]+)"></bloquinho-pagelink>');
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {
@@ -3571,9 +3576,9 @@ class PageLinkInlineSyntax extends md.InlineSyntax {
   }
 }
 
-/// Inline syntax para Table {{tableId}}
+/// Inline syntax para Table <bloquinho-table id="tableId"></bloquinho-table>
 class TableInlineSyntax extends md.InlineSyntax {
-  TableInlineSyntax() : super(r'\{\{([^}]+)\}\}');
+  TableInlineSyntax() : super(r'<bloquinho-table id="([^"]+)"></bloquinho-table>');
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {
@@ -3590,12 +3595,26 @@ class PageLinkElementBuilder extends MarkdownElementBuilder {
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
     final pageId = element.textContent;
 
-    return PageLinkBadge(
-      pageTitle: pageId, // Fallback se não encontrar por ID
-      pageId: pageId,
-      onTap: () {
-        // TODO: Implementar navegação para a página
-        print('Navegar para página: $pageId');
+    return Consumer(
+      builder: (context, ref, _) {
+        return PageLinkBadge(
+          pageTitle: pageId, // Fallback se não encontrar por ID
+          pageId: pageId,
+          onTap: () {
+            // Encontrar o BlocoEditorScreen no widget tree e usar sua navegação
+            try {
+              final editorState = context.findAncestorStateOfType<BlocoEditorScreenState>();
+              if (editorState != null) {
+                // Usar o método de navegação interno do editor
+                editorState.setPage(pageId);
+              } else {
+                print('BlocoEditorScreen não encontrado no widget tree');
+              }
+            } catch (e) {
+              print('Erro ao navegar para página: $e');
+            }
+          },
+        );
       },
     );
   }
@@ -3607,122 +3626,75 @@ class TableElementBuilder extends MarkdownElementBuilder {
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
     final tableId = element.textContent;
 
-    // Dados de exemplo - em produção, buscar dados reais da tabela por ID
-    final sampleData = [
-      ['Coluna 1', 'Coluna 2', 'Coluna 3'],
-      ['Dado 1', 'Dado 2', 'Dado 3'],
-      ['Dado 4', 'Dado 5', 'Dado 6'],
-    ];
-
-    return Builder(
-      builder: (context) => Container(
-        margin: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.grey[700]!
-                : Colors.grey[300]!,
+    return Consumer(
+      builder: (context, ref, _) {
+        final tableAsync = ref.watch(databaseTableProvider(tableId));
+        
+        return tableAsync.when(
+          data: (table) {
+            if (table == null) {
+              // Tabela não encontrada - mostrar placeholder
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.warning, color: Colors.red, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Tabela não encontrada: $tableId',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ],
+                ),
+              );
+            }
+            
+            return WindowsDatabaseTableWidget(
+              tableId: tableId,
+            );
+          },
+          loading: () => Container(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 8),
+                Text('Carregando tabela...', style: TextStyle(fontSize: 12)),
+              ],
+            ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+          error: (error, stack) => Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              border: Border.all(color: Colors.red.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header da tabela
-            Container(
-              height: 44,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[800]
-                    : Colors.grey[100],
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error, color: Colors.red, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'Erro ao carregar tabela: $error',
+                  style: TextStyle(color: Colors.red, fontSize: 12),
                 ),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[700]!
-                        : Colors.grey[300]!,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.table_chart,
-                    size: 16,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white70
-                        : Colors.grey[600],
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Tabela: $tableId', // TODO: Buscar nome real por ID
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white70
-                          : Colors.grey[700],
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
-            // Conteúdo da tabela
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Table(
-                border: TableBorder.all(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey[700]!
-                      : Colors.grey[300]!,
-                ),
-                children: sampleData.asMap().entries.map((entry) {
-                  final rowIndex = entry.key;
-                  final row = entry.value;
-                  final isHeader = rowIndex == 0;
-
-                  return TableRow(
-                    decoration: BoxDecoration(
-                      color: isHeader
-                          ? (Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey[800]
-                              : Colors.grey[50])
-                          : null,
-                    ),
-                    children: row.map((cell) {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          cell,
-                          style: TextStyle(
-                            fontWeight: isHeader
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

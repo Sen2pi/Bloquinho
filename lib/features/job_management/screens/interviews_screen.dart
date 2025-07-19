@@ -51,6 +51,7 @@ class _InterviewsScreenState extends ConsumerState<InterviewsScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _createNewInterview(),
         backgroundColor: AppColors.primary,
+        heroTag: "interviews_screen_fab",
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(

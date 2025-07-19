@@ -118,6 +118,9 @@ CVModel _$CVModelFromJson(Map<String, dynamic> json) => CVModel(
           .map((e) => e as String)
           .toList(),
       pdfPath: json['pdfPath'] as String?,
+      htmlContent: json['htmlContent'] as String?,
+      htmlFilePath: json['htmlFilePath'] as String?,
+      isHtmlCV: json['isHtmlCV'] as bool,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -142,6 +145,9 @@ Map<String, dynamic> _$CVModelToJson(CVModel instance) => <String, dynamic>{
       'certifications': instance.certifications,
       'interviewIds': instance.interviewIds,
       'pdfPath': instance.pdfPath,
+      'htmlContent': instance.htmlContent,
+      'htmlFilePath': instance.htmlFilePath,
+      'isHtmlCV': instance.isHtmlCV,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
     };
