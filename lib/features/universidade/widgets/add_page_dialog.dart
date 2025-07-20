@@ -102,6 +102,7 @@ class _AddPageDialogState extends State<AddPageDialog> {
                     }
                     return null;
                   },
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<TipoContextoPage>(
@@ -126,6 +127,7 @@ class _AddPageDialogState extends State<AddPageDialog> {
                   ),
                   enabled: widget.contextoId == null,
                   onChanged: (value) => _selectedContextoId = value.isEmpty ? null : value,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
                 const SizedBox(height: 16),
                 Column(
@@ -198,6 +200,7 @@ class _AddPageDialogState extends State<AddPageDialog> {
                     hintText: 'Conteúdo inicial da página...',
                   ),
                   maxLines: 10,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
               ],
             ),

@@ -69,6 +69,7 @@ class _AddCursoDialogState extends ConsumerState<AddCursoDialog> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) => value?.isEmpty == true ? 'Nome é obrigatório' : null,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
                 const SizedBox(height: 16),
                 universidadesAsync.when(
@@ -108,6 +109,7 @@ class _AddCursoDialogState extends ConsumerState<AddCursoDialog> {
                     labelText: 'Código do Curso',
                     border: OutlineInputBorder(),
                   ),
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -117,6 +119,7 @@ class _AddCursoDialogState extends ConsumerState<AddCursoDialog> {
                     border: OutlineInputBorder(),
                   ),
                   maxLines: 3,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
               ],
             ),

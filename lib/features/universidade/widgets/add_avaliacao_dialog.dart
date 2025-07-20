@@ -83,6 +83,7 @@ class _AddAvaliacaoDialogState extends ConsumerState<AddAvaliacaoDialog> {
                   ),
                   validator: (value) =>
                       value?.isEmpty == true ? 'Nome é obrigatório' : null,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
                 const SizedBox(height: 16),
                 unidadesAsync.when(
@@ -228,6 +229,7 @@ class _AddAvaliacaoDialogState extends ConsumerState<AddAvaliacaoDialog> {
                           border: OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.number,
+                        onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -246,6 +248,7 @@ class _AddAvaliacaoDialogState extends ConsumerState<AddAvaliacaoDialog> {
                             return 'Valor inválido';
                           return null;
                         },
+                        onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       ),
                     ),
                   ],
@@ -258,6 +261,7 @@ class _AddAvaliacaoDialogState extends ConsumerState<AddAvaliacaoDialog> {
                     border: OutlineInputBorder(),
                   ),
                   maxLines: 3,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
               ],
             ),

@@ -81,6 +81,7 @@ class _AddUnidadeCurricularDialogState
                   ),
                   validator: (value) =>
                       value?.isEmpty == true ? 'Nome é obrigatório' : null,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
                 const SizedBox(height: 16),
                 cursosAsync.when(
@@ -114,6 +115,7 @@ class _AddUnidadeCurricularDialogState
                           labelText: 'Código',
                           border: OutlineInputBorder(),
                         ),
+                        onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -154,6 +156,7 @@ class _AddUnidadeCurricularDialogState
                         controller: TextEditingController(
                           text: _creditos?.toString() ?? '',
                         ),
+                        onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -191,6 +194,7 @@ class _AddUnidadeCurricularDialogState
                           hintText: 'Ex: 15.5',
                           border: OutlineInputBorder(),
                         ),
+                        onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       ),
                     ),
                   ],
@@ -202,6 +206,7 @@ class _AddUnidadeCurricularDialogState
                     labelText: 'Professor',
                     border: OutlineInputBorder(),
                   ),
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -211,6 +216,7 @@ class _AddUnidadeCurricularDialogState
                     border: OutlineInputBorder(),
                   ),
                   maxLines: 3,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
               ],
             ),

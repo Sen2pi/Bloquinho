@@ -81,6 +81,7 @@ class _AddUniversidadeDialogState extends State<AddUniversidadeDialog> {
                     }
                     return null;
                   },
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -90,6 +91,7 @@ class _AddUniversidadeDialogState extends State<AddUniversidadeDialog> {
                     border: OutlineInputBorder(),
                     hintText: 'Ex: USP, UNICAMP',
                   ),
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -101,6 +103,7 @@ class _AddUniversidadeDialogState extends State<AddUniversidadeDialog> {
                           labelText: 'País',
                           border: OutlineInputBorder(),
                         ),
+                        onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -111,6 +114,7 @@ class _AddUniversidadeDialogState extends State<AddUniversidadeDialog> {
                           labelText: 'Cidade',
                           border: OutlineInputBorder(),
                         ),
+                        onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       ),
                     ),
                   ],
@@ -129,6 +133,7 @@ class _AddUniversidadeDialogState extends State<AddUniversidadeDialog> {
                     }
                     return null;
                   },
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -138,6 +143,7 @@ class _AddUniversidadeDialogState extends State<AddUniversidadeDialog> {
                     border: OutlineInputBorder(),
                   ),
                   maxLines: 3,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 ),
               ],
             ),
