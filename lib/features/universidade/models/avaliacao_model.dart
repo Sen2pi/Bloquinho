@@ -29,6 +29,23 @@ enum TipoAvaliacao {
   outro,
 }
 
+enum StatusAvaliacao {
+  @JsonValue('pendente')
+  pendente,
+  @JsonValue('em_andamento')
+  emAndamento,
+  @JsonValue('entregue')
+  entregue,
+  @JsonValue('corrigida')
+  corrigida,
+  @JsonValue('aprovada')
+  aprovada,
+  @JsonValue('reprovada')
+  reprovada,
+  @JsonValue('em_atraso')
+  emAtraso,
+}
+
 extension TipoAvaliacaoExtension on TipoAvaliacao {
   String get displayName {
     switch (this) {
@@ -52,21 +69,45 @@ extension TipoAvaliacaoExtension on TipoAvaliacao {
   }
 }
 
+extension StatusAvaliacaoExtension on StatusAvaliacao {
+  String get displayName {
+    switch (this) {
+      case StatusAvaliacao.pendente:
+        return 'Pendente';
+      case StatusAvaliacao.emAndamento:
+        return 'Em Andamento';
+      case StatusAvaliacao.entregue:
+        return 'Entregue';
+      case StatusAvaliacao.corrigida:
+        return 'Corrigida';
+      case StatusAvaliacao.aprovada:
+        return 'Aprovada';
+      case StatusAvaliacao.reprovada:
+        return 'Reprovada';
+      case StatusAvaliacao.emAtraso:
+        return 'Em Atraso';
+    }
+  }
+}
+
 @JsonSerializable()
 class AvaliacaoModel {
   final String id;
   final String nome;
   final String unidadeCurricularId;
   final TipoAvaliacao tipo;
+  final StatusAvaliacao statusAvaliacao;
   final double? nota;
   final double notaMaxima;
   final double peso;
   final DateTime? dataAvaliacao;
   final DateTime? dataEntrega;
+  final DateTime? deadline;
   final String? descricao;
   final String? observacoes;
   final bool realizada;
   final bool entregue;
+  final String? agendaItemId;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -75,15 +116,18 @@ class AvaliacaoModel {
     required this.nome,
     required this.unidadeCurricularId,
     required this.tipo,
+    this.statusAvaliacao = StatusAvaliacao.pendente,
     this.nota,
     required this.notaMaxima,
     required this.peso,
     this.dataAvaliacao,
     this.dataEntrega,
+    this.deadline,
     this.descricao,
     this.observacoes,
     this.realizada = false,
     this.entregue = false,
+    this.agendaItemId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -92,15 +136,18 @@ class AvaliacaoModel {
     required String nome,
     required String unidadeCurricularId,
     required TipoAvaliacao tipo,
+    StatusAvaliacao statusAvaliacao = StatusAvaliacao.pendente,
     double? nota,
     double notaMaxima = 20.0,
     double peso = 1.0,
     DateTime? dataAvaliacao,
     DateTime? dataEntrega,
+    DateTime? deadline,
     String? descricao,
     String? observacoes,
     bool realizada = false,
     bool entregue = false,
+    String? agendaItemId,
   }) {
     final now = DateTime.now();
     return AvaliacaoModel(
@@ -108,15 +155,18 @@ class AvaliacaoModel {
       nome: nome,
       unidadeCurricularId: unidadeCurricularId,
       tipo: tipo,
+      statusAvaliacao: statusAvaliacao,
       nota: nota,
       notaMaxima: notaMaxima,
       peso: peso,
       dataAvaliacao: dataAvaliacao,
       dataEntrega: dataEntrega,
+      deadline: deadline,
       descricao: descricao,
       observacoes: observacoes,
       realizada: realizada,
       entregue: entregue,
+      agendaItemId: agendaItemId,
       createdAt: now,
       updatedAt: now,
     );
@@ -128,15 +178,20 @@ class AvaliacaoModel {
       nome: json['nome'] as String,
       unidadeCurricularId: json['unidadeCurricularId'] as String,
       tipo: TipoAvaliacao.values.firstWhere((e) => e.name == json['tipo']),
+      statusAvaliacao: json['statusAvaliacao'] != null 
+        ? StatusAvaliacao.values.firstWhere((e) => e.name == json['statusAvaliacao'])
+        : StatusAvaliacao.pendente,
       nota: (json['nota'] as num?)?.toDouble(),
       notaMaxima: (json['notaMaxima'] as num).toDouble(),
       peso: (json['peso'] as num).toDouble(),
       dataAvaliacao: json['dataAvaliacao'] != null ? DateTime.parse(json['dataAvaliacao']) : null,
       dataEntrega: json['dataEntrega'] != null ? DateTime.parse(json['dataEntrega']) : null,
+      deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
       descricao: json['descricao'] as String?,
       observacoes: json['observacoes'] as String?,
       realizada: json['realizada'] as bool? ?? false,
       entregue: json['entregue'] as bool? ?? false,
+      agendaItemId: json['agendaItemId'] as String?,
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
     );
@@ -148,15 +203,18 @@ class AvaliacaoModel {
       'nome': nome,
       'unidadeCurricularId': unidadeCurricularId,
       'tipo': tipo.name,
+      'statusAvaliacao': statusAvaliacao.name,
       'nota': nota,
       'notaMaxima': notaMaxima,
       'peso': peso,
       'dataAvaliacao': dataAvaliacao?.toIso8601String(),
       'dataEntrega': dataEntrega?.toIso8601String(),
+      'deadline': deadline?.toIso8601String(),
       'descricao': descricao,
       'observacoes': observacoes,
       'realizada': realizada,
       'entregue': entregue,
+      'agendaItemId': agendaItemId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -173,37 +231,51 @@ class AvaliacaoModel {
   }
 
   String get status {
-    if (!realizada && !entregue) {
-      if (dataAvaliacao != null && DateTime.now().isAfter(dataAvaliacao!)) {
-        return 'Em atraso';
-      }
-      return 'Pendente';
+    return statusAvaliacao.displayName;
+  }
+
+  StatusAvaliacao get statusCalculado {
+    final now = DateTime.now();
+    
+    // Se já foi corrigida com nota
+    if (nota != null) {
+      return aprovado ? StatusAvaliacao.aprovada : StatusAvaliacao.reprovada;
     }
-    if (realizada || entregue) {
-      if (nota != null) {
-        return aprovado ? 'Aprovado' : 'Reprovado';
-      }
-      return 'Aguardando correção';
+    
+    // Se foi entregue mas ainda não corrigida
+    if (entregue || realizada) {
+      return StatusAvaliacao.corrigida;
     }
-    return 'Não realizada';
+    
+    // Verificar se está em atraso
+    final dataLimite = deadline ?? dataEntrega ?? dataAvaliacao;
+    if (dataLimite != null && now.isAfter(dataLimite)) {
+      return StatusAvaliacao.emAtraso;
+    }
+    
+    // Status padrão baseado nas datas
+    if (dataAvaliacao != null && now.isAfter(dataAvaliacao!.subtract(const Duration(days: 7)))) {
+      return StatusAvaliacao.emAndamento;
+    }
+    
+    return StatusAvaliacao.pendente;
   }
 
   bool get emAtraso {
     if (realizada || entregue) return false;
-    if (dataAvaliacao != null) {
-      return DateTime.now().isAfter(dataAvaliacao!);
-    }
-    if (dataEntrega != null) {
-      return DateTime.now().isAfter(dataEntrega!);
-    }
-    return false;
+    final dataLimite = deadline ?? dataEntrega ?? dataAvaliacao;
+    return dataLimite != null && DateTime.now().isAfter(dataLimite);
   }
 
   int get diasParaEntrega {
     if (realizada || entregue) return 0;
-    final dataLimite = dataEntrega ?? dataAvaliacao;
+    final dataLimite = deadline ?? dataEntrega ?? dataAvaliacao;
     if (dataLimite == null) return -1;
     return dataLimite.difference(DateTime.now()).inDays;
+  }
+
+  DateTime? get dataLimiteEfetiva {
+    return deadline ?? dataEntrega ?? dataAvaliacao;
   }
 
   AvaliacaoModel copyWith({
@@ -211,15 +283,18 @@ class AvaliacaoModel {
     String? nome,
     String? unidadeCurricularId,
     TipoAvaliacao? tipo,
+    StatusAvaliacao? statusAvaliacao,
     double? nota,
     double? notaMaxima,
     double? peso,
     DateTime? dataAvaliacao,
     DateTime? dataEntrega,
+    DateTime? deadline,
     String? descricao,
     String? observacoes,
     bool? realizada,
     bool? entregue,
+    String? agendaItemId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -228,15 +303,18 @@ class AvaliacaoModel {
       nome: nome ?? this.nome,
       unidadeCurricularId: unidadeCurricularId ?? this.unidadeCurricularId,
       tipo: tipo ?? this.tipo,
+      statusAvaliacao: statusAvaliacao ?? this.statusAvaliacao,
       nota: nota ?? this.nota,
       notaMaxima: notaMaxima ?? this.notaMaxima,
       peso: peso ?? this.peso,
       dataAvaliacao: dataAvaliacao ?? this.dataAvaliacao,
       dataEntrega: dataEntrega ?? this.dataEntrega,
+      deadline: deadline ?? this.deadline,
       descricao: descricao ?? this.descricao,
       observacoes: observacoes ?? this.observacoes,
       realizada: realizada ?? this.realizada,
       entregue: entregue ?? this.entregue,
+      agendaItemId: agendaItemId ?? this.agendaItemId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );

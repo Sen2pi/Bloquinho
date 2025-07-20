@@ -17,7 +17,7 @@ class UniversidadeFileService {
   late String _workspaceId;
   bool _initialized = false;
 
-  Future<void> setContext(String profileName, String workspaceId) async {
+  void setContext(String profileName, String workspaceId) {
     _profileName = profileName;
     _workspaceId = workspaceId;
     _initialized = true;
@@ -29,47 +29,62 @@ class UniversidadeFileService {
     }
   }
 
-  String get _basePath {
-    return WorkspaceStorageService.getWorkspacePath(_profileName, _workspaceId);
+  Future<String> get _basePath async {
+    final storageService = WorkspaceStorageService();
+    await storageService.initialize();
+    await storageService.setContext(_profileName, _workspaceId);
+    final path = await storageService.getCurrentWorkspacePath();
+    if (path == null) {
+      throw Exception('Workspace path não encontrado para $_profileName/$_workspaceId');
+    }
+    return path;
   }
 
-  Directory get _universidadeDir {
-    return Directory('$_basePath${Platform.pathSeparator}universidade');
+  Future<Directory> get _universidadeDir async {
+    final basePath = await _basePath;
+    return Directory('$basePath${Platform.pathSeparator}universidade');
   }
 
-  Directory get _pagesDir {
-    return Directory('${_universidadeDir.path}${Platform.pathSeparator}pages');
+  Future<Directory> get _pagesDir async {
+    final dir = await _universidadeDir;
+    return Directory('${dir.path}${Platform.pathSeparator}pages');
   }
 
-  Directory get _filesDir {
-    return Directory('${_universidadeDir.path}${Platform.pathSeparator}files');
+  Future<Directory> get _filesDir async {
+    final dir = await _universidadeDir;
+    return Directory('${dir.path}${Platform.pathSeparator}files');
   }
 
-  File get _pagesFile {
-    return File('${_universidadeDir.path}${Platform.pathSeparator}pages.json');
+  Future<File> get _pagesFile async {
+    final dir = await _universidadeDir;
+    return File('${dir.path}${Platform.pathSeparator}pages.json');
   }
 
   Future<void> _ensureDirectoriesExist() async {
-    if (!await _universidadeDir.exists()) {
-      await _universidadeDir.create(recursive: true);
+    final universidadeDir = await _universidadeDir;
+    if (!await universidadeDir.exists()) {
+      await universidadeDir.create(recursive: true);
     }
-    if (!await _pagesDir.exists()) {
-      await _pagesDir.create(recursive: true);
+    final pagesDir = await _pagesDir;
+    if (!await pagesDir.exists()) {
+      await pagesDir.create(recursive: true);
     }
-    if (!await _filesDir.exists()) {
-      await _filesDir.create(recursive: true);
+    final filesDir = await _filesDir;
+    if (!await filesDir.exists()) {
+      await filesDir.create(recursive: true);
     }
   }
 
   Future<List<UniversidadePageModel>> getPages() async {
     await _ensureDirectoriesExist();
     
-    if (!await _pagesFile.exists()) {
+    final pagesFile = await _pagesFile;
+    if (!await pagesFile.exists()) {
       return [];
     }
 
     try {
-      final content = await _pagesFile.readAsString();
+      final content = await pagesFile.readAsString();
       final List<dynamic> jsonList = json.decode(content);
       return jsonList.map((item) => UniversidadePageModel.fromJson(item)).toList();
     } catch (e) {
@@ -84,7 +99,8 @@ class UniversidadeFileService {
     try {
       final jsonList = pages.map((page) => page.toJson()).toList();
       final content = json.encode(jsonList);
-      await _pagesFile.writeAsString(content);
+      final pagesFile = await _pagesFile;
+      await pagesFile.writeAsString(content);
     } catch (e) {
       print('Erro ao salvar páginas: $e');
       rethrow;
@@ -182,9 +198,10 @@ class UniversidadeFileService {
   Future<File> saveFile(String fileName, List<int> bytes, {String? contextoId, TipoContextoPage? tipoContexto}) async {
     await _ensureDirectoriesExist();
     
-    Directory targetDir = _filesDir;
+    final filesDir = await _filesDir;
+    Directory targetDir = filesDir;
     if (contextoId != null && tipoContexto != null) {
-      targetDir = Directory('${_filesDir.path}${Platform.pathSeparator}${tipoContexto.name}${Platform.pathSeparator}$contextoId');
+      targetDir = Directory('${filesDir.path}${Platform.pathSeparator}${tipoContexto.name}${Platform.pathSeparator}$contextoId');
       if (!await targetDir.exists()) {
         await targetDir.create(recursive: true);
       }
@@ -198,9 +215,10 @@ class UniversidadeFileService {
   Future<List<FileSystemEntity>> getFiles({String? contextoId, TipoContextoPage? tipoContexto}) async {
     await _ensureDirectoriesExist();
     
-    Directory targetDir = _filesDir;
+    final filesDir = await _filesDir;
+    Directory targetDir = filesDir;
     if (contextoId != null && tipoContexto != null) {
-      targetDir = Directory('${_filesDir.path}${Platform.pathSeparator}${tipoContexto.name}${Platform.pathSeparator}$contextoId');
+      targetDir = Directory('${filesDir.path}${Platform.pathSeparator}${tipoContexto.name}${Platform.pathSeparator}$contextoId');
       if (!await targetDir.exists()) {
         return [];
       }
@@ -219,9 +237,10 @@ class UniversidadeFileService {
   Future<File?> getFile(String fileName, {String? contextoId, TipoContextoPage? tipoContexto}) async {
     await _ensureDirectoriesExist();
     
-    Directory targetDir = _filesDir;
+    final filesDir = await _filesDir;
+    Directory targetDir = filesDir;
     if (contextoId != null && tipoContexto != null) {
-      targetDir = Directory('${_filesDir.path}${Platform.pathSeparator}${tipoContexto.name}${Platform.pathSeparator}$contextoId');
+      targetDir = Directory('${filesDir.path}${Platform.pathSeparator}${tipoContexto.name}${Platform.pathSeparator}$contextoId');
     }
     
     final file = File('${targetDir.path}${Platform.pathSeparator}$fileName');
@@ -245,7 +264,8 @@ class UniversidadeFileService {
       }
     }
     
-    countFiles(_filesDir);
+    final filesDir = await _filesDir;
+    countFiles(filesDir);
     
     return {
       'totalFiles': totalFiles,

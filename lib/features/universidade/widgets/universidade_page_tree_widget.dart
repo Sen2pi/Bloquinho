@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/universidade_page_model.dart';
 import '../providers/universidade_provider.dart';
 import '../widgets/add_page_dialog.dart';
+import '../widgets/universidade_page_editor_widget.dart';
 
 class UniversidadePageTreeWidget extends ConsumerWidget {
   final TipoContextoPage? filtroTipo;
@@ -153,12 +154,40 @@ class UniversidadePageTreeWidget extends ConsumerWidget {
                 fontWeight: depth == 0 ? FontWeight.bold : FontWeight.normal,
               ),
             ),
-            subtitle: Text(page.contextoNome),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(page.contextoNome),
+                if (page.tipoModulo != null)
+                  Text(
+                    page.tipoModulo!.displayName,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                if (page.arquivos.isNotEmpty)
+                  Text(
+                    '${page.arquivos.length} arquivo(s)',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.blue[600],
+                    ),
+                  ),
+              ],
+            ),
             trailing: PopupMenuButton<String>(
               onSelected: (value) {
                 switch (value) {
                   case 'add_child':
                     _showAddPageDialog(context, ref, parentId: page.id);
+                    break;
+                  case 'add_module':
+                    _showAddModuleDialog(context, ref, page.id);
+                    break;
+                  case 'manage_files':
+                    _showFileManagerDialog(context, ref, page);
                     break;
                   case 'edit':
                     _showEditPageDialog(context, ref, page);
@@ -176,6 +205,27 @@ class UniversidadePageTreeWidget extends ConsumerWidget {
                       Icon(Icons.add),
                       SizedBox(width: 8),
                       Text('Adicionar subpágina'),
+                    ],
+                  ),
+                ),
+                if (page.tipoContexto == TipoContextoPage.unidadeCurricular)
+                  const PopupMenuItem(
+                    value: 'add_module',
+                    child: Row(
+                      children: [
+                        Icon(Icons.library_books),
+                        SizedBox(width: 8),
+                        Text('Adicionar módulo'),
+                      ],
+                    ),
+                  ),
+                const PopupMenuItem(
+                  value: 'manage_files',
+                  child: Row(
+                    children: [
+                      Icon(Icons.folder),
+                      SizedBox(width: 8),
+                      Text('Gerenciar arquivos'),
                     ],
                   ),
                 ),
@@ -217,6 +267,8 @@ class UniversidadePageTreeWidget extends ConsumerWidget {
         return Colors.green;
       case TipoContextoPage.unidadeCurricular:
         return Colors.orange;
+      case TipoContextoPage.modulo:
+        return Colors.teal;
       case TipoContextoPage.avaliacao:
         return Colors.purple;
       case TipoContextoPage.geral:
@@ -297,7 +349,318 @@ class UniversidadePageTreeWidget extends ConsumerWidget {
     );
   }
 
+  void _showAddModuleDialog(BuildContext context, WidgetRef ref, String unidadeId) {
+    final titleController = TextEditingController();
+    TipoModulo selectedTipo = TipoModulo.teorica;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Novo Módulo'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Nome do Módulo',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<TipoModulo>(
+              value: selectedTipo,
+              decoration: const InputDecoration(
+                labelText: 'Tipo de Módulo',
+                border: OutlineInputBorder(),
+              ),
+              items: TipoModulo.values
+                  .map((tipo) => DropdownMenuItem(
+                        value: tipo,
+                        child: Text(tipo.displayName),
+                      ))
+                  .toList(),
+              onChanged: (value) => selectedTipo = value!,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final title = titleController.text.trim();
+              if (title.isNotEmpty) {
+                final modulePage = UniversidadePageModel.create(
+                  titulo: title,
+                  parentId: unidadeId,
+                  tipoContexto: TipoContextoPage.modulo,
+                  contextoId: unidadeId,
+                  tipoModulo: selectedTipo,
+                );
+                
+                final service = ref.read(universidadeServiceProvider);
+                await service.savePage(modulePage);
+                ref.invalidate(universidadePagesProvider);
+                
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Módulo criado com sucesso!')),
+                  );
+                }
+              }
+            },
+            child: const Text('Criar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFileManagerDialog(BuildContext context, WidgetRef ref, UniversidadePageModel page) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Arquivos - ${page.titulo}'),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.8,
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('${page.arquivos.length} arquivo(s)'),
+                  ElevatedButton.icon(
+                    onPressed: () => _showAddFileDialog(context, ref, page),
+                    icon: const Icon(Icons.upload_file),
+                    label: const Text('Adicionar'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: page.arquivos.isEmpty
+                    ? const Center(
+                        child: Text('Nenhum arquivo adicionado'),
+                      )
+                    : ListView.builder(
+                        itemCount: page.arquivos.length,
+                        itemBuilder: (context, index) {
+                          final arquivo = page.arquivos[index];
+                          return ListTile(
+                            leading: _getFileIcon(arquivo.tipo),
+                            title: Text(arquivo.nome),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(arquivo.tamanhoFormatado),
+                                Text(
+                                  'Por: ${arquivo.uploadedBy}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            trailing: PopupMenuButton<String>(
+                              onSelected: (action) {
+                                if (action == 'delete') {
+                                  _deleteFile(context, ref, page, arquivo.id);
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.delete, color: Colors.red),
+                                      SizedBox(width: 8),
+                                      Text('Excluir', style: TextStyle(color: Colors.red)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddFileDialog(BuildContext context, WidgetRef ref, UniversidadePageModel page) {
+    final nomeController = TextEditingController();
+    final descricaoController = TextEditingController();
+    String tipoArquivo = 'pdf';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Adicionar Arquivo'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nomeController,
+              decoration: const InputDecoration(
+                labelText: 'Nome do arquivo',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: tipoArquivo,
+              decoration: const InputDecoration(
+                labelText: 'Tipo de arquivo',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'pdf', child: Text('PDF')),
+                DropdownMenuItem(value: 'doc', child: Text('Word Document')),
+                DropdownMenuItem(value: 'ppt', child: Text('PowerPoint')),
+                DropdownMenuItem(value: 'xls', child: Text('Excel')),
+                DropdownMenuItem(value: 'txt', child: Text('Texto')),
+                DropdownMenuItem(value: 'zip', child: Text('Arquivo comprimido')),
+              ],
+              onChanged: (value) => tipoArquivo = value!,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: descricaoController,
+              decoration: const InputDecoration(
+                labelText: 'Descrição (opcional)',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final nome = nomeController.text.trim();
+              if (nome.isNotEmpty) {
+                final arquivo = ArquivoAnexo.create(
+                  nome: nome,
+                  tipo: tipoArquivo,
+                  caminho: '/files/${page.id}/$nome',
+                  tamanho: 1024,
+                  descricao: descricaoController.text.isEmpty 
+                    ? null 
+                    : descricaoController.text,
+                  uploadedBy: 'Professor',
+                );
+
+                final updatedPage = page.copyWith(
+                  arquivos: [...page.arquivos, arquivo],
+                );
+
+                final service = ref.read(universidadeServiceProvider);
+                await service.savePage(updatedPage);
+                ref.invalidate(universidadePagesProvider);
+
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Arquivo adicionado com sucesso!')),
+                  );
+                }
+              }
+            },
+            child: const Text('Adicionar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteFile(BuildContext context, WidgetRef ref, UniversidadePageModel page, String fileId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar exclusão'),
+        content: const Text('Deseja realmente excluir este arquivo?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final updatedFiles = page.arquivos.where((f) => f.id != fileId).toList();
+              final updatedPage = page.copyWith(arquivos: updatedFiles);
+
+              final service = ref.read(universidadeServiceProvider);
+              await service.savePage(updatedPage);
+              ref.invalidate(universidadePagesProvider);
+
+              if (context.mounted) {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                _showFileManagerDialog(context, ref, updatedPage);
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _getFileIcon(String tipo) {
+    switch (tipo.toLowerCase()) {
+      case 'pdf':
+        return const Icon(Icons.picture_as_pdf, color: Colors.red);
+      case 'doc':
+      case 'docx':
+        return const Icon(Icons.description, color: Colors.blue);
+      case 'ppt':
+      case 'pptx':
+        return const Icon(Icons.slideshow, color: Colors.orange);
+      case 'xls':
+      case 'xlsx':
+        return const Icon(Icons.grid_on, color: Colors.green);
+      case 'txt':
+        return const Icon(Icons.text_snippet, color: Colors.grey);
+      case 'zip':
+      case 'rar':
+        return const Icon(Icons.archive, color: Colors.purple);
+      default:
+        return const Icon(Icons.attach_file, color: Colors.grey);
+    }
+  }
+
   void _openPageEditor(BuildContext context, UniversidadePageModel page) {
-    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.8,
+          child: UniversidadePageEditorWidget(page: page),
+        ),
+      ),
+    );
   }
 }

@@ -17,37 +17,43 @@ import '../services/universidade_service.dart';
 import '../../../shared/providers/workspace_provider.dart';
 import '../../../shared/providers/user_profile_provider.dart';
 import '../../../core/models/workspace.dart';
+import '../../agenda/models/agenda_item.dart';
+import '../../agenda/providers/agenda_provider.dart';
 
 final universidadeServiceProvider = Provider<UniversidadeService>((ref) {
   final service = UniversidadeService();
 
-  ref.listen<Workspace?>(workspaceProvider, (previous, next) async {
+  // Configurar o contexto imediatamente se disponível
+  final currentWorkspace = ref.read(workspaceProvider);
+  final currentProfile = ref.read(currentProfileProvider);
+
+  if (currentWorkspace != null && currentProfile != null) {
+    // Definir contexto de forma síncrona para evitar erros
+    service.setContext(currentProfile.name, currentWorkspace.id);
+  }
+
+  // Escutar mudanças no workspace
+  ref.listen<Workspace?>(workspaceProvider, (previous, next) {
     if (next != null) {
       final currentProfile = ref.read(currentProfileProvider);
       if (currentProfile != null) {
-        await service.setContext(currentProfile.name, next.id);
+        service.setContext(currentProfile.name, next.id);
       }
     }
   });
 
-  final currentWorkspace = ref.read(workspaceProvider);
-  final currentProfile = ref.read(currentProfileProvider);
-  if (currentWorkspace != null && currentProfile != null) {
-    Future.microtask(() async {
-      await service.setContext(currentProfile.name, currentWorkspace.id);
-    });
-  }
-
   return service;
 });
 
-final universidadesProvider = FutureProvider<List<UniversidadeModel>>((ref) async {
+final universidadesProvider =
+    FutureProvider<List<UniversidadeModel>>((ref) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.getUniversidades();
 });
 
-final universidadeProvider = FutureProvider.family<UniversidadeModel?, String>((ref, id) async {
+final universidadeProvider =
+    FutureProvider.family<UniversidadeModel?, String>((ref, id) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.getUniversidade(id);
@@ -59,31 +65,38 @@ final cursosProvider = FutureProvider<List<CursoModel>>((ref) async {
   return service.getCursos();
 });
 
-final cursoProvider = FutureProvider.family<CursoModel?, String>((ref, id) async {
+final cursoProvider =
+    FutureProvider.family<CursoModel?, String>((ref, id) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.getCurso(id);
 });
 
-final cursosByUniversidadeProvider = FutureProvider.family<List<CursoModel>, String>((ref, universidadeId) async {
+final cursosByUniversidadeProvider =
+    FutureProvider.family<List<CursoModel>, String>(
+        (ref, universidadeId) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.getCursosByUniversidade(universidadeId);
 });
 
-final unidadesCurricularesProvider = FutureProvider<List<UnidadeCurricularModel>>((ref) async {
+final unidadesCurricularesProvider =
+    FutureProvider<List<UnidadeCurricularModel>>((ref) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.getUnidadesCurriculares();
 });
 
-final unidadeCurricularProvider = FutureProvider.family<UnidadeCurricularModel?, String>((ref, id) async {
+final unidadeCurricularProvider =
+    FutureProvider.family<UnidadeCurricularModel?, String>((ref, id) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.getUnidadeCurricular(id);
 });
 
-final unidadesByCursoProvider = FutureProvider.family<List<UnidadeCurricularModel>, String>((ref, cursoId) async {
+final unidadesByCursoProvider =
+    FutureProvider.family<List<UnidadeCurricularModel>, String>(
+        (ref, cursoId) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.getUnidadesByCurso(cursoId);
@@ -95,31 +108,37 @@ final avaliacoesProvider = FutureProvider<List<AvaliacaoModel>>((ref) async {
   return service.getAvaliacoes();
 });
 
-final avaliacaoProvider = FutureProvider.family<AvaliacaoModel?, String>((ref, id) async {
+final avaliacaoProvider =
+    FutureProvider.family<AvaliacaoModel?, String>((ref, id) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.getAvaliacao(id);
 });
 
-final avaliacoesByUnidadeProvider = FutureProvider.family<List<AvaliacaoModel>, String>((ref, unidadeId) async {
+final avaliacoesByUnidadeProvider =
+    FutureProvider.family<List<AvaliacaoModel>, String>((ref, unidadeId) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.getAvaliacoesByUnidade(unidadeId);
 });
 
-final universidadePagesProvider = FutureProvider<List<UniversidadePageModel>>((ref) async {
+final universidadePagesProvider =
+    FutureProvider<List<UniversidadePageModel>>((ref) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.getPages();
 });
 
-final universidadePageProvider = FutureProvider.family<UniversidadePageModel?, String>((ref, id) async {
+final universidadePageProvider =
+    FutureProvider.family<UniversidadePageModel?, String>((ref, id) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.getPage(id);
 });
 
-final pagesByContextoProvider = FutureProvider.family<List<UniversidadePageModel>, Map<String, dynamic>>((ref, params) async {
+final pagesByContextoProvider =
+    FutureProvider.family<List<UniversidadePageModel>, Map<String, dynamic>>(
+        (ref, params) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   final tipo = params['tipo'] as TipoContextoPage;
@@ -127,31 +146,37 @@ final pagesByContextoProvider = FutureProvider.family<List<UniversidadePageModel
   return service.getPagesByContexto(tipo, contextoId);
 });
 
-final estatisticasUniversidadeProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final estatisticasUniversidadeProvider =
+    FutureProvider<Map<String, dynamic>>((ref) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.getEstatisticas();
 });
 
-final searchCursosProvider = FutureProvider.family<List<CursoModel>, String>((ref, query) async {
+final searchCursosProvider =
+    FutureProvider.family<List<CursoModel>, String>((ref, query) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.searchCursos(query);
 });
 
-final searchUnidadesProvider = FutureProvider.family<List<UnidadeCurricularModel>, String>((ref, query) async {
+final searchUnidadesProvider =
+    FutureProvider.family<List<UnidadeCurricularModel>, String>(
+        (ref, query) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.searchUnidades(query);
 });
 
-final searchAvaliacoesProvider = FutureProvider.family<List<AvaliacaoModel>, String>((ref, query) async {
+final searchAvaliacoesProvider =
+    FutureProvider.family<List<AvaliacaoModel>, String>((ref, query) async {
   final service = ref.watch(universidadeServiceProvider);
   await service.initialize();
   return service.searchAvaliacoes(query);
 });
 
-class UniversidadesNotifier extends StateNotifier<AsyncValue<List<UniversidadeModel>>> {
+class UniversidadesNotifier
+    extends StateNotifier<AsyncValue<List<UniversidadeModel>>> {
   UniversidadesNotifier(this.ref) : super(const AsyncValue.loading()) {
     loadUniversidades();
   }
@@ -251,7 +276,8 @@ class CursosNotifier extends StateNotifier<AsyncValue<List<CursoModel>>> {
   }
 }
 
-class UnidadesCurricularesNotifier extends StateNotifier<AsyncValue<List<UnidadeCurricularModel>>> {
+class UnidadesCurricularesNotifier
+    extends StateNotifier<AsyncValue<List<UnidadeCurricularModel>>> {
   UnidadesCurricularesNotifier(this.ref) : super(const AsyncValue.loading()) {
     loadUnidades();
   }
@@ -284,9 +310,40 @@ class UnidadesCurricularesNotifier extends StateNotifier<AsyncValue<List<Unidade
     try {
       final service = ref.read(universidadeServiceProvider);
       await service.saveUnidadeCurricular(unidade);
+      
+      // Recalcular média do curso se a unidade foi concluída
+      if (unidade.concluida && unidade.notaFinal != null) {
+        await _atualizarMediaCurso(unidade.cursoId);
+      }
+      
       await loadUnidades();
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
+    }
+  }
+  
+  Future<void> _atualizarMediaCurso(String cursoId) async {
+    try {
+      final service = ref.read(universidadeServiceProvider);
+      final unidadesDoCurso = await service.getUnidadesByCurso(cursoId);
+      
+      // Filtrar apenas unidades concluídas com nota final
+      final unidadesConcluidas = unidadesDoCurso
+          .where((u) => u.concluida && u.notaFinal != null)
+          .toList();
+      
+      if (unidadesConcluidas.isNotEmpty) {
+        final notas = unidadesConcluidas.map((u) => u.notaFinal!).toList();
+        final mediaFinal = notas.reduce((a, b) => a + b) / notas.length;
+        
+        final curso = await service.getCurso(cursoId);
+        if (curso != null) {
+          final cursoAtualizado = curso.copyWith(mediaAtual: mediaFinal);
+          await service.saveCurso(cursoAtualizado);
+        }
+      }
+    } catch (e) {
+      // Se falhar ao atualizar a média do curso, não impede a operação principal
     }
   }
 
@@ -301,7 +358,8 @@ class UnidadesCurricularesNotifier extends StateNotifier<AsyncValue<List<Unidade
   }
 }
 
-class AvaliacoesNotifier extends StateNotifier<AsyncValue<List<AvaliacaoModel>>> {
+class AvaliacoesNotifier
+    extends StateNotifier<AsyncValue<List<AvaliacaoModel>>> {
   AvaliacoesNotifier(this.ref) : super(const AsyncValue.loading()) {
     loadAvaliacoes();
   }
@@ -323,10 +381,46 @@ class AvaliacoesNotifier extends StateNotifier<AsyncValue<List<AvaliacaoModel>>>
   Future<void> addAvaliacao(AvaliacaoModel avaliacao) async {
     try {
       final service = ref.read(universidadeServiceProvider);
-      await service.saveAvaliacao(avaliacao);
+
+      // Criar evento na agenda se há deadline
+      String? agendaItemId;
+      if (avaliacao.dataLimiteEfetiva != null) {
+        agendaItemId = await _createAgendaItem(avaliacao);
+      }
+
+      // Salvar avaliação com o ID do item da agenda
+      final avaliacaoComAgenda = agendaItemId != null
+          ? avaliacao.copyWith(agendaItemId: agendaItemId)
+          : avaliacao;
+
+      await service.saveAvaliacao(avaliacaoComAgenda);
       await loadAvaliacoes();
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
+    }
+  }
+
+  Future<String?> _createAgendaItem(AvaliacaoModel avaliacao) async {
+    try {
+      final agendaNotifier = ref.read(agendaProvider.notifier);
+
+            final agendaItem = AgendaItem.create(
+        title: '${avaliacao.tipo.displayName}: ${avaliacao.nome}',
+        description: avaliacao.descricao ?? 'Avaliação da disciplina',
+        type: avaliacao.tipo == TipoAvaliacao.exame 
+          ? AgendaItemType.event 
+          : AgendaItemType.task,
+        startDate: avaliacao.dataLimiteEfetiva,
+        endDate: avaliacao.dataLimiteEfetiva,
+        status: TaskStatus.todo,
+        tags: ['universidade', 'avaliacao', avaliacao.tipo.name],
+      );
+      
+      await agendaNotifier.createItem(agendaItem);
+      return agendaItem.id;
+    } catch (e) {
+      // Se falhar ao criar na agenda, não impede a criação da avaliação
+      return null;
     }
   }
 
@@ -351,25 +445,33 @@ class AvaliacoesNotifier extends StateNotifier<AsyncValue<List<AvaliacaoModel>>>
   }
 }
 
-final universidadesNotifierProvider = StateNotifierProvider<UniversidadesNotifier, AsyncValue<List<UniversidadeModel>>>((ref) {
+final universidadesNotifierProvider = StateNotifierProvider<
+    UniversidadesNotifier, AsyncValue<List<UniversidadeModel>>>((ref) {
   return UniversidadesNotifier(ref);
 });
 
-final cursosNotifierProvider = StateNotifierProvider<CursosNotifier, AsyncValue<List<CursoModel>>>((ref) {
+final cursosNotifierProvider =
+    StateNotifierProvider<CursosNotifier, AsyncValue<List<CursoModel>>>((ref) {
   return CursosNotifier(ref);
 });
 
-final unidadesCurricularesNotifierProvider = StateNotifierProvider<UnidadesCurricularesNotifier, AsyncValue<List<UnidadeCurricularModel>>>((ref) {
+final unidadesCurricularesNotifierProvider = StateNotifierProvider<
+    UnidadesCurricularesNotifier,
+    AsyncValue<List<UnidadeCurricularModel>>>((ref) {
   return UnidadesCurricularesNotifier(ref);
 });
 
-final avaliacoesNotifierProvider = StateNotifierProvider<AvaliacoesNotifier, AsyncValue<List<AvaliacaoModel>>>((ref) {
+final avaliacoesNotifierProvider =
+    StateNotifierProvider<AvaliacoesNotifier, AsyncValue<List<AvaliacaoModel>>>(
+        (ref) {
   return AvaliacoesNotifier(ref);
 });
 
-final selectedUniversidadeProvider = StateProvider<UniversidadeModel?>((ref) => null);
+final selectedUniversidadeProvider =
+    StateProvider<UniversidadeModel?>((ref) => null);
 final selectedCursoProvider = StateProvider<CursoModel?>((ref) => null);
-final selectedUnidadeCurricularProvider = StateProvider<UnidadeCurricularModel?>((ref) => null);
+final selectedUnidadeCurricularProvider =
+    StateProvider<UnidadeCurricularModel?>((ref) => null);
 final selectedAvaliacaoProvider = StateProvider<AvaliacaoModel?>((ref) => null);
 
 final universidadeDashboardTabProvider = StateProvider<int>((ref) => 0);

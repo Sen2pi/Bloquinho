@@ -143,6 +143,11 @@ class CursoModel {
     return medias.reduce((a, b) => a + b) / medias.length;
   }
 
+  double calcularMediaConcluidas(List<double> mediasConcluidas) {
+    if (mediasConcluidas.isEmpty) return 0.0;
+    return mediasConcluidas.reduce((a, b) => a + b) / mediasConcluidas.length;
+  }
+
   bool get aprovado {
     if (mediaAtual == null || mediaMinima == null) return false;
     return mediaAtual! >= mediaMinima!;

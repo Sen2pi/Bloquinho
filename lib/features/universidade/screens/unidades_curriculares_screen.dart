@@ -19,7 +19,7 @@ class UnidadesCurricularesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final unidadesAsync = ref.watch(unidadesCurricularesProvider);
+    final unidadesAsync = ref.watch(unidadesCurricularesNotifierProvider);
     final searchQuery = ref.watch(unidadeSearchQueryProvider);
 
     return Scaffold(
@@ -58,6 +58,7 @@ class UnidadesCurricularesScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'unidades_curriculares_fab',
         onPressed: () => _showAddUnidadeDialog(context, ref),
         tooltip: 'Adicionar Disciplina',
         child: const Icon(Icons.add),

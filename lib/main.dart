@@ -291,6 +291,31 @@ class BloquinhoApp extends ConsumerWidget {
           builder: (context, state) => const AvaliacoesScreen(),
         ),
 
+        // Rotas para as páginas da universidade (sistema hierárquico)
+        GoRoute(
+          path: '/workspace/universidade/editor',
+          name: 'workspace_universidade_editor_root',
+          builder: (context, state) => const UniversidadeDashboardScreen(),
+        ),
+
+        GoRoute(
+          path: '/workspace/universidade/editor/:pageId',
+          name: 'workspace_universidade_editor',
+          builder: (context, state) {
+            final pageId = state.pathParameters['pageId'] ?? '';
+            return BlocoEditorScreen(documentId: pageId);
+          },
+        ),
+
+        GoRoute(
+          path: '/universidade/editor/:pageId',
+          name: 'universidade_editor',
+          builder: (context, state) {
+            final pageId = state.pathParameters['pageId'] ?? '';
+            return BlocoEditorScreen(documentId: pageId);
+          },
+        ),
+
         GoRoute(
           path: '/workspace/profile/storage',
           name: 'workspace_profile_storage',
@@ -363,7 +388,14 @@ class BloquinhoApp extends ConsumerWidget {
           },
         ),
 
-        // Workspace Bloco Editor
+        // Workspace Bloco Editor sem pageId (redireciona para dashboard)
+        GoRoute(
+          path: '/workspace/bloquinho/editor',
+          name: 'workspace_bloco_editor_root',
+          builder: (context, state) => const BloquinhoDashboardScreen(),
+        ),
+
+        // Workspace Bloco Editor com pageId
         GoRoute(
           path: '/workspace/bloquinho/editor/:pageId',
           name: 'workspace_bloco_editor',

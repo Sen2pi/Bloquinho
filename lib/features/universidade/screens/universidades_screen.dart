@@ -13,13 +13,14 @@ import '../providers/universidade_provider.dart';
 import '../models/universidade_model.dart';
 import '../widgets/add_universidade_dialog.dart';
 import '../widgets/universidade_card.dart';
+import '../screens/universidade_details_screen.dart';
 
 class UniversidadesScreen extends ConsumerWidget {
   const UniversidadesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final universidadesAsync = ref.watch(universidadesProvider);
+    final universidadesAsync = ref.watch(universidadesNotifierProvider);
     final searchQuery = ref.watch(universidadeSearchQueryProvider);
 
     return Scaffold(
@@ -58,6 +59,7 @@ class UniversidadesScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'universidades_fab',
         onPressed: () => _showAddUniversidadeDialog(context, ref),
         tooltip: 'Adicionar Universidade',
         child: const Icon(Icons.add),
@@ -204,6 +206,10 @@ class UniversidadesScreen extends ConsumerWidget {
   }
 
   void _navigateToUniversidadeDetails(BuildContext context, UniversidadeModel universidade) {
-    
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => UniversidadeDetailsScreen(universidade: universidade),
+      ),
+    );
   }
 }

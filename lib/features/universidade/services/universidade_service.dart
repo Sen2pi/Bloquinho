@@ -21,7 +21,7 @@ class UniversidadeService {
   late String _workspaceId;
   bool _initialized = false;
 
-  Future<void> setContext(String profileName, String workspaceId) async {
+  void setContext(String profileName, String workspaceId) {
     _profileName = profileName;
     _workspaceId = workspaceId;
     _initialized = true;
@@ -33,37 +33,51 @@ class UniversidadeService {
     }
   }
 
-  String get _basePath {
-    return WorkspaceStorageService.getWorkspacePath(_profileName, _workspaceId);
+  Future<String> get _basePath async {
+    final storageService = WorkspaceStorageService();
+    await storageService.initialize();
+    await storageService.setContext(_profileName, _workspaceId);
+    final path = await storageService.getCurrentWorkspacePath();
+    if (path == null) {
+      throw Exception('Workspace path não encontrado para $_profileName/$_workspaceId');
+    }
+    return path;
   }
 
-  Directory get _universidadeDir {
-    return Directory('$_basePath${Platform.pathSeparator}universidade');
+  Future<Directory> get _universidadeDir async {
+    final basePath = await _basePath;
+    return Directory('$basePath${Platform.pathSeparator}universidade');
   }
 
-  File get _universidadesFile {
-    return File('${_universidadeDir.path}${Platform.pathSeparator}universidades.json');
+  Future<File> get _universidadesFile async {
+    final dir = await _universidadeDir;
+    return File('${dir.path}${Platform.pathSeparator}universidades.json');
   }
 
-  File get _cursosFile {
-    return File('${_universidadeDir.path}${Platform.pathSeparator}cursos.json');
+  Future<File> get _cursosFile async {
+    final dir = await _universidadeDir;
+    return File('${dir.path}${Platform.pathSeparator}cursos.json');
   }
 
-  File get _unidadesCurricularesFile {
-    return File('${_universidadeDir.path}${Platform.pathSeparator}unidades_curriculares.json');
+  Future<File> get _unidadesCurricularesFile async {
+    final dir = await _universidadeDir;
+    return File('${dir.path}${Platform.pathSeparator}unidades_curriculares.json');
   }
 
-  File get _avaliacoesFile {
-    return File('${_universidadeDir.path}${Platform.pathSeparator}avaliacoes.json');
+  Future<File> get _avaliacoesFile async {
+    final dir = await _universidadeDir;
+    return File('${dir.path}${Platform.pathSeparator}avaliacoes.json');
   }
 
-  File get _pagesFile {
-    return File('${_universidadeDir.path}${Platform.pathSeparator}pages.json');
+  Future<File> get _pagesFile async {
+    final dir = await _universidadeDir;
+    return File('${dir.path}${Platform.pathSeparator}pages.json');
   }
 
   Future<void> _ensureDirectoryExists() async {
-    if (!await _universidadeDir.exists()) {
-      await _universidadeDir.create(recursive: true);
+    final dir = await _universidadeDir;
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
     }
   }
 
@@ -105,7 +119,8 @@ class UniversidadeService {
   }
 
   Future<List<UniversidadeModel>> getUniversidades() async {
-    return _loadJsonFile(_universidadesFile, (json) => UniversidadeModel.fromJson(json));
+    final file = await _universidadesFile;
+    return _loadJsonFile(file, (json) => UniversidadeModel.fromJson(json));
   }
 
   Future<void> saveUniversidade(UniversidadeModel universidade) async {
@@ -118,17 +133,20 @@ class UniversidadeService {
       universidades.add(universidade);
     }
     
-    await _saveJsonFile(_universidadesFile, universidades, (u) => u.toJson());
+    final file = await _universidadesFile;
+    await _saveJsonFile(file, universidades, (u) => u.toJson());
   }
 
   Future<void> deleteUniversidade(String id) async {
     final universidades = await getUniversidades();
     universidades.removeWhere((u) => u.id == id);
-    await _saveJsonFile(_universidadesFile, universidades, (u) => u.toJson());
+    final universidadesFile = await _universidadesFile;
+    await _saveJsonFile(universidadesFile, universidades, (u) => u.toJson());
     
     final cursos = await getCursos();
     cursos.removeWhere((c) => c.universidadeId == id);
-    await _saveJsonFile(_cursosFile, cursos, (c) => c.toJson());
+    final cursosFile = await _cursosFile;
+    await _saveJsonFile(cursosFile, cursos, (c) => c.toJson());
   }
 
   Future<UniversidadeModel?> getUniversidade(String id) async {
@@ -141,7 +159,8 @@ class UniversidadeService {
   }
 
   Future<List<CursoModel>> getCursos() async {
-    return _loadJsonFile(_cursosFile, (json) => CursoModel.fromJson(json));
+    final file = await _cursosFile;
+    return _loadJsonFile(file, (json) => CursoModel.fromJson(json));
   }
 
   Future<void> saveCurso(CursoModel curso) async {
@@ -154,7 +173,8 @@ class UniversidadeService {
       cursos.add(curso);
     }
     
-    await _saveJsonFile(_cursosFile, cursos, (c) => c.toJson());
+    final cursosFile = await _cursosFile;
+    await _saveJsonFile(cursosFile, cursos, (c) => c.toJson());
     
     final universidade = await getUniversidade(curso.universidadeId);
     if (universidade != null) {
@@ -170,7 +190,8 @@ class UniversidadeService {
     final cursos = await getCursos();
     final curso = cursos.firstWhere((c) => c.id == id, orElse: () => throw Exception('Curso não encontrado'));
     cursos.removeWhere((c) => c.id == id);
-    await _saveJsonFile(_cursosFile, cursos, (c) => c.toJson());
+    final cursosFile = await _cursosFile;
+    await _saveJsonFile(cursosFile, cursos, (c) => c.toJson());
     
     final universidade = await getUniversidade(curso.universidadeId);
     if (universidade != null) {
@@ -181,7 +202,8 @@ class UniversidadeService {
     
     final unidades = await getUnidadesCurriculares();
     unidades.removeWhere((u) => u.cursoId == id);
-    await _saveJsonFile(_unidadesCurricularesFile, unidades, (u) => u.toJson());
+    final unidadesFile = await _unidadesCurricularesFile;
+    await _saveJsonFile(unidadesFile, unidades, (u) => u.toJson());
   }
 
   Future<CursoModel?> getCurso(String id) async {
@@ -199,7 +221,8 @@ class UniversidadeService {
   }
 
   Future<List<UnidadeCurricularModel>> getUnidadesCurriculares() async {
-    return _loadJsonFile(_unidadesCurricularesFile, (json) => UnidadeCurricularModel.fromJson(json));
+    final file = await _unidadesCurricularesFile;
+    return _loadJsonFile(file, (json) => UnidadeCurricularModel.fromJson(json));
   }
 
   Future<void> saveUnidadeCurricular(UnidadeCurricularModel unidade) async {
@@ -212,7 +235,8 @@ class UniversidadeService {
       unidades.add(unidade);
     }
     
-    await _saveJsonFile(_unidadesCurricularesFile, unidades, (u) => u.toJson());
+    final unidadesFile = await _unidadesCurricularesFile;
+    await _saveJsonFile(unidadesFile, unidades, (u) => u.toJson());
     
     final curso = await getCurso(unidade.cursoId);
     if (curso != null) {
@@ -228,7 +252,8 @@ class UniversidadeService {
     final unidades = await getUnidadesCurriculares();
     final unidade = unidades.firstWhere((u) => u.id == id, orElse: () => throw Exception('Unidade curricular não encontrada'));
     unidades.removeWhere((u) => u.id == id);
-    await _saveJsonFile(_unidadesCurricularesFile, unidades, (u) => u.toJson());
+    final unidadesFile = await _unidadesCurricularesFile;
+    await _saveJsonFile(unidadesFile, unidades, (u) => u.toJson());
     
     final curso = await getCurso(unidade.cursoId);
     if (curso != null) {
@@ -239,7 +264,8 @@ class UniversidadeService {
     
     final avaliacoes = await getAvaliacoes();
     avaliacoes.removeWhere((a) => a.unidadeCurricularId == id);
-    await _saveJsonFile(_avaliacoesFile, avaliacoes, (a) => a.toJson());
+    final avaliacoesFile = await _avaliacoesFile;
+    await _saveJsonFile(avaliacoesFile, avaliacoes, (a) => a.toJson());
   }
 
   Future<UnidadeCurricularModel?> getUnidadeCurricular(String id) async {
@@ -257,7 +283,8 @@ class UniversidadeService {
   }
 
   Future<List<AvaliacaoModel>> getAvaliacoes() async {
-    return _loadJsonFile(_avaliacoesFile, (json) => AvaliacaoModel.fromJson(json));
+    final file = await _avaliacoesFile;
+    return _loadJsonFile(file, (json) => AvaliacaoModel.fromJson(json));
   }
 
   Future<void> saveAvaliacao(AvaliacaoModel avaliacao) async {
@@ -270,7 +297,8 @@ class UniversidadeService {
       avaliacoes.add(avaliacao);
     }
     
-    await _saveJsonFile(_avaliacoesFile, avaliacoes, (a) => a.toJson());
+    final avaliacoesFile = await _avaliacoesFile;
+    await _saveJsonFile(avaliacoesFile, avaliacoes, (a) => a.toJson());
     
     final unidade = await getUnidadeCurricular(avaliacao.unidadeCurricularId);
     if (unidade != null) {
@@ -286,7 +314,8 @@ class UniversidadeService {
     final avaliacoes = await getAvaliacoes();
     final avaliacao = avaliacoes.firstWhere((a) => a.id == id, orElse: () => throw Exception('Avaliação não encontrada'));
     avaliacoes.removeWhere((a) => a.id == id);
-    await _saveJsonFile(_avaliacoesFile, avaliacoes, (a) => a.toJson());
+    final avaliacoesFile = await _avaliacoesFile;
+    await _saveJsonFile(avaliacoesFile, avaliacoes, (a) => a.toJson());
     
     final unidade = await getUnidadeCurricular(avaliacao.unidadeCurricularId);
     if (unidade != null) {
@@ -311,7 +340,8 @@ class UniversidadeService {
   }
 
   Future<List<UniversidadePageModel>> getPages() async {
-    return _loadJsonFile(_pagesFile, (json) => UniversidadePageModel.fromJson(json));
+    final file = await _pagesFile;
+    return _loadJsonFile(file, (json) => UniversidadePageModel.fromJson(json));
   }
 
   Future<void> savePage(UniversidadePageModel page) async {
@@ -324,13 +354,15 @@ class UniversidadeService {
       pages.add(page);
     }
     
-    await _saveJsonFile(_pagesFile, pages, (p) => p.toJson());
+    final pagesFile = await _pagesFile;
+    await _saveJsonFile(pagesFile, pages, (p) => p.toJson());
   }
 
   Future<void> deletePage(String id) async {
     final pages = await getPages();
     pages.removeWhere((p) => p.id == id);
-    await _saveJsonFile(_pagesFile, pages, (p) => p.toJson());
+    final pagesFile = await _pagesFile;
+    await _saveJsonFile(pagesFile, pages, (p) => p.toJson());
   }
 
   Future<UniversidadePageModel?> getPage(String id) async {

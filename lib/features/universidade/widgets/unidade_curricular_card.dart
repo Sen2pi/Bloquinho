@@ -56,9 +56,10 @@ class UnidadeCurricularCard extends StatelessWidget {
                       children: [
                         Text(
                           unidade.nome,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -71,7 +72,8 @@ class UnidadeCurricularCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: _getStatusColor().withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -79,9 +81,9 @@ class UnidadeCurricularCard extends StatelessWidget {
                     child: Text(
                       unidade.status,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: _getStatusColor(),
-                        fontWeight: FontWeight.bold,
-                      ),
+                            color: _getStatusColor(),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                   ),
                   PopupMenuButton<String>(
@@ -112,7 +114,8 @@ class UnidadeCurricularCard extends StatelessWidget {
                           children: [
                             Icon(Icons.delete, color: Colors.red),
                             SizedBox(width: 8),
-                            Text('Excluir', style: TextStyle(color: Colors.red)),
+                            Text('Excluir',
+                                style: TextStyle(color: Colors.red)),
                           ],
                         ),
                       ),
@@ -125,7 +128,8 @@ class UnidadeCurricularCard extends StatelessWidget {
                 children: [
                   if (unidade.codigo != null) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.secondaryContainer,
                         borderRadius: BorderRadius.circular(12),
@@ -133,16 +137,19 @@ class UnidadeCurricularCard extends StatelessWidget {
                       child: Text(
                         unidade.codigo!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSecondaryContainer,
-                          fontWeight: FontWeight.w500,
-                        ),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSecondaryContainer,
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
                     ),
                     const SizedBox(width: 8),
                   ],
                   if (unidade.semestre != null) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.tertiaryContainer,
                         borderRadius: BorderRadius.circular(12),
@@ -150,15 +157,38 @@ class UnidadeCurricularCard extends StatelessWidget {
                       child: Text(
                         '${unidade.semestre}º Semestre',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onTertiaryContainer,
-                          fontWeight: FontWeight.w500,
-                        ),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onTertiaryContainer,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  if (unidade.creditos != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.secondaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${unidade.creditos} ECTS',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSecondaryContainer,
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
                     ),
                     const SizedBox(width: 8),
                   ],
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primaryContainer,
                       borderRadius: BorderRadius.circular(12),
@@ -166,20 +196,39 @@ class UnidadeCurricularCard extends StatelessWidget {
                     child: Text(
                       '${unidade.avaliacaoIds.length} avaliações',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.w500,
-                      ),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
                   ),
                   const Spacer(),
-                  if (unidade.mediaAtual != null)
-                    Text(
-                      'Média: ${unidade.mediaAtual!.toStringAsFixed(1)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: unidade.aprovado ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (unidade.notaFinal != null)
+                        Text(
+                          'Nota Final: ${unidade.notaFinal!.toStringAsFixed(1)}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: unidade.concluida 
+                                    ? (unidade.notaFinal! >= unidade.configuracaoMedia.notaMinima 
+                                        ? Colors.green 
+                                        : Colors.red)
+                                    : Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      if (unidade.mediaAtual != null)
+                        Text(
+                          'Média: ${unidade.mediaAtual!.toStringAsFixed(1)}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: unidade.aprovado ? Colors.green : Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ],
@@ -191,14 +240,15 @@ class UnidadeCurricularCard extends StatelessWidget {
 
   Color _getStatusColor() {
     switch (unidade.status.toLowerCase()) {
-      case 'aprovado':
+      case 'concluída':
         return Colors.green;
-      case 'reprovado':
+      case 'reprovada':
         return Colors.red;
-      case 'sem avaliações':
+      case 'suspensa':
         return Colors.orange;
       case 'inativa':
         return Colors.grey;
+      case 'em curso':
       default:
         return Colors.blue;
     }

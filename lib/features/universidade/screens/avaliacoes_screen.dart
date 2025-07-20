@@ -19,7 +19,7 @@ class AvaliacoesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final avaliacoesAsync = ref.watch(avaliacoesProvider);
+    final avaliacoesAsync = ref.watch(avaliacoesNotifierProvider);
     final searchQuery = ref.watch(avaliacaoSearchQueryProvider);
 
     return Scaffold(
@@ -58,6 +58,7 @@ class AvaliacoesScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'avaliacoes_fab',
         onPressed: () => _showAddAvaliacaoDialog(context, ref),
         tooltip: 'Adicionar Avaliação',
         child: const Icon(Icons.add),

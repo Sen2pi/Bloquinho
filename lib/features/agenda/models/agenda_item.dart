@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 part 'agenda_item.g.dart';
 
@@ -94,6 +95,56 @@ class AgendaItem extends Equatable {
       _$AgendaItemFromJson(json);
 
   Map<String, dynamic> toJson() => _$AgendaItemToJson(this);
+
+  factory AgendaItem.create({
+    required String title,
+    String? description,
+    DateTime? startDate,
+    DateTime? endDate,
+    DateTime? deadline,
+    required AgendaItemType type,
+    TaskStatus? status,
+    Priority priority = Priority.medium,
+    String? location,
+    List<String> attendees = const [],
+    List<String> tags = const [],
+    bool isAllDay = false,
+    bool isRecurring = false,
+    String? recurrenceRule,
+    String? color,
+    String? databaseItemId,
+    String? databaseName,
+    String? notes,
+    List<String> attachments = const [],
+    String? workspaceId,
+  }) {
+    final now = DateTime.now();
+    return AgendaItem(
+      id: const Uuid().v4(),
+      title: title,
+      description: description,
+      startDate: startDate,
+      endDate: endDate,
+      deadline: deadline,
+      type: type,
+      status: status,
+      priority: priority,
+      location: location,
+      attendees: attendees,
+      tags: tags,
+      isAllDay: isAllDay,
+      isRecurring: isRecurring,
+      recurrenceRule: recurrenceRule,
+      color: color,
+      databaseItemId: databaseItemId,
+      databaseName: databaseName,
+      createdAt: now,
+      updatedAt: now,
+      notes: notes,
+      attachments: attachments,
+      workspaceId: workspaceId,
+    );
+  }
 
   AgendaItem copyWith({
     String? id,

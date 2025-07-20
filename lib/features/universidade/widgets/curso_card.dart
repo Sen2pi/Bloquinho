@@ -9,6 +9,7 @@
 
 import 'package:flutter/material.dart';
 import '../models/curso_model.dart';
+import '../models/tipo_curso_enum.dart';
 
 class CursoCard extends StatelessWidget {
   final CursoModel curso;

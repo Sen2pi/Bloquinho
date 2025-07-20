@@ -20,7 +20,7 @@ class CursosScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cursosAsync = ref.watch(cursosProvider);
+    final cursosAsync = ref.watch(cursosNotifierProvider);
     final searchQuery = ref.watch(cursoSearchQueryProvider);
 
     return Scaffold(
@@ -59,6 +59,7 @@ class CursosScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'cursos_fab',
         onPressed: () => _showAddCursoDialog(context, ref),
         tooltip: 'Adicionar Curso',
         child: const Icon(Icons.add),

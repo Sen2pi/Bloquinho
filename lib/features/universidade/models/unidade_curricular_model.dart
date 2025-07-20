@@ -64,6 +64,8 @@ class UnidadeCurricularModel {
   final int? anoLetivo;
   final ConfiguracaoMedia configuracaoMedia;
   final double? mediaAtual;
+  final double? notaFinal;
+  final String statusConclusao;
   final List<String> avaliacaoIds;
   final List<String> pageIds;
   final List<String> fileIds;
@@ -83,6 +85,8 @@ class UnidadeCurricularModel {
     this.anoLetivo,
     required this.configuracaoMedia,
     this.mediaAtual,
+    this.notaFinal,
+    this.statusConclusao = 'Em Curso',
     required this.avaliacaoIds,
     required this.pageIds,
     required this.fileIds,
@@ -101,6 +105,8 @@ class UnidadeCurricularModel {
     int? semestre,
     int? anoLetivo,
     ConfiguracaoMedia? configuracaoMedia,
+    double? notaFinal,
+    String statusConclusao = 'Em Curso',
     List<String>? avaliacaoIds,
     List<String>? pageIds,
     List<String>? fileIds,
@@ -124,6 +130,8 @@ class UnidadeCurricularModel {
             notaMaxima: 20.0,
           ),
       mediaAtual: null,
+      notaFinal: notaFinal,
+      statusConclusao: statusConclusao,
       avaliacaoIds: avaliacaoIds ?? [],
       pageIds: pageIds ?? [],
       fileIds: fileIds ?? [],
@@ -146,6 +154,8 @@ class UnidadeCurricularModel {
       anoLetivo: json['anoLetivo'] as int?,
       configuracaoMedia: ConfiguracaoMedia.fromJson(json['configuracaoMedia']),
       mediaAtual: (json['mediaAtual'] as num?)?.toDouble(),
+      notaFinal: (json['notaFinal'] as num?)?.toDouble(),
+      statusConclusao: json['statusConclusao'] as String? ?? 'Em Curso',
       avaliacaoIds: List<String>.from(json['avaliacaoIds'] ?? []),
       pageIds: List<String>.from(json['pageIds'] ?? []),
       fileIds: List<String>.from(json['fileIds'] ?? []),
@@ -168,6 +178,8 @@ class UnidadeCurricularModel {
       'anoLetivo': anoLetivo,
       'configuracaoMedia': configuracaoMedia.toJson(),
       'mediaAtual': mediaAtual,
+      'notaFinal': notaFinal,
+      'statusConclusao': statusConclusao,
       'avaliacaoIds': avaliacaoIds,
       'pageIds': pageIds,
       'fileIds': fileIds,
@@ -183,6 +195,13 @@ class UnidadeCurricularModel {
   }
 
   String get status {
+    if (!ativo) return 'Inativa';
+    return statusConclusao;
+  }
+
+  bool get concluida => statusConclusao == 'Concluída';
+
+  String get statusAvaliacao {
     if (!ativo) return 'Inativa';
     if (mediaAtual == null) return 'Sem avaliações';
     if (aprovado) return 'Aprovado';
@@ -224,6 +243,8 @@ class UnidadeCurricularModel {
     int? anoLetivo,
     ConfiguracaoMedia? configuracaoMedia,
     double? mediaAtual,
+    double? notaFinal,
+    String? statusConclusao,
     List<String>? avaliacaoIds,
     List<String>? pageIds,
     List<String>? fileIds,
@@ -243,6 +264,8 @@ class UnidadeCurricularModel {
       anoLetivo: anoLetivo ?? this.anoLetivo,
       configuracaoMedia: configuracaoMedia ?? this.configuracaoMedia,
       mediaAtual: mediaAtual ?? this.mediaAtual,
+      notaFinal: notaFinal ?? this.notaFinal,
+      statusConclusao: statusConclusao ?? this.statusConclusao,
       avaliacaoIds: avaliacaoIds ?? this.avaliacaoIds,
       pageIds: pageIds ?? this.pageIds,
       fileIds: fileIds ?? this.fileIds,

@@ -50,7 +50,7 @@ class _AddCursoDialogState extends ConsumerState<AddCursoDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final universidadesAsync = ref.watch(universidadesProvider);
+    final universidadesAsync = ref.watch(universidadesNotifierProvider);
 
     return AlertDialog(
       title: Text(widget.curso == null ? 'Adicionar Curso' : 'Editar Curso'),

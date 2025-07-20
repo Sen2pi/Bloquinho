@@ -404,6 +404,22 @@ class GlobalSearchResults extends ConsumerWidget {
         return '📅';
       case SearchResultType.page:
         return '📄';
+      case SearchResultType.universidade:
+        return '🏛️';
+      case SearchResultType.curso:
+        return '📚';
+      case SearchResultType.unidadeCurricular:
+        return '📖';
+      case SearchResultType.avaliacao:
+        return '📝';
+      case SearchResultType.universidadePage:
+        return '📄';
+      case SearchResultType.application:
+        return '💼';
+      case SearchResultType.cv:
+        return '📄';
+      case SearchResultType.interview:
+        return '🎤';
     }
   }
 
@@ -417,6 +433,22 @@ class GlobalSearchResults extends ConsumerWidget {
         return 'Agenda';
       case SearchResultType.page:
         return 'Páginas';
+      case SearchResultType.universidade:
+        return 'Universidades';
+      case SearchResultType.curso:
+        return 'Cursos';
+      case SearchResultType.unidadeCurricular:
+        return 'Unidades Curriculares';
+      case SearchResultType.avaliacao:
+        return 'Avaliações';
+      case SearchResultType.universidadePage:
+        return 'Páginas da Universidade';
+      case SearchResultType.application:
+        return 'Candidaturas';
+      case SearchResultType.cv:
+        return 'CVs';
+      case SearchResultType.interview:
+        return 'Entrevistas';
     }
   }
 }

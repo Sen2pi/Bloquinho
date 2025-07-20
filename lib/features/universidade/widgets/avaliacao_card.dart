@@ -223,7 +223,7 @@ class AvaliacaoCard extends StatelessWidget {
       case TipoAvaliacao.projeto:
         return Icons.engineering;
       case TipoAvaliacao.apresentacao:
-        return Icons.presentation_chart;
+        return Icons.present_to_all;
       case TipoAvaliacao.laboratorio:
         return Icons.science;
       case TipoAvaliacao.participacao:

@@ -20,91 +20,150 @@ class QuickActionsUniversidadeWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
+            Icon(
+              Icons.flash_on,
+              color: Theme.of(context).colorScheme.primary,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
             Text(
               'Ações Rápidas',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              childAspectRatio: 2,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              children: [
-                _buildActionButton(
-                  context,
-                  'Nova Universidade',
-                  Icons.school,
-                  Colors.blue,
-                  () => _showAddUniversidadeDialog(context, ref),
-                ),
-                _buildActionButton(
-                  context,
-                  'Novo Curso',
-                  Icons.book,
-                  Colors.green,
-                  () => _showAddCursoDialog(context, ref),
-                ),
-                _buildActionButton(
-                  context,
-                  'Nova Disciplina',
-                  Icons.subject,
-                  Colors.orange,
-                  () => _showAddUnidadeDialog(context, ref),
-                ),
-                _buildActionButton(
-                  context,
-                  'Nova Avaliação',
-                  Icons.assignment,
-                  Colors.purple,
-                  () => _showAddAvaliacaoDialog(context, ref),
-                ),
-              ],
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 16),
+
+        // Primeira linha - Universidade e Curso
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildModernActionButton(
+                  context,
+                  'Nova Universidade',
+                  Icons.school,
+                  const Color(0xFF4F46E5),
+                  () => _showAddUniversidadeDialog(context, ref),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildModernActionButton(
+                  context,
+                  'Novo Curso',
+                  Icons.book,
+                  const Color(0xFF10B981),
+                  () => _showAddCursoDialog(context, ref),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Segunda linha - Disciplina e Avaliação
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildModernActionButton(
+                  context,
+                  'Nova Disciplina',
+                  Icons.subject,
+                  const Color(0xFFF59E0B),
+                  () => _showAddUnidadeDialog(context, ref),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildModernActionButton(
+                  context,
+                  'Nova Avaliação',
+                  Icons.assignment,
+                  const Color(0xFF8B5CF6),
+                  () => _showAddAvaliacaoDialog(context, ref),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildActionButton(
+  Widget _buildModernActionButton(
     BuildContext context,
     String label,
     IconData icon,
     Color color,
     VoidCallback onTap,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withOpacity(0.3)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 32),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
             const SizedBox(height: 8),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -118,11 +177,14 @@ class QuickActionsUniversidadeWidget extends ConsumerWidget {
       context: context,
       builder: (context) => AddUniversidadeDialog(
         onSave: (universidade) async {
-          await ref.read(universidadesNotifierProvider.notifier).addUniversidade(universidade);
+          await ref
+              .read(universidadesNotifierProvider.notifier)
+              .addUniversidade(universidade);
           if (context.mounted) {
             Navigator.of(context).pop();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Universidade adicionada com sucesso!')),
+              const SnackBar(
+                  content: Text('Universidade adicionada com sucesso!')),
             );
           }
         },
@@ -152,11 +214,14 @@ class QuickActionsUniversidadeWidget extends ConsumerWidget {
       context: context,
       builder: (context) => AddUnidadeCurricularDialog(
         onSave: (unidade) async {
-          await ref.read(unidadesCurricularesNotifierProvider.notifier).addUnidade(unidade);
+          await ref
+              .read(unidadesCurricularesNotifierProvider.notifier)
+              .addUnidade(unidade);
           if (context.mounted) {
             Navigator.of(context).pop();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Disciplina adicionada com sucesso!')),
+              const SnackBar(
+                  content: Text('Disciplina adicionada com sucesso!')),
             );
           }
         },
@@ -169,11 +234,14 @@ class QuickActionsUniversidadeWidget extends ConsumerWidget {
       context: context,
       builder: (context) => AddAvaliacaoDialog(
         onSave: (avaliacao) async {
-          await ref.read(avaliacoesNotifierProvider.notifier).addAvaliacao(avaliacao);
+          await ref
+              .read(avaliacoesNotifierProvider.notifier)
+              .addAvaliacao(avaliacao);
           if (context.mounted) {
             Navigator.of(context).pop();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Avaliação adicionada com sucesso!')),
+              const SnackBar(
+                  content: Text('Avaliação adicionada com sucesso!')),
             );
           }
         },
